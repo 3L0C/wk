@@ -1,4 +1,4 @@
-#include "window.h"
+#include "lib/window.h"
 #include "config.h"
 #include "chords.h"
 

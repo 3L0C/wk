@@ -1,5 +1,0 @@
-#ifndef WK_WAYLAND_WINDOW_H_
-#define WK_WAYLAND_WINDOW_H_
-
-
-#endif /* WK_WAYLAND_WINDOW_H_ */

@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "window.h"
+#include "lib/window.h"
 
 void
 render(void)
