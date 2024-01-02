@@ -30,58 +30,86 @@ HEADERS     := $(wildcard $(SOURCE_DIR)/*.h) ./config.h ./chords.h
 SOURCES     := $(wildcard $(SOURCE_DIR)/*.c)
 OBJECTS     := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.o)))
 MANFILES    := $(wildcard $(MAN_DIR)/*.1)
-LIBHEADERS  := $(wildcard $(LIB_DIR)/*.h)
-LIBSOURCES  := $(wildcard $(LIB_DIR)/*.c)
-LIBOBJS     := $(addprefix $(BUILD_DIR)/lib/, $(notdir $(LIBSOURCES:.c=.o)))
-DEPS        := $(SOURCES:.c=.d) $(LIBSOURCES:.c=.d) $(XSOURCES:.c=.d) $(WSOURCES:.c=.d)
+LIBHDRS     := $(wildcard $(LIB_DIR)/*.h)
+LIBSRCS     := $(wildcard $(LIB_DIR)/*.c)
+LIBOBJS     := $(addprefix $(BUILD_DIR)/lib/, $(notdir $(LIBSRCS:.c=.o)))
+DEPS        := $(SOURCES:.c=.d) $(LIBSRCS:.c=.d) $(XSOURCES:.c=.d) $(WSOURCES:.c=.d)
 
-.SECONDEXPANSION:
+# goals to check to ensure correct backend is used
+X11GOALS    := all x11 debug-x11
+WAYGOALS    := wayland debug-wayland
+
+# update LIBOBJS etc. based on goal
+ifeq (0,$(words $(MAKECMDGOALS)))
+# no goal given, equivilent to 'all'
+BACKHDRS += $(XHEADERS)
+BACKSRCS += $(XSOURCES)
+BACKOBJS += $(XOBJECTS)
+else
+# some goal given
+ifeq (0,$(words $(filter $(X11GOALS),$(MAKECMDGOALS))))
+# no x11 goals, target wayland
+BACKHDRS += $(WHEADERS)
+BACKSRCS += $(WSOURCES)
+BACKOBJS += $(WOBJECTS)
+else
+# x11 goal, target x11
+BACKHDRS += $(XHEADERS)
+BACKSRCS += $(XSOURCES)
+BACKOBJS += $(XOBJECTS)
+endif
+endif
+
+# check for debug
+ifneq (0,$(words $(filter debug-wayland debug-x11,$(MAKECMDGOALS))))
+CFLAGS += -ggdb
+endif
+
+
 all: x11
 
-x11: libx11 $(BUILD_DIR)/$(NAME)
+x11: $(BUILD_DIR)/$(NAME)
 
-libx11: $$(eval RENDOBJS += $(XOBJECTS))
+wayland: $(BUILD_DIR)/$(NAME)
 
-wayland: libwayland $(BUILD_DIR)/$(NAME)
+debug-x11: options $(BUILD_DIR)/$(NAME)
 
-libwayland: $$(eval RENDOBJS+= $(WOBJECTS))
-
-debug: $$(eval CFLAGS += -ggdb)
-
-debug-x11: debug libx11 options $(BUILD_DIR)/$(NAME)
-
-debug-wayland: debug libwayland options $(BUILD_DIR)/$(NAME)
+debug-wayland: options $(BUILD_DIR)/$(NAME)
 
 options:
 	@ printf "%-8s = %s\n" "CFLAGS"  "$(CFLAGS)"
 	@ printf "%-8s = %s\n" "HEADERS" "$(HEADERS)"
 	@ printf "%-8s = %s\n" "SOURCES" "$(SOURCES)"
 	@ printf "%-8s = %s\n" "OBJECTS" "$(OBJECTS)"
+	@ printf "%-8s = %s\n" "LIBHDRS" "$(LIBHDRS)"
+	@ printf "%-8s = %s\n" "LIBSRCS" "$(LIBSRCS)"
 	@ printf "%-8s = %s\n" "LIBOBJS" "$(LIBOBJS)"
-	@ printf "%-8s = %s\n" "RENDOBJS" "$(RENDOBJS)"
+	@ printf "%-8s = %s\n" "BACKHDRS" "$(BACKHDRS)"
+	@ printf "%-8s = %s\n" "BACKSRCS" "$(BACKSRCS)"
+	@ printf "%-8s = %s\n" "BACKOBJS" "$(BACKOBJS)"
 
-$(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $$(RENDOBJS) FORCE
+$(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $(BACKOBJS) FORCE # $$(RENDOBJS) FORCE
 	@ printf "%-8s %-40s %s\n" $(CC) "$@ $(^:FORCE=)" "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)
 	@ $(CC) $(CFLAGS) $(^:FORCE=) -o $@
 	@ cp build/$(NAME) $(NAME)
 
-$(BUILD_DIR)/lib/%.o: $(LIB_DIR)/%.c $(LIBHEADERS)
+$(BUILD_DIR)/lib/%.o: $(LIB_DIR)/%.c $(LIBHDRS)
 	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/lib
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -iquote$(LIB_DIR) -o $@ $<
 
-$(BUILD_DIR)/lib/x11/%.o: $(X11_DIR)/%.c $(XHEADERS) $(LIBHEADERS)
+$(BUILD_DIR)/lib/x11/%.o: $(X11_DIR)/%.c $(BACKHDRS) $(LIBHDRS)
 	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/lib/x11
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -iquote$(X11_DIR) -o $@ $<
 
-$(BUILD_DIR)/lib/wayland/%.o: $(WAY_DIR)/%.c $(WHEADERS) $(LIBHEADERS)
+$(BUILD_DIR)/lib/wayland/%.o: $(WAY_DIR)/%.c $(BACKHDRS) $(LIBHDRS)
 	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/lib/wayland
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -iquote$(WAY_DIR) -o $@ $<
 
-$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS) $(LIBHEADERS)
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS) $(LIBHDRS)
 	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -o $@ $<
