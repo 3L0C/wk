@@ -1,10 +1,15 @@
-#include "lib/window.h"
-#include "config.h"
+#include <stdio.h>
+
 #include "chords.h"
+#include "client.h"
+#include "common.h"
+
+static Client client;
 
 int
-main(int argc, char **argv)
+main(int argc, char** argv)
 {
-    render();
+    initClient(&client);
+    parseArgs(&client, &argc, &argv);
     return 0;
 }

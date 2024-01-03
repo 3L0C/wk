@@ -1,0 +1,92 @@
+#ifndef WK_SCANNER_H_
+#define WK_SCANNER_H_
+
+#include "lib/common.h"
+
+#define WK_MOD_NONE    (1<<0)
+#define WK_MOD_CTRL    (1<<1)
+#define WK_MOD_ALT     (1<<2)
+#define WK_MOD_HYPER   (1<<3)
+#define WK_MOD_SHIFT   (1<<4)
+#define WK_MOD_ALL     (WK_MOD_CTRL|WK_MOD_ALT|WK_MOD_HYPER|WK_MOD_SHIFT)
+#define IS_MOD(mod)     ((mod) != WK_MOD_NONE && \
+                         ((mod) & WK_MOD_ALL) != WK_MOD_NONE)
+
+typedef enum
+{
+    /* single characters */
+    TOKEN_LEFT_BRACKET,
+    TOKEN_RIGHT_BRACKET,
+    TOKEN_LEFT_BRACE,
+    TOKEN_RIGHT_BRACE,
+
+    /* keywords */
+    TOKEN_INDEX,
+    TOKEN_INDEX_ONE,
+    TOKEN_THIS_KEY,
+    TOKEN_BEFORE,
+    TOKEN_AFTER,
+    TOKEN_KEEP,
+    TOKEN_UNHOOK,
+    TOKEN_NO_BEFORE,
+    TOKEN_NO_AFTER,
+    TOKEN_WRITE,
+
+    /* literals */
+    TOKEN_COMMAND,
+    TOKEN_COMM_INTERP,
+    TOKEN_DESCRIPTION,
+    TOKEN_DESC_INTERP,
+
+    /* keys */
+    TOKEN_KEY,
+
+    /* mods */
+    TOKEN_MOD_CTRL,
+    TOKEN_MOD_ALT,
+    TOKEN_MOD_HYPER,
+    TOKEN_MOD_SHIFT,
+
+    /* specials */
+    TOKEN_SPECIAL_LEFT,
+    TOKEN_SPECIAL_RIGHT,
+    TOKEN_SPECIAL_UP,
+    TOKEN_SPECIAL_DOWN,
+    TOKEN_SPECIAL_TAB,
+    TOKEN_SPECIAL_SPACE,
+    TOKEN_SPECIAL_RETURN,
+    TOKEN_SPECIAL_DELETE,
+    TOKEN_SPECIAL_ESCAPE,
+    TOKEN_SPECIAL_HOME,
+    TOKEN_SPECIAL_PAGE_UP,
+    TOKEN_SPECIAL_PAGE_DOWN,
+    TOKEN_SPECIAL_END,
+    TOKEN_SPECIAL_BEGIN,
+
+    /* control */
+    TOKEN_NO_INTERP, TOKEN_ERROR, TOKEN_EOF
+} TokenType;
+
+typedef struct
+{
+    const char* start;
+    const char* current;
+    size_t line;
+    TokenType interpType;
+    bool isInterpolation;
+} Scanner;
+
+typedef struct
+{
+    TokenType type;
+    const char* start;
+    size_t length;
+    size_t line;
+    const char* message;
+    size_t messageLength;
+} Token;
+
+void initScanner(Scanner* scanner, const char* source);
+Token scanToken(Scanner* scanner);
+
+#endif /* WK_SCANNER_H_ */

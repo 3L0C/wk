@@ -1,0 +1,117 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "lib/memory.h"
+
+#include "debug.h"
+#include "line.h"
+#include "scanner.h"
+#include "token.h"
+
+void
+initLine(Line* line)
+{
+    line->index         = -1;
+    line->mods          = WK_MOD_NONE;
+    initTokenArray(&line->description);
+    initTokenArray(&line->command);
+    initTokenArray(&line->before);
+    initTokenArray(&line->after);
+    line->keep          = false;
+    line->unhook        = false;
+    line->nobefore      = false;
+    line->noafter       = false;
+    line->write         = false;
+    initLineArray(&line->array);
+}
+
+void
+initLineArray(LineArray* array)
+{
+    array->lines    = NULL;
+    array->capacity = 0;
+    array->count    = 0;
+}
+
+static void
+copyLineArray(LineArray* from, LineArray* to)
+{
+    if (from->count == 0)
+    {
+        initLineArray(to);
+        return;
+    }
+    to->lines = ALLOCATE(Line, from->capacity);
+    to->capacity = from->capacity;
+    to->count = from->count;
+    for (size_t i = 0; i < from->count; i++)
+    {
+        copyLine(&from->lines[i], &to->lines[i]);
+    }
+}
+
+void
+copyLine(Line* from, Line* to)
+{
+    to->index         = from->index;
+    to->mods          = from->mods;
+    to->key           = from->key;
+    copyTokenArray(&from->description, &to->description);
+    copyTokenArray(&from->command, &to->command);
+    copyTokenArray(&from->before, &to->before);
+    copyTokenArray(&from->after, &to->after);
+    to->keep          = from->keep;
+    to->unhook        = from->unhook;
+    to->nobefore      = from->nobefore;
+    to->noafter       = from->noafter;
+    to->write         = from->write;
+    copyLineArray(&from->array, &to->array);
+}
+
+void
+writeLineArray(LineArray* array, Line* line)
+{
+    if (array->capacity < array->count + 1)
+    {
+        int oldCapacity = array->capacity;
+        array->capacity = GROW_CAPACITY(oldCapacity);
+        array->lines = GROW_ARRAY(
+            Line, array->lines, oldCapacity, array->capacity
+        );
+    }
+
+    copyLine(line, &array->lines[array->count]);
+    array->count++;
+}
+
+void
+freeLine(Line* line)
+{
+    FREE_ARRAY(Token, line->description.tokens, line->description.capacity);
+    FREE_ARRAY(Token, line->command.tokens, line->command.capacity);
+    FREE_ARRAY(Token, line->before.tokens, line->before.capacity);
+    FREE_ARRAY(Token, line->after.tokens, line->after.capacity);
+    freeLineArray(&line->array);
+    initLine(line);
+}
+
+void
+freeLineArray(LineArray* array)
+{
+    for (size_t i = 0; i < array->count; i++)
+    {
+        freeLine(&array->lines[i]);
+    }
+    FREE_ARRAY(Line, array->lines, array->capacity);
+    initLineArray(array);
+}
+
+void
+printLineArray(LineArray* array)
+{
+    for (size_t i = 0; i < array->count; i++)
+    {
+
+    }
+}
