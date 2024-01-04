@@ -1,0 +1,32 @@
+m 'Tag & follow' :before ${{echo first}} :after ${{echo last}}
+{
+    [\: S-RET aテrstg] 'Tag %(index+1)' ${{
+        echo "%(key)"
+    }}
+}
+# Browser binds
+b 'Browser'
+{
+    b 'Open Brave' ${{brave}}
+    f 'Open Firefox' ${{firefox}}
+    l 'Open Librewolf' ${{librewolf}}
+    # Mullvad-exclude browser
+    m 'Mullvad-exclude'
+    {
+        b 'Exclude Brave' ${{mullvad-exclude brave}}
+        f 'Exclude Firefox' ${{mullvad-exclude firefox}}
+        l 'Exclude Librewolf' ${{GTK_USE_PORTAL=1 mullvad-exclude librewolf}}
+    }
+    # Browser Profiles
+    p 'Profiles'
+    {
+        c 'Profile' ${{GTK_USE_PORTAL=1 mullvad-exclude librewolf -P banking "bigbank.org"}}
+    }
+    # Sites prefixes
+    s 'Open sites'
+    {
+        c 'Codeberg' ${{librewolf "https://www.codeberg.org"}}
+        t 'twitch' ${{librewolf "https://www.twitch.tv/"}}
+        y 'Youtube' ${{librewolf "https://vid.puffyan.us/feed/popular"}}
+    }
+}

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -9,6 +10,8 @@
 void
 initScanner(Scanner* scanner, const char* source)
 {
+    assert(scanner && source);
+
     scanner->start = source;
     scanner->current = source;
     scanner->line = 1;
@@ -400,6 +403,8 @@ scanInterpolation(Scanner* scanner)
 Token
 scanToken(Scanner* scanner)
 {
+    assert(scanner);
+
     skipWhitespace(scanner);
     if (isAtEnd(scanner)) return makeToken(scanner, TOKEN_EOF);
     if (scanner->isInterpolation) return scanInterpolation(scanner);

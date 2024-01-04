@@ -1,11 +1,11 @@
-#include <iso646.h>
-#include <stdbool.h>
-#include <stddef.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "lib/common.h"
 #include "lib/memory.h"
+#include "lib/types.h"
 
 #include "debug.h"
 #include "line.h"
@@ -452,8 +452,10 @@ keyChord(Compiler* compiler)
 }
 
 int
-transpileBinds(const char* source)
+transpileChords(const char* source)
 {
+    assert(source);
+
     Compiler compiler;
     initCompiler(&compiler, source);
     advance(&compiler);

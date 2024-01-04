@@ -1,32 +1,37 @@
 #ifndef WK_CLIENT_H_
 #define WK_CLIENT_H_
 
-#include <stdbool.h>
+#include <stdio.h>
 
-#include "lib/common.h"
+#include "common.h"
+#include "types.h"
 
 typedef struct
 {
     const char* delimiter;
-    unsigned int maxCols;
+    size_t maxCols;
     int windowWidth;
     int windowHeight;
-    unsigned int windowPosition;
-    unsigned int borderWidth;
+    size_t windowPosition;
+    size_t borderWidth;
     const char* foreground;
     const char* background;
     const char* border;
     const char* shell;
     const char* fonts[MAX_FONTS];
-    unsigned int fontCount;
-    unsigned int fontSize;
+    size_t fontCount;
+    size_t fontSize;
     const char* keys;
     const char* parse;
-    const char* chords;
-    const char* script;
+    const char* chordsFile;
+    bool tryScript;
+    char* script;
+    size_t scriptCapacity;
+    size_t scriptCount;
+    const Chord* chords;
     bool debug;
 } Client;
 
-void initClient(Client*);
+void initClient(Client* client, const Chord* chords);
 
 #endif /* WK_CLIENT_H_ */

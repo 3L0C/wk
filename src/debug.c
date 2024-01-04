@@ -1,7 +1,10 @@
+#include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
 
-#include "common.h"
+#include "lib/common.h"
+#include "lib/types.h"
+
 #include "debug.h"
 #include "line.h"
 #include "scanner.h"
@@ -24,6 +27,8 @@ printSimpleToken(Token* token, const char* type)
 void
 disassembleToken(Token* token)
 {
+    assert(token);
+
     char* type = "";
     switch (token->type)
     {
@@ -86,6 +91,8 @@ disassembleToken(Token* token)
 void
 debugScanner(const char* source)
 {
+    assert(source);
+
     Scanner scanner;
     initScanner(&scanner, source);
     while (true)
@@ -143,6 +150,8 @@ printTokenArray(Line* line, TokenArray* array, const char* message)
 void
 disassembleLine(Line* line, size_t index)
 {
+    assert(line);
+
     printf("[%04zu]  LINE\n", index);
     /* int         index; */
     printf("\tINDEX: %04d | ", line->index);
@@ -175,6 +184,8 @@ disassembleLine(Line* line, size_t index)
 void
 debugLineArray(LineArray* array)
 {
+    assert(array);
+
     for (size_t i = 0; i < array->count; i++)
     {
         disassembleLine(&array->lines[i], i);

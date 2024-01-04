@@ -1,8 +1,10 @@
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "lib/memory.h"
+#include "lib/types.h"
 
 #include "debug.h"
 #include "line.h"
@@ -12,6 +14,8 @@
 void
 initLine(Line* line)
 {
+    assert(line);
+
     line->index         = -1;
     line->mods          = WK_MOD_NONE;
     initTokenArray(&line->description);
@@ -29,6 +33,8 @@ initLine(Line* line)
 void
 initLineArray(LineArray* array)
 {
+    assert(array);
+
     array->lines    = NULL;
     array->capacity = 0;
     array->count    = 0;
@@ -54,6 +60,8 @@ copyLineArray(LineArray* from, LineArray* to)
 void
 copyLine(Line* from, Line* to)
 {
+    assert(from && to);
+
     to->index         = from->index;
     to->mods          = from->mods;
     to->key           = from->key;
@@ -72,6 +80,8 @@ copyLine(Line* from, Line* to)
 void
 writeLineArray(LineArray* array, Line* line)
 {
+    assert(array && line);
+
     if (array->capacity < array->count + 1)
     {
         int oldCapacity = array->capacity;
@@ -88,6 +98,8 @@ writeLineArray(LineArray* array, Line* line)
 void
 freeLine(Line* line)
 {
+    assert(line);
+
     FREE_ARRAY(Token, line->description.tokens, line->description.capacity);
     FREE_ARRAY(Token, line->command.tokens, line->command.capacity);
     FREE_ARRAY(Token, line->before.tokens, line->before.capacity);
@@ -99,6 +111,8 @@ freeLine(Line* line)
 void
 freeLineArray(LineArray* array)
 {
+    assert(array);
+
     for (size_t i = 0; i < array->count; i++)
     {
         freeLine(&array->lines[i]);
@@ -110,6 +124,8 @@ freeLineArray(LineArray* array)
 void
 printLineArray(LineArray* array)
 {
+    assert(array);
+
     for (size_t i = 0; i < array->count; i++)
     {
 

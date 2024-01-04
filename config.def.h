@@ -11,7 +11,7 @@ static const char* foreground = "#DCD7BA"; /* Window foreground color */
 static const char* background = "#181616"; /* Window background color */
 static const char* border = "#7FB4CA"; /* Window border color */
 static const char* shell = "/bin/sh";
-/* Fonts to use */
+/* Fonts to use. Max supported is 8 */
 static const char* fonts[] = {
     "monospace 10"
 };

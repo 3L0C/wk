@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 
 #include "lib/memory.h"
@@ -9,6 +10,8 @@
 void
 initTokenArray(TokenArray* array)
 {
+    assert(array);
+
     array->tokens = NULL;
     array->capacity = 0;
     array->count = 0;
@@ -28,6 +31,8 @@ copyToken(Token* from, Token* to)
 void
 copyTokenArray(TokenArray* from, TokenArray* to)
 {
+    assert(from && to);
+
     if (from->count == 0)
     {
         initTokenArray(to);
@@ -45,6 +50,8 @@ copyTokenArray(TokenArray* from, TokenArray* to)
 void
 writeTokenArray(TokenArray* array, Token* token)
 {
+    assert(array && token);
+
     if (array->capacity < array->count + 1)
     {
         size_t oldCapacity = array->capacity;

@@ -1,4 +1,8 @@
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
+
+#include "lib/types.h"
 
 #include "line.h"
 #include "scanner.h"
@@ -13,11 +17,12 @@ writeChordsHeader(void)
     printf("#ifndef WK_CHORDS_H_\n");
     printf("#define WK_CHORDS_H_\n");
     printf("\n");
-    printf("#include \"lib/common.h\"");
+    printf("#include \"lib/common.h\"\n");
+    printf("#include \"lib/types.h\"\n");
     printf("\n");
     printf("#define NULL_CHORD  { WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL, NULL, NULL, false, false, false, false, false, NULL }\n");
-    printf("#define PREFIX(...) (const Chord[]){ __VA_ARGS__, { NULL_CHORD } }\n");
-    printf("#define CHORDS(...) { __VA_ARGS__, { NULL_CHORD } }\n");
+    printf("#define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }\n");
+    printf("#define CHORDS(...) { __VA_ARGS__, NULL_CHORD }\n");
     printf("\n");
     printf("const Chord chords[] = CHORDS(\n");
     printf("    /* mods,    specials,    key,    description,    command,    before,    after, */\n");
@@ -100,10 +105,20 @@ writeChordKey(Token* token)
     printf("\", ");
 }
 
+static size_t
+rstrip(Token* token)
+{
+    size_t index = token->length - 1;
+    const char* lexeme = &token->start[0];
+    while (index && isspace(lexeme[index])) index--;
+    return index + 1;
+}
+
 static void
 writeChordEscString(Token* token)
 {
-    for (size_t i = 0; i < token->length; i++)
+    size_t length = rstrip(token);
+    for (size_t i = 0; i < length; i++)
     {
         char c = token->start[i];
         switch (c)
@@ -194,6 +209,8 @@ writeChordLines(LineArray* lines, int indent)
 void
 writeChords(LineArray* lines)
 {
+    assert(lines);
+
     writeChordsHeader();
     writeChordLines(lines, 1);
     writeChordsFooter();
