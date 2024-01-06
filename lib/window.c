@@ -1,10 +1,14 @@
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sysexits.h>
 
 #include "common.h"
 #include "client.h"
 #include "types.h"
 #include "window.h"
+#include "x11/window.h"
+#include "wayland/window.h"
 
 static bool
 initColor(WkHexColor* hexColor, const char* color)
@@ -70,26 +74,40 @@ initFonts(WkFontArray* fonts, Client* client)
 }
 
 void
-initWindow(WkWindow* window, Client* client)
+initProperties(WkProperties* props, Client* client)
 {
-    assert(window && client);
+    assert(props && client);
 
-    window->delimiter = client->delimiter;
-    window->maxCols = client->maxCols;
-    window->desiredWidth = client->windowWidth;
-    window->desiredHeight = client->windowHeight;
-    window->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
-    window->borderWidth = client->borderWidth;
-    initColors(window->colors, client);
-    window->shell = client->shell;
-    initFonts(&window->fonts, client);
-    window->chords = client->chords;
-    window->debug = client->debug;
+    props->delimiter = client->delimiter;
+    props->maxCols = client->maxCols;
+    props->desiredWidth = client->windowWidth;
+    props->desiredHeight = client->windowHeight;
+    props->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
+    props->borderWidth = client->borderWidth;
+    initColors(props->colors, client);
+    props->shell = client->shell;
+    initFonts(&props->fonts, client);
+    props->chords = client->chords;
+    props->debug = client->debug;
 }
 
 void
-pressKeys(WkWindow* window, const char* keys)
+pressKeys(WkProperties* props, const char* keys)
 {
-    assert(window);
+    assert(props);
     if (!keys) return;
+}
+
+int
+run(WkProperties* props)
+{
+    if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
+    {
+        return runWayland(props);
+    }
+    else
+    {
+        return runX11(props);
+    }
+    return EX_SOFTWARE;
 }

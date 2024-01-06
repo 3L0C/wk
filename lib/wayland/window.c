@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <sysexits.h>
 
-#include "lib/window.h"
+#include "window.h"
 
-void
-render(void)
+int
+runWayland(WkProperties* props)
 {
     printf("wayland\n");
+    return EX_OK;
 }

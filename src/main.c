@@ -14,7 +14,7 @@
 #include "transpiler.h"
 
 static Client client;
-static WkWindow window;
+static WkProperties props;
 
 static int
 parseFile(void)
@@ -31,13 +31,13 @@ static int
 runScript(void)
 {
     if (!tryStdin(&client)) return EX_IOERR;
-    if (!compileChords(&window, client.script))
+    if (!compileChords(&props, client.script))
     {
         free(client.script);
         return EX_DATAERR;
     }
-    pressKeys(&window, client.keys);
-    return run(&window);
+    pressKeys(&props, client.keys);
+    return run(&props);
 }
 
 static int
@@ -45,13 +45,13 @@ runChordsFile(void)
 {
     char* source = readFile(client.chordsFile);
     if (!source) return EX_IOERR;
-    if (!compileChords(&window, source))
+    if (!compileChords(&props, source))
     {
         free(source);
         return EX_DATAERR;
     }
-    pressKeys(&window, client.keys);
-    return run(&window);
+    pressKeys(&props, client.keys);
+    return run(&props);
 }
 
 int
@@ -61,7 +61,7 @@ main(int argc, char** argv)
 
     initClient(&client, chords);
     parseArgs(&client, &argc, &argv);
-    initWindow(&window, &client);
+    initProperties(&props, &client);
 
     if (client.parse)
     {
@@ -77,7 +77,7 @@ main(int argc, char** argv)
     }
     else
     {
-        result = run(&window);
+        result = run(&props);
     }
 
     return result;

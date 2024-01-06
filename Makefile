@@ -11,9 +11,12 @@ MAN_DIR     := ./man
 LIB_DIR     := ./lib
 X11_DIR     := $(LIB_DIR)/x11
 WAY_DIR     := $(LIB_DIR)/wayland
+PKG_CONFIG  ?= pkg-config
 
 # flags
 CFLAGS      := -Wall -Wextra -Werror -Wno-unused-parameter -DVERSION=\"$(VERSION)\" -MMD -MP -iquote.
+LDFLAGS     += $(shell $(PKG_CONFIG) --libs x11 xinerama cairo pango pangocairo wayland-client xkbcommon)
+CFLAGS      += $(shell $(PKG_CONFIG) --cflags-only-I x11 xinerama cairo pango pangocairo wayland-client xkbcommon)
 
 # x11 files
 XHEADERS    := $(wildcard $(X11_DIR)/*.h)
@@ -35,46 +38,15 @@ LIBSRCS     := $(wildcard $(LIB_DIR)/*.c)
 LIBOBJS     := $(addprefix $(BUILD_DIR)/lib/, $(notdir $(LIBSRCS:.c=.o)))
 DEPS        := $(SOURCES:.c=.d) $(LIBSRCS:.c=.d) $(XSOURCES:.c=.d) $(WSOURCES:.c=.d)
 
-# goals to check to ensure correct backend is used
-X11GOALS    := all x11 debug-x11
-WAYGOALS    := wayland debug-wayland
-
-# update LIBOBJS etc. based on goal
-ifeq (0,$(words $(MAKECMDGOALS)))
-# no goal given, equivilent to 'all'
-BACKHDRS += $(XHEADERS)
-BACKSRCS += $(XSOURCES)
-BACKOBJS += $(XOBJECTS)
-else
-# some goal given
-ifeq (0,$(words $(filter $(X11GOALS),$(MAKECMDGOALS))))
-# no x11 goals, target wayland
-BACKHDRS += $(WHEADERS)
-BACKSRCS += $(WSOURCES)
-BACKOBJS += $(WOBJECTS)
-else
-# x11 goal, target x11
-BACKHDRS += $(XHEADERS)
-BACKSRCS += $(XSOURCES)
-BACKOBJS += $(XOBJECTS)
-endif
-endif
-
 # check for debug
-ifneq (0,$(words $(filter debug-wayland debug-x11,$(MAKECMDGOALS))))
+ifneq (0,$(words $(filter debug,$(MAKECMDGOALS))))
 CFLAGS += -ggdb
 endif
 
 
-all: x11
+all: $(BUILD_DIR)/$(NAME)
 
-x11: $(BUILD_DIR)/$(NAME)
-
-wayland: $(BUILD_DIR)/$(NAME)
-
-debug-x11: options $(BUILD_DIR)/$(NAME)
-
-debug-wayland: options $(BUILD_DIR)/$(NAME)
+debug: options $(BUILD_DIR)/$(NAME)
 
 options:
 	@ printf "%-8s = %s\n" "CFLAGS"  "$(CFLAGS)"
@@ -88,29 +60,29 @@ options:
 	@ printf "%-8s = %s\n" "BACKSRCS" "$(BACKSRCS)"
 	@ printf "%-8s = %s\n" "BACKOBJS" "$(BACKOBJS)"
 
-$(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $(BACKOBJS) FORCE # $$(RENDOBJS) FORCE
-	@ printf "%-8s %-40s %s\n" $(CC) "$@ $(^:FORCE=)" "$(CFLAGS)"
+$(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $(XOBJECTS) $(WOBJECTS)
+	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"
 	@ mkdir -p $(BUILD_DIR)
-	@ $(CC) $(CFLAGS) $(^:FORCE=) -o $@
+	@ $(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 	@ cp build/$(NAME) $(NAME)
 
 $(BUILD_DIR)/lib/%.o: $(LIB_DIR)/%.c $(LIBHDRS)
-	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/lib
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -iquote$(LIB_DIR) -o $@ $<
 
-$(BUILD_DIR)/lib/x11/%.o: $(X11_DIR)/%.c $(BACKHDRS) $(LIBHDRS)
-	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
+$(BUILD_DIR)/lib/x11/%.o: $(X11_DIR)/%.c $(XHEADERS) $(LIBHDRS)
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/lib/x11
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -iquote$(X11_DIR) -o $@ $<
 
-$(BUILD_DIR)/lib/wayland/%.o: $(WAY_DIR)/%.c $(BACKHDRS) $(LIBHDRS)
-	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
+$(BUILD_DIR)/lib/wayland/%.o: $(WAY_DIR)/%.c $(WHEADERS) $(LIBHDRS)
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/lib/wayland
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -iquote$(WAY_DIR) -o $@ $<
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS) $(LIBHDRS)
-	@ printf "%-8s %-40s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)
 	@ $(CC) -c $(C_LANG) $(CFLAGS) -o $@ $<
 
@@ -147,7 +119,5 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)
 	rm -f $(foreach F,$(patsubst %,$(MAN_DIR)/%,$(notdir $(MANFILES))),$(DESTDDIR)$(MANPREFIX)/$(F))
 
-FORCE:
-
 -include $(DEPS)
-.PHONY: all x11 libx11 wayland libwayland debug debug-x11 debug-wayland options clean dist install uninstall FORCE
+.PHONY: all debug options clean dist install uninstall

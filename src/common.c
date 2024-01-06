@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "lib/client.h"
+#include "lib/common.h"
 #include "lib/memory.h"
 #include "lib/window.h"
 
@@ -20,7 +21,8 @@ readFile(const char* path)
     FILE* file = fopen(path, "rb");
     if (!file)
     {
-        fprintf(stderr, "Could not open file '%s'.\n", path);
+        errorMsg("Could not open file '%s'.", path);
+        /* fprintf(stderr, "Could not open file '%s'.\n", path); */
         goto error;
     }
 
@@ -31,14 +33,16 @@ readFile(const char* path)
     char* buffer = (char*)malloc(fileSize + 1);
     if (!buffer)
     {
-        fprintf(stderr, "Not enough memory to read '%s'.\n", path);
+        errorMsg("Not enough memory to read '%s'.", path);
+        /* fprintf(stderr, "Not enough memory to read '%s'.\n", path); */
         goto alloc_error;
     }
 
     size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
     if (bytesRead < fileSize)
     {
-        fprintf(stderr, "Could not read file '%s'.\n", path);
+        errorMsg("Could not read file '%s'.", path);
+        /* fprintf(stderr, "Could not read file '%s'.\n", path); */
         goto read_error;
     }
 
@@ -156,7 +160,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             if (!getNum(&n))
             {
                 usage();
-                fprintf(stderr, "[ERROR] Could not convert '%s' into a number.\n", optarg);
+                errorMsg("Could not convert '%s' into a number.", optarg);
                 exit(EXIT_FAILURE);
             }
             client->maxCols = (unsigned int)n;
@@ -168,7 +172,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             if (!getNum(&n))
             {
                 usage();
-                fprintf(stderr, "[ERROR] Could not convert '%s' into a number.\n", optarg);
+                errorMsg("Could not convert '%s' into a number.", optarg);
                 exit(EXIT_FAILURE);
             }
             client->windowWidth = n;
@@ -180,7 +184,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             if (!getNum(&n))
             {
                 usage();
-                fprintf(stderr, "[ERROR] Could not convert '%s' into a number.\n", optarg);
+                errorMsg("Could not convert '%s' into a number.", optarg);
                 exit(EXIT_FAILURE);
             }
             client->windowHeight = n;
@@ -192,7 +196,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             if (!getNum(&n))
             {
                 usage();
-                fprintf(stderr, "[ERROR] Could not convert '%s' into a number.\n", optarg);
+                errorMsg("Could not convert '%s' into a number.", optarg);
                 exit(EXIT_FAILURE);
             }
             client->borderWidth = (unsigned int)n;
@@ -209,11 +213,10 @@ parseArgs(Client* client, int* argc, char*** argv)
             }
             else
             {
-                fprintf(
-                    stderr,
-                    "[WARNING] Cannot have more than %d fonts: '%s'.\n",
-                    MAX_FONTS,
-                    optarg
+
+                warnMsg(
+                    "Cannot have more than %d fonts: '%s'.",
+                    MAX_FONTS, optarg
                 );
             }
             break;
@@ -223,11 +226,11 @@ parseArgs(Client* client, int* argc, char*** argv)
         /* Errors */
         case '?':
             usage();
-            fprintf(stderr, "[ERROR] Unrecognized option: '%s'.\n", GET_ARG(argv));
+            errorMsg("Unrecognized option: '%s'.", GET_ARG(argv));
             exit(EXIT_FAILURE);
         case ':':
             usage();
-            fprintf(stderr, "[ERROR] '%s' requires an argument but none given.\n", GET_ARG(argv));
+            errorMsg("'%s' requires an argument but none given.", GET_ARG(argv));
             exit(EXIT_FAILURE);
         default: usage(); exit(EXIT_FAILURE); break;
         }
@@ -238,7 +241,7 @@ parseArgs(Client* client, int* argc, char*** argv)
 
     if (*argc > 0)
     {
-        fprintf(stderr, "[WARNING] Ignoring additional arguments: ");
+        warnMsg("Ignoring additional arguments:");
         for (int i = 0; i < *argc; i++)
         {
             fprintf(stderr, "'%s'%c", (*argv)[i], (i + 1 == *argc ? '\n' : ' '));

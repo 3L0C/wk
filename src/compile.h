@@ -3,6 +3,6 @@
 
 #include "lib/window.h"
 
-bool compileChords(WkWindow* window, const char* source);
+bool compileChords(WkProperties* props, const char* source);
 
 #endif /* WK_COMPILE_H_ */

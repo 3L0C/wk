@@ -7,6 +7,8 @@
 #include "client.h"
 #include "types.h"
 
+#define WINDOW_MIN_WIDTH 80
+
 typedef enum
 {
     WK_WIN_POS_BOTTOM,
@@ -50,10 +52,10 @@ typedef struct
     WkFontArray fonts;
     const Chord* chords;
     bool debug;
-} WkWindow;
+} WkProperties;
 
-void initWindow(WkWindow* window, Client* client);
-void pressKeys(WkWindow* window, const char* keys);
-int run(WkWindow* window);
+void initProperties(WkProperties* props, Client* client);
+void pressKeys(WkProperties* props, const char* keys);
+int run(WkProperties* props);
 
 #endif /* WK_LIB_WINDOW_H_ */
