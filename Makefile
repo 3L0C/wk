@@ -56,9 +56,6 @@ options:
 	@ printf "%-8s = %s\n" "LIBHDRS" "$(LIBHDRS)"
 	@ printf "%-8s = %s\n" "LIBSRCS" "$(LIBSRCS)"
 	@ printf "%-8s = %s\n" "LIBOBJS" "$(LIBOBJS)"
-	@ printf "%-8s = %s\n" "BACKHDRS" "$(BACKHDRS)"
-	@ printf "%-8s = %s\n" "BACKSRCS" "$(BACKSRCS)"
-	@ printf "%-8s = %s\n" "BACKOBJS" "$(BACKOBJS)"
 
 $(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $(XOBJECTS) $(WOBJECTS)
 	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"

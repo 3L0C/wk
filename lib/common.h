@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define MAX_FONTS 8
-
 void errorMsg(const char* fmt, ...);
 void warnMsg(const char* fmt, ...);
 

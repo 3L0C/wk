@@ -1,6 +1,7 @@
 #ifndef WK_CLIENT_H_
 #define WK_CLIENT_H_
 
+#include <stdint.h>
 #include <stdio.h>
 
 #include "common.h"
@@ -12,15 +13,15 @@ typedef struct
     size_t maxCols;
     int windowWidth;
     int windowHeight;
+    uint32_t widthPadding;
+    uint32_t heightPadding;
     size_t windowPosition;
     size_t borderWidth;
     const char* foreground;
     const char* background;
     const char* border;
     const char* shell;
-    const char* fonts[MAX_FONTS];
-    size_t fontCount;
-    size_t fontSize;
+    const char* font;
     const char* keys;
     const char* parse;
     const char* chordsFile;

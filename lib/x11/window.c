@@ -32,12 +32,22 @@ checkLocale(void)
     }
 }
 
+static cairo_surface_t*
+getThrowawaySurface(void)
+{
+    return cairo_xlib_surface_create(
+        window->display, window->drawable, window->visual,
+        window->width, window->height
+    );
+}
+
 static bool
 x11Position(WkWindowPosition pos)
 {
     assert(x11.props);
     return x11.props->position == pos;
 }
+
 static uint32_t
 getWindowWidth(void)
 {
@@ -64,10 +74,12 @@ setMonitor(void)
     int propHeight = properties->desiredHeight;
     Window root = DefaultRootWindow(window->display);
 
+    window->height = cairoGetHeight(properties, getThrowawaySurface());
+
     {
-#define INTERSECT(x,y,w,h,r)                                                 \
-        (fmax(0, fmin((x)+(w),(r).x_org+(r).width) - fmax((x),(r).x_org)) && \
-         fmax(0, fmin((y)+(h),(r).y_org+(r).height) - fmax((y),(r).y_org)))
+#define INTERSECT(x,y,w,h,r)                                              \
+        (MAX(0, MIN((x)+(w),(r).x_org+(r).width) - MAX((x),(r).x_org)) && \
+         MAX(0, MIN((y)+(h),(r).y_org+(r).height) - MAX((y),(r).y_org)))
 
         int32_t n;
         XineramaScreenInfo* info = XineramaQueryScreens(window->display, &n);
@@ -308,7 +320,7 @@ render(void)
 
         cairo_push_group(buffer->cairo.cr);
         CairoPaintResult result;
-        window->render(&buffer->cairo, buffer->width, window->maxHeight, &result);
+        window->render(&buffer->cairo, buffer->width, window->maxHeight, properties, &result);
         window->displayed = result.displayed;
         cairo_pop_group_to_source(buffer->cairo.cr);
 
@@ -352,7 +364,11 @@ runX11(WkProperties* props)
     checkLocale();
     properties = x11.props = props;
     if (!initX11()) return EX_SOFTWARE;
-    if (false) render();
+    if (false)
+    {
+        getThrowawaySurface();
+        render();
+    }
 
     printf("x11\n");
     return EX_OK;

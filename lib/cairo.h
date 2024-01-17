@@ -1,10 +1,11 @@
 #ifndef WK_LIB_CAIRO_H_
 #define WK_LIB_CAIRO_H_
 
-#include "window.h"
 #include <cairo.h>
 #include <pango/pangocairo.h>
 #include <stdint.h>
+
+#include "propeties.h"
 
 typedef struct
 {
@@ -23,7 +24,8 @@ typedef struct
 {
     CairoColor fg;
     CairoColor bg;
-    WkFontArray fonts;
+    CairoColor bd;
+    const char* font;
     int32_t baseline;
     uint32_t hpadding;
     struct box
@@ -41,12 +43,20 @@ typedef struct
 
 typedef struct
 {
+    uint32_t xAdvance;
+    uint32_t height;
+    uint32_t baseline;
+} CairoResult;
+
+typedef struct
+{
     uint32_t displayed;
     uint32_t height;
 } CairoPaintResult;
 
-void cairoDestroy(Cairo* cairo);
 bool cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface);
-void cairoPaint(Cairo* cairo, uint32_t width, uint32_t maxHeight, WkProperties* props, CairoPaintResult* outResult);
+void cairoDestroy(Cairo* cairo);
+uint32_t cairoGetHeight(WkProperties* properties, cairo_surface_t* surface);
+void cairoPaint(Cairo* cairo, uint32_t width, uint32_t maxHeight, WkProperties* properties, CairoPaintResult* outResult);
 
 #endif /* WK_LIB_CAIRO_H_ */

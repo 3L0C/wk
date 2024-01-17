@@ -5,8 +5,8 @@
 
 #include "common.h"
 #include "client.h"
+#include "propeties.h"
 #include "types.h"
-#include "window.h"
 #include "x11/window.h"
 #include "wayland/window.h"
 
@@ -60,19 +60,6 @@ initColors(WkHexColor* hexColors, Client* client)
     }
 }
 
-static void
-initFonts(WkFontArray* fonts, Client* client)
-{
-    assert(fonts && client);
-
-    fonts->fontCount = client->fontCount;
-    fonts->fontSize = client->fontSize;
-    for (size_t i = 0; i < fonts->fontCount; i++)
-    {
-        fonts->fonts[i] = client->fonts[i];
-    }
-}
-
 void
 initProperties(WkProperties* props, Client* client)
 {
@@ -82,11 +69,13 @@ initProperties(WkProperties* props, Client* client)
     props->maxCols = client->maxCols;
     props->desiredWidth = client->windowWidth;
     props->desiredHeight = client->windowHeight;
+    props->widthPadding = client->widthPadding;
+    props->heightPadding = client->heightPadding;
     props->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
     props->borderWidth = client->borderWidth;
     initColors(props->colors, client);
     props->shell = client->shell;
-    initFonts(&props->fonts, client);
+    props->font = client->font;
     props->chords = client->chords;
     props->debug = client->debug;
 }

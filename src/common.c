@@ -9,7 +9,7 @@
 #include "lib/client.h"
 #include "lib/common.h"
 #include "lib/memory.h"
-#include "lib/window.h"
+#include "lib/propeties.h"
 
 #include "common.h"
 
@@ -206,20 +206,7 @@ parseArgs(Client* client, int* argc, char*** argv)
         case 0x094: client->background = optarg; break;
         case 0x095: client->border = optarg; break;
         case 0x096: client->shell = optarg; break;
-        case 0x097:
-            if (client->fontCount < client->fontSize)
-            {
-                client->fonts[client->fontCount++] = optarg;
-            }
-            else
-            {
-
-                warnMsg(
-                    "Cannot have more than %d fonts: '%s'.",
-                    MAX_FONTS, optarg
-                );
-            }
-            break;
+        case 0x097: client->font = optarg; break;
         case 'k': client->keys = optarg; break;
         case 'p': client->parse = optarg; break;
         case 'c': client->chordsFile = optarg; break;
