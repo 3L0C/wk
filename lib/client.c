@@ -14,9 +14,9 @@ initClient(Client* client, const Chord* chords)
     client->delimiter = delimiter;
     client->maxCols = maxCols;
     client->windowWidth = windowWidth;
-    client->windowHeight = windowHeight;
-    client->widthPadding = widthPadding;
-    client->heightPadding = heightPadding;
+    client->windowGap = windowGap;
+    client->wpadding = widthPadding;
+    client->hpadding = heightPadding;
     client->windowPosition = windowPosition;
     client->borderWidth = borderWidth;
     client->foreground = foreground;

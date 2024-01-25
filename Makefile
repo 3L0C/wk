@@ -43,10 +43,31 @@ ifneq (0,$(words $(filter debug,$(MAKECMDGOALS))))
 CFLAGS += -ggdb
 endif
 
+# check for x11
+ifeq (1,$(words $(filter x11,$(MAKECMDGOALS))))
+BOBJECTS += $(XOBJECTS)
+CFLAGS   += -DWK_X11_BACKEND
+endif
+
+# check for wayland
+ifeq (1,$(words $(filter wayland,$(MAKECMDGOALS))))
+BOBJECTS += $(WOBJECTS)
+CFLAGS   += -DWK_WAYLAND_BACKEND
+endif
+
+# making all
+ifeq (0,$(words $(MAKECMDGOALS)))
+BOBJECTS += $(XOBJECTS) $(WOBJECTS)
+CFLAGS   += -DWK_X11_BACKEND -DWK_WAYLAND_BACKEND
+endif
 
 all: $(BUILD_DIR)/$(NAME)
 
-debug: options $(BUILD_DIR)/$(NAME)
+debug: options
+
+x11: all
+
+wayland: all
 
 options:
 	@ printf "%-8s = %s\n" "CFLAGS"  "$(CFLAGS)"
@@ -56,8 +77,9 @@ options:
 	@ printf "%-8s = %s\n" "LIBHDRS" "$(LIBHDRS)"
 	@ printf "%-8s = %s\n" "LIBSRCS" "$(LIBSRCS)"
 	@ printf "%-8s = %s\n" "LIBOBJS" "$(LIBOBJS)"
+	@ printf "%-8s = %s\n" "BOBJECTS" "$(BOBJECTS)"
 
-$(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $(XOBJECTS) $(WOBJECTS)
+$(BUILD_DIR)/$(NAME): $(OBJECTS) $(LIBOBJS) $(BOBJECTS)
 	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"
 	@ mkdir -p $(BUILD_DIR)
 	@ $(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
@@ -117,4 +139,4 @@ uninstall:
 	rm -f $(foreach F,$(patsubst %,$(MAN_DIR)/%,$(notdir $(MANFILES))),$(DESTDDIR)$(MANPREFIX)/$(F))
 
 -include $(DEPS)
-.PHONY: all debug options clean dist install uninstall
+.PHONY: all debug x11 wayland options clean dist install uninstall

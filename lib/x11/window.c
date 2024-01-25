@@ -15,6 +15,7 @@
 #include "cairo.h"
 #include "lib/cairo.h"
 #include "lib/common.h"
+#include "lib/properties.h"
 #include "lib/window.h"
 
 #include "window.h"
@@ -42,39 +43,85 @@ getThrowawaySurface(void)
 }
 
 static bool
-x11Position(WkWindowPosition pos)
+desiriedPos(WkWindowPosition pos)
 {
     assert(x11.props);
     return x11.props->position == pos;
 }
 
-static uint32_t
-getWindowWidth(void)
+static void
+resizeWinWidth(void)
 {
-    uint32_t width = window->width * (window->widthFactor ? window->widthFactor : 1);
-
-    if (width > window->width - 2 * window->hmarginSize)
+    int32_t windowWidth = properties->windowWidth;
+    struct display* root = &window->root;
+    if (windowWidth < 0)
     {
-        width = window->width - 2 * window->hmarginSize;
+        /* set width to half the size of the screen */
+        window->x = root->x + (root->w / 4);
+        window->width = root->w / 2;
+    }
+    else if (windowWidth == 0 || (uint32_t)windowWidth > root->w)
+    {
+        /* make the window as wide as the screen */
+        window->x = root->x;
+        window->width = root->w;
+    }
+    else
+    {
+        /* set the width to the desired user setting */
+        window->x = root->x + ((root->w - windowWidth) / 2); /* position in the middle */
+        window->width = windowWidth;
+    }
+}
+
+static void
+resizeWinHeight(void)
+{
+    int32_t windowGap = properties->windowGap;
+    struct display* root = &window->root;
+    window->maxHeight = root->h;
+
+    if (windowGap < 0)
+    {
+        /* user wants a 1/10th gap between edge of screen and window*/
+        window->y = root->y + (root->h / 10);
+    }
+    else if (windowGap == 0 || (uint32_t)windowGap > root->h)
+    {
+        /* user has no gap, or it is too large for the screen */
+        window->y = root->y;
+    }
+    else
+    {
+        /* position window with desired gap, if any */
+        window->y = root->y + windowGap;
     }
 
-    if (width < WINDOW_MIN_WIDTH || 2 * window->hmarginSize > window->width)
+    /* sanity check that window is not too big */
+    if (window->height >= root->h)
     {
-        width = WINDOW_MIN_WIDTH;
+        window->y = 0;
+        window->height = root->h;
     }
 
-    return width;
+    if (desiriedPos(WK_WIN_POS_BOTTOM))
+    {
+        window->y = root->h - window->height - window->y;
+    }
+}
+
+static void
+resizeWindow(void)
+{
+    resizeWinWidth();
+    resizeWinHeight();
 }
 
 static void
 setMonitor(void)
 {
     static int32_t monitor = -1;
-    int propWidth = properties->desiredWidth;
-    int propHeight = properties->desiredHeight;
     Window root = DefaultRootWindow(window->display);
-
-    window->height = cairoGetHeight(properties, getThrowawaySurface());
 
     {
 #define INTERSECT(x,y,w,h,r)                                              \
@@ -132,83 +179,49 @@ setMonitor(void)
                 }
             }
 
-            if (propWidth == -1)
-            {
-                window->x = info[i].x_org + ((info[i].width / 2) / 2);
-                window->width = info[i].width / 2;
-            }
-            else if (propWidth == 0 || propWidth > info[i].width)
-            {
-                window->x = info[i].x_org;
-                window->width = info[i].width;
-            }
-            else
-            {
-                window->x = info[i].x_org + ((info[i].width - propWidth) / 2);
-                window->width = propWidth;
-            }
-
-            if (propHeight == -1)
-            {
-                window->y = info[i].y_org + (
-                    (info[i].height / 10) * (x11Position(WK_WIN_POS_BOTTOM) ? -1 : 1)
-                );
-            }
-            else if (propHeight == 0 || propHeight > info[i].height)
-            {
-                window->y = info[i].y_org;
-            }
-            else
-            {
-                window->y = info[i].y_org + ((info[i].height - propHeight) / 2);
-            }
-
-            if (x11Position(WK_WIN_POS_BOTTOM))
-            {
-                window->y += info[i].height - window->height; /* FIXME need to calculate window height at some point */
-            }
-
-            window->maxHeight = info[i].height;
+            window->root.x = info[i].x_org;
+            window->root.y = info[i].y_org;
+            window->root.w = info[i].width;
+            window->root.h = info[i].height;
             XFree(info);
         }
         else
         {
-            window->maxHeight = DisplayHeight(window->display, window->screen);
-            window->x = 0;
-            if (x11Position(WK_WIN_POS_BOTTOM))
-            {
-                window->y = window->maxHeight - window->height;
-            }
-            else
-            {
-                window->y = 0;
-            }
-            window->width = DisplayWidth(window->display, window->screen);
+            window->root.x = 0;
+            window->root.y = 0;
+            window->root.w = DisplayWidth(window->display, window->screen);
+            window->root.h = DisplayHeight(window->display, window->screen);
         }
 
-        window->origWidth = window->width;
-        window->origX = window->x;
-        window->width = getWindowWidth();
-        window->x += (window->origWidth - window->width) / 2;
+    window->height = cairoGetHeight(properties, getThrowawaySurface(), window->root.h);
 
+    resizeWindow();
 #undef INTERSECT
     }
 
     window->monitor = monitor;
     XMoveResizeWindow(
-        window->display, window->drawable, window->x, window->y + window->yOffset,
+        window->display, window->drawable, window->x, window->y,
         window->width, window->height
     );
     XFlush(window->display);
 }
 
+static void
+initBuffer(void)
+{
+    Buffer* buffer = &window->buffer;
+    memset(buffer, 0, sizeof(Buffer));
+}
+
 static bool
-initX11()
+initX11(void)
 {
     Display* display = window->display = x11.dispaly = XOpenDisplay(NULL);
     if (!x11.dispaly) return false;
     window->screen = DefaultScreen(display);
     window->width = window->height = 1;
+    window->border = properties->borderWidth;
     window->monitor = -1;
     window->visual = DefaultVisual(display, window->screen);
     XSetWindowAttributes wa = {
@@ -227,11 +240,12 @@ initX11()
         wa.background_pixmap = None;
         wa.border_pixel = 0;
         wa.colormap = XCreateColormap(display, DefaultRootWindow(display), window->visual, AllocNone);
+        valuemask = CWOverrideRedirect | CWEventMask | CWBackPixmap | CWColormap | CWBorderPixel;
     }
 
     window->drawable = XCreateWindow(
         display, DefaultRootWindow(display), 0, 0, window->width, window->height,
-        0, depth, CopyFromParent, window->visual, valuemask, &wa
+        window->border, depth, CopyFromParent, window->visual, valuemask, &wa
     );
     XSelectInput(display, window->drawable, ButtonPressMask | KeyPressMask);
     XMapRaised(display, window->drawable);
@@ -245,6 +259,8 @@ initX11()
     XSetClassHint(display, window->drawable, (XClassHint[]){{ .res_name = "wk", .res_class = "wk" }});
     setMonitor();
     window->render = cairoPaint;
+    initBuffer();
+    cairoInitPaint(&window->paint, properties);
     return true;
 }
 
@@ -258,21 +274,22 @@ destroyBuffer(Buffer* buffer)
 static bool
 createBuffer(Buffer* buffer)
 {
-    cairo_surface_t* surf = cairo_xlib_surface_create(
+    cairo_surface_t* surface = cairo_xlib_surface_create(
         window->display, window->drawable, window->visual, window->width, window->height
     );
 
-    if (!surf) goto fail;
+    if (!surface) goto fail;
 
-    cairo_xlib_surface_set_size(surf, window->width, window->height);
+    cairo_xlib_surface_set_size(surface, window->width, window->height);
     buffer->cairo.scale = 1;
 
-    if (!cairoCreateForSurface(&buffer->cairo, surf))
+    if (!cairoCreateForSurface(&buffer->cairo, surface))
     {
-        cairo_surface_destroy(surf);
+        cairo_surface_destroy(surface);
         goto fail;
     }
 
+    buffer->cairo.paint = &window->paint;
     buffer->width = window->width;
     buffer->height = window->height;
     buffer->created = true;
@@ -281,6 +298,20 @@ createBuffer(Buffer* buffer)
 fail:
     destroyBuffer(buffer);
     return false;
+}
+
+static Buffer*
+getBuffer(void)
+{
+    Buffer* buffer = &window->buffer;
+
+    if (!buffer) return NULL;
+
+    if (window->height != buffer->height) destroyBuffer(buffer);
+
+    if (!buffer->created && !createBuffer(buffer)) return NULL;
+
+    return buffer;
 }
 
 static Buffer*
@@ -301,7 +332,7 @@ nextBuffer(void)
 }
 
 static bool
-render(void)
+bmRender(void)
 {
     uint32_t oldw = window->width;
     uint32_t oldh = window->height;
@@ -340,7 +371,7 @@ render(void)
         }
 
         XMoveResizeWindow(
-            window->display, window->drawable, window->x, winY + window->yOffset,
+            window->display, window->drawable, window->x, winY,
             window->width, window->height
         );
     }
@@ -357,19 +388,172 @@ render(void)
     return true;
 }
 
+
+static bool
+render(void)
+{
+    uint32_t oldh = window->height;
+    window->height = cairoGetHeight(properties, getThrowawaySurface(), window->root.h);
+    resizeWinHeight();
+    Buffer* buffer = getBuffer();
+
+    if (!buffer)
+    {
+        errorMsg("Could not get buffer while rendering.");
+        return false;
+    }
+
+    cairo_push_group(buffer->cairo.cr);
+    CairoPaintResult result;
+    window->render(&buffer->cairo, buffer->width, buffer->height, properties, &result);
+    window->displayed = result.displayed;
+    cairo_pop_group_to_source(buffer->cairo.cr);
+
+    if (oldh != window->height)
+    {
+        XMoveResizeWindow(
+            window->display, window->drawable, window->x, window->y,
+            window->width, window->height
+        );
+    }
+
+    if (buffer->created)
+    {
+        cairo_save(buffer->cairo.cr);
+        cairo_set_operator(buffer->cairo.cr, CAIRO_OPERATOR_SOURCE);
+        cairo_paint(buffer->cairo.cr);
+        cairo_surface_flush(buffer->cairo.surface);
+        cairo_restore(buffer->cairo.cr);
+    }
+
+    return true;
+}
+
+static void
+cleanup(void)
+{
+    XUngrabKey(window->display, AnyKey, AnyModifier, DefaultRootWindow(window->display));
+    XSync(window->display, False);
+    XCloseDisplay(window->display);
+}
+
+static bool
+grabfocus(void)
+{
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = 10000000 };
+    Window focuswin;
+    int i, revertwin;
+
+    for (i = 0; i < 100; i++)
+    {
+        XGetInputFocus(window->display, &focuswin, &revertwin);
+        if (focuswin == window->drawable) return true;
+        XSetInputFocus(window->display, window->drawable, RevertToParent, CurrentTime);
+        nanosleep(&ts, NULL);
+    }
+
+    cleanup();
+    errorMsg("Could not grab focus.");
+    return false;
+}
+
+static bool
+grabkeyboard(void)
+{
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000 };
+    int i;
+
+    /* try to grab keyboard, we may have to wait for another process to ungrab */
+    for (i = 0; i < 1000; i++)
+    {
+        if (XGrabKeyboard(window->display,
+                          DefaultRootWindow(window->display),
+                          True, GrabModeAsync, GrabModeAsync,
+                          CurrentTime) == GrabSuccess)
+        {
+            return true;
+        }
+        nanosleep(&ts, NULL);
+    }
+
+    cleanup();
+    errorMsg("Could not grab keyboard.");
+    return false;
+}
+
+static WkStatus
+keypress(XKeyEvent* keyEvent)
+{
+    return WK_STATUS_EXIT_OK;
+}
+
+static int
+eventHandler(void)
+{
+    XEvent ev;
+
+    while (!XNextEvent(window->display, &ev))
+    {
+        if (XFilterEvent(&ev, window->drawable)) continue;
+
+        switch (ev.type)
+        {
+        case DestroyNotify:
+            if (ev.xdestroywindow.window != window->drawable) break;
+            cleanup();
+            return EX_SOFTWARE;
+        case Expose:
+            if (ev.xexpose.count == 0) render();
+            break;
+        case FocusIn:
+            /* regrab focus from parent window */
+            if (ev.xfocus.window != window->drawable)
+            {
+                if (!grabfocus()) return EX_SOFTWARE;
+            }
+            break;
+        case KeyPress:
+            return EX_OK;
+            switch (keypress(&ev.xkey))
+            {
+            case WK_STATUS_RUNNING: break;
+            case WK_STATUS_DAMAGED: render(); break;
+            case WK_STATUS_EXIT_OK: return EX_OK;
+            case WK_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
+            }
+            break;
+        case VisibilityNotify:
+            if (ev.xvisibility.state != VisibilityUnobscured)
+            {
+                XRaiseWindow(window->display, window->drawable);
+                XFlush(window->display);
+            }
+            break;
+        }
+    }
+
+    return EX_OK;
+}
+
 int
 runX11(WkProperties* props)
 {
     assert(props);
+
+    int result = EX_SOFTWARE;
     checkLocale();
     properties = x11.props = props;
-    if (!initX11()) return EX_SOFTWARE;
+    if (!initX11()) return result;
+    grabkeyboard();
+    render();
+    result = eventHandler();
+
     if (false)
     {
-        getThrowawaySurface();
-        render();
+        bmRender();
     }
 
     printf("x11\n");
-    return EX_OK;
+    cleanup();
+    return result;
 }

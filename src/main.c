@@ -22,7 +22,7 @@ parseFile(void)
     int result = EX_SOFTWARE;
     char* source = readFile(client.parse);
     if (!source) return EX_IOERR;
-    result = transpileChords(source);
+    result = transpileChords(source, client.delimiter);
     free(source);
     return result;
 }

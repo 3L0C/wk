@@ -5,7 +5,7 @@
 
 #include "common.h"
 #include "client.h"
-#include "propeties.h"
+#include "properties.h"
 #include "types.h"
 #include "x11/window.h"
 #include "wayland/window.h"
@@ -67,10 +67,13 @@ initProperties(WkProperties* props, Client* client)
 
     props->delimiter = client->delimiter;
     props->maxCols = client->maxCols;
-    props->desiredWidth = client->windowWidth;
-    props->desiredHeight = client->windowHeight;
-    props->widthPadding = client->widthPadding;
-    props->heightPadding = client->heightPadding;
+    props->windowWidth = client->windowWidth;
+    props->windowGap = client->windowGap;
+    props->wpadding = client->wpadding;
+    props->hpadding = client->hpadding;
+    props->cell_height = 0;
+    props->rows = 0;
+    props->cols = 0;
     props->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
     props->borderWidth = client->borderWidth;
     initColors(props->colors, client);
@@ -85,18 +88,4 @@ pressKeys(WkProperties* props, const char* keys)
 {
     assert(props);
     if (!keys) return;
-}
-
-int
-run(WkProperties* props)
-{
-    if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
-    {
-        return runWayland(props);
-    }
-    else
-    {
-        return runX11(props);
-    }
-    return EX_SOFTWARE;
 }

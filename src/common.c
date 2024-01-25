@@ -9,7 +9,7 @@
 #include "lib/client.h"
 #include "lib/common.h"
 #include "lib/memory.h"
-#include "lib/propeties.h"
+#include "lib/properties.h"
 
 #include "common.h"
 
@@ -22,7 +22,6 @@ readFile(const char* path)
     if (!file)
     {
         errorMsg("Could not open file '%s'.", path);
-        /* fprintf(stderr, "Could not open file '%s'.\n", path); */
         goto error;
     }
 
@@ -34,7 +33,6 @@ readFile(const char* path)
     if (!buffer)
     {
         errorMsg("Not enough memory to read '%s'.", path);
-        /* fprintf(stderr, "Not enough memory to read '%s'.\n", path); */
         goto alloc_error;
     }
 
@@ -42,7 +40,6 @@ readFile(const char* path)
     if (bytesRead < fileSize)
     {
         errorMsg("Could not read file '%s'.", path);
-        /* fprintf(stderr, "Could not read file '%s'.\n", path); */
         goto read_error;
     }
 
@@ -124,7 +121,7 @@ parseArgs(Client* client, int* argc, char*** argv)
         { "parse",          required_argument,  0, 'p' },
         { "chords",         required_argument,  0, 'c' },
         { "win-width",      required_argument,  0, 0x090 },
-        { "win-width",      required_argument,  0, 0x091 },
+        { "win-gap",        required_argument,  0, 0x091 },
         { "border-width",   required_argument,  0, 0x092 },
         { "fg",             required_argument,  0, 0x093 },
         { "bg",             required_argument,  0, 0x094 },
@@ -187,7 +184,7 @@ parseArgs(Client* client, int* argc, char*** argv)
                 errorMsg("Could not convert '%s' into a number.", optarg);
                 exit(EXIT_FAILURE);
             }
-            client->windowHeight = n;
+            client->windowGap = n;
             break;
         }
         case 0x092:

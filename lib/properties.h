@@ -31,21 +31,17 @@ typedef struct
     uint8_t a;
 } WkHexColor;
 
-/* typedef struct */
-/* { */
-/*     const char* fonts[MAX_FONTS]; */
-/*     size_t fontCount; */
-/*     size_t fontSize; */
-/* } WkFontArray; */
-
 typedef struct
 {
     const char* delimiter;
     size_t maxCols;
-    int desiredWidth;
-    int desiredHeight;
-    uint32_t widthPadding;
-    uint32_t heightPadding;
+    int windowWidth;
+    int windowGap;
+    uint32_t wpadding;
+    uint32_t hpadding;
+    uint32_t cell_height;
+    uint32_t rows;
+    uint32_t cols;
     WkWindowPosition position;
     size_t borderWidth;
     WkHexColor colors[WK_COLOR_LAST];
@@ -57,6 +53,5 @@ typedef struct
 
 void initProperties(WkProperties* props, Client* client);
 void pressKeys(WkProperties* props, const char* keys);
-int run(WkProperties* props);
 
 #endif /* WK_LIB_PROPERTIES_H_ */

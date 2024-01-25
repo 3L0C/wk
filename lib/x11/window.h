@@ -30,16 +30,16 @@ typedef struct
     uint32_t y;
     uint32_t width;
     uint32_t height;
+    uint32_t border;
     uint32_t maxHeight;
-    uint32_t origWidth;
-    uint32_t origX;
-    uint32_t hmarginSize;
     float widthFactor;
     uint32_t displayed;
     int32_t monitor;
-    /* align */
-    int32_t yOffset;
-    void (*render)(Cairo* cairo, uint32_t width, uint32_t max_height, WkProperties* props, CairoPaintResult* result);
+    struct display {
+        uint32_t x, y, w, h;
+    } root;
+    CairoPaint paint;
+    void (*render)(Cairo* cairo, uint32_t width, uint32_t maxHeight, WkProperties* props, CairoPaintResult* result);
 } WkX11Window;
 
 typedef struct

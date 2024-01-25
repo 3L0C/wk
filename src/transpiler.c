@@ -452,7 +452,7 @@ keyChord(Compiler* compiler)
 }
 
 int
-transpileChords(const char* source)
+transpileChords(const char* source, const char* delimiter)
 {
     assert(source);
 
@@ -466,7 +466,7 @@ transpileChords(const char* source)
 
     if (!compiler.hadError)
     {
-        writeChords(&compiler.lines);
+        writeChords(&compiler.lines, delimiter);
     }
     freeLineArray(&compiler.lines);
 

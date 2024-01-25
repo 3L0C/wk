@@ -12,9 +12,9 @@ typedef struct
     const char* delimiter;
     size_t maxCols;
     int windowWidth;
-    int windowHeight;
-    uint32_t widthPadding;
-    uint32_t heightPadding;
+    int windowGap;
+    uint32_t wpadding;
+    uint32_t hpadding;
     size_t windowPosition;
     size_t borderWidth;
     const char* foreground;

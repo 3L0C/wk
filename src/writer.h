@@ -5,6 +5,6 @@
 
 #include "line.h"
 
-void writeChords(LineArray* lines);
+void writeChords(LineArray* lines, const char* delimiter);
 
 #endif /* WK_WRITER_H_ */

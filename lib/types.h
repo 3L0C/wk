@@ -3,14 +3,18 @@
 
 #include "common.h"
 
-#define WK_MOD_NONE    (1<<0)
-#define WK_MOD_CTRL    (1<<1)
-#define WK_MOD_ALT     (1<<2)
-#define WK_MOD_HYPER   (1<<3)
-#define WK_MOD_SHIFT   (1<<4)
-#define WK_MOD_ALL     (WK_MOD_CTRL|WK_MOD_ALT|WK_MOD_HYPER|WK_MOD_SHIFT)
+#define WK_MOD_NONE     (1<<0)
+#define WK_MOD_CTRL     (1<<1)
+#define WK_MOD_ALT      (1<<2)
+#define WK_MOD_HYPER    (1<<3)
+#define WK_MOD_SHIFT    (1<<4)
+#define WK_MOD_ALL      (WK_MOD_CTRL|WK_MOD_ALT|WK_MOD_HYPER|WK_MOD_SHIFT)
 #define IS_MOD(mod)     ((mod) != WK_MOD_NONE && \
                          ((mod) & WK_MOD_ALL) != WK_MOD_NONE)
+#define IS_CTRL(mod)    (((mod) & WK_MOD_CTRL) == WK_MOD_CTRL)
+#define IS_ALT(mod)     (((mod) & WK_MOD_ALT) == WK_MOD_ALT)
+#define IS_HYPER(mod)   (((mod) & WK_MOD_HYPER) == WK_MOD_HYPER)
+#define IS_SHIFT(mod)   (((mod) & WK_MOD_SHIFT) == WK_MOD_SHIFT)
 
 typedef enum
 {
@@ -37,6 +41,7 @@ typedef struct Chord
     const SpecialType special;
     const char* key;
     const char* description;
+    const char* repr;
     const char* command;
     const char* before;
     const char* after;

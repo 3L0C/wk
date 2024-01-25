@@ -54,7 +54,7 @@ countChords(const Chord* chords)
 }
 
 void
-calculateRows(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols)
+calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols)
 {
     assert(rows && cols);
 

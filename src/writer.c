@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "lib/types.h"
@@ -8,6 +9,8 @@
 #include "scanner.h"
 #include "token.h"
 #include "writer.h"
+
+static const char* delim;
 
 static void writeChordLines(LineArray* lines, int indent);
 
@@ -20,13 +23,16 @@ writeChordsHeader(void)
     printf("#include \"lib/common.h\"\n");
     printf("#include \"lib/types.h\"\n");
     printf("\n");
-    printf("#define NULL_CHORD  { WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL, NULL, NULL, false, false, false, false, false, NULL }\n");
+    printf("#define NULL_CHORD  { WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL, NULL, NULL, NULL, false, false, false, false, false, NULL }\n");
     printf("#define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }\n");
     printf("#define CHORDS(...) { __VA_ARGS__, NULL_CHORD }\n");
     printf("\n");
+    printf("/* mods,    specials,  key,    description,   repr, */\n");
+    printf("/* command, */\n");
+    printf("/* before, */\n");
+    printf("/* after, */\n");
+    printf("/* keep,    unhook,    nobefore,    noafter,    write,    chords */\n");
     printf("const Chord chords[] = CHORDS(\n");
-    printf("    /* mods,    specials,    key,    description,    command,    before,    after, */\n");
-    printf("    /* keep,    unhook,    nobefore,    noafter,    write,    chords */\n");
 }
 
 static void
@@ -41,11 +47,11 @@ static int
 countMods(int mods)
 {
     int result = 0;
-    if (mods == WK_MOD_NONE) return result;
-    if ((mods & WK_MOD_CTRL) == WK_MOD_CTRL) result++;
-    if ((mods & WK_MOD_ALT) == WK_MOD_ALT) result++;
-    if ((mods & WK_MOD_HYPER) == WK_MOD_HYPER) result++;
-    if ((mods & WK_MOD_SHIFT) == WK_MOD_SHIFT) result++;
+    if (!IS_MOD(mods)) return result;
+    if (IS_CTRL(mods)) result++;
+    if (IS_ALT(mods)) result++;
+    if (IS_HYPER(mods)) result++;
+    if (IS_SHIFT(mods)) result++;
     return result;
 }
 
@@ -53,11 +59,11 @@ static void
 writeChordMods(int mods)
 {
     int count = countMods(mods);
-    if (mods == WK_MOD_NONE) printf("WK_MOD_NONE");
-    if ((mods & WK_MOD_CTRL) == WK_MOD_CTRL) printf("WK_MOD_CTRL%s", count-- > 1 ? "|" : "");
-    if ((mods & WK_MOD_ALT) == WK_MOD_ALT) printf("WK_MOD_ALT%s", count-- > 1 ? "|" : "");
-    if ((mods & WK_MOD_HYPER) == WK_MOD_HYPER) printf("WK_MOD_HYPER%s", count-- > 1 ? "|" : "");
-    if ((mods & WK_MOD_SHIFT) == WK_MOD_SHIFT) printf("WK_MOD_SHIFT%s", count-- > 1 ? "|" : "");
+    if (!IS_MOD(mods)) printf("WK_MOD_NONE");
+    if (IS_CTRL(mods)) printf("WK_MOD_CTRL%s", count-- > 1 ? "|" : "");
+    if (IS_ALT(mods)) printf("WK_MOD_ALT%s", count-- > 1 ? "|" : "");
+    if (IS_HYPER(mods)) printf("WK_MOD_HYPER%s", count-- > 1 ? "|" : "");
+    if (IS_SHIFT(mods)) printf("WK_MOD_SHIFT%s", count-- > 1 ? "|" : "");
     printf(", ");
 }
 
@@ -106,18 +112,19 @@ writeChordKey(Token* token)
 }
 
 static size_t
-rstrip(Token* token)
+rstrip(Token* token, bool flag)
 {
     size_t index = token->length - 1;
-    const char* lexeme = &token->start[0];
+    if (!flag) return index + 1;
+    const char* lexeme = token->start;
     while (index && isspace(lexeme[index])) index--;
     return index + 1;
 }
 
 static void
-writeChordEscString(Token* token)
+writeChordEscString(Token* token, bool flag)
 {
-    size_t length = rstrip(token);
+    size_t length = rstrip(token, flag);
     for (size_t i = 0; i < length; i++)
     {
         char c = token->start[i];
@@ -125,6 +132,7 @@ writeChordEscString(Token* token)
         {
         case '\\': printf("\\"); break;
         case '\"': printf("\\\""); break;
+        case '\n': printf("\\\n"); break;
         default: printf("%c", c); break;
         }
     }
@@ -138,9 +146,20 @@ writeChordInterp(Token* token, Line* line)
     case TOKEN_INDEX:       printf("%d", line->index); break;
     case TOKEN_INDEX_ONE:   printf("%d", line->index + 1); break;
     case TOKEN_THIS_KEY:    writeChordEscKey(&line->key); break;
-    default: writeChordEscString(token); break;
+    case TOKEN_COMM_INTERP: /* FALLTHROUGH */
+    case TOKEN_DESC_INTERP: writeChordEscString(token, false); break;
+    default: writeChordEscString(token, true); break;
     }
 
+}
+
+static void
+writeChordRawString(TokenArray* array, Line* line)
+{
+    for (size_t i = 0; i < array->count; i++)
+    {
+        writeChordInterp(&array->tokens[i], line);
+    }
 }
 
 static void
@@ -148,11 +167,29 @@ writeChordString(TokenArray* array, Line* line)
 {
 
     printf("\"");
-    for (size_t i = 0; i < array->count; i++)
-    {
-        writeChordInterp(&array->tokens[i], line);
-    }
+    writeChordRawString(array, line);
     printf("\", ");
+}
+
+static void
+writeChordModStr(int mods)
+{
+    if (!IS_MOD(mods)) return;
+    if (IS_CTRL(mods)) printf("C-");
+    if (IS_ALT(mods)) printf("A-");
+    if (IS_HYPER(mods)) printf("H-");
+    if (IS_SHIFT(mods)) printf("S-");
+}
+
+static void
+writeChordRepr(Line* line)
+{
+    printf("\"");
+    writeChordModStr(line->mods);
+    writeChordEscKey(&line->key);
+    printf(" %s ", delim);
+    writeChordRawString(&line->description, line);
+    printf("\",\n");
 }
 
 static void
@@ -164,28 +201,37 @@ writeChordBool(bool flag)
 static void
 writeChordLine(Line* line, int indent)
 {
+    printf("%*s", indent * 4, " "); /* print indentation */
     writeChordMods(line->mods);
     writeChordSpecial(&line->key);
     writeChordKey(&line->key);
     writeChordString(&line->description, line);
+    writeChordRepr(line);
+
+    printf("%*s", indent * 4, " "); /* print indentation */
     writeChordString(&line->command, line);
+    printf("\n%*s", indent * 4, " "); /* print indentation */
     writeChordString(&line->before, line);
+    printf("\n%*s", indent * 4, " "); /* print indentation */
     writeChordString(&line->after, line);
-    printf("\n  %*s", indent * 4, " ");
+
+    printf("\n%*s", indent * 4, " ");
     writeChordBool(line->keep);
     writeChordBool(line->unhook);
     writeChordBool(line->nobefore);
     writeChordBool(line->noafter);
     writeChordBool(line->write);
+
     if (line->array.count != 0)
     {
+        printf("\n%*s", indent * 4, " ");
         printf("PREFIX(\n");
         writeChordLines(&line->array, indent + 1);
-        printf("%*s)", indent * 4, " ");
+        printf("%*s)\n", indent * 4, " ");
     }
     else
     {
-        printf("NULL ");
+        printf("NULL\n");
     }
 }
 
@@ -195,9 +241,9 @@ writeChordLines(LineArray* lines, int indent)
     for (size_t i = 0; i < lines->count; i++)
     {
         printf("%*s", indent * 4, " "); /* print indentation */
-        printf("{ ");
-        writeChordLine(&lines->lines[i], indent);
-        printf("}");
+        printf("{\n");
+        writeChordLine(&lines->lines[i], indent + 1);
+        printf("%*s}", indent * 4, " "); /* print indentation */
         if (i + 1 != lines->count)
         {
             printf(",");
@@ -207,9 +253,10 @@ writeChordLines(LineArray* lines, int indent)
 }
 
 void
-writeChords(LineArray* lines)
+writeChords(LineArray* lines, const char* delimiter)
 {
     assert(lines);
+    delim = delimiter;
 
     writeChordsHeader();
     writeChordLines(lines, 1);
