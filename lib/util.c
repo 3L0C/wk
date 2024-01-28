@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -100,23 +101,33 @@ handlePrefix(WkProperties* props, const Chord* chord)
     return WK_STATUS_DAMAGED;
 }
 
-static WkStatus
+static void
 handleCommand(WkProperties* props, const Chord* chord)
 {
-    /* no command */
-    if (!chord->command) return WK_STATUS_EXIT_OK;
-
-    if (chord->before) spawnAsync(props, chord->before);
-    if (chord->after)
+    if (chord->write)
     {
-        spawnAsync(props, chord->command);
-        spawnAsync(props, chord->after);
+        printf("%s\n", chord->command);
+    }
+    else if (chord->after)
+    {
+        spawnAsync(props, chord->command, true);
     }
     else
     {
         spawn(props->shell, chord->command);
     }
-    return WK_STATUS_EXIT_SOFTWARE;
+}
+
+static WkStatus
+handleCommands(WkProperties* props, const Chord* chord)
+{
+    /* no command */
+    if (!chord->command) return WK_STATUS_EXIT_OK;
+
+    if (chord->before) spawnAsync(props, chord->before, true);
+    handleCommand(props, chord);
+    if (chord->after) spawnAsync(props, chord->after, true);
+    return chord->keep ? WK_STATUS_DAMAGED : WK_STATUS_EXIT_OK;
 }
 
 static WkStatus
@@ -125,7 +136,7 @@ pressKey(WkProperties* props, const Chord* chord)
     assert(props && chord);
 
     if (chord->chords) return handlePrefix(props, chord);
-    return handleCommand(props, chord);
+    return handleCommands(props, chord);
 }
 
 WkStatus
@@ -157,6 +168,8 @@ isUtf8StartByte(char byte)
 WkStatus
 spawn(const char* shell, const char* cmd)
 {
+    assert(shell && cmd);
+
     if (fork() == 0)
     {
         setsid();
@@ -182,13 +195,39 @@ fail:
 }
 
 WkStatus
-spawnAsync(WkProperties* props, const char* cmd)
+spawnAsync(WkProperties* props, const char* cmd, bool waitFlag)
 {
-    if (fork() == 0) {
+    assert(props && cmd);
+
+    pid_t child = fork();
+
+    if (child == -1)
+    {
+        errorMsg("Could not fork process:");
+        perror("fork");
+        return WK_STATUS_EXIT_SOFTWARE;
+    }
+
+    if (child == 0)
+    {
         if (props->xp && props->cleanupfp) props->cleanupfp(props->xp);
         spawn(props->shell, cmd);
         exit(EX_OK);
     }
+
+    if (waitFlag)
+    {
+        int status;
+        if (waitpid(child, &status, 0) == -1)
+        {
+            errorMsg("Could not wait for child process:");
+            perror("waitpid");
+            return WK_STATUS_EXIT_SOFTWARE;
+        }
+
+        return WIFEXITED(status) ? WK_STATUS_EXIT_OK : WK_STATUS_EXIT_SOFTWARE;
+    }
+
     wait(NULL);
     return WK_STATUS_EXIT_OK;
 }
