@@ -167,7 +167,7 @@ identifierType(Scanner* scanner)
     {
     case 'a':
         if (isKeyword(scanner, 1, 4, "fter"))       return TOKEN_AFTER;
-        if (isKeyword(scanner, 1, 4, "sync"))       return TOKEN_INDEX;
+        if (isKeyword(scanner, 1, 4, "sync"))       return TOKEN_ASYNC;
         break;
     case 'b': return checkKeyword(scanner, 1, 5, "efore",   TOKEN_BEFORE);
     case 'i':

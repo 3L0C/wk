@@ -30,6 +30,8 @@ typedef struct
 
 static void keyChord(Compiler* compiler);
 
+static bool debug;
+
 static void
 initCompiler(Compiler* compiler, const char* source)
 {
@@ -94,6 +96,7 @@ advance(Compiler* compiler)
     while (true)
     {
         compiler->current = scanToken(&compiler->scanner);
+        if (debug) disassembleToken(&compiler->current);
         if (compiler->current.type != TOKEN_ERROR) break;
 
         errorAtCurrent(compiler, compiler->current.message);
@@ -453,11 +456,12 @@ keyChord(Compiler* compiler)
 }
 
 int
-transpileChords(const char* source, const char* delimiter)
+transpileChords(const char* source, const char* delimiter, bool debugFlag)
 {
     assert(source);
 
     Compiler compiler;
+    debug = debugFlag;
     initCompiler(&compiler, source);
     advance(&compiler);
     while (!match(&compiler, TOKEN_EOF))

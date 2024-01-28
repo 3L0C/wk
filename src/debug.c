@@ -35,6 +35,8 @@ disassembleToken(Token* token)
     /* single characters */
     case TOKEN_LEFT_BRACKET:        type = "TOKEN_LEFT_BRACKET";        break;
     case TOKEN_RIGHT_BRACKET:       type = "TOKEN_RIGHT_BRACKET";       break;
+    case TOKEN_LEFT_BRACE:          type = "TOKEN_LEFT_BRACE";          break;
+    case TOKEN_RIGHT_BRACE:         type = "TOKEN_RIGHT_BRACE";         break;
 
     /* keywords */
     case TOKEN_INDEX:               type = "TOKEN_INDEX";               break;

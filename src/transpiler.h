@@ -3,6 +3,6 @@
 
 #include "lib/common.h"
 
-int transpileChords(const char* source, const char* delimiter);
+int transpileChords(const char* source, const char* delimiter, bool debugFlag);
 
 #endif /* WK_TRANSPILER_H_ */

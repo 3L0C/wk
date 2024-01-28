@@ -13,8 +13,7 @@ void calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows,
 void countChords(WkProperties* props);
 WkStatus handleKeypress(WkProperties* props, Key* key);
 bool isUtf8StartByte(char byte);
-WkStatus spawn(const char* shell, const char* cmd);
-WkStatus spawnAsync(WkProperties* props, const char* cmd, bool waitFlag);
+WkStatus spawn(WkProperties* props, const char* cmd, bool async);
 
 #endif /* WK_LIB_UTIL_H_ */
 

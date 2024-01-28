@@ -107,15 +107,9 @@ handleCommand(WkProperties* props, const Chord* chord)
     if (chord->write)
     {
         printf("%s\n", chord->command);
+        return;
     }
-    else if (chord->after)
-    {
-        spawnAsync(props, chord->command, true);
-    }
-    else
-    {
-        spawn(props->shell, chord->command);
-    }
+    spawn(props, chord->command, chord->async || chord->after != NULL);
 }
 
 static WkStatus
@@ -124,9 +118,9 @@ handleCommands(WkProperties* props, const Chord* chord)
     /* no command */
     if (!chord->command) return WK_STATUS_EXIT_OK;
 
-    if (chord->before) spawnAsync(props, chord->before, true);
+    if (chord->before) spawn(props, chord->before, chord->async);
     handleCommand(props, chord);
-    if (chord->after) spawnAsync(props, chord->after, true);
+    if (chord->after) spawn(props, chord->after, chord->async);
     return chord->keep ? WK_STATUS_DAMAGED : WK_STATUS_EXIT_OK;
 }
 
@@ -165,37 +159,45 @@ isUtf8StartByte(char byte)
     return (byte & 0xC0) != 0x80;
 }
 
-WkStatus
-spawn(const char* shell, const char* cmd)
+static WkStatus
+spawnSync(const char* shell, const char* cmd)
+{
+    assert(shell && cmd);
+
+    setsid();
+    char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL };
+    if (!exec[0])
+    {
+        errorMsg("Could not duplicate shell string: '%s'.", shell);
+        goto fail;
+    }
+    if (!exec[2])
+    {
+        errorMsg("Could not duplicate command string: '%s'.", cmd);
+        goto fail;
+    }
+    execvp(exec[0], exec);
+    errorMsg("Failed to spawn command: '%s -c %s'.", shell, cmd);
+fail:
+    free(exec[0]);
+    free(exec[2]);
+    return WK_STATUS_EXIT_SOFTWARE;
+}
+
+static WkStatus
+spawnAsync(const char* shell, const char* cmd)
 {
     assert(shell && cmd);
 
     if (fork() == 0)
     {
-        setsid();
-        char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL };
-        if (!exec[0])
-        {
-            errorMsg("Could not duplicate shell string: '%s'.", shell);
-            goto fail;
-        }
-        if (!exec[2])
-        {
-            errorMsg("Could not duplicate command string: '%s'.", cmd);
-            goto fail;
-        }
-        execvp(exec[0], exec);
-        errorMsg("Failed to spawn command: '%s -c %s'.", shell, cmd);
-fail:
-        free(exec[0]);
-        free(exec[2]);
-        return WK_STATUS_EXIT_SOFTWARE;
+        spawnSync(shell, cmd);
     }
     return WK_STATUS_EXIT_OK;
 }
 
 WkStatus
-spawnAsync(WkProperties* props, const char* cmd, bool waitFlag)
+spawn(WkProperties* props, const char* cmd, bool async)
 {
     assert(props && cmd);
 
@@ -204,24 +206,31 @@ spawnAsync(WkProperties* props, const char* cmd, bool waitFlag)
     if (child == -1)
     {
         errorMsg("Could not fork process:");
-        perror("fork");
+        perror(NULL);
         return WK_STATUS_EXIT_SOFTWARE;
     }
 
     if (child == 0)
     {
         if (props->xp && props->cleanupfp) props->cleanupfp(props->xp);
-        spawn(props->shell, cmd);
+        if (async)
+        {
+            spawnAsync(props->shell, cmd);
+        }
+        else
+        {
+            spawnSync(props->shell, cmd);
+        }
         exit(EX_OK);
     }
 
-    if (waitFlag)
+    if (!async)
     {
         int status;
         if (waitpid(child, &status, 0) == -1)
         {
             errorMsg("Could not wait for child process:");
-            perror("waitpid");
+            perror(NULL);
             return WK_STATUS_EXIT_SOFTWARE;
         }
 

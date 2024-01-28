@@ -18,12 +18,12 @@ static Client client;
 static WkProperties props;
 
 static int
-parseFile(void)
+transpile(void)
 {
     int result = EX_SOFTWARE;
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
-    result = transpileChords(source, client.delimiter);
+    result = transpileChords(source, client.delimiter, client.debug);
     free(source);
     return result;
 }
@@ -72,7 +72,7 @@ main(int argc, char** argv)
 
     if (client.transpile)
     {
-        result = parseFile();
+        result = transpile();
     }
     else if (client.tryScript)
     {

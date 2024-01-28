@@ -148,6 +148,7 @@ debugChord(const Chord* chord)
     debugBool("nobefore", chord->nobefore);
     debugBool("noafter", chord->noafter);
     debugBool("write", chord->write);
+    debugBool("async", chord->async);
     debugPointer("chords", chord->chords);
     printf("---- End Chord -----\n");
 }
