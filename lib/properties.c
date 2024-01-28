@@ -7,8 +7,6 @@
 #include "client.h"
 #include "properties.h"
 #include "types.h"
-#include "x11/window.h"
-#include "wayland/window.h"
 
 static bool
 initColor(WkHexColor* hexColor, const char* color)
@@ -16,7 +14,7 @@ initColor(WkHexColor* hexColor, const char* color)
     assert(hexColor && color);
 
     unsigned int r, g, b, a = 255;
-    int count = sscanf(color, "#%2x%2x%2x%2x", &r, &b, &g, &a);
+    int count = sscanf(color, "#%2x%2x%2x%2x", &r, &g, &b, &a);
 
     if (count != 3 && count != 4) return false;
 
@@ -74,13 +72,18 @@ initProperties(WkProperties* props, Client* client)
     props->cell_height = 0;
     props->rows = 0;
     props->cols = 0;
+    props->width = 0;
+    props->height = 0;
     props->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
     props->borderWidth = client->borderWidth;
     initColors(props->colors, client);
     props->shell = client->shell;
     props->font = client->font;
     props->chords = client->chords;
+    props->chordCount = 0;
     props->debug = client->debug;
+    props->cleanupfp = NULL;
+    props->xp = NULL;
 }
 
 void

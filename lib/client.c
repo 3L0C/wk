@@ -25,7 +25,7 @@ initClient(Client* client, const Chord* chords)
     client->shell = shell;
     client->font = font;
     client->keys = NULL;
-    client->parse = NULL;
+    client->transpile = NULL;
     client->chordsFile = NULL;
     client->tryScript = false;
     client->script = NULL;

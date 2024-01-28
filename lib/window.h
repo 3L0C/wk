@@ -1,7 +1,8 @@
 #ifndef WK_LIB_WINDOW_H_
 #define WK_LIB_WINDOW_H_
 
-#include "lib/properties.h"
+#include "properties.h"
+#include "types.h"
 
 #define WINDOW_MIN_WIDTH 80
 
@@ -13,6 +14,6 @@ typedef enum
     WK_STATUS_EXIT_SOFTWARE,
 } WkStatus;
 
-int run(WkProperties* properties);
+int run(WkProperties* props);
 
 #endif /* WK_LIB_WINDOW_H_ */

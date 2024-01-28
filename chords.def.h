@@ -8,7 +8,7 @@
 #define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }
 #define CHORDS(...) { __VA_ARGS__, NULL_CHORD }
 
-/* mods,    specials,  key,    description,   repr, */
+/* mods,    specials,  key,    description,   hint, */
 /* command, */
 /* before, */
 /* after, */
@@ -26,61 +26,61 @@ const Chord chords[] = CHORDS(
                 "echo \":\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_CTRL|WK_MOD_SHIFT, WK_SPECIAL_RETURN, "RET", "Tag 2", "C-S-RET -> Tag 2",
                 "echo \"RET\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "a", "Tag 3", "a -> Tag 3",
                 "echo \"a\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "テ", "Tag 4", "テ -> Tag 4",
                 "echo \"テ\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "r", "Tag 5", "r -> Tag 5",
                 "echo \"r\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "s", "Tag 6", "s -> Tag 6",
                 "echo \"s\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "t", "Tag 7", "t -> Tag 7",
                 "echo \"t\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "g", "Tag 8", "g -> Tag 8",
                 "echo \"g\"", 
                 "", 
                 "", 
-                false, false, false, false, false, NULL
+                false, false, false, true, false, NULL
             }
         )
     },
     {
-        WK_MOD_NONE, WK_SPECIAL_NONE, "b", "Browser", "b -> Browser",
+        WK_MOD_NONE, WK_SPECIAL_HOME, "Home", "Browser", "Home -> Browser",
         "", 
         "", 
         "", 

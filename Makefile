@@ -114,8 +114,8 @@ chords.h:
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -rf $(NAME)
-	rm -rf config.h
-	rm -rf chords.h
+# rm -rf config.h
+# rm -rf chords.h
 
 dist: clean
 	mkdir -p $(NAME)-$(VERSION)/src

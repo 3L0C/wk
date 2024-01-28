@@ -308,28 +308,28 @@ specialType(Scanner* scanner)
 {
     switch (*scanner->start)
     {
-    case 'L': return checkSpecial(scanner, 1, 0, "eft", TOKEN_SPECIAL_LEFT);
+    case 'L': return checkSpecial(scanner, 1, 3, "eft", TOKEN_SPECIAL_LEFT);
     case 'R':
         if (isKeyword(scanner, 1, 4, "ight")) return TOKEN_SPECIAL_RIGHT;
         if (isKeyword(scanner, 1, 2, "ET")) return TOKEN_SPECIAL_RETURN;
         break;
-    case 'U': return checkSpecial(scanner, 1, 0, "p", TOKEN_SPECIAL_UP);
+    case 'U': return checkSpecial(scanner, 1, 1, "p", TOKEN_SPECIAL_UP);
     case 'D':
         if (isKeyword(scanner, 1, 3, "own")) return TOKEN_SPECIAL_DOWN;
         if (isKeyword(scanner, 1, 2, "EL")) return TOKEN_SPECIAL_DELETE;
         break;
-    case 'T': return checkSpecial(scanner, 1, 0, "AB", TOKEN_SPECIAL_TAB);
-    case 'S': return checkSpecial(scanner, 1, 0, "PC", TOKEN_SPECIAL_SPACE);
+    case 'T': return checkSpecial(scanner, 1, 2, "AB", TOKEN_SPECIAL_TAB);
+    case 'S': return checkSpecial(scanner, 1, 2, "PC", TOKEN_SPECIAL_SPACE);
     case 'E':
         if (isKeyword(scanner, 1, 2, "SC")) return TOKEN_SPECIAL_ESCAPE;
         if (isKeyword(scanner, 1, 2, "nd")) return TOKEN_SPECIAL_END;
         break;
-    case 'H': return checkSpecial(scanner, 1, 0, "ome", TOKEN_SPECIAL_HOME);
+    case 'H': return checkSpecial(scanner, 1, 3, "ome", TOKEN_SPECIAL_HOME);
     case 'P':
         if (isKeyword(scanner, 1, 3, "gUp")) return TOKEN_SPECIAL_PAGE_UP;
-        if (isKeyword(scanner, 1, 2, "gDown")) return TOKEN_SPECIAL_PAGE_DOWN;
+        if (isKeyword(scanner, 1, 5, "gDown")) return TOKEN_SPECIAL_PAGE_DOWN;
         break;
-    case 'B': return checkSpecial(scanner, 1, 0, "egin", TOKEN_SPECIAL_BEGIN);
+    case 'B': return checkSpecial(scanner, 1, 4, "egin", TOKEN_SPECIAL_BEGIN);
     }
 
     return TOKEN_ERROR;

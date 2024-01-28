@@ -23,7 +23,7 @@ typedef struct
     const char* shell;
     const char* font;
     const char* keys;
-    const char* parse;
+    const char* transpile;
     const char* chordsFile;
     bool tryScript;
     char* script;

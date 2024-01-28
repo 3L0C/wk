@@ -5,6 +5,7 @@
 
 #include "lib/client.h"
 #include "lib/common.h"
+#include "lib/debug.h"
 #include "lib/memory.h"
 #include "lib/window.h"
 
@@ -20,7 +21,7 @@ static int
 parseFile(void)
 {
     int result = EX_SOFTWARE;
-    char* source = readFile(client.parse);
+    char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
     result = transpileChords(source, client.delimiter);
     free(source);
@@ -63,7 +64,13 @@ main(int argc, char** argv)
     parseArgs(&client, &argc, &argv);
     initProperties(&props, &client);
 
-    if (client.parse)
+    if (props.debug)
+    {
+        debugProperties(&props);
+        debugClient(&client);
+    }
+
+    if (client.transpile)
     {
         result = parseFile();
     }

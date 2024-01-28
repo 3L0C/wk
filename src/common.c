@@ -62,26 +62,29 @@ usage(void)
     fputs(
         "usage: wk [options]\n"
         "\n"
-        "Options:\n"
+        "options:\n"
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
         "    -D, --debug                Print debug information.\n"
         "    -t, --top                  Position window at top of screen.\n"
         "    -b, --bottom               Position window at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as chords.\n"
-        "    -d, --delimiter STRING     Set delimiter to STRING.\n"
         "    -m, --max-cols NUM         Set maximum columns to NUM.\n"
-        "    -k, --press KEY(s)         Press KEY(s) before dispalying window.\n"
-        "    -p, --parse FILE           Parse FILE and transpile to valid 'chords.h' via stdout.\n"
+        "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
+        "    -T, --transpile FILE       Transpile FILE to valid 'chords.h' syntax and print to stdout.\n"
         "    -c, --chords FILE          Use FILE for chords rather than those in 'chords.h'.\n"
-        "    --win-width NUM            Set window width to NUM\n"
-        "    --win-height NUM           Set window height to NUM\n"
-        "    --border-width NUM         Set border width to NUM\n"
-        "    --fg COLOR                 Set window foreground to COLOR. i.e. '#AABBCC'\n"
-        "    --bg COLOR                 Set window background to COLOR. i.e. '#AABBCC'\n"
-        "    --bd COLOR                 Set window border to COLOR. i.e. '#AABBCC'\n"
-        "    --shell STRING             Set shell to STRING, i.e. '/bin/sh'.\n"
-        "    --font FONT_STRING         Add FONT_STRING to list of fonts.\n",
+        "    --win-width NUM            Set window width to NUM.\n"
+        "    --win-gap NUM              Window gap between top/bottom of screen. Set to '-1' for a\n"
+        "                               gap of 1/10th of the screen height.\n"
+        "    --border-width NUM         Set border width to NUM.\n"
+        "    --wpadding NUM             Set left and right padding around hint text to NUM.\n"
+        "    --hpadding NUM             Set up and down padding around hint text to NUM.\n"
+        "    --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').\n"
+        "    --bg COLOR                 Set window background to COLOR (e.g., '#F1CD39').\n"
+        "    --bd COLOR                 Set window border to COLOR (e.g., '#F1CD39').\n"
+        "    --shell STRING             Set shell to STRING (e.g., '/bin/sh').\n"
+        "    --font STRING              Set font to STRING. Should be a valid Pango font description\n"
+        "                               (e.g., 'monospace, M+ 1c, ..., 16').\n",
         stderr
     );
 }
@@ -115,19 +118,20 @@ parseArgs(Client* client, int* argc, char*** argv)
         { "bottom",         no_argument,        0, 'b' },
         { "script",         no_argument,        0, 's' },
         /*                  required argument           */
-        { "delimiter",      required_argument,  0, 'd' },
         { "max-cols",       required_argument,  0, 'm' },
-        { "press",          required_argument,  0, 'k' },
-        { "parse",          required_argument,  0, 'p' },
+        { "press",          required_argument,  0, 'p' },
+        { "transpile",      required_argument,  0, 'T' },
         { "chords",         required_argument,  0, 'c' },
         { "win-width",      required_argument,  0, 0x090 },
         { "win-gap",        required_argument,  0, 0x091 },
         { "border-width",   required_argument,  0, 0x092 },
-        { "fg",             required_argument,  0, 0x093 },
-        { "bg",             required_argument,  0, 0x094 },
-        { "bd",             required_argument,  0, 0x095 },
-        { "shell",          required_argument,  0, 0x096 },
-        { "font",           required_argument,  0, 0x097 },
+        { "wpadding",       required_argument,  0, 0x093 },
+        { "hpadding",       required_argument,  0, 0x094 },
+        { "fg",             required_argument,  0, 0x095 },
+        { "bg",             required_argument,  0, 0x096 },
+        { "bd",             required_argument,  0, 0x097 },
+        { "shell",          required_argument,  0, 0x098 },
+        { "font",           required_argument,  0, 0x099 },
         { 0, 0, 0, 0 }
     };
 
@@ -137,7 +141,7 @@ parseArgs(Client* client, int* argc, char*** argv)
     while (true)
     {
 
-        opt = getopt_long(*argc, *argv, ":hvDtbsd:m:k:p:c:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvDtbsm:p:T:c:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
@@ -150,7 +154,6 @@ parseArgs(Client* client, int* argc, char*** argv)
         case 'b': client->windowPosition = WK_WIN_POS_BOTTOM; break;
         case 's': client->tryScript = true; break;
         /* requires argument */
-        case 'd': client->delimiter = optarg; break;
         case 'm':
         {
             int n;
@@ -199,13 +202,37 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->borderWidth = (unsigned int)n;
             break;
         }
-        case 0x093: client->foreground = optarg; break;
-        case 0x094: client->background = optarg; break;
-        case 0x095: client->border = optarg; break;
-        case 0x096: client->shell = optarg; break;
-        case 0x097: client->font = optarg; break;
-        case 'k': client->keys = optarg; break;
-        case 'p': client->parse = optarg; break;
+        case 0x093:
+        {
+            int n;
+            if (!getNum(&n))
+            {
+                usage();
+                errorMsg("Could not convert '%s' into a number.", optarg);
+                exit(EXIT_FAILURE);
+            }
+            client->wpadding = (unsigned int)n;
+            break;
+        }
+        case 0x094:
+        {
+            int n;
+            if (!getNum(&n))
+            {
+                usage();
+                errorMsg("Could not convert '%s' into a number.", optarg);
+                exit(EXIT_FAILURE);
+            }
+            client->hpadding = (unsigned int)n;
+            break;
+        }
+        case 0x095: client->foreground = optarg; break;
+        case 0x096: client->background = optarg; break;
+        case 0x097: client->border = optarg; break;
+        case 0x098: client->shell = optarg; break;
+        case 0x099: client->font = optarg; break;
+        case 'p': client->keys = optarg; break;
+        case 'T': client->transpile = optarg; break;
         case 'c': client->chordsFile = optarg; break;
         /* Errors */
         case '?':

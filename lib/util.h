@@ -5,10 +5,16 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "properties.h"
 #include "types.h"
+#include "window.h"
 
-bool vrprintf(char** ioBuffer, size_t* ioLen, const char* fmt, va_list args);
-uint32_t countChords(const Chord* chords);
 void calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols);
+void countChords(WkProperties* props);
+WkStatus handleKeypress(WkProperties* props, Key* key);
+bool isUtf8StartByte(char byte);
+WkStatus spawn(const char* shell, const char* cmd);
+WkStatus spawnAsync(const char* shell, const char* cmd, CleanupFP fp, void* xp);
 
 #endif /* WK_LIB_UTIL_H_ */
+

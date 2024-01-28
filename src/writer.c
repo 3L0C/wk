@@ -27,7 +27,7 @@ writeChordsHeader(void)
     printf("#define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }\n");
     printf("#define CHORDS(...) { __VA_ARGS__, NULL_CHORD }\n");
     printf("\n");
-    printf("/* mods,    specials,  key,    description,   repr, */\n");
+    printf("/* mods,    specials,  key,    description,   hint, */\n");
     printf("/* command, */\n");
     printf("/* before, */\n");
     printf("/* after, */\n");
@@ -182,7 +182,7 @@ writeChordModStr(int mods)
 }
 
 static void
-writeChordRepr(Line* line)
+writeChordHint(Line* line)
 {
     printf("\"");
     writeChordModStr(line->mods);
@@ -206,7 +206,7 @@ writeChordLine(Line* line, int indent)
     writeChordSpecial(&line->key);
     writeChordKey(&line->key);
     writeChordString(&line->description, line);
-    writeChordRepr(line);
+    writeChordHint(line);
 
     printf("%*s", indent * 4, " "); /* print indentation */
     writeChordString(&line->command, line);

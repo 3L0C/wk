@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef void (*CleanupFP)(void* xp);
+
 void errorMsg(const char* fmt, ...);
 void warnMsg(const char* fmt, ...);
 

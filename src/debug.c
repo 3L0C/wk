@@ -104,19 +104,26 @@ debugScanner(const char* source)
 }
 
 static void
-printMods(int mods)
+printMods(int mod)
 {
-    printf("\tMODS: ");
-    if (!IS_MOD(mods))
+    if (!IS_MOD(mod))
     {
-        printf("NONE\n");
+        printf("MODS: NONE\n");
         return;
     }
-    if ((mods & WK_MOD_CTRL) == WK_MOD_CTRL) printf("WK_MOD_CTRL | ");
-    if ((mods & WK_MOD_ALT) == WK_MOD_ALT) printf("WK_MOD_ALT | ");
-    if ((mods & WK_MOD_HYPER) == WK_MOD_HYPER) printf("WK_MOD_HYPER | ");
-    if ((mods & WK_MOD_SHIFT) == WK_MOD_SHIFT) printf("WK_MOD_SHIFT");
-    printf("\n");
+
+    printf("MODS: ");
+    const char* mods[4];
+    int idx = 0;
+    if (IS_CTRL(mod)) mods[idx++] = "WK_MOD_CTRL";
+    if (IS_ALT(mod)) mods[idx++] = "WK_MOD_ALT";
+    if (IS_HYPER(mod)) mods[idx++] = "WK_MOD_HYPER";
+    if (IS_SHIFT(mod)) mods[idx++] = "WK_MOD_SHIFT";
+
+    for (int i = 0; i < idx; i++)
+    {
+        printf("%s%s", mods[i], (i + 1 == idx) ? "\n" : "|");
+    }
 }
 
 static void

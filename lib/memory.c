@@ -18,7 +18,7 @@ reallocate(void* pointer, size_t oldSize, size_t newSize)
     if (result == NULL)
     {
         perror("memory allocation");
-        exit(1);
+        exit(EX_UNAVAILABLE);
     }
     return result;
 }

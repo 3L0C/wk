@@ -41,7 +41,7 @@ typedef struct Chord
     const SpecialType special;
     const char* key;
     const char* description;
-    const char* repr;
+    const char* hint;
     const char* command;
     const char* before;
     const char* after;
@@ -52,5 +52,13 @@ typedef struct Chord
     const bool write;
     struct Chord* chords;
 } Chord;
+
+typedef struct
+{
+    unsigned int mods;
+    SpecialType special;
+    const char* key;
+    int len;
+} Key;
 
 #endif /* WK_LIB_TYPES_H_ */

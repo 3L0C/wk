@@ -1,28 +1,76 @@
 #include <assert.h>
+#include <locale.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <locale.h>
+#include <string.h>
 #include <sysexits.h>
+#include <time.h>
 
 #include <cairo-xlib.h>
+#include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xinerama.h>
+#include <unistd.h>
 
-#include "cairo.h"
 #include "lib/cairo.h"
 #include "lib/common.h"
+#include "lib/debug.h"
 #include "lib/properties.h"
+#include "lib/types.h"
+#include "lib/util.h"
 #include "lib/window.h"
 
+#include "debug.h"
 #include "window.h"
+
+typedef struct
+{
+    SpecialType special;
+    KeySym keysym;
+} SpecialKeys;
 
 static X11 x11;
 static WkX11Window* window = &x11.window;
 static WkProperties* properties;
+static bool debug;
+
+static const SpecialKeys specialkeys[] = {
+    { WK_SPECIAL_NONE,      XK_VoidSymbol },
+    { WK_SPECIAL_LEFT,      XK_Left },
+    { WK_SPECIAL_LEFT,      XK_KP_Left },
+    { WK_SPECIAL_RIGHT,     XK_Right },
+    { WK_SPECIAL_RIGHT,     XK_KP_Right },
+    { WK_SPECIAL_UP,        XK_Up },
+    { WK_SPECIAL_UP,        XK_KP_Up },
+    { WK_SPECIAL_DOWN,      XK_Down },
+    { WK_SPECIAL_DOWN,      XK_KP_Down },
+    { WK_SPECIAL_TAB,       XK_Tab },
+    { WK_SPECIAL_TAB,       XK_KP_Tab },
+    { WK_SPECIAL_SPACE,     XK_space },
+    { WK_SPECIAL_SPACE,     XK_KP_Space },
+    { WK_SPECIAL_RETURN,    XK_Return },
+    { WK_SPECIAL_RETURN,    XK_KP_Enter },
+    { WK_SPECIAL_DELETE,    XK_Delete },
+    { WK_SPECIAL_DELETE,    XK_KP_Delete },
+    { WK_SPECIAL_ESCAPE,    XK_Escape },
+    { WK_SPECIAL_HOME,      XK_Home },
+    { WK_SPECIAL_HOME,      XK_KP_Home },
+    { WK_SPECIAL_PAGE_UP,   XK_Page_Up },
+    { WK_SPECIAL_PAGE_UP,   XK_KP_Page_Up },
+    { WK_SPECIAL_PAGE_DOWN, XK_Page_Down },
+    { WK_SPECIAL_PAGE_DOWN, XK_KP_Page_Down },
+    { WK_SPECIAL_END,       XK_End },
+    { WK_SPECIAL_END,       XK_KP_End },
+    { WK_SPECIAL_BEGIN,     XK_Begin },
+    { WK_SPECIAL_BEGIN,     XK_KP_Begin }
+};
+
+static const size_t specialkeysLen = sizeof(specialkeys) / sizeof(specialkeys[0]);
 
 static void
 checkLocale(void)
@@ -31,6 +79,7 @@ checkLocale(void)
     {
         warnMsg("Locale not supported.");
     }
+    debugMsg(debug, "Locale supported.");
 }
 
 static cairo_surface_t*
@@ -124,6 +173,8 @@ setMonitor(void)
     Window root = DefaultRootWindow(window->display);
 
     {
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define INTERSECT(x,y,w,h,r)                                              \
         (MAX(0, MIN((x)+(w),(r).x_org+(r).width) - MAX((x),(r).x_org)) && \
          MAX(0, MIN((y)+(h),(r).y_org+(r).height) - MAX((y),(r).y_org)))
@@ -197,6 +248,8 @@ setMonitor(void)
 
     resizeWindow();
 #undef INTERSECT
+#undef MIN
+#undef MAX
     }
 
     window->monitor = monitor;
@@ -217,6 +270,7 @@ initBuffer(void)
 static bool
 initX11(void)
 {
+    debugMsg(debug, "Initializing x11.");
     Display* display = window->display = x11.dispaly = XOpenDisplay(NULL);
     if (!x11.dispaly) return false;
     window->screen = DefaultScreen(display);
@@ -245,7 +299,7 @@ initX11(void)
 
     window->drawable = XCreateWindow(
         display, DefaultRootWindow(display), 0, 0, window->width, window->height,
-        window->border, depth, CopyFromParent, window->visual, valuemask, &wa
+        0, depth, CopyFromParent, window->visual, valuemask, &wa
     );
     XSelectInput(display, window->drawable, ButtonPressMask | KeyPressMask);
     XMapRaised(display, window->drawable);
@@ -260,7 +314,8 @@ initX11(void)
     setMonitor();
     window->render = cairoPaint;
     initBuffer();
-    cairoInitPaint(&window->paint, properties);
+    cairoInitPaint(properties, &window->paint);
+    if (debug) debugWindow(window);
     return true;
 }
 
@@ -306,88 +361,11 @@ getBuffer(void)
     Buffer* buffer = &window->buffer;
 
     if (!buffer) return NULL;
-
     if (window->height != buffer->height) destroyBuffer(buffer);
-
     if (!buffer->created && !createBuffer(buffer)) return NULL;
 
     return buffer;
 }
-
-static Buffer*
-nextBuffer(void)
-{
-    Buffer* buffer = &window->buffer;
-
-    if (!buffer) return NULL;
-
-    if (window->width != buffer->width || window->height != buffer->height)
-    {
-        destroyBuffer(buffer);
-    }
-
-    if (!buffer->created && !createBuffer(buffer)) return NULL;
-
-    return buffer;
-}
-
-static bool
-bmRender(void)
-{
-    uint32_t oldw = window->width;
-    uint32_t oldh = window->height;
-
-    Buffer* buffer;
-    for (int32_t tries = 0; tries < 2; tries++)
-    {
-        buffer = nextBuffer();
-        if (!buffer)
-        {
-            errorMsg("Could not get next buffer.");
-            return false;
-        }
-
-        if (!window->render) break;
-
-        cairo_push_group(buffer->cairo.cr);
-        CairoPaintResult result;
-        window->render(&buffer->cairo, buffer->width, window->maxHeight, properties, &result);
-        window->displayed = result.displayed;
-        cairo_pop_group_to_source(buffer->cairo.cr);
-
-        if (window->height == result.height) break;
-
-        window->height = result.height;
-        destroyBuffer(buffer);
-    }
-
-    if (oldw != window->width || oldh != window->height)
-    {
-        uint32_t winY = 0;
-
-        if (properties->position == WK_WIN_POS_BOTTOM)
-        {
-            winY = window->maxHeight - window->height; /* FIXME */
-        }
-
-        XMoveResizeWindow(
-            window->display, window->drawable, window->x, winY,
-            window->width, window->height
-        );
-    }
-
-    if (buffer->created)
-    {
-        cairo_save(buffer->cairo.cr);
-        cairo_set_operator(buffer->cairo.cr, CAIRO_OPERATOR_SOURCE);
-        cairo_paint(buffer->cairo.cr);
-        cairo_surface_flush(buffer->cairo.surface);
-        cairo_restore(buffer->cairo.cr);
-    }
-
-    return true;
-}
-
 
 static bool
 render(void)
@@ -395,19 +373,6 @@ render(void)
     uint32_t oldh = window->height;
     window->height = cairoGetHeight(properties, getThrowawaySurface(), window->root.h);
     resizeWinHeight();
-    Buffer* buffer = getBuffer();
-
-    if (!buffer)
-    {
-        errorMsg("Could not get buffer while rendering.");
-        return false;
-    }
-
-    cairo_push_group(buffer->cairo.cr);
-    CairoPaintResult result;
-    window->render(&buffer->cairo, buffer->width, buffer->height, properties, &result);
-    window->displayed = result.displayed;
-    cairo_pop_group_to_source(buffer->cairo.cr);
 
     if (oldh != window->height)
     {
@@ -417,24 +382,37 @@ render(void)
         );
     }
 
-    if (buffer->created)
+    Buffer* buffer = getBuffer();
+
+    if (!buffer)
     {
-        cairo_save(buffer->cairo.cr);
-        cairo_set_operator(buffer->cairo.cr, CAIRO_OPERATOR_SOURCE);
-        cairo_paint(buffer->cairo.cr);
-        cairo_surface_flush(buffer->cairo.surface);
-        cairo_restore(buffer->cairo.cr);
+        errorMsg("Could not get buffer while rendering.");
+        return false;
     }
+
+    properties->width = buffer->width;
+    properties->height = buffer->height;
+    window->render(&buffer->cairo, properties);
+    cairo_surface_flush(buffer->cairo.surface);
+    XFlush(window->display);
 
     return true;
 }
 
 static void
-cleanup(void)
+cleanup(X11* x)
 {
-    XUngrabKey(window->display, AnyKey, AnyModifier, DefaultRootWindow(window->display));
-    XSync(window->display, False);
-    XCloseDisplay(window->display);
+    destroyBuffer(&x->window.buffer);
+    XUngrabKey(x->window.display, AnyKey, AnyModifier, DefaultRootWindow(x->window.display));
+    XSync(x->window.display, False);
+    XCloseDisplay(x->window.display);
+}
+
+static void
+cleanupAsync(void* xp)
+{
+    X11* x = (X11*)xp;
+    close(ConnectionNumber(x->dispaly));
 }
 
 static bool
@@ -452,7 +430,7 @@ grabfocus(void)
         nanosleep(&ts, NULL);
     }
 
-    cleanup();
+    cleanup(&x11);
     errorMsg("Could not grab focus.");
     return false;
 }
@@ -476,15 +454,59 @@ grabkeyboard(void)
         nanosleep(&ts, NULL);
     }
 
-    cleanup();
+    cleanup(&x11);
     errorMsg("Could not grab keyboard.");
     return false;
+}
+
+static SpecialType
+getSpecialKey(KeySym keysym)
+{
+    for (size_t i = 0; i < specialkeysLen; i++)
+    {
+        if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
+    }
+    return WK_SPECIAL_NONE;
+}
+
+static unsigned int
+getKeyEventMods(unsigned int mod)
+{
+    unsigned int result = 0;
+    if (mod & ControlMask) result |= WK_MOD_CTRL;
+    if (mod & Mod1Mask) result |= WK_MOD_ALT;
+    if (mod & Mod4Mask) result |= WK_MOD_HYPER;
+    if (mod & ShiftMask) result |= WK_MOD_SHIFT;
+    return result ? result : WK_MOD_NONE;
+}
+
+static bool
+processKey(Key* key, unsigned int state, const char* buffer, int len, KeySym keysym)
+{
+    key->key = buffer;
+    key->len = len;
+    key->mods = getKeyEventMods(state);
+    key->special = getSpecialKey(keysym);
+    return (*key->key != '\0' || key->special != WK_SPECIAL_NONE);
 }
 
 static WkStatus
 keypress(XKeyEvent* keyEvent)
 {
-    return WK_STATUS_EXIT_OK;
+    KeySym keysym = XK_VoidSymbol;
+    Status status;
+    char buffer[32] = {0};
+    int len;
+    Key key;
+
+    len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
+
+    if (status == XLookupNone || status == XBufferOverflow) return WK_STATUS_RUNNING;
+
+    if (!processKey(&key, keyEvent->state, buffer, len, keysym)) return WK_STATUS_RUNNING;
+
+    return handleKeypress(properties, &key);
+
 }
 
 static int
@@ -500,7 +522,7 @@ eventHandler(void)
         {
         case DestroyNotify:
             if (ev.xdestroywindow.window != window->drawable) break;
-            cleanup();
+            cleanup(&x11);
             return EX_SOFTWARE;
         case Expose:
             if (ev.xexpose.count == 0) render();
@@ -513,7 +535,6 @@ eventHandler(void)
             }
             break;
         case KeyPress:
-            return EX_OK;
             switch (keypress(&ev.xkey))
             {
             case WK_STATUS_RUNNING: break;
@@ -543,17 +564,13 @@ runX11(WkProperties* props)
     int result = EX_SOFTWARE;
     checkLocale();
     properties = x11.props = props;
+    properties->cleanupfp = cleanupAsync;
+    properties->xp = &x11;
+    debug = properties->debug;
     if (!initX11()) return result;
     grabkeyboard();
     render();
     result = eventHandler();
-
-    if (false)
-    {
-        bmRender();
-    }
-
-    printf("x11\n");
-    cleanup();
+    cleanup(&x11);
     return result;
 }

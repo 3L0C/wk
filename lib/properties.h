@@ -42,13 +42,18 @@ typedef struct
     uint32_t cell_height;
     uint32_t rows;
     uint32_t cols;
+    uint32_t width;
+    uint32_t height;
     WkWindowPosition position;
     size_t borderWidth;
     WkHexColor colors[WK_COLOR_LAST];
     const char* shell;
     const char* font;
     const Chord* chords;
+    uint32_t chordCount;
     bool debug;
+    CleanupFP cleanupfp;
+    void* xp;
 } WkProperties;
 
 void initProperties(WkProperties* props, Client* client);

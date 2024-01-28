@@ -39,7 +39,7 @@ typedef struct
         uint32_t x, y, w, h;
     } root;
     CairoPaint paint;
-    void (*render)(Cairo* cairo, uint32_t width, uint32_t maxHeight, WkProperties* props, CairoPaintResult* result);
+    void (*render)(Cairo* cairo, WkProperties* props);
 } WkX11Window;
 
 typedef struct
@@ -48,33 +48,6 @@ typedef struct
     WkX11Window window;
     WkProperties* props;
 } X11;
-
-/* struct window { */
-/*     Display *display; */
-/*     int32_t screen; */
-/*     Drawable drawable; */
-/*     XIM xim; */
-/*     XIC xic; */
-/*     Visual *visual; */
-
-/*     KeySym keysym; */
-/*     uint32_t mods; */
-
-/*     struct buffer buffer; */
-/*     uint32_t x, y, width, height, max_height; */
-/*     uint32_t orig_width, orig_x; */
-/*     uint32_t hmargin_size; */
-/*     float width_factor; */
-/*     uint32_t displayed; */
-
-/*     int32_t monitor; */
-/*     enum bm_align align; */
-/*     int32_t y_offset; */
-
-/*     struct { */
-/*         void (*render)(struct cairo *cairo, uint32_t width, uint32_t max_height, struct bm_menu *menu, struct cairo_paint_result *result); */
-/*     } notify; */
-/* }; */
 
 int runX11(WkProperties* props);
 

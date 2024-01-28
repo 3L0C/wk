@@ -4,7 +4,7 @@
 static const char* delimiter = "->"; /* Seperator when displaying binds */
 static const unsigned int maxCols = 4; /* Max number of columns to use */
 static const int windowWidth = -1; /* Window width. Set to '-1' for 1/2 the width of your screen. */
-static const int windowGap = -1; /* Window gap between top/bottom of screen. Set to '-1' for a gap of 1/10th of screen height. */
+static const int windowGap = -1; /* Window gap between top/bottom of screen. Set to '-1' for a gap of 1/10th of the screen height. */
 static const unsigned int widthPadding = 2; /* X-Padding around key/description text in cells. */
 static const unsigned int heightPadding = 2; /* Y-Padding around key/description text in cells. */
 static const unsigned int windowPosition = 0; /* Position to place the window. '0' = bottom; '1' = top. */

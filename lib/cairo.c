@@ -15,8 +15,19 @@
 #include <pango/pangocairo.h>
 
 #include "cairo.h"
+#include "common.h"
+#include "debug.h"
+#include "properties.h"
+#include "types.h"
 #include "util.h"
 #include "window.h"
+
+
+/* drawGrid(Cairo* cairo, WkProperties* props, uint32_t width, uint32_t height) */
+static Cairo* cairo;
+static WkProperties* properties;
+static uint32_t width;
+static uint32_t height;
 
 bool
 cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface)
@@ -25,9 +36,6 @@ cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface)
 
     cairo->cr = cairo_create(surface);
     if (!cairo->cr) goto fail;
-
-    cairo->pango = pango_cairo_create_context(cairo->cr);
-    if (!cairo->pango) goto fail;
 
     cairo->surface = surface;
     assert(cairo->scale > 0);
@@ -47,20 +55,19 @@ cairoDestroy(Cairo* cairo)
 }
 
 uint32_t
-cairoGetHeight(WkProperties* properties, cairo_surface_t* surface)
+cairoGetHeight(WkProperties* props, cairo_surface_t* surface, uint32_t maxHeight)
 {
-    assert(properties && surface);
+    assert(props && surface);
 
-    uint32_t count = countChords(properties->chords);
-    uint32_t rows = 0;
-    uint32_t cols = 0;
+    uint32_t height = 0;
+    countChords(props);
 
     cairo_t* cr = cairo_create(surface);
     PangoLayout* layout = pango_cairo_create_layout(cr);
-    PangoFontDescription* fontDesc = pango_font_description_from_string(properties->font);
+    PangoFontDescription* fontDesc = pango_font_description_from_string(props->font);
     PangoRectangle rect;
 
-    calculateGrid(count, properties->maxCols, &rows, &cols);
+    calculateGrid(props->chordCount, props->maxCols, &props->rows, &props->cols);
 
     pango_layout_set_text(
         layout,
@@ -73,131 +80,217 @@ cairoGetHeight(WkProperties* properties, cairo_surface_t* surface)
     pango_layout_get_pixel_extents(layout, NULL, &rect);
 
     /* cleanup */
-    cairo_surface_destroy(surface);
-    cairo_destroy(cr);
-    g_object_unref(layout);
     pango_font_description_free(fontDesc);
+    g_object_unref(layout);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
 
-    return (rect.height + properties->heightPadding * 2) * rows;
+    props->cell_height = (rect.height + props->hpadding * 2);
+    height = props->cell_height * props->rows + (props->borderWidth * 2);
+    return height > maxHeight ? maxHeight : height;
 }
 
-static PangoLayout*
-pangoGetLayout(Cairo* cairo, CairoPaint* paint, const char* buffer)
+static void
+cairoSetColors(CairoPaint* paint, WkHexColor* colors)
 {
-    PangoLayout* layout = pango_cairo_create_layout(cairo->cr);
-    pango_layout_set_text(layout, buffer, -1);
-    PangoFontDescription* desc = pango_font_description_from_string(paint->font);
-    pango_layout_set_font_description(layout, desc);
-    pango_layout_set_single_paragraph_mode(layout, 1);
-    pango_font_description_free(desc);
-    return layout;
+    /* foreground */
+    paint->fg.r = (float)colors[WK_COLOR_FOREGROUND].r / 255.0f;
+    paint->fg.g = (float)colors[WK_COLOR_FOREGROUND].g / 255.0f;
+    paint->fg.b = (float)colors[WK_COLOR_FOREGROUND].b / 255.0f;
+    paint->fg.a = (float)colors[WK_COLOR_FOREGROUND].a / 255.0f;
+
+    /* background */
+    paint->bg.r = (float)colors[WK_COLOR_BACKGROUND].r / 255.0f;
+    paint->bg.g = (float)colors[WK_COLOR_BACKGROUND].g / 255.0f;
+    paint->bg.b = (float)colors[WK_COLOR_BACKGROUND].b / 255.0f;
+    paint->bg.a = (float)colors[WK_COLOR_BACKGROUND].a / 255.0f;
+
+    /* border */
+    paint->bd.r = (float)colors[WK_COLOR_BORDER].r / 255.0f;
+    paint->bd.g = (float)colors[WK_COLOR_BORDER].g / 255.0f;
+    paint->bd.b = (float)colors[WK_COLOR_BORDER].b / 255.0f;
+    paint->bd.a = (float)colors[WK_COLOR_BORDER].a / 255.0f;
+}
+
+void
+cairoInitPaint(WkProperties* props, CairoPaint* paint)
+{
+    cairoSetColors(paint, props->colors);
+    paint->font = props->font;
 }
 
 static bool
-pangoGetTextExtents(Cairo* cairo, CairoPaint* paint, CairoResult* result, const char* fmt, ...)
+setSourceRgba(WkColor type)
 {
-    assert(cairo && paint && result && fmt);
-    memset(result, 0, sizeof(CairoResult));
+    CairoColor* color;
 
-    va_list args;
-    va_start(args, fmt);
-    /* FIXME */
-    bool ret = vrprintf(NULL, NULL, fmt, args);
-    va_end(args);
+    switch (type)
+    {
+    case WK_COLOR_FOREGROUND: color = &cairo->paint->fg; break;
+    case WK_COLOR_BACKGROUND: color = &cairo->paint->bg; break;
+    case WK_COLOR_BORDER: color = &cairo->paint->bd; break;
+    default: errorMsg("Invalid color request %d", type); return false;
+    }
 
-    if (!ret) return false;
+    cairo_set_source_rgba(cairo->cr, color->r, color->g, color->b, color->a);
+    return true;
+}
 
-    PangoRectangle rect;
-    PangoLayout *layout = pangoGetLayout(cairo, paint, NULL);
-    pango_layout_get_pixel_extents(layout, NULL, &rect);
-    int baseline = pango_layout_get_baseline(layout) / PANGO_SCALE;
-    g_object_unref(layout);
+static bool
+drawBackground()
+{
+    assert(cairo && properties);
 
-    result->xAdvance = rect.x + rect.width;
-    result->height = rect.height;
-    result->baseline = baseline;
+    if (!setSourceRgba(WK_COLOR_BACKGROUND)) return false;
+
+    cairo_paint(cairo->cr);
+
+    return true;
+}
+
+static bool
+drawBorder()
+{
+    assert(cairo && properties);
+
+    double lineW = cairo_get_line_width(cairo->cr);
+    cairo_set_line_width(cairo->cr, properties->borderWidth);
+    if (!setSourceRgba(WK_COLOR_BORDER)) return false;
+    cairo_rectangle(cairo->cr, 0, 0, width, height);
+    cairo_stroke(cairo->cr);
+    cairo_set_line_width(cairo->cr, lineW);
     return true;
 }
 
 static void
-setColors(CairoPaint* paint, WkHexColor* colors)
+drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cell_width)
 {
-    /* foreground */
-    paint->fg.r = colors[WK_COLOR_FOREGROUND].r;
-    paint->fg.g = colors[WK_COLOR_FOREGROUND].g;
-    paint->fg.b = colors[WK_COLOR_FOREGROUND].b;
-    paint->fg.a = colors[WK_COLOR_FOREGROUND].a;
+    size_t len = strlen(text) + 1;
+    int textw, texth;
+    char buffer[len];
+    memcpy(buffer, text, len);
 
-    /* background */
-    paint->bg.r = colors[WK_COLOR_BACKGROUND].r;
-    paint->bg.g = colors[WK_COLOR_BACKGROUND].g;
-    paint->bg.b = colors[WK_COLOR_BACKGROUND].b;
-    paint->bg.a = colors[WK_COLOR_BACKGROUND].a;
+    debugMsg(properties->debug, "Truncating hint: '%s'.", buffer);
 
-    /* border */
-    paint->bd.r = colors[WK_COLOR_BORDER].r;
-    paint->bd.g = colors[WK_COLOR_BORDER].g;
-    paint->bd.b = colors[WK_COLOR_BORDER].b;
-    paint->bd.a = colors[WK_COLOR_BORDER].a;
+    do
+    {
+        len--;
+        while (!isUtf8StartByte(buffer[len])) len--;
+        pango_layout_set_text(layout, buffer, len);
+        pango_layout_get_pixel_size(layout, &textw, &texth);
+    } while (len && (uint32_t)textw > cell_width);
+
+    for (int i = 0; len && i < 3; i++)
+    {
+        len--;
+        while (!isUtf8StartByte(buffer[len])) len--;
+    }
+
+    buffer[len + 0] = '.';
+    buffer[len + 1] = '.';
+    buffer[len + 2] = '.';
+    buffer[len + 3] = '\0';
+
+    debugMsg(properties->debug, "Truncated hint:  '%s'.", buffer);
+
+    pango_layout_set_text(layout, buffer, -1);
+}
+
+static void
+drawHintText(PangoLayout* layout, const char* text, uint32_t cell_width)
+{
+    assert(layout && text);
+
+    int w, h;
+    pango_layout_set_text(layout, text, -1);
+    pango_layout_get_pixel_size(layout, &w, &h);
+
+    if ((uint32_t)w > cell_width)
+    {
+        drawTruncatedHintText(layout, text, cell_width);
+    }
+}
+
+static bool
+drawGrid()
+{
+    assert(cairo && properties);
+
+    uint32_t startx = properties->borderWidth;
+    uint32_t starty = properties->borderWidth;
+    uint32_t rows = properties->rows;
+    uint32_t cols = properties->cols;
+    uint32_t wpadding = properties->wpadding;
+    uint32_t hpadding = properties->hpadding;
+    uint32_t cell_width = width / cols;
+    uint32_t cell_height = properties->cell_height;
+    PangoLayout* layout = pango_cairo_create_layout(cairo->cr);
+    PangoFontDescription* fontDesc = pango_font_description_from_string(properties->font);
+
+    pango_layout_set_font_description(layout, fontDesc);
+    pango_font_description_free(fontDesc);
+
+    if (!setSourceRgba(WK_COLOR_FOREGROUND)) goto fail;
+
+    for (uint32_t i = 0; i < cols; i++)
+    {
+        uint32_t x = startx + (i * cell_width) + wpadding;
+        for (uint32_t j = 0; j < rows; j++)
+        {
+            uint32_t y = starty + (j * cell_height) + hpadding;
+            uint32_t idx = (rows * i) + j;
+            if (idx > properties->chordCount)
+            {
+                errorMsg(
+                    "Tried drawing chords at index '%d' when chords end at '%d'.",
+                    idx, properties->chordCount
+                );
+                goto fail;
+            }
+            drawHintText(layout, properties->chords[idx].hint, cell_width - (wpadding * 2));
+            cairo_move_to(cairo->cr, x, y);
+            pango_cairo_show_layout(cairo->cr, layout);
+        }
+    }
+
+    g_object_unref(layout);
+    return true;
+
+fail:
+    g_object_unref(layout);
+    return false;
 }
 
 void
-cairoPaint(
-    Cairo* cairo,
-    uint32_t width,
-    uint32_t maxHeight,
-    WkProperties* properties,
-    CairoPaintResult* outResult
-)
+cairoPaint(Cairo* cr, WkProperties* props)
 {
-    assert(cairo && properties && outResult);
+    assert(cr && props);
 
-    maxHeight /= cairo->scale;
+    cairo = cr;
+    properties = props;
+    width = props->width;
+    height = props->height;
 
-    memset(outResult, 0, sizeof(CairoPaintResult));
-    outResult->displayed = 1;
+    height /= cairo->scale;
 
-    CairoPaint paint = {0};
-    paint.font = properties->font;
+    if (!drawBackground())
+    {
+        errorMsg("Could not draw background.");
+        goto fail;
+    }
 
-    CairoResult result = {0};
-    uint32_t asciiHeight;
-    pangoGetTextExtents(cairo, &paint, &result, "!\"#$%%&'()*+,-./0123456789:;<=>?@ABCD"
-                        "EFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
+    if (!drawBorder())
+    {
+        errorMsg("Could not draw border.");
+        goto fail;
+    }
 
-    asciiHeight = result.height;
-    paint.baseline = result.baseline;
+    if (!drawGrid())
+    {
+        errorMsg("Could not draw grid.");
+        goto fail;
+    }
 
-    size_t borderWidth = properties->borderWidth;
-    width -= borderWidth;
-    uint32_t height = MIN(asciiHeight, maxHeight);
-    uint32_t vpadding = (height - asciiHeight) / 2;
-    /* double borderRadius = 0; /\* TODO decide if there should be support for curved borders...curved...borders. *\/ */
-    uint32_t chordsCount = countChords(properties->chords);
-
-    cairo_set_source_rgba(cairo->cr, 0, 0, 0, 0);
-    cairo_rectangle(cairo->cr, 0, 0, width, height);
-
-    cairo_save(cairo->cr);
-    cairo_set_operator(cairo->cr, CAIRO_OPERATOR_CLEAR);
-    cairo_paint(cairo->cr);
-    cairo_restore(cairo->cr);
-
-    /* uint32_t count; */
-    uint32_t rows = 0;
-    uint32_t cols = 0;
-    calculateGrid(chordsCount, properties->maxCols, &rows, &cols); /* rows i.e. lines */
-
-    memset(&result, 0, sizeof(result));
-    setColors(&paint, properties->colors);
-
-    paint.pos = (struct pos){ 0 + result.xAdvance + borderWidth, vpadding + borderWidth };
-    paint.box = (struct box){ 4, 0, vpadding, -vpadding, width - paint.pos.x, height };
-
-    uint32_t titleh = (result.height > 0 ? result.height : height); /* FIXME no title sooo..... */
-    outResult->height = titleh;
-
-    /* uint32_t posy = titleh; */
-    /* uint32_t spacingX = 0; */
-    /* uint32_t spacingY = 0; */
+fail:
+    return;
 }
