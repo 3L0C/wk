@@ -54,21 +54,15 @@ isKey(const Chord* chord, Key* key)
 }
 
 static bool
-testCommand(const char* cmd)
-{
-    return *cmd != '\0';
-}
-
-static bool
 testHook(const Chord* chord, bool nohook)
 {
-    return (!chord->unhook && !nohook && testCommand(chord->command));
+    return (!chord->unhook && !nohook && chord->command);
 }
 
 static void
 setBeforeHook(Chord* chord, const char* hook)
 {
-    if (testCommand(hook) && testHook(chord, chord->nobefore))
+    if (hook && testHook(chord, chord->nobefore))
     {
         chord->before = hook;
     }
@@ -77,7 +71,7 @@ setBeforeHook(Chord* chord, const char* hook)
 static void
 setAfterHook(Chord* chord, const char* hook)
 {
-    if (testCommand(hook) && testHook(chord, chord->noafter))
+    if (hook && testHook(chord, chord->noafter))
     {
         chord->after = hook;
     }
@@ -86,7 +80,7 @@ setAfterHook(Chord* chord, const char* hook)
 static void
 setHooks(const Chord* chord)
 {
-    if (!testCommand(chord->before) || !testCommand(chord->after)) return;
+    if (!chord->before || !chord->after) return;
 
     Chord* chords = chord->chords;
     for (int i = 0; chords[i].key; i++)
@@ -97,25 +91,24 @@ setHooks(const Chord* chord)
 }
 
 static WkStatus
-pressKey(WkProperties* props, const Chord* chord)
+handlePrefix(WkProperties* props, const Chord* chord)
 {
-    /* TODO handle other exec paths like keep open, and write
-     * probably best to break out the command execution into a separate function. */
-    /* prefix */
-    if (chord->chords != NULL)
-    {
-        setHooks(chord);
-        props->chords = chord->chords;
-        debugMsg(props->debug, "Found prefix.");
-        return WK_STATUS_DAMAGED;
-    }
+    setHooks(chord);
+    props->chords = chord->chords;
+    debugMsg(props->debug, "Found prefix.");
+    return WK_STATUS_DAMAGED;
+}
+
+static WkStatus
+handleCommand(WkProperties* props, const Chord* chord)
+{
     /* before */
-    if (testCommand(chord->before))
+    if (chord->before)
     {
         spawnAsync(props->shell, chord->before, props->cleanupfp, props->xp);
     }
     /* command with after hook */
-    if (testCommand(chord->command) && testCommand(chord->after))
+    if (chord->command && chord->after)
     {
         debugMsg(props->debug, "Found command.");
         spawnAsync(props->shell, chord->command, props->cleanupfp, props->xp);
@@ -123,7 +116,7 @@ pressKey(WkProperties* props, const Chord* chord)
         return WK_STATUS_EXIT_OK;
     }
     /* command no hook */
-    if (testCommand(chord->command))
+    if (chord->command)
     {
         debugMsg(props->debug, "Found command.");
         spawn(props->shell, chord->command);
@@ -131,6 +124,15 @@ pressKey(WkProperties* props, const Chord* chord)
     }
     debugMsg(props->debug, "No match.");
     return WK_STATUS_EXIT_SOFTWARE;
+}
+
+static WkStatus
+pressKey(WkProperties* props, const Chord* chord)
+{
+    assert(props && chord);
+
+    if (chord->chords) return handlePrefix(props, chord);
+    return handleCommand(props, chord);
 }
 
 WkStatus
