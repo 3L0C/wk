@@ -43,11 +43,8 @@ typedef struct Chord
     const char* description;
     const char* hint;
     const char* command;
-    const int commandlen;
     const char* before;
-    const int beforelen;
     const char* after;
-    const int afterlen;
     const bool keep;
     const bool unhook;
     const bool nobefore;

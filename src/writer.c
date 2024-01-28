@@ -23,8 +23,8 @@ writeChordsHeader(void)
     printf("#include \"lib/common.h\"\n");
     printf("#include \"lib/types.h\"\n");
     printf("\n");
-    printf("/*                    mods,        special,         key,  desc, hint, command,  clen, before, blen, after, alen, keep,  unhook, nobefore, noafter, write, chords */\n");
-    printf("#define NULL_CHORD  { WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL, NULL,     0,    NULL,   0,    NULL,  0,    false, false,  false,    false,   false, NULL }\n");
+    printf("/*                    mods,        special,         key,  desc, hint, command,  before, after, keep,  unhook, nobefore, noafter, write, chords */\n");
+    printf("#define NULL_CHORD  { WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL, NULL,     NULL,   NULL,  false, false,  false,    false,   false, NULL }\n");
     printf("#define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }\n");
     printf("#define CHORDS(...) { __VA_ARGS__, NULL_CHORD }\n");
     printf("\n");
@@ -218,17 +218,14 @@ writeChordLine(Line* line, int indent)
     /* command */
     printf("%*s", indent * 4, " ");
     writeChordString(&line->command, line);
-    printf("-1, ");
 
     /* before */
     printf("\n%*s", indent * 4, " ");
     writeChordString(&line->before, line);
-    printf("-1, ");
 
     /* after */
     printf("\n%*s", indent * 4, " ");
     writeChordString(&line->after, line);
-    printf("-1, ");
 
     /* flags */
     printf("\n%*s", indent * 4, " ");

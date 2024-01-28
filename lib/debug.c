@@ -30,7 +30,7 @@ debugMod(unsigned int mod)
 {
     if (!IS_MOD(mod))
     {
-        printf("mods                NONE\n");
+        printf("mods                NONE|%u\n", mod);
         return;
     }
 
@@ -46,6 +46,7 @@ debugMod(unsigned int mod)
     {
         printf("%s%s", mods[i], (i + 1 == idx) ? "\n" : "|");
     }
+    printf("%u", mod);
 }
 
 static void
@@ -56,15 +57,16 @@ debugPointer(const char* text, const void* value)
     printf("%s%*s%s\n", text, (max - len) > 0 ? max - len : 1, " ", value ? "(not null)" : "(null)");
 }
 
-static void
+static bool
 debugSpecial(SpecialType special)
 {
     printf("special             ");
     const char* text = NULL;
+    bool flag = true;
 
     switch (special)
     {
-    case WK_SPECIAL_NONE:       text = "WK_SPECIAL_NONE";       break;
+    case WK_SPECIAL_NONE:       text = "WK_SPECIAL_NONE";       flag = false; break;
     case WK_SPECIAL_LEFT:       text = "WK_SPECIAL_LEFT";       break;
     case WK_SPECIAL_RIGHT:      text = "WK_SPECIAL_RIGHT";      break;
     case WK_SPECIAL_UP:         text = "WK_SPECIAL_UP";         break;
@@ -79,10 +81,11 @@ debugSpecial(SpecialType special)
     case WK_SPECIAL_PAGE_DOWN:  text = "WK_SPECIAL_PAGE_DOWN";  break;
     case WK_SPECIAL_END:        text = "WK_SPECIAL_END";        break;
     case WK_SPECIAL_BEGIN:      text = "WK_SPECIAL_BEGIN";      break;
-    default: text = "UNKNOWN";
+    default: text = "UNKNOWN"; flag = false; break;
     }
 
-    printf("%s\n", text);
+    printf("%s|%d\n", text, special);
+    return flag;
 }
 
 static void
@@ -210,8 +213,14 @@ debugKey(const Key* key)
 {
     printf("----- Beg Key ------\n");
     debugMod(key->mods);
-    debugSpecial(key->special);
-    debugString("key", key->key);
+    if (debugSpecial(key->special))
+    {
+        printf("key                 SPECIAL\n");
+    }
+    else
+    {
+        debugString("key", key->key);
+    }
     debugInt("len", key->len);
     printf("----- End Key ------\n");
 }

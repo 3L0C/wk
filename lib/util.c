@@ -93,36 +93,29 @@ setHooks(const Chord* chord)
 static WkStatus
 handlePrefix(WkProperties* props, const Chord* chord)
 {
+    debugMsg(props->debug, "Found prefix.");
+
     setHooks(chord);
     props->chords = chord->chords;
-    debugMsg(props->debug, "Found prefix.");
     return WK_STATUS_DAMAGED;
 }
 
 static WkStatus
 handleCommand(WkProperties* props, const Chord* chord)
 {
-    /* before */
-    if (chord->before)
+    /* no command */
+    if (!chord->command) return WK_STATUS_EXIT_OK;
+
+    if (chord->before) spawnAsync(props, chord->before);
+    if (chord->after)
     {
-        spawnAsync(props->shell, chord->before, props->cleanupfp, props->xp);
+        spawnAsync(props, chord->command);
+        spawnAsync(props, chord->after);
     }
-    /* command with after hook */
-    if (chord->command && chord->after)
+    else
     {
-        debugMsg(props->debug, "Found command.");
-        spawnAsync(props->shell, chord->command, props->cleanupfp, props->xp);
-        spawnAsync(props->shell, chord->after, props->cleanupfp, props->xp);
-        return WK_STATUS_EXIT_OK;
-    }
-    /* command no hook */
-    if (chord->command)
-    {
-        debugMsg(props->debug, "Found command.");
         spawn(props->shell, chord->command);
-        return WK_STATUS_EXIT_OK;
     }
-    debugMsg(props->debug, "No match.");
     return WK_STATUS_EXIT_SOFTWARE;
 }
 
@@ -189,15 +182,14 @@ fail:
 }
 
 WkStatus
-spawnAsync(const char* shell, const char* cmd, CleanupFP fp, void* xp)
+spawnAsync(WkProperties* props, const char* cmd)
 {
-    WkStatus result = WK_STATUS_EXIT_OK;
     if (fork() == 0) {
-        if (xp && fp) fp(xp);
-        result = spawn(shell, cmd);
+        if (props->xp && props->cleanupfp) props->cleanupfp(props->xp);
+        spawn(props->shell, cmd);
         exit(EX_OK);
     }
     wait(NULL);
-    return result;
+    return WK_STATUS_EXIT_OK;
 }
 

@@ -14,7 +14,7 @@ void countChords(WkProperties* props);
 WkStatus handleKeypress(WkProperties* props, Key* key);
 bool isUtf8StartByte(char byte);
 WkStatus spawn(const char* shell, const char* cmd);
-WkStatus spawnAsync(const char* shell, const char* cmd, CleanupFP fp, void* xp);
+WkStatus spawnAsync(WkProperties* props, const char* cmd);
 
 #endif /* WK_LIB_UTIL_H_ */
 
