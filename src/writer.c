@@ -23,16 +23,11 @@ writeChordsHeader(void)
     printf("#include \"lib/common.h\"\n");
     printf("#include \"lib/types.h\"\n");
     printf("\n");
-    printf("/*                    mods,        special,         key,  desc, hint, command,  before, after, keep,  unhook, nobefore, noafter, write, chords */\n");
-    printf("#define NULL_CHORD  { WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL, NULL,     NULL,   NULL,  false, false,  false,    false,   false, NULL }\n");
-    printf("#define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }\n");
-    printf("#define CHORDS(...) { __VA_ARGS__, NULL_CHORD }\n");
-    printf("\n");
     printf("/* mods,    specials,  key,    description,   hint, */\n");
-    printf("/* command, clen */\n");
-    printf("/* before, blen */\n");
-    printf("/* after, alen */\n");
-    printf("/* keep,    unhook,    nobefore,    noafter,    write,    chords */\n");
+    printf("/* command */\n");
+    printf("/* before */\n");
+    printf("/* after */\n");
+    printf("/* keep, unhook, nobefore, noafter, write, async, chords */\n");
     printf("const Chord chords[] = CHORDS(\n");
 }
 
@@ -234,6 +229,7 @@ writeChordLine(Line* line, int indent)
     writeChordBool(line->nobefore);
     writeChordBool(line->noafter);
     writeChordBool(line->write);
+    writeChordBool(line->async);
 
     /* prefix */
     if (line->array.count != 0)

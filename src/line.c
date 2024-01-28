@@ -27,6 +27,7 @@ initLine(Line* line)
     line->nobefore      = false;
     line->noafter       = false;
     line->write         = false;
+    line->async         = false;
     initLineArray(&line->array);
 }
 
@@ -74,6 +75,7 @@ copyLine(Line* from, Line* to)
     to->nobefore      = from->nobefore;
     to->noafter       = from->noafter;
     to->write         = from->write;
+    to->async         = from->async;
     copyLineArray(&from->array, &to->array);
 }
 

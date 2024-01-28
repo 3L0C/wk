@@ -30,6 +30,7 @@ struct Line
     bool        nobefore;
     bool        noafter;
     bool        write;
+    bool        async;
     LineArray   array;
 };
 

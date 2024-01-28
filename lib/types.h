@@ -16,6 +16,23 @@
 #define IS_HYPER(mod)   (((mod) & WK_MOD_HYPER) == WK_MOD_HYPER)
 #define IS_SHIFT(mod)   (((mod) & WK_MOD_SHIFT) == WK_MOD_SHIFT)
 
+#define NULL_CHORD  \
+    {                                                       \
+    /*  mods,        special,         key,  desc, hint, */  \
+        WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL,     \
+    /*  command, */                                         \
+        NULL,                                               \
+    /*  before, */                                          \
+        NULL,                                               \
+    /*  after, */                                           \
+        NULL,                                               \
+    /*  keep,  unhook, nobefore, noafter, write, async, */  \
+        false, false,  false,    false,   false, false,     \
+        NULL                                                \
+    }
+#define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }
+#define CHORDS(...) { __VA_ARGS__, NULL_CHORD }
+
 typedef enum
 {
     WK_SPECIAL_NONE,
@@ -50,6 +67,7 @@ typedef struct Chord
     const bool nobefore;
     const bool noafter;
     const bool write;
+    const bool async;
     struct Chord* chords;
 } Chord;
 

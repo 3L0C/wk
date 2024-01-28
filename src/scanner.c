@@ -165,7 +165,10 @@ identifierType(Scanner* scanner)
 {
     switch (*scanner->start)
     {
-    case 'a': return checkKeyword(scanner, 1, 4, "fter",    TOKEN_AFTER);
+    case 'a':
+        if (isKeyword(scanner, 1, 4, "fter"))       return TOKEN_AFTER;
+        if (isKeyword(scanner, 1, 4, "sync"))       return TOKEN_INDEX;
+        break;
     case 'b': return checkKeyword(scanner, 1, 5, "efore",   TOKEN_BEFORE);
     case 'i':
         if (isKeyword(scanner, 1, 6, "ndex+1"))     return TOKEN_INDEX_ONE;

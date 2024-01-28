@@ -300,6 +300,7 @@ keywords(Compiler* compiler)
         case TOKEN_NO_BEFORE:   compiler->line.nobefore = true; break;
         case TOKEN_NO_AFTER:    compiler->line.noafter  = true; break;
         case TOKEN_WRITE:       compiler->line.write    = true; break;
+        case TOKEN_ASYNC:       compiler->line.async    = true; break;
         default: return; /* not a keyword but not an error */
         }
         /* consume keyword */
