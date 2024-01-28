@@ -240,4 +240,3 @@ spawn(WkProperties* props, const char* cmd, bool async)
     wait(NULL);
     return WK_STATUS_EXIT_OK;
 }
-
