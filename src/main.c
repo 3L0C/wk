@@ -7,6 +7,7 @@
 #include "lib/common.h"
 #include "lib/debug.h"
 #include "lib/memory.h"
+#include "lib/util.h"
 #include "lib/window.h"
 
 #include "chords.h"

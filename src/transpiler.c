@@ -435,6 +435,10 @@ setHooks(Compiler* compiler)
     Line* parent = &compiler->linePrefix->lines[compiler->linePrefix->count - 1];
     LineArray* children = compiler->lineDest;
 
+    /* TODO do not overwrite prefixes
+     * Might want to implement an INHERIT flag
+     * so that prefixes can take on parent flags
+     */
     for (size_t i = 0; i < children->count; i++)
     {
         Line* child = &children->lines[i];

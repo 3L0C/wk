@@ -7,6 +7,6 @@ e 'Echo keys' :before ${{echo first}} :after ${{echo last}}
 t 'Tag & follow' :before ${{dwmc viewex %(index)}}
 {
     [arstneio] 'Tag %(index+1)' :keep ${{
-        st
+        notify-send "dwmc" "Viewing tag %(index+1)"
     }}
 }

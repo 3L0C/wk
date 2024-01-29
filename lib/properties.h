@@ -57,6 +57,5 @@ typedef struct
 } WkProperties;
 
 void initProperties(WkProperties* props, Client* client);
-void pressKeys(WkProperties* props, const char* keys);
 
 #endif /* WK_LIB_PROPERTIES_H_ */

@@ -177,6 +177,12 @@ isUtf8StartByte(char byte)
     return (byte & 0xC0) != 0x80;
 }
 
+void
+pressKeys(WkProperties* props, const char* keys)
+{
+    return;
+}
+
 static WkStatus
 spawnSync(const char* shell, const char* cmd)
 {

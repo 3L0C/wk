@@ -86,9 +86,3 @@ initProperties(WkProperties* props, Client* client)
     props->xp = NULL;
 }
 
-void
-pressKeys(WkProperties* props, const char* keys)
-{
-    assert(props);
-    if (!keys) return;
-}

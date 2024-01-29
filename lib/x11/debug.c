@@ -7,23 +7,23 @@
 static void
 debugRootDispaly(struct display* root)
 {
-    printf("| Root x:             %u\n", root->x);
-    printf("| Root y:             %u\n", root->y);
-    printf("| Root width:         %u\n", root->w);
-    printf("| Root height:        %u\n", root->h);
+    printf("[DEBUG] | Root x:             %u\n", root->x);
+    printf("[DEBUG] | Root y:             %u\n", root->y);
+    printf("[DEBUG] | Root width:         %u\n", root->w);
+    printf("[DEBUG] | Root height:        %u\n", root->h);
 }
 
 void
 debugWindow(WkX11Window* window)
 {
-    printf("--------------- WkX11Window ----------------\n");
-    printf("| Window x:           %u\n", window->x);
-    printf("| Window y:           %u\n", window->y);
-    printf("| Window width:       %u\n", window->width);
-    printf("| Window height:      %u\n", window->height);
-    printf("| Window border:      %u\n", window->border);
-    printf("| Window max height:  %u\n", window->maxHeight);
+    printf("[DEBUG] --------------- WkX11Window ----------------\n");
+    printf("[DEBUG] | Window x:           %u\n", window->x);
+    printf("[DEBUG] | Window y:           %u\n", window->y);
+    printf("[DEBUG] | Window width:       %u\n", window->width);
+    printf("[DEBUG] | Window height:      %u\n", window->height);
+    printf("[DEBUG] | Window border:      %u\n", window->border);
+    printf("[DEBUG] | Window max height:  %u\n", window->maxHeight);
     debugRootDispaly(&window->root);
     debugCairoPaint(&window->paint);
-    printf("--------------------------------------------\n");
+    printf("[DEBUG] --------------------------------------------\n");
 }

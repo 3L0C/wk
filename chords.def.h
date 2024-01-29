@@ -84,56 +84,56 @@ const Chord chords[] = CHORDS(
         PREFIX(
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "a", "Tag 1", "a -> Tag 1",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 1\"", 
                 "dwmc viewex 0", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "r", "Tag 2", "r -> Tag 2",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 2\"", 
                 "dwmc viewex 1", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "s", "Tag 3", "s -> Tag 3",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 3\"", 
                 "dwmc viewex 2", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "t", "Tag 4", "t -> Tag 4",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 4\"", 
                 "dwmc viewex 3", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "n", "Tag 5", "n -> Tag 5",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 5\"", 
                 "dwmc viewex 4", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "e", "Tag 6", "e -> Tag 6",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 6\"", 
                 "dwmc viewex 5", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "i", "Tag 7", "i -> Tag 7",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 7\"", 
                 "dwmc viewex 6", 
                 NULL, 
                 WK_FLAG_KEEP, NULL
             },
             {
                 WK_MOD_NONE, WK_SPECIAL_NONE, "o", "Tag 8", "o -> Tag 8",
-                "st", 
+                "notify-send \"dwmc\" \"Viewing tag 8\"", 
                 "dwmc viewex 7", 
                 NULL, 
                 WK_FLAG_KEEP, NULL

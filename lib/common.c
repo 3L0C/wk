@@ -20,7 +20,7 @@ warnMsg(const char* fmt, ...)
     vfprintf(stderr, format, ap);
     va_end(ap);
 
-    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len - 2] == ':' ? ' ' : '\n'), stderr);
 }
 
 void
@@ -38,5 +38,5 @@ errorMsg(const char* fmt, ...)
     vfprintf(stderr, format, ap);
     va_end(ap);
 
-    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len - 2] == ':' ? ' ' : '\n'), stderr);
 }
