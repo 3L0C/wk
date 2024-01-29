@@ -110,11 +110,11 @@ printMods(int mod)
 {
     if (!IS_MOD(mod))
     {
-        printf("MODS: NONE\n");
+        printf("\tMods: WK_MOD_NONE\n");
         return;
     }
 
-    printf("MODS: ");
+    printf("\tMods: ");
     const char* mods[4];
     int idx = 0;
     if (IS_CTRL(mod)) mods[idx++] = "WK_MOD_CTRL";
@@ -141,19 +141,40 @@ printTokenArray(Line* line, TokenArray* array, const char* message)
 {
     printf("\t");
     printf("%s: ", message);
-    if (array->count == 0) printf("NONE");
+    if (array->count == 0) printf("None");
     for (size_t i = 0; i < array->count; i++)
     {
-        Token token = array->tokens[i];
-        switch (token.type)
+        Token* token = &array->tokens[i];
+        switch (token->type)
         {
         case TOKEN_INDEX:       printf("%d", line->index); break;
         case TOKEN_INDEX_ONE:   printf("%d", line->index + 1); break;
         case TOKEN_THIS_KEY:    printf("%.*s", (int)line->key.length, line->key.start); break;
-        default: printf("%.*s", (int)array->tokens[i].length, array->tokens[i].start); break;
+        default: printf("%.*s", (int)token->length, token->start); break;
         }
     }
     printf("\n");
+}
+
+static void
+printFlags(WkFlags flags)
+{
+    if (flags == 0)
+    {
+        printf("\tFlags: WK_FLAG_DEFAULTS|%d\n", flags);
+        return;
+    }
+
+    printf("\tFlags: ");
+    if (IS_FLAG(flags, WK_FLAG_KEEP)) printf("WK_FLAG_KEEP|");
+    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) printf("WK_FLAG_UNHOOK|");
+    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) printf("WK_FLAG_NOBEFORE|");
+    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) printf("WK_FLAG_NOAFTER|");
+    if (IS_FLAG(flags, WK_FLAG_WRITE)) printf("WK_FLAG_WRITE|");
+    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) printf("WK_FLAG_SYNC_COMMAND|");
+    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) printf("WK_FLAG_BEFORE_ASYNC|");
+    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) printf("WK_FLAG_AFTER_SYNC|");
+    printf("%d\n", flags);
 }
 
 void
@@ -161,38 +182,15 @@ disassembleLine(Line* line, size_t index)
 {
     assert(line);
 
-    printf("[%04zu]  LINE\n", index);
-    /* int         index; */
-    printf("\tINDEX: %04d | ", line->index);
-    /* flag        keep; */
-    printf("KEEP: %s | ", (IS_FLAG(line->flags, WK_FLAG_KEEP) ? "True" : "False"));
-    /* flag        unhook; */
-    printf("UNHOOK: %s | ", (IS_FLAG(line->flags, WK_FLAG_UNHOOK) ? "True" : "False"));
-    /* flag        nobefore; */
-    printf("NOBEFORE: %s | ", (IS_FLAG(line->flags, WK_FLAG_NOBEFORE) ? "True" : "False"));
-    /* flag        noafter; */
-    printf("NOAFTER: %s | ", (IS_FLAG(line->flags, WK_FLAG_NOAFTER) ? "True" : "False"));
-    /* flag        write; */
-    printf("WRITE: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
-    /* flag        sync command; */
-    printf("SYNC_COMMAND: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
-    /* flag        before async; */
-    printf("BEFORE_ASYNC: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
-    /* flag        after async; */
-    printf("AFTER_SYNC: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
-    /* int         mods; */
+    printf("[%04zu]  Line\n", index);
+    printf("\tIndex: %04d\n", line->index);
+    printFlags(line->flags);
     printMods(line->mods);
-    /* Token       key; */
-    printToken(line->key, "KEY");
-    /* TokenArray  description; */
-    printTokenArray(line, &line->description, "DESCRIPTION");
-    /* TokenArray  command; */
-    printTokenArray(line, &line->command, "COMMAND");
-    /* TokenArray  before; */
-    printTokenArray(line, &line->before, "BEFORE");
-    /* TokenArray  after; */
-    printTokenArray(line, &line->after, "AFTER");
-    /* LineArray   array; */
+    printToken(line->key, "Key");
+    printTokenArray(line, &line->description, "Description");
+    printTokenArray(line, &line->command, "Command");
+    printTokenArray(line, &line->before, "Before");
+    printTokenArray(line, &line->after, "After");
     debugLineArray(&line->array);
 }
 

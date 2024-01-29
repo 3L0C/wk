@@ -516,6 +516,8 @@ transpileChords(const char* source, const char* delimiter, bool debugFlag)
         keyChord(&compiler);
     }
 
+    if (debug) debugLineArray(&compiler.lines);
+
     if (!compiler.hadError)
     {
         writeChords(&compiler.lines, delimiter);
