@@ -46,7 +46,7 @@ isAlpha(const char c)
 {
     return ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') ||
-            c == '+';
+            c == '+' || c == '-' || c == '_';
 }
 
 static bool
@@ -167,9 +167,12 @@ identifierType(Scanner* scanner)
     {
     case 'a':
         if (isKeyword(scanner, 1, 4, "fter"))       return TOKEN_AFTER;
-        if (isKeyword(scanner, 1, 4, "sync"))       return TOKEN_ASYNC;
+        if (isKeyword(scanner, 1, 10, "fter-sync")) return TOKEN_AFTER_SYNC;
         break;
-    case 'b': return checkKeyword(scanner, 1, 5, "efore",   TOKEN_BEFORE);
+    case 'b':
+        if (isKeyword(scanner, 1, 5, "efore"))          return TOKEN_BEFORE;
+        if (isKeyword(scanner, 1, 11, "efore-async"))   return TOKEN_BEFORE_ASYNC;
+        break;
     case 'i':
         if (isKeyword(scanner, 1, 6, "ndex+1"))     return TOKEN_INDEX_ONE;
         if (isKeyword(scanner, 1, 4, "ndex"))       return TOKEN_INDEX;
@@ -179,11 +182,12 @@ identifierType(Scanner* scanner)
         if (isKeyword(scanner, 1, 2, "ey"))         return TOKEN_THIS_KEY;
         break;
     case 'n':
-        if (isKeyword(scanner, 1, 6, "oafter"))     return TOKEN_NO_AFTER;
-        if (isKeyword(scanner, 1, 7, "obefore"))    return TOKEN_NO_BEFORE;
+        if (isKeyword(scanner, 1, 7, "o-after"))    return TOKEN_NO_AFTER;
+        if (isKeyword(scanner, 1, 8, "o-before"))   return TOKEN_NO_BEFORE;
         break;
+    case 's': return checkKeyword(scanner, 1, 3, "ync", TOKEN_SYNC_CMD);
     case 'u': return checkKeyword(scanner, 1, 5, "nhook", TOKEN_UNHOOK);
-    case 'w': return checkKeyword(scanner, 1, 4, "rite",  TOKEN_WRITE);
+    case 'w': return checkKeyword(scanner, 1, 4, "rite", TOKEN_WRITE);
     }
     return TOKEN_ERROR;
 }

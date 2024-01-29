@@ -294,16 +294,26 @@ keywords(Compiler* compiler)
             consume(compiler, TOKEN_BEFORE, "Expected 'before' keyword.");
             command(compiler, &compiler->line.before);
             break;
+        case TOKEN_BEFORE_ASYNC:
+            consume(compiler, TOKEN_BEFORE_ASYNC, "Expect 'before-async' keyword.");
+            command(compiler, &compiler->line.before);
+            compiler->line.flags |= WK_FLAG_BEFORE_ASYNC;
+            break;
         case TOKEN_AFTER:
             consume(compiler, TOKEN_AFTER, "Expected 'after' keyword.");
             command(compiler, &compiler->line.after);
             break;
-        case TOKEN_KEEP:        compiler->line.keep     = true; break;
-        case TOKEN_UNHOOK:      compiler->line.unhook   = true; break;
-        case TOKEN_NO_BEFORE:   compiler->line.nobefore = true; break;
-        case TOKEN_NO_AFTER:    compiler->line.noafter  = true; break;
-        case TOKEN_WRITE:       compiler->line.write    = true; break;
-        case TOKEN_ASYNC:       compiler->line.async    = true; break;
+        case TOKEN_AFTER_SYNC:
+            consume(compiler, TOKEN_AFTER_SYNC, "Expect 'after-sync' keyword.");
+            command(compiler, &compiler->line.after);
+            compiler->line.flags |= WK_FLAG_AFTER_SYNC;
+            break;
+        case TOKEN_KEEP:            compiler->line.flags |= WK_FLAG_KEEP; break;
+        case TOKEN_UNHOOK:          compiler->line.flags |= WK_FLAG_UNHOOK; break;
+        case TOKEN_NO_BEFORE:       compiler->line.flags |= WK_FLAG_NOBEFORE; break;
+        case TOKEN_NO_AFTER:        compiler->line.flags |= WK_FLAG_NOAFTER; break;
+        case TOKEN_WRITE:           compiler->line.flags |= WK_FLAG_WRITE; break;
+        case TOKEN_SYNC_CMD:        compiler->line.flags |= WK_FLAG_SYNC_COMMAND; break;
         default: return; /* not a keyword but not an error */
         }
         /* consume keyword */
@@ -398,6 +408,42 @@ chordArray(Compiler* compiler)
 }
 
 static void
+setBeforeHook(Line* parent, Line* child)
+{
+    assert(parent && child);
+
+    if (parent->before.count == 0) return;
+    if (child->before.count) return;
+    freeTokenArray(&child->before);
+    copyTokenArray(&parent->before, &child->before);
+}
+
+static void
+setAfterHook(Line* parent, Line* child)
+{
+    assert(parent && child);
+
+    if (parent->after.count == 0) return;
+    if (child->after.count) return;
+    freeTokenArray(&child->after);
+    copyTokenArray(&parent->after, &child->after);
+}
+
+static void
+setHooks(Compiler* compiler)
+{
+    Line* parent = &compiler->linePrefix->lines[compiler->linePrefix->count - 1];
+    LineArray* children = compiler->lineDest;
+
+    for (size_t i = 0; i < children->count; i++)
+    {
+        Line* child = &children->lines[i];
+        setBeforeHook(parent, child);
+        setAfterHook(parent, child);
+    }
+}
+
+static void
 prefix(Compiler* compiler)
 {
     /* backup information */
@@ -415,6 +461,7 @@ prefix(Compiler* compiler)
         keyChord(compiler);
     }
     consume(compiler, TOKEN_RIGHT_BRACE, "Expect '}' after prefix.");
+    setHooks(compiler);
     compiler->linePrefix = parent;
     compiler->lineDest = dest;
 }

@@ -12,8 +12,9 @@ typedef struct
     size_t count;
 } TokenArray;
 
-void initTokenArray(TokenArray* array);
 void copyTokenArray(TokenArray* from, TokenArray* to);
+void initTokenArray(TokenArray* array);
+void freeTokenArray(TokenArray* array);
 void writeTokenArray(TokenArray* array, Token* token);
 
 #endif /* WK_TOKEN_H_ */

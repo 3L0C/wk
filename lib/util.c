@@ -47,6 +47,24 @@ countChords(WkProperties* props)
     while (chords[*count].key) (*count)++;
 }
 
+int
+countFlags(WkFlags flags)
+{
+    int result = 0;
+
+    if (!flags) return 0;
+    if (IS_FLAG(flags, WK_FLAG_KEEP)) result++;
+    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) result++;
+    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) result++;
+    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) result++;
+    if (IS_FLAG(flags, WK_FLAG_WRITE)) result++;
+    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) result++;
+    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) result++;
+    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) result++;
+
+    return result;
+}
+
 static bool
 isKey(const Chord* chord, Key* key)
 {
@@ -57,13 +75,13 @@ isKey(const Chord* chord, Key* key)
 static bool
 testHook(const Chord* chord, bool nohook)
 {
-    return (!chord->unhook && !nohook && chord->command);
+    return (!CHORD_FLAG(chord, WK_FLAG_UNHOOK) && !nohook && chord->command);
 }
 
 static void
 setBeforeHook(Chord* chord, const char* hook)
 {
-    if (hook && testHook(chord, chord->nobefore))
+    if (hook && testHook(chord, CHORD_FLAG(chord, WK_FLAG_NOBEFORE)))
     {
         chord->before = hook;
     }
@@ -72,7 +90,7 @@ setBeforeHook(Chord* chord, const char* hook)
 static void
 setAfterHook(Chord* chord, const char* hook)
 {
-    if (hook && testHook(chord, chord->noafter))
+    if (hook && testHook(chord, CHORD_FLAG(chord, WK_FLAG_NOAFTER)))
     {
         chord->after = hook;
     }
@@ -104,12 +122,12 @@ handlePrefix(WkProperties* props, const Chord* chord)
 static void
 handleCommand(WkProperties* props, const Chord* chord)
 {
-    if (chord->write)
+    if (CHORD_FLAG(chord, WK_FLAG_WRITE))
     {
         printf("%s\n", chord->command);
         return;
     }
-    spawn(props, chord->command, chord->async || chord->after != NULL);
+    spawn(props, chord->command, !CHORD_FLAG(chord, WK_FLAG_SYNC_COMMAND));
 }
 
 static WkStatus
@@ -118,10 +136,10 @@ handleCommands(WkProperties* props, const Chord* chord)
     /* no command */
     if (!chord->command) return WK_STATUS_EXIT_OK;
 
-    if (chord->before) spawn(props, chord->before, chord->async);
+    if (chord->before) spawn(props, chord->before, CHORD_FLAG(chord, WK_FLAG_BEFORE_ASYNC));
     handleCommand(props, chord);
-    if (chord->after) spawn(props, chord->after, chord->async);
-    return chord->keep ? WK_STATUS_DAMAGED : WK_STATUS_EXIT_OK;
+    if (chord->after) spawn(props, chord->after, !CHORD_FLAG(chord, WK_FLAG_AFTER_SYNC));
+    return CHORD_FLAG(chord, WK_FLAG_KEEP) ? WK_STATUS_DAMAGED : WK_STATUS_EXIT_OK;
 }
 
 static WkStatus

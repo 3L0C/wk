@@ -1,6 +1,12 @@
-m 'Tag & follow' :before ${{echo first}} :after ${{echo last}}
+e 'Echo keys' :before ${{echo first}} :after ${{echo last}}
 {
-    [\: C-S-RET aテrstg] 'Tag %(index+1)' :keep :async ${{
+    [\: C-S-RET aテrstg] 'Tag %(index+1)' ${{
         echo "%(key)"
+    }}
+}
+t 'Tag & follow' :before ${{dwmc viewex %(index)}}
+{
+    [arstneio] 'Tag %(index+1)' :keep ${{
+        st
     }}
 }

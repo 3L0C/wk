@@ -7,16 +7,6 @@
 #include "debug.h"
 #include "scanner.h"
 
-void
-initTokenArray(TokenArray* array)
-{
-    assert(array);
-
-    array->tokens = NULL;
-    array->capacity = 0;
-    array->count = 0;
-}
-
 static void
 copyToken(Token* from, Token* to)
 {
@@ -45,6 +35,24 @@ copyTokenArray(TokenArray* from, TokenArray* to)
     {
         copyToken(&from->tokens[i], &to->tokens[i]);
     }
+}
+
+void
+initTokenArray(TokenArray* array)
+{
+    assert(array);
+
+    array->tokens = NULL;
+    array->capacity = 0;
+    array->count = 0;
+}
+
+void
+freeTokenArray(TokenArray* array)
+{
+    assert(array);
+
+    FREE_ARRAY(Token, array->tokens, array->capacity);
 }
 
 void

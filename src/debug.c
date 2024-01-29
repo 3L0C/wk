@@ -164,16 +164,22 @@ disassembleLine(Line* line, size_t index)
     printf("[%04zu]  LINE\n", index);
     /* int         index; */
     printf("\tINDEX: %04d | ", line->index);
-    /* bool        keep; */
-    printf("KEEP: %s | ", (line->keep ? "True" : "False"));
-    /* bool        unhook; */
-    printf("UNHOOK: %s | ", (line->unhook ? "True" : "False"));
-    /* bool        nobefore; */
-    printf("NOBEFORE: %s | ", (line->nobefore ? "True" : "False"));
-    /* bool        noafter; */
-    printf("NOAFTER: %s | ", (line->noafter ? "True" : "False"));
-    /* bool        write; */
-    printf("WRITE: %s\n", (line->write ? "True" : "False"));
+    /* flag        keep; */
+    printf("KEEP: %s | ", (IS_FLAG(line->flags, WK_FLAG_KEEP) ? "True" : "False"));
+    /* flag        unhook; */
+    printf("UNHOOK: %s | ", (IS_FLAG(line->flags, WK_FLAG_UNHOOK) ? "True" : "False"));
+    /* flag        nobefore; */
+    printf("NOBEFORE: %s | ", (IS_FLAG(line->flags, WK_FLAG_NOBEFORE) ? "True" : "False"));
+    /* flag        noafter; */
+    printf("NOAFTER: %s | ", (IS_FLAG(line->flags, WK_FLAG_NOAFTER) ? "True" : "False"));
+    /* flag        write; */
+    printf("WRITE: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
+    /* flag        sync command; */
+    printf("SYNC_COMMAND: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
+    /* flag        before async; */
+    printf("BEFORE_ASYNC: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
+    /* flag        after async; */
+    printf("AFTER_SYNC: %s\n", (IS_FLAG(line->flags, WK_FLAG_WRITE) ? "True" : "False"));
     /* int         mods; */
     printMods(line->mods);
     /* Token       key; */

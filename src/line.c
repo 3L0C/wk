@@ -11,36 +11,6 @@
 #include "scanner.h"
 #include "token.h"
 
-void
-initLine(Line* line)
-{
-    assert(line);
-
-    line->index         = -1;
-    line->mods          = WK_MOD_NONE;
-    initTokenArray(&line->description);
-    initTokenArray(&line->command);
-    initTokenArray(&line->before);
-    initTokenArray(&line->after);
-    line->keep          = false;
-    line->unhook        = false;
-    line->nobefore      = false;
-    line->noafter       = false;
-    line->write         = false;
-    line->async         = false;
-    initLineArray(&line->array);
-}
-
-void
-initLineArray(LineArray* array)
-{
-    assert(array);
-
-    array->lines    = NULL;
-    array->capacity = 0;
-    array->count    = 0;
-}
-
 static void
 copyLineArray(LineArray* from, LineArray* to)
 {
@@ -63,38 +33,15 @@ copyLine(Line* from, Line* to)
 {
     assert(from && to);
 
-    to->index         = from->index;
-    to->mods          = from->mods;
-    to->key           = from->key;
+    to->index       = from->index;
+    to->mods        = from->mods;
+    to->key         = from->key;
     copyTokenArray(&from->description, &to->description);
     copyTokenArray(&from->command, &to->command);
     copyTokenArray(&from->before, &to->before);
     copyTokenArray(&from->after, &to->after);
-    to->keep          = from->keep;
-    to->unhook        = from->unhook;
-    to->nobefore      = from->nobefore;
-    to->noafter       = from->noafter;
-    to->write         = from->write;
-    to->async         = from->async;
+    to->flags       = from->flags;
     copyLineArray(&from->array, &to->array);
-}
-
-void
-writeLineArray(LineArray* array, Line* line)
-{
-    assert(array && line);
-
-    if (array->capacity < array->count + 1)
-    {
-        int oldCapacity = array->capacity;
-        array->capacity = GROW_CAPACITY(oldCapacity);
-        array->lines = GROW_ARRAY(
-            Line, array->lines, oldCapacity, array->capacity
-        );
-    }
-
-    copyLine(line, &array->lines[array->count]);
-    array->count++;
 }
 
 void
@@ -102,10 +49,10 @@ freeLine(Line* line)
 {
     assert(line);
 
-    FREE_ARRAY(Token, line->description.tokens, line->description.capacity);
-    FREE_ARRAY(Token, line->command.tokens, line->command.capacity);
-    FREE_ARRAY(Token, line->before.tokens, line->before.capacity);
-    FREE_ARRAY(Token, line->after.tokens, line->after.capacity);
+    freeTokenArray(&line->description);
+    freeTokenArray(&line->command);
+    freeTokenArray(&line->before);
+    freeTokenArray(&line->after);
     freeLineArray(&line->array);
     initLine(line);
 }
@@ -124,6 +71,31 @@ freeLineArray(LineArray* array)
 }
 
 void
+initLine(Line* line)
+{
+    assert(line);
+
+    line->index         = -1;
+    line->mods          = WK_MOD_NONE;
+    initTokenArray(&line->description);
+    initTokenArray(&line->command);
+    initTokenArray(&line->before);
+    initTokenArray(&line->after);
+    line->flags         = WK_FLAG_DEFAULTS;
+    initLineArray(&line->array);
+}
+
+void
+initLineArray(LineArray* array)
+{
+    assert(array);
+
+    array->lines    = NULL;
+    array->capacity = 0;
+    array->count    = 0;
+}
+
+void
 printLineArray(LineArray* array)
 {
     assert(array);
@@ -132,4 +104,22 @@ printLineArray(LineArray* array)
     {
 
     }
+}
+
+void
+writeLineArray(LineArray* array, Line* line)
+{
+    assert(array && line);
+
+    if (array->capacity < array->count + 1)
+    {
+        int oldCapacity = array->capacity;
+        array->capacity = GROW_CAPACITY(oldCapacity);
+        array->lines = GROW_ARRAY(
+            Line, array->lines, oldCapacity, array->capacity
+        );
+    }
+
+    copyLine(line, &array->lines[array->count]);
+    array->count++;
 }

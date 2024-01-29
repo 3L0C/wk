@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "lib/types.h"
+#include "lib/util.h"
 
 #include "line.h"
 #include "scanner.h"
@@ -27,7 +28,7 @@ writeChordsHeader(void)
     printf("/* command */\n");
     printf("/* before */\n");
     printf("/* after */\n");
-    printf("/* keep, unhook, nobefore, noafter, write, async, chords */\n");
+    printf("/* flags, chords */\n");
     printf("const Chord chords[] = CHORDS(\n");
 }
 
@@ -55,12 +56,11 @@ static void
 writeChordMods(int mods)
 {
     int count = countMods(mods);
-    if (!IS_MOD(mods)) printf("WK_MOD_NONE");
-    if (IS_CTRL(mods)) printf("WK_MOD_CTRL%s", count-- > 1 ? "|" : "");
-    if (IS_ALT(mods)) printf("WK_MOD_ALT%s", count-- > 1 ? "|" : "");
-    if (IS_HYPER(mods)) printf("WK_MOD_HYPER%s", count-- > 1 ? "|" : "");
-    if (IS_SHIFT(mods)) printf("WK_MOD_SHIFT%s", count-- > 1 ? "|" : "");
-    printf(", ");
+    if (!IS_MOD(mods)) printf("WK_MOD_NONE, ");
+    if (IS_CTRL(mods)) printf("WK_MOD_CTRL%s", count-- > 1 ? "|" : ", ");
+    if (IS_ALT(mods)) printf("WK_MOD_ALT%s", count-- > 1 ? "|" : ", ");
+    if (IS_HYPER(mods)) printf("WK_MOD_HYPER%s", count-- > 1 ? "|" : ", ");
+    if (IS_SHIFT(mods)) printf("WK_MOD_SHIFT%s", count-- > 1 ? "|" : ", ");
 }
 
 static void
@@ -195,9 +195,23 @@ writeChordHint(Line* line)
 }
 
 static void
-writeChordBool(bool flag)
+writeChordFlags(WkFlags flags)
 {
-    printf("%s, ", flag ? "true" : "false");
+    int count = countFlags(flags);
+    if (count == 0)
+    {
+        printf("WK_FLAG_DEFAULTS, ");
+        return;
+    }
+
+    if (IS_FLAG(flags, WK_FLAG_KEEP)) printf("WK_FLAG_KEEP%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) printf("WK_FLAG_UNHOOK%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) printf("WK_FLAG_NOBEFORE%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) printf("WK_FLAG_NOAFTER%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_WRITE)) printf("WK_FLAG_WRITE%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) printf("WK_FLAG_SYNC_COMMAND%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) printf("WK_FLAG_BEFORE_ASYNC%s", count-- > 1 ? "|" : ", ");
+    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) printf("WK_FLAG_AFTER_SYNC%s", count-- > 1 ? "|" : ", ");
 }
 
 static void
@@ -224,12 +238,7 @@ writeChordLine(Line* line, int indent)
 
     /* flags */
     printf("\n%*s", indent * 4, " ");
-    writeChordBool(line->keep);
-    writeChordBool(line->unhook);
-    writeChordBool(line->nobefore);
-    writeChordBool(line->noafter);
-    writeChordBool(line->write);
-    writeChordBool(line->async);
+    writeChordFlags(line->flags);
 
     /* prefix */
     if (line->array.count != 0)

@@ -469,10 +469,10 @@ getSpecialKey(KeySym keysym)
     return WK_SPECIAL_NONE;
 }
 
-static unsigned int
-getKeyEventMods(unsigned int mod)
+static WkMod
+getKeyEventMods(WkMod mod)
 {
-    unsigned int result = 0;
+    WkMod result = 0;
     if (mod & ControlMask) result |= WK_MOD_CTRL;
     if (mod & Mod1Mask) result |= WK_MOD_ALT;
     if (mod & Mod4Mask) result |= WK_MOD_HYPER;

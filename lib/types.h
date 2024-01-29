@@ -3,18 +3,13 @@
 
 #include "common.h"
 
-#define WK_MOD_NONE     (1<<0)
-#define WK_MOD_CTRL     (1<<1)
-#define WK_MOD_ALT      (1<<2)
-#define WK_MOD_HYPER    (1<<3)
-#define WK_MOD_SHIFT    (1<<4)
-#define WK_MOD_ALL      (WK_MOD_CTRL|WK_MOD_ALT|WK_MOD_HYPER|WK_MOD_SHIFT)
-#define IS_MOD(mod)     ((mod) != WK_MOD_NONE && \
-                         ((mod) & WK_MOD_ALL) != WK_MOD_NONE)
-#define IS_CTRL(mod)    (((mod) & WK_MOD_CTRL) == WK_MOD_CTRL)
-#define IS_ALT(mod)     (((mod) & WK_MOD_ALT) == WK_MOD_ALT)
-#define IS_HYPER(mod)   (((mod) & WK_MOD_HYPER) == WK_MOD_HYPER)
-#define IS_SHIFT(mod)   (((mod) & WK_MOD_SHIFT) == WK_MOD_SHIFT)
+#define IS_FLAG(flags, test)    (((flags) & (test)) == (test))
+#define IS_MOD(mod)             (mod)
+#define IS_CTRL(mod)            (IS_FLAG((mod), WK_MOD_CTRL))
+#define IS_ALT(mod)             (IS_FLAG((mod), WK_MOD_ALT))
+#define IS_HYPER(mod)           (IS_FLAG((mod), WK_MOD_HYPER))
+#define IS_SHIFT(mod)           (IS_FLAG((mod), WK_MOD_SHIFT))
+#define CHORD_FLAG(chord, flag) (IS_FLAG((chord)->flags, (flag)))
 
 #define NULL_CHORD  \
     {                                                       \
@@ -26,12 +21,21 @@
         NULL,                                               \
     /*  after, */                                           \
         NULL,                                               \
-    /*  keep,  unhook, nobefore, noafter, write, async, */  \
-        false, false,  false,    false,   false, false,     \
+    /*  flags, */                                           \
+        WK_FLAG_DEFAULTS,                                   \
         NULL                                                \
     }
 #define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }
 #define CHORDS(...) { __VA_ARGS__, NULL_CHORD }
+
+typedef enum
+{
+    WK_MOD_NONE     = (0),
+    WK_MOD_CTRL     = (1<<0),
+    WK_MOD_ALT      = (1<<1),
+    WK_MOD_HYPER    = (1<<2),
+    WK_MOD_SHIFT    = (1<<3),
+} WkMod;
 
 typedef enum
 {
@@ -52,9 +56,22 @@ typedef enum
     WK_SPECIAL_BEGIN,
 } SpecialType;
 
+typedef enum
+{
+    WK_FLAG_DEFAULTS        = (0),
+    WK_FLAG_KEEP            = (1<<0),
+    WK_FLAG_UNHOOK          = (1<<1),
+    WK_FLAG_NOBEFORE        = (1<<2),
+    WK_FLAG_NOAFTER         = (1<<3),
+    WK_FLAG_WRITE           = (1<<4),
+    WK_FLAG_SYNC_COMMAND    = (1<<5),
+    WK_FLAG_BEFORE_ASYNC    = (1<<6),
+    WK_FLAG_AFTER_SYNC      = (1<<7),
+} WkFlags;
+
 typedef struct Chord
 {
-    const unsigned int mods;
+    const WkMod mods;
     const SpecialType special;
     const char* key;
     const char* description;
@@ -62,18 +79,13 @@ typedef struct Chord
     const char* command;
     const char* before;
     const char* after;
-    const bool keep;
-    const bool unhook;
-    const bool nobefore;
-    const bool noafter;
-    const bool write;
-    const bool async;
+    const WkFlags flags;
     struct Chord* chords;
 } Chord;
 
 typedef struct
 {
-    unsigned int mods;
+    WkMod mods;
     SpecialType special;
     const char* key;
     int len;
