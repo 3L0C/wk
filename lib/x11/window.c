@@ -133,7 +133,7 @@ resizeWinHeight(void)
     if (windowGap < 0)
     {
         /* user wants a 1/10th gap between edge of screen and window*/
-        window->y = root->y + (root->h / 10);
+        window->y = (root->h / 10);
     }
     else if (windowGap == 0 || (uint32_t)windowGap > root->h)
     {
@@ -155,7 +155,7 @@ resizeWinHeight(void)
 
     if (desiriedPos(WK_WIN_POS_BOTTOM))
     {
-        window->y = root->h - window->height - window->y;
+        window->y = root->h - window->height - window->y + root->y;
     }
 }
 
