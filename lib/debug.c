@@ -90,7 +90,7 @@ debugString(const char* text, const char* value)
 }
 
 static void
-debugFlags(WkFlags flags)
+debugFlags(WkFlag flags)
 {
     if (flags == 0)
     {
@@ -159,6 +159,15 @@ debugChord(const Chord* chord)
     debugFlags(chord->flags);
     debugPointer("Chords", chord->chords);
     printf("[DEBUG] --------------------------------------------\n");
+}
+
+void
+debugChordsShallow(const Chord* chords, uint32_t len)
+{
+    for (uint32_t i = 0; i < len; i++)
+    {
+        debugChord(&chords[i]);
+    }
 }
 
 void

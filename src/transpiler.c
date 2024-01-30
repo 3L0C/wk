@@ -46,7 +46,7 @@ initCompiler(Compiler* compiler, const char* source)
 }
 
 static LineArray*
-nextArray(Compiler* compiler)
+nextLineArray(Compiler* compiler)
 {
     return &compiler->lineDest->lines[compiler->lineDest->count - 1].array;
 }
@@ -309,6 +309,7 @@ keywords(Compiler* compiler)
             compiler->line.flags |= WK_FLAG_AFTER_SYNC;
             break;
         case TOKEN_KEEP:            compiler->line.flags |= WK_FLAG_KEEP; break;
+        case TOKEN_INHERIT:         compiler->line.flags |= WK_FLAG_INHERIT; break;
         case TOKEN_UNHOOK:          compiler->line.flags |= WK_FLAG_UNHOOK; break;
         case TOKEN_NO_BEFORE:       compiler->line.flags |= WK_FLAG_NOBEFORE; break;
         case TOKEN_NO_AFTER:        compiler->line.flags |= WK_FLAG_NOAFTER; break;
@@ -429,21 +430,58 @@ setAfterHook(Line* parent, Line* child)
     copyTokenArray(&parent->after, &child->after);
 }
 
-static void
-setHooks(Compiler* compiler)
+static Line*
+getLastLine(LineArray* lines)
 {
-    Line* parent = &compiler->linePrefix->lines[compiler->linePrefix->count - 1];
-    LineArray* children = compiler->lineDest;
+    if (lines->count == 0) return NULL;
+    return &lines->lines[lines->count - 1];
+}
 
-    /* TODO do not overwrite prefixes
-     * Might want to implement an INHERIT flag
-     * so that prefixes can take on parent flags
-     */
+static void
+setHooks(Line* parent, LineArray* children)
+{
+    return;
+    if (!parent || !children) return;
+    if (parent->before.count == 0 && parent->after.count == 0) return;
+
     for (size_t i = 0; i < children->count; i++)
     {
         Line* child = &children->lines[i];
-        setBeforeHook(parent, child);
-        setAfterHook(parent, child);
+        if (child->array.count && IS_FLAG(child->flags, WK_FLAG_INHERIT))
+        {
+            setBeforeHook(parent, child);
+            setAfterHook(parent, child);
+            setHooks(child, &child->array);
+        }
+        else
+        {
+            setBeforeHook(parent, child);
+            setAfterHook(parent, child);
+        }
+    }
+}
+
+static void
+setHooksAndFlags(Line* parent, LineArray* children)
+{
+    if (!parent || !children) return;
+    /* if (parent->before.count == 0 && parent->after.count == 0) return; */
+
+    for (size_t i = 0; i < children->count; i++)
+    {
+        Line* child = &children->lines[i];
+        setFlags(parent, child);
+        if (child->array.count && IS_FLAG(child->flags, WK_FLAG_INHERIT))
+        {
+            setBeforeHook(parent, child);
+            setAfterHook(parent, child);
+            setHooks(child, &child->array);
+        }
+        else
+        {
+            setBeforeHook(parent, child);
+            setAfterHook(parent, child);
+        }
     }
 }
 
@@ -453,19 +491,24 @@ prefix(Compiler* compiler)
     /* backup information */
     LineArray* parent = compiler->linePrefix;
     LineArray* dest = compiler->lineDest;
+
     /* advance line */
     compiler->linePrefix = compiler->lineDest;
     writeLineArray(compiler->lineDest, &compiler->line);
-    compiler->lineDest = nextArray(compiler);
+    compiler->lineDest = nextLineArray(compiler);
     freeLine(&compiler->line);
     initLine(&compiler->line);
-    /* compile chords/prefixes */
+
+    /* scan chords/prefixes */
     while (!check(compiler, TOKEN_EOF) && !check(compiler, TOKEN_RIGHT_BRACE))
     {
         keyChord(compiler);
     }
     consume(compiler, TOKEN_RIGHT_BRACE, "Expect '}' after prefix.");
-    setHooks(compiler);
+
+    /* end prefix */
+    setHooks(getLastLine(compiler->linePrefix), compiler->lineDest);
+    setHooksAndFlags(getLastLine(compiler->linePrefix), compiler->lineDest);
     compiler->linePrefix = parent;
     compiler->lineDest = dest;
 }

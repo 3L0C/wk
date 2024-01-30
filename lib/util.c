@@ -48,12 +48,13 @@ countChords(WkProperties* props)
 }
 
 int
-countFlags(WkFlags flags)
+countFlags(WkFlag flags)
 {
     int result = 0;
 
     if (!flags) return 0;
     if (IS_FLAG(flags, WK_FLAG_KEEP)) result++;
+    if (IS_FLAG(flags, WK_FLAG_INHERIT)) result++;
     if (IS_FLAG(flags, WK_FLAG_UNHOOK)) result++;
     if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) result++;
     if (IS_FLAG(flags, WK_FLAG_NOAFTER)) result++;
@@ -72,49 +73,53 @@ isKey(const Chord* chord, Key* key)
     return iscntrl(*key->key) && chord->mods == key->mods && chord->special == key->special;
 }
 
-static bool
-testHook(const Chord* chord, bool nohook)
-{
-    return (!CHORD_FLAG(chord, WK_FLAG_UNHOOK) && !nohook && chord->command);
-}
+/* static bool */
+/* testHook(const Chord* chord, WkFlag test) */
+/* { */
+/*     return ( */
+/*         !CHORD_FLAG(chord, WK_FLAG_UNHOOK) && */
+/*         !CHORD_FLAG(chord, test) && */
+/*         ((!chord->chords) || CHORD_FLAG(chord, WK_FLAG_INHERIT)) */
+/*     ); */
+/* } */
 
-static void
-setBeforeHook(Chord* chord, const char* hook)
-{
-    if (hook && testHook(chord, CHORD_FLAG(chord, WK_FLAG_NOBEFORE)))
-    {
-        chord->before = hook;
-    }
-}
+/* static void */
+/* setBeforeHook(Chord* chord, const char* hook) */
+/* { */
+/*     if (hook && testHook(chord, WK_FLAG_NOBEFORE)) */
+/*     { */
+/*         chord->before = hook; */
+/*     } */
+/* } */
 
-static void
-setAfterHook(Chord* chord, const char* hook)
-{
-    if (hook && testHook(chord, CHORD_FLAG(chord, WK_FLAG_NOAFTER)))
-    {
-        chord->after = hook;
-    }
-}
+/* static void */
+/* setAfterHook(Chord* chord, const char* hook) */
+/* { */
+/*     if (hook && testHook(chord, CHORD_FLAG(chord, WK_FLAG_NOAFTER))) */
+/*     { */
+/*         chord->after = hook; */
+/*     } */
+/* } */
 
-static void
-setHooks(const Chord* chord)
-{
-    if (!chord->before || !chord->after) return;
+/* static void */
+/* setHooks(const Chord* chord) */
+/* { */
+/*     if (!chord->before || !chord->after) return; */
 
-    Chord* chords = chord->chords;
-    for (int i = 0; chords[i].key; i++)
-    {
-        setBeforeHook(&chords[i], chord->before);
-        setAfterHook(&chords[i], chord->after);
-    }
-}
+/*     Chord* chords = chord->chords; */
+/*     for (int i = 0; chords[i].key; i++) */
+/*     { */
+/*         setBeforeHook(&chords[i], chord->before); */
+/*         setAfterHook(&chords[i], chord->after); */
+/*     } */
+/* } */
 
 static WkStatus
 handlePrefix(WkProperties* props, const Chord* chord)
 {
     debugMsg(props->debug, "Found prefix.");
 
-    setHooks(chord);
+    /* setHooks(chord); */
     props->chords = chord->chords;
     return WK_STATUS_DAMAGED;
 }
@@ -157,10 +162,14 @@ handleKeypress(WkProperties* props, Key* key)
     uint32_t len = props->chordCount;
     const Chord* chords = props->chords;
 
+    if (props->debug)
+    {
+        debugChordsShallow(chords, len);
+        debugKey(key);
+    }
+
     for (uint32_t i = 0; i < len; i++)
     {
-        debugChord(&chords[i]);
-        debugKey(key);
         if (isKey(&chords[i], key))
         {
             debugMsg(props->debug, "Found match: '%s'.", chords[i].key);

@@ -11,7 +11,7 @@
 
 void calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols);
 void countChords(WkProperties* props);
-int countFlags(WkFlags flags);
+int countFlags(WkFlag flags);
 WkStatus handleKeypress(WkProperties* props, Key* key);
 bool isUtf8StartByte(char byte);
 void pressKeys(WkProperties* props, const char* keys);

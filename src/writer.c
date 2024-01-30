@@ -194,8 +194,20 @@ writeChordHint(Line* line)
     printf("\",\n");
 }
 
+static char
+getDelim(int* count, char a, char b)
+{
+    return (*count)-- > 1 ? a : b;
+}
+
 static void
-writeChordFlags(WkFlags flags)
+writeChordFlag(WkFlag flags, WkFlag flag, const char* repr, int* count)
+{
+    if (IS_FLAG(flags, flag)) printf("%s%c", repr, getDelim(count, '|', ','));
+}
+
+static void
+writeChordFlags(WkFlag flags)
 {
     int count = countFlags(flags);
     if (count == 0)
@@ -204,14 +216,16 @@ writeChordFlags(WkFlags flags)
         return;
     }
 
-    if (IS_FLAG(flags, WK_FLAG_KEEP)) printf("WK_FLAG_KEEP%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) printf("WK_FLAG_UNHOOK%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) printf("WK_FLAG_NOBEFORE%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) printf("WK_FLAG_NOAFTER%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_WRITE)) printf("WK_FLAG_WRITE%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) printf("WK_FLAG_SYNC_COMMAND%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) printf("WK_FLAG_BEFORE_ASYNC%s", count-- > 1 ? "|" : ", ");
-    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) printf("WK_FLAG_AFTER_SYNC%s", count-- > 1 ? "|" : ", ");
+    writeChordFlag(flags, WK_FLAG_KEEP, "WK_FLAG_KEEP", &count);
+    writeChordFlag(flags, WK_FLAG_INHERIT, "WK_FLAG_INHERIT", &count);
+    writeChordFlag(flags, WK_FLAG_UNHOOK, "WK_FLAG_UNHOOK", &count);
+    writeChordFlag(flags, WK_FLAG_NOBEFORE, "WK_FLAG_NOBEFORE", &count);
+    writeChordFlag(flags, WK_FLAG_NOAFTER, "WK_FLAG_NOAFTER", &count);
+    writeChordFlag(flags, WK_FLAG_WRITE, "WK_FLAG_WRITE", &count);
+    writeChordFlag(flags, WK_FLAG_SYNC_COMMAND, "WK_FLAG_SYNC_COMMAND", &count);
+    writeChordFlag(flags, WK_FLAG_BEFORE_ASYNC, "WK_FLAG_BEFORE_ASYNC", &count);
+    writeChordFlag(flags, WK_FLAG_AFTER_SYNC, "WK_FLAG_AFTER_SYNC", &count);
+    printf(" ");
 }
 
 static void

@@ -45,6 +45,7 @@ disassembleToken(Token* token)
     case TOKEN_BEFORE:              type = "TOKEN_BEGIN";               break;
     case TOKEN_AFTER:               type = "TOKEN_BEGIN";               break;
     case TOKEN_KEEP:                type = "TOKEN_KEEP";                break;
+    case TOKEN_INHERIT:             type = "TOKEN_INHERIT";             break;
     case TOKEN_UNHOOK:              type = "TOKEN_UNHOOK";              break;
     case TOKEN_NO_BEFORE:           type = "TOKEN_NO_BEFORE";           break;
     case TOKEN_NO_AFTER:            type = "TOKEN_NO_AFTER";            break;
@@ -108,13 +109,14 @@ debugScanner(const char* source)
 static void
 printMods(int mod)
 {
+    printf("       ");
     if (!IS_MOD(mod))
     {
-        printf("\tMods: WK_MOD_NONE\n");
+        printf("Mods: WK_MOD_NONE\n");
         return;
     }
 
-    printf("\tMods: ");
+    printf("Mods: ");
     const char* mods[4];
     int idx = 0;
     if (IS_CTRL(mod)) mods[idx++] = "WK_MOD_CTRL";
@@ -131,7 +133,7 @@ printMods(int mod)
 static void
 printToken(Token token, const char* message)
 {
-    printf("\t");
+    printf("       ");
     printf("%s: '%.*s'", message, (int)token.length, token.start);
     printf("\n");
 }
@@ -139,7 +141,7 @@ printToken(Token token, const char* message)
 static void
 printTokenArray(Line* line, TokenArray* array, const char* message)
 {
-    printf("\t");
+    printf("       ");
     printf("%s: ", message);
     if (array->count == 0) printf("None");
     for (size_t i = 0; i < array->count; i++)
@@ -157,23 +159,31 @@ printTokenArray(Line* line, TokenArray* array, const char* message)
 }
 
 static void
-printFlags(WkFlags flags)
+printFlag(WkFlag flags, WkFlag flag, const char* repr, const char delim)
 {
+    if (IS_FLAG(flags, flag)) printf("%s%c", repr, delim);
+}
+
+static void
+printFlags(WkFlag flags)
+{
+    printf("       ");
     if (flags == 0)
     {
-        printf("\tFlags: WK_FLAG_DEFAULTS|%d\n", flags);
+        printf("Flags: WK_FLAG_DEFAULTS|%d\n", flags);
         return;
     }
 
-    printf("\tFlags: ");
-    if (IS_FLAG(flags, WK_FLAG_KEEP)) printf("WK_FLAG_KEEP|");
-    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) printf("WK_FLAG_UNHOOK|");
-    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) printf("WK_FLAG_NOBEFORE|");
-    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) printf("WK_FLAG_NOAFTER|");
-    if (IS_FLAG(flags, WK_FLAG_WRITE)) printf("WK_FLAG_WRITE|");
-    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) printf("WK_FLAG_SYNC_COMMAND|");
-    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) printf("WK_FLAG_BEFORE_ASYNC|");
-    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) printf("WK_FLAG_AFTER_SYNC|");
+    printf("Flags: ");
+    printFlag(flags, WK_FLAG_KEEP, "WK_FLAG_KEEP", '|');
+    printFlag(flags, WK_FLAG_INHERIT, "WK_FLAG_INHERIT", '|');
+    printFlag(flags, WK_FLAG_UNHOOK, "WK_FLAG_UNHOOK", '|');
+    printFlag(flags, WK_FLAG_NOBEFORE, "WK_FLAG_NOBEFORE", '|');
+    printFlag(flags, WK_FLAG_NOAFTER, "WK_FLAG_NOAFTER", '|');
+    printFlag(flags, WK_FLAG_WRITE, "WK_FLAG_WRITE", '|');
+    printFlag(flags, WK_FLAG_SYNC_COMMAND, "WK_FLAG_SYNC_COMMAND", '|');
+    printFlag(flags, WK_FLAG_BEFORE_ASYNC, "WK_FLAG_BEFORE_ASYNC", '|');
+    printFlag(flags, WK_FLAG_AFTER_SYNC, "WK_FLAG_AFTER_SYNC", '|');
     printf("%d\n", flags);
 }
 
@@ -182,8 +192,8 @@ disassembleLine(Line* line, size_t index)
 {
     assert(line);
 
-    printf("[%04zu]  Line\n", index);
-    printf("\tIndex: %04d\n", line->index);
+    printf("[%04zu] Line\n", index);
+    printf("       Index: %04d\n", line->index);
     printFlags(line->flags);
     printMods(line->mods);
     printToken(line->key, "Key");

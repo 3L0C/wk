@@ -9,6 +9,7 @@
 void debugCairoColor(const CairoColor* color);
 void debugCairoPaint(const CairoPaint* paint);
 void debugChord(const Chord* chord);
+void debugChordsShallow(const Chord* chords, uint32_t len);
 void debugClient(const Client* client);
 void debugHexColors(const WkHexColor* colors);
 void debugKey(const Key* key);

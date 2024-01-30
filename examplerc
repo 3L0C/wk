@@ -1,6 +1,10 @@
 e 'Echo keys' :before ${{echo first}} :after ${{echo last}}
 {
-    [\: C-S-RET aテrstg] 'Tag %(index+1)' ${{
+    a 'A prefix!' :inherit
+    {
+        [abcd] '%(key) chord!' ${{echo %(key)}}
+    }
+    [\: C-S-RET テrstg] 'Tag %(index+1)' ${{
         echo "%(key)"
     }}
 }

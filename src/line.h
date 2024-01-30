@@ -26,7 +26,7 @@ struct Line
     TokenArray  command;
     TokenArray  before;
     TokenArray  after;
-    WkFlags     flags;
+    WkFlag      flags;
     LineArray   array;
 };
 

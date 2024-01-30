@@ -144,13 +144,7 @@ isKeyword(Scanner* scanner, int start, int length, const char* rest)
 }
 
 static TokenType
-checkKeyword(
-    Scanner* scanner,
-    size_t start,
-    size_t length,
-    const char* rest,
-    TokenType type
-)
+checkKeyword(Scanner* scanner, size_t start, size_t length, const char* rest, TokenType type)
 {
     if (isKeyword(scanner, start, length, rest))
     {
@@ -173,9 +167,11 @@ identifierType(Scanner* scanner)
         if (isKeyword(scanner, 1, 5, "efore"))          return TOKEN_BEFORE;
         if (isKeyword(scanner, 1, 11, "efore-async"))   return TOKEN_BEFORE_ASYNC;
         break;
+    case 'c': return checkKeyword(scanner, 1, 4, "lose", TOKEN_CLOSE);
     case 'i':
         if (isKeyword(scanner, 1, 6, "ndex+1"))     return TOKEN_INDEX_ONE;
         if (isKeyword(scanner, 1, 4, "ndex"))       return TOKEN_INDEX;
+        if (isKeyword(scanner, 1, 6, "nherit"))     return TOKEN_INHERIT;
         break;
     case 'k':
         if (isKeyword(scanner, 1, 3, "eep"))        return TOKEN_KEEP;
@@ -204,18 +200,19 @@ identifier(Scanner* scanner)
 static Token
 description(Scanner* scanner)
 {
-    skipWhitespace(scanner);
     while (!isAtEnd(scanner))
     {
         switch (peek(scanner))
         {
-        case '\'': {
+        case '\'': /* NOTE possible return */
+        {
             Token result = makeToken(scanner, TOKEN_DESCRIPTION);
             advance(scanner);
             return result;
         }
         case '\n': scanner->line++; break;
-        case '%': {
+        case '%': /* NOTE possible return */
+        {
             if (peekNext(scanner) == '(')
             {
                 scanner->isInterpolation = true;
@@ -243,7 +240,6 @@ description(Scanner* scanner)
 static Token
 command(Scanner* scanner)
 {
-    skipWhitespace(scanner);
     int braces = 0;
     while (!isAtEnd(scanner))
     {
@@ -412,9 +408,10 @@ scanToken(Scanner* scanner)
 {
     assert(scanner);
 
+    if (scanner->isInterpolation) return scanInterpolation(scanner);
+
     skipWhitespace(scanner);
     if (isAtEnd(scanner)) return makeToken(scanner, TOKEN_EOF);
-    if (scanner->isInterpolation) return scanInterpolation(scanner);
 
     char c = advance(scanner);
 
@@ -430,13 +427,16 @@ scanToken(Scanner* scanner)
     case ':': makeCurrent(scanner); return identifier(scanner);
 
     /* literals */
-    case '\'': makeCurrent(scanner); return description(scanner);
+    case '\'':
+        makeCurrent(scanner);
+        return description(scanner);
     case '$':
         if (!match(scanner, '{') || !match(scanner, '{'))
         {
             return errorToken(scanner, "Expect '{{' after '$'");
         }
         makeCurrent(scanner);
+        skipWhitespace(scanner);
         return command(scanner);
     case '\\': makeCurrent(scanner); return key(scanner, advance(scanner));
     /* keys */
