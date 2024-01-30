@@ -18,23 +18,32 @@ getDelim(int* count, char a, char b)
 }
 
 static void
-debugInt(const char* text, int value)
+printDebug(unsigned int indent)
 {
-    static const int max = 20;
-    int len = strlen(text);
-    printf("[DEBUG] | %s%*s%04d\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
+    printf("[DEBUG] %*s", indent * 8, (indent ? " " : ""));
 }
 
 static void
-debugMod(const WkMods* mods)
+debugInt(const char* text, int value, unsigned int indent)
 {
+    static const int max = 20;
+    int len = strlen(text);
+    printDebug(indent);
+    printf("| %s%*s%04d\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
+}
+
+static void
+debugMod(const WkMods* mods, unsigned int indent)
+{
+    printDebug(indent);
+
     if (!IS_MOD(*mods))
     {
-        printf("[DEBUG] | Mods                NONE\n");
+        printf("| Mods                NONE\n");
         return;
     }
 
-    printf("[DEBUG] | Mods                ");
+    printf("| Mods                ");
     int count = COUNT_MODS(*mods);
     if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
     if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
@@ -43,17 +52,19 @@ debugMod(const WkMods* mods)
 }
 
 static void
-debugPointer(const char* text, const void* value)
+debugPointer(const char* text, const void* value, unsigned int indent)
 {
     static const int max = 20;
     int len = strlen(text);
-    printf("[DEBUG] | %s%*s%s\n", text, (max - len) > 0 ? max - len : 1, " ", value ? "(not null)" : "(null)");
+    printDebug(indent);
+    printf("| %s%*s%s\n", text, (max - len) > 0 ? max - len : 1, " ", value ? "(not null)" : "(null)");
 }
 
 static bool
-debugSpecial(SpecialType special)
+debugSpecial(SpecialType special, unsigned int indent)
 {
-    printf("[DEBUG] | Special             ");
+    printDebug(indent);
+    printf("| Special             ");
     const char* text = NULL;
     bool flag = true;
 
@@ -82,23 +93,26 @@ debugSpecial(SpecialType special)
 }
 
 static void
-debugString(const char* text, const char* value)
+debugString(const char* text, const char* value, unsigned int indent)
 {
     static const int max = 20;
     int len = strlen(text);
-    printf("[DEBUG] | %s%*s'%s'\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
+    printDebug(indent);
+    printf("| %s%*s'%s'\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
 }
 
 static void
-debugFlags(const WkFlags* flags)
+debugFlags(const WkFlags* flags, unsigned int indent)
 {
+    printDebug(indent);
+
     if (!HAS_FLAG(*flags))
     {
-        printf("[DEBUG] | Flags:              WK_FLAG_DEFAULTS\n");
+        printf("| Flags:              WK_FLAG_DEFAULTS\n");
         return;
     }
 
-    printf("[DEBUG] | Flags:              ");
+    printf("| Flags:              ");
     int count = COUNT_FLAGS(*flags);
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
@@ -110,15 +124,6 @@ debugFlags(const WkFlags* flags)
     if (flags->syncCommand) printf("SYNCCOMMAND%c", getDelim(&count, '|', '\n'));
     if (flags->beforeAsync) printf("BEFOREASYNC%c", getDelim(&count, '|', '\n'));
     if (flags->afterSync) printf("AFTERSYNC%c", getDelim(&count, '|', '\n'));
-}
-
-void
-debugCairoColor(const CairoColor* color)
-{
-    printf("[DEBUG] |     Red:            %#02X\n", (uint8_t)(color->r * 255));
-    printf("[DEBUG] |     Green:          %#02X\n", (uint8_t)(color->g * 255));
-    printf("[DEBUG] |     Blue:           %#02X\n", (uint8_t)(color->b * 255));
-    printf("[DEBUG] |     Alpha:          %#02X\n", (uint8_t)(color->a * 255));
 }
 
 void
@@ -147,28 +152,37 @@ debugCairoPaint(const CairoPaint* paint)
 }
 
 void
-debugChord(const Chord* chord)
+debugChord(const Chord* chord, unsigned int indent)
 {
-    printf("[DEBUG] ------------------ Chord -------------------\n");
-    debugMod(&chord->mods);
-    debugSpecial(chord->special);
-    debugString("Key", chord->key);
-    debugString("Description", chord->description);
-    debugString("Hint", chord->hint);
-    debugString("Command", chord->command);
-    debugString("Before", chord->before);
-    debugString("After", chord->after);
-    debugFlags(&chord->flags);
-    debugPointer("Chords", chord->chords);
-    printf("[DEBUG] --------------------------------------------\n");
+    printDebug(indent);
+
+    printf("------------------ Chord -------------------\n");
+
+    debugMod(&chord->mods, indent);
+    debugSpecial(chord->special, indent);
+    debugString("Key", chord->key, indent);
+    debugString("Description", chord->description, indent);
+    debugString("Hint", chord->hint, indent);
+    debugString("Command", chord->command, indent);
+    debugString("Before", chord->before, indent);
+    debugString("After", chord->after, indent);
+    debugFlags(&chord->flags, indent);
+    debugPointer("Chords", chord->chords, indent);
+
+    printDebug(indent);
+    printf("--------------------------------------------\n");
 }
 
 void
-debugChords(const Chord* chords)
+debugChords(const Chord* chords, unsigned int indent)
 {
     for (uint32_t i = 0; chords[i].key; i++)
     {
-        debugChord(&chords[i]);
+        debugChord(&chords[i], indent);
+        if (chords[i].chords)
+        {
+            debugChords(chords[i].chords, indent + 1);
+        }
     }
 }
 
@@ -177,7 +191,7 @@ debugChordsShallow(const Chord* chords, uint32_t len)
 {
     for (uint32_t i = 0; i < len; i++)
     {
-        debugChord(&chords[i]);
+        debugChord(&chords[i], 0);
     }
 }
 
@@ -241,16 +255,16 @@ void
 debugKey(const Key* key)
 {
     printf("[DEBUG] ------------------- Key --------------------\n");
-    debugMod(&key->mods);
-    if (debugSpecial(key->special))
+    debugMod(&key->mods, 0);
+    if (debugSpecial(key->special, 0))
     {
         printf("[DEBUG] | Key                 SPECIAL\n");
     }
     else
     {
-        debugString("Key", key->key);
+        debugString("Key", key->key, 0);
     }
-    debugInt("len", key->len);
+    debugInt("len", key->len, 0);
     printf("[DEBUG] --------------------------------------------\n");
 }
 
@@ -269,10 +283,10 @@ debugMsg(bool debug, const char* fmt, ...)
     memcpy(format + debugLen, fmt, len);
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stderr, format, ap);
+    vprintf(format, ap);
     va_end(ap);
 
-    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stdout);
 }
 
 void

@@ -41,18 +41,11 @@ countChords(WkProperties* props)
 {
     assert(props);
 
-    if (props->debug)
-    {
-        debugMsg(true, "Counting chords.");
-        debugChords(props->chords);
-    }
-
     const Chord* chords = props->chords;
     uint32_t* count = &props->chordCount;
     props->chordCount = 0; /* reset count */
 
     while (chords[*count].key) (*count)++;
-    debugMsg(props->debug, "Chords count: '%u'.", *count);
 }
 
 static bool
@@ -135,6 +128,11 @@ handleKeypress(WkProperties* props, Key* key)
     {
         if (isKey(&chords[i], key))
         {
+            if (props->debug)
+            {
+                debugChord(&chords[i], 0);
+                debugKey(key);
+            }
             debugMsg(props->debug, "Found match: '%s'.", chords[i].key);
             return pressKey(props, &chords[i]);
         }

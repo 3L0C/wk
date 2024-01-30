@@ -8,11 +8,11 @@ static const int windowGap = -1; /* Window gap between top/bottom of screen. Set
 static const unsigned int widthPadding = 6; /* X-Padding around key/description text in cells. */
 static const unsigned int heightPadding = 2; /* Y-Padding around key/description text in cells. */
 static const unsigned int windowPosition = 0; /* Position to place the window. '0' = bottom; '1' = top. */
-static const unsigned int borderWidth = 2; /* Window border width */
+static const unsigned int borderWidth = 4; /* Window border width */
 static const char* foreground = "#DCD7BA"; /* Window foreground color */
 static const char* background = "#181616"; /* Window background color */
 static const char* border = "#7FB4CA"; /* Window border color */
 static const char* shell = "/bin/sh"; /* Default shell to run chord commands with. */
-static const char* font = "monospace, 10"; /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
+static const char* font = "monospace, 14"; /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
 
 #endif /* WK_CONFIG_H_ */

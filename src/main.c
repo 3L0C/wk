@@ -85,6 +85,10 @@ main(int argc, char** argv)
     }
     else
     {
+        if (props.debug)
+        {
+            debugChords(props.chords, 0);
+        }
         result = run(&props);
     }
 

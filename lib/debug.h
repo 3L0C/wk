@@ -6,10 +6,9 @@
 #include "properties.h"
 #include "types.h"
 
-void debugCairoColor(const CairoColor* color);
 void debugCairoPaint(const CairoPaint* paint);
-void debugChord(const Chord* chord);
-void debugChords(const Chord* chords);
+void debugChord(const Chord* chord, unsigned int indent);
+void debugChords(const Chord* chords, unsigned int indent);
 void debugChordsShallow(const Chord* chords, uint32_t len);
 void debugClient(const Client* client);
 void debugHexColors(const WkHexColor* colors);
