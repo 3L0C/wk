@@ -252,10 +252,10 @@ writeChordLines(LineArray* lines, int indent)
 {
     for (size_t i = 0; i < lines->count; i++)
     {
-        printf("%*s", indent * 4, " "); /* print indentation */
+        printf("%*s", indent * 4, " ");
         printf("{\n");
         writeChordLine(&lines->lines[i], indent + 1);
-        printf("%*s}", indent * 4, " "); /* print indentation */
+        printf("%*s}", indent * 4, " ");
         if (i + 1 != lines->count)
         {
             printf(",");

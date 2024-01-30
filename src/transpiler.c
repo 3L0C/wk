@@ -414,11 +414,11 @@ setFlags(WkFlags* parent, WkFlags* child)
 {
     assert(parent && child);
 
-    if (!child->close) child->keep = parent->keep;
-    child->write = parent->write;
-    child->syncCommand = parent->syncCommand;
-    child->beforeAsync = parent->beforeAsync;
-    child->afterSync = parent->afterSync;
+    if (parent->keep && !child->close) child->keep = parent->keep;
+    if (parent->write) child->write = parent->write;
+    if (parent->syncCommand) child->syncCommand = parent->syncCommand;
+    if (parent->beforeAsync) child->beforeAsync = parent->beforeAsync;
+    if (parent->afterSync) child->afterSync = parent->afterSync;
 }
 
 static void
