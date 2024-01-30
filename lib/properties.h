@@ -39,7 +39,7 @@ typedef struct
     int windowGap;
     uint32_t wpadding;
     uint32_t hpadding;
-    uint32_t cell_height;
+    uint32_t cellHeight;
     uint32_t rows;
     uint32_t cols;
     uint32_t width;

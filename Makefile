@@ -130,9 +130,9 @@ install: $(BUILD_DIR)/$(NAME)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f $(NAME) $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/$(NAME)
-	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	cp -R $(MANFILES) $(MAN_DIR)
-	chmod 644 $(patsubst %,$(MAN_DIR)/%,$(notdir $(MAN)))
+# mkdir -p $(DESTDIR)$(MANPREFIX)/man1
+# cp -R $(MANFILES) $(MAN_DIR)
+# chmod 644 $(patsubst %,$(MAN_DIR)/%,$(notdir $(MAN)))
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)

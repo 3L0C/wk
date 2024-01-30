@@ -285,7 +285,7 @@ debugProperties(const WkProperties* props)
     printf("[DEBUG] | Window gap:         %d\n", props->windowGap);
     printf("[DEBUG] | Width padding:      %u\n", props->wpadding);
     printf("[DEBUG] | Height padding:     %u\n", props->hpadding);
-    printf("[DEBUG] | Cell height:        %u\n", props->cell_height);
+    printf("[DEBUG] | Cell height:        %u\n", props->cellHeight);
     printf("[DEBUG] | Rows:               %u\n", props->rows);
     printf("[DEBUG] | Cols:               %u\n", props->cols);
     printf("[DEBUG] | Width:              %u\n", props->width);

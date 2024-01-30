@@ -6,6 +6,6 @@
 bool
 compileChords(WkProperties* props, const char* source)
 {
-    assert(props);
+    assert(props && source);
     return true;
 }

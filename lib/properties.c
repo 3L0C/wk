@@ -69,7 +69,7 @@ initProperties(WkProperties* props, Client* client)
     props->windowGap = client->windowGap;
     props->wpadding = client->wpadding;
     props->hpadding = client->hpadding;
-    props->cell_height = 0;
+    props->cellHeight = 0;
     props->rows = 0;
     props->cols = 0;
     props->width = 0;

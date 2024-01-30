@@ -84,8 +84,8 @@ cairoGetHeight(WkProperties* props, cairo_surface_t* surface, uint32_t maxHeight
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
 
-    props->cell_height = (rect.height + props->hpadding * 2);
-    height = props->cell_height * props->rows + (props->borderWidth * 2);
+    props->cellHeight = (rect.height + props->hpadding * 2);
+    height = props->cellHeight * props->rows + (props->borderWidth * 2);
     return height > maxHeight ? maxHeight : height;
 }
 
@@ -221,8 +221,10 @@ drawGrid()
     uint32_t cols = properties->cols;
     uint32_t wpadding = properties->wpadding;
     uint32_t hpadding = properties->hpadding;
-    uint32_t cell_width = width / cols;
-    uint32_t cell_height = properties->cell_height;
+    uint32_t cellWidth = width / cols;
+    uint32_t cellHeight = properties->cellHeight;
+    uint32_t idx = 0;
+    uint32_t count = properties->chordCount;
     PangoLayout* layout = pango_cairo_create_layout(cairo->cr);
     PangoFontDescription* fontDesc = pango_font_description_from_string(properties->font);
 
@@ -233,25 +235,17 @@ drawGrid()
 
     if (properties->debug)
     {
+        debugProperties(properties);
         debugChordsShallow(properties->chords, properties->chordCount);
     }
 
-    for (uint32_t i = 0; i < cols; i++)
+    for (uint32_t i = 0; i < cols && idx < count; i++)
     {
-        uint32_t x = startx + (i * cell_width) + wpadding;
-        for (uint32_t j = 0; j < rows; j++)
+        uint32_t x = startx + (i * cellWidth) + wpadding;
+        for (uint32_t j = 0; j < rows && idx < count; j++, idx++)
         {
-            uint32_t y = starty + (j * cell_height) + hpadding;
-            uint32_t idx = (rows * i) + j;
-            if (idx > properties->chordCount)
-            {
-                errorMsg(
-                    "Tried drawing chords at index '%d' when chords end at '%d'.",
-                    idx, properties->chordCount
-                );
-                goto fail;
-            }
-            drawHintText(layout, properties->chords[idx].hint, cell_width - (wpadding * 2));
+            uint32_t y = starty + (j * cellHeight) + hpadding;
+            drawHintText(layout, properties->chords[idx].hint, cellWidth - (wpadding * 2));
             cairo_move_to(cairo->cr, x, y);
             pango_cairo_show_layout(cairo->cr, layout);
         }
