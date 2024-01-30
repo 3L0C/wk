@@ -41,85 +41,47 @@ countChords(WkProperties* props)
 {
     assert(props);
 
+    if (props->debug)
+    {
+        debugMsg(true, "Counting chords.");
+        debugChords(props->chords);
+    }
+
     const Chord* chords = props->chords;
     uint32_t* count = &props->chordCount;
+    props->chordCount = 0; /* reset count */
 
     while (chords[*count].key) (*count)++;
+    debugMsg(props->debug, "Chords count: '%u'.", *count);
 }
 
-int
-countFlags(WkFlag flags)
+static bool
+modsEqual(const WkMods* a, const WkMods* b)
 {
-    int result = 0;
-
-    if (!flags) return 0;
-    if (IS_FLAG(flags, WK_FLAG_KEEP)) result++;
-    if (IS_FLAG(flags, WK_FLAG_INHERIT)) result++;
-    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) result++;
-    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) result++;
-    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) result++;
-    if (IS_FLAG(flags, WK_FLAG_WRITE)) result++;
-    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) result++;
-    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) result++;
-    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) result++;
-
-    return result;
+    return (
+        a->ctrl == b->ctrl &&
+        a->alt == b->alt &&
+        a->hyper == b->hyper &&
+        a->shift == b->shift
+    );
 }
 
 static bool
 isKey(const Chord* chord, Key* key)
 {
     if (strcmp(chord->key, key->key) == 0) return true;
-    return iscntrl(*key->key) && chord->mods == key->mods && chord->special == key->special;
+    return (
+        iscntrl(*key->key) &&
+        modsEqual(&chord->mods, &key->mods) &&
+        chord->special == key->special
+    );
 }
-
-/* static bool */
-/* testHook(const Chord* chord, WkFlag test) */
-/* { */
-/*     return ( */
-/*         !CHORD_FLAG(chord, WK_FLAG_UNHOOK) && */
-/*         !CHORD_FLAG(chord, test) && */
-/*         ((!chord->chords) || CHORD_FLAG(chord, WK_FLAG_INHERIT)) */
-/*     ); */
-/* } */
-
-/* static void */
-/* setBeforeHook(Chord* chord, const char* hook) */
-/* { */
-/*     if (hook && testHook(chord, WK_FLAG_NOBEFORE)) */
-/*     { */
-/*         chord->before = hook; */
-/*     } */
-/* } */
-
-/* static void */
-/* setAfterHook(Chord* chord, const char* hook) */
-/* { */
-/*     if (hook && testHook(chord, CHORD_FLAG(chord, WK_FLAG_NOAFTER))) */
-/*     { */
-/*         chord->after = hook; */
-/*     } */
-/* } */
-
-/* static void */
-/* setHooks(const Chord* chord) */
-/* { */
-/*     if (!chord->before || !chord->after) return; */
-
-/*     Chord* chords = chord->chords; */
-/*     for (int i = 0; chords[i].key; i++) */
-/*     { */
-/*         setBeforeHook(&chords[i], chord->before); */
-/*         setAfterHook(&chords[i], chord->after); */
-/*     } */
-/* } */
 
 static WkStatus
 handlePrefix(WkProperties* props, const Chord* chord)
 {
     debugMsg(props->debug, "Found prefix.");
 
-    /* setHooks(chord); */
     props->chords = chord->chords;
     return WK_STATUS_DAMAGED;
 }
@@ -127,12 +89,12 @@ handlePrefix(WkProperties* props, const Chord* chord)
 static void
 handleCommand(WkProperties* props, const Chord* chord)
 {
-    if (CHORD_FLAG(chord, WK_FLAG_WRITE))
+    if (chord->flags.write)
     {
         printf("%s\n", chord->command);
         return;
     }
-    spawn(props, chord->command, !CHORD_FLAG(chord, WK_FLAG_SYNC_COMMAND));
+    spawn(props, chord->command, !chord->flags.syncCommand);
 }
 
 static WkStatus
@@ -141,10 +103,11 @@ handleCommands(WkProperties* props, const Chord* chord)
     /* no command */
     if (!chord->command) return WK_STATUS_EXIT_OK;
 
-    if (chord->before) spawn(props, chord->before, CHORD_FLAG(chord, WK_FLAG_BEFORE_ASYNC));
+    if (chord->before) spawn(props, chord->before, chord->flags.beforeAsync);
     handleCommand(props, chord);
-    if (chord->after) spawn(props, chord->after, !CHORD_FLAG(chord, WK_FLAG_AFTER_SYNC));
-    return CHORD_FLAG(chord, WK_FLAG_KEEP) ? WK_STATUS_DAMAGED : WK_STATUS_EXIT_OK;
+    if (chord->after) spawn(props, chord->after, !chord->flags.afterSync);
+    /* FIXME should keep return damaged or running? */
+    return chord->flags.keep ? WK_STATUS_RUNNING : WK_STATUS_EXIT_OK;
 }
 
 static WkStatus

@@ -469,15 +469,13 @@ getSpecialKey(KeySym keysym)
     return WK_SPECIAL_NONE;
 }
 
-static WkMod
-getKeyEventMods(WkMod mod)
+static void
+setKeyEventMods(WkMods* mods, unsigned int state)
 {
-    WkMod result = 0;
-    if (mod & ControlMask) result |= WK_MOD_CTRL;
-    if (mod & Mod1Mask) result |= WK_MOD_ALT;
-    if (mod & Mod4Mask) result |= WK_MOD_HYPER;
-    if (mod & ShiftMask) result |= WK_MOD_SHIFT;
-    return result ? result : WK_MOD_NONE;
+    if (state & ControlMask) mods->ctrl = true;
+    if (state & Mod1Mask) mods->alt = true;
+    if (state & Mod4Mask) mods->hyper = true;
+    if (state & ShiftMask) mods->shift = true;
 }
 
 static bool
@@ -485,7 +483,7 @@ processKey(Key* key, unsigned int state, const char* buffer, int len, KeySym key
 {
     key->key = buffer;
     key->len = len;
-    key->mods = getKeyEventMods(state);
+    setKeyEventMods(&key->mods, state);
     key->special = getSpecialKey(keysym);
     return (*key->key != '\0' || key->special != WK_SPECIAL_NONE);
 }
@@ -497,7 +495,7 @@ keypress(XKeyEvent* keyEvent)
     Status status;
     char buffer[32] = {0};
     int len;
-    Key key;
+    Key key = {0};
 
     len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
 

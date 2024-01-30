@@ -20,13 +20,13 @@ struct LineArray
 struct Line
 {
     int         index;
-    int         mods;
+    WkMods      mods;
     Token       key;
     TokenArray  description;
     TokenArray  command;
     TokenArray  before;
     TokenArray  after;
-    WkFlag      flags;
+    WkFlags     flags;
     LineArray   array;
 };
 

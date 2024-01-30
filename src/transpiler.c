@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -155,14 +156,14 @@ isMod(TokenType type)
 }
 
 static void
-addMod(TokenType type, int* mod)
+addMod(TokenType type, WkMods* mods)
 {
     switch (type)
     {
-    case TOKEN_MOD_ALT:     *mod |= WK_MOD_ALT;    break;
-    case TOKEN_MOD_CTRL:    *mod |= WK_MOD_CTRL;   break;
-    case TOKEN_MOD_HYPER:   *mod |= WK_MOD_HYPER;  break;
-    case TOKEN_MOD_SHIFT:   *mod |= WK_MOD_SHIFT;  break;
+    case TOKEN_MOD_ALT:     mods->alt = true;    break;
+    case TOKEN_MOD_CTRL:    mods->ctrl = true;   break;
+    case TOKEN_MOD_HYPER:   mods->hyper = true;  break;
+    case TOKEN_MOD_SHIFT:   mods->shift = true;  break;
     default: break;
     }
 }
@@ -297,7 +298,7 @@ keywords(Compiler* compiler)
         case TOKEN_BEFORE_ASYNC:
             consume(compiler, TOKEN_BEFORE_ASYNC, "Expect 'before-async' keyword.");
             command(compiler, &compiler->line.before);
-            compiler->line.flags |= WK_FLAG_BEFORE_ASYNC;
+            compiler->line.flags.beforeAsync = true;
             break;
         case TOKEN_AFTER:
             consume(compiler, TOKEN_AFTER, "Expected 'after' keyword.");
@@ -306,15 +307,15 @@ keywords(Compiler* compiler)
         case TOKEN_AFTER_SYNC:
             consume(compiler, TOKEN_AFTER_SYNC, "Expect 'after-sync' keyword.");
             command(compiler, &compiler->line.after);
-            compiler->line.flags |= WK_FLAG_AFTER_SYNC;
+            compiler->line.flags.afterSync = true;
             break;
-        case TOKEN_KEEP:            compiler->line.flags |= WK_FLAG_KEEP; break;
-        case TOKEN_INHERIT:         compiler->line.flags |= WK_FLAG_INHERIT; break;
-        case TOKEN_UNHOOK:          compiler->line.flags |= WK_FLAG_UNHOOK; break;
-        case TOKEN_NO_BEFORE:       compiler->line.flags |= WK_FLAG_NOBEFORE; break;
-        case TOKEN_NO_AFTER:        compiler->line.flags |= WK_FLAG_NOAFTER; break;
-        case TOKEN_WRITE:           compiler->line.flags |= WK_FLAG_WRITE; break;
-        case TOKEN_SYNC_CMD:        compiler->line.flags |= WK_FLAG_SYNC_COMMAND; break;
+        case TOKEN_KEEP:            compiler->line.flags.keep = true; break;
+        case TOKEN_INHERIT:         compiler->line.flags.inherit = true; break;
+        case TOKEN_UNHOOK:          compiler->line.flags.unhook = true; break;
+        case TOKEN_NO_BEFORE:       compiler->line.flags.nobefore = true; break;
+        case TOKEN_NO_AFTER:        compiler->line.flags.noafter = true; break;
+        case TOKEN_WRITE:           compiler->line.flags.write = true; break;
+        case TOKEN_SYNC_CMD:        compiler->line.flags.syncCommand = true; break;
         default: return; /* not a keyword but not an error */
         }
         /* consume keyword */
@@ -409,6 +410,18 @@ chordArray(Compiler* compiler)
 }
 
 static void
+setFlags(WkFlags* parent, WkFlags* child)
+{
+    assert(parent && child);
+
+    if (!child->close) child->keep = parent->keep;
+    child->write = parent->write;
+    child->syncCommand = parent->syncCommand;
+    child->beforeAsync = parent->beforeAsync;
+    child->afterSync = parent->afterSync;
+}
+
+static void
 setBeforeHook(Line* parent, Line* child)
 {
     assert(parent && child);
@@ -438,46 +451,21 @@ getLastLine(LineArray* lines)
 }
 
 static void
-setHooks(Line* parent, LineArray* children)
-{
-    return;
-    if (!parent || !children) return;
-    if (parent->before.count == 0 && parent->after.count == 0) return;
-
-    for (size_t i = 0; i < children->count; i++)
-    {
-        Line* child = &children->lines[i];
-        if (child->array.count && IS_FLAG(child->flags, WK_FLAG_INHERIT))
-        {
-            setBeforeHook(parent, child);
-            setAfterHook(parent, child);
-            setHooks(child, &child->array);
-        }
-        else
-        {
-            setBeforeHook(parent, child);
-            setAfterHook(parent, child);
-        }
-    }
-}
-
-static void
 setHooksAndFlags(Line* parent, LineArray* children)
 {
     if (!parent || !children) return;
-    /* if (parent->before.count == 0 && parent->after.count == 0) return; */
 
     for (size_t i = 0; i < children->count; i++)
     {
         Line* child = &children->lines[i];
-        setFlags(parent, child);
-        if (child->array.count && IS_FLAG(child->flags, WK_FLAG_INHERIT))
+        setFlags(&parent->flags, &child->flags);
+        if (child->array.count && child->flags.inherit)
         {
             setBeforeHook(parent, child);
             setAfterHook(parent, child);
-            setHooks(child, &child->array);
+            setHooksAndFlags(child, &child->array);
         }
-        else
+        else if (child->array.count == 0)
         {
             setBeforeHook(parent, child);
             setAfterHook(parent, child);
@@ -507,7 +495,6 @@ prefix(Compiler* compiler)
     consume(compiler, TOKEN_RIGHT_BRACE, "Expect '}' after prefix.");
 
     /* end prefix */
-    setHooks(getLastLine(compiler->linePrefix), compiler->lineDest);
     setHooksAndFlags(getLastLine(compiler->linePrefix), compiler->lineDest);
     compiler->linePrefix = parent;
     compiler->lineDest = dest;

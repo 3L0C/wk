@@ -18,49 +18,44 @@ static void writeChordLines(LineArray* lines, int indent);
 static void
 writeChordsHeader(void)
 {
-    printf("#ifndef WK_CHORDS_H_\n");
-    printf("#define WK_CHORDS_H_\n");
-    printf("\n");
-    printf("#include \"lib/common.h\"\n");
-    printf("#include \"lib/types.h\"\n");
-    printf("\n");
-    printf("/* mods,    specials,  key,    description,   hint, */\n");
-    printf("/* command */\n");
-    printf("/* before */\n");
-    printf("/* after */\n");
-    printf("/* flags, chords */\n");
-    printf("const Chord chords[] = CHORDS(\n");
+    printf(
+        "#ifndef WK_CHORDS_H_\n"
+        "#define WK_CHORDS_H_\n"
+        "\n"
+        "#include \"lib/common.h\"\n"
+        "#include \"lib/types.h\"\n"
+        "\n"
+        "/* mods, specials,\n"
+        " * key, description, hint,\n"
+        " * command\n"
+        " * before\n"
+        " * after\n"
+        " * flags, chords\n"
+        " */\n"
+        "const Chord chords[] = CHORDS(\n"
+    );
 }
 
 static void
 writeChordsFooter(void)
 {
-    printf(");\n");
-    printf("\n");
-    printf("#endif /* WK_CHORDS_H_ */\n");
-}
-
-static int
-countMods(int mods)
-{
-    int result = 0;
-    if (!IS_MOD(mods)) return result;
-    if (IS_CTRL(mods)) result++;
-    if (IS_ALT(mods)) result++;
-    if (IS_HYPER(mods)) result++;
-    if (IS_SHIFT(mods)) result++;
-    return result;
+    printf(
+        ");\n"
+        "\n"
+        "#endif /* WK_CHORDS_H_ */\n"
+    );
 }
 
 static void
-writeChordMods(int mods)
+writeChordMods(WkMods* mods)
 {
-    int count = countMods(mods);
-    if (!IS_MOD(mods)) printf("WK_MOD_NONE, ");
-    if (IS_CTRL(mods)) printf("WK_MOD_CTRL%s", count-- > 1 ? "|" : ", ");
-    if (IS_ALT(mods)) printf("WK_MOD_ALT%s", count-- > 1 ? "|" : ", ");
-    if (IS_HYPER(mods)) printf("WK_MOD_HYPER%s", count-- > 1 ? "|" : ", ");
-    if (IS_SHIFT(mods)) printf("WK_MOD_SHIFT%s", count-- > 1 ? "|" : ", ");
+    printf(
+        "MAKE_MODS(%s, %s, %s, %s), ",
+        (mods->ctrl ? "true" : "false"),
+        (mods->alt ? "true" : "false"),
+        (mods->hyper ? "true" : "false"),
+        (mods->shift ? "true" : "false")
+    );
 }
 
 static void
@@ -174,66 +169,50 @@ writeChordString(TokenArray* array, Line* line)
 }
 
 static void
-writeChordModStr(int mods)
+writeChordModStr(WkMods* mods)
 {
-    if (!IS_MOD(mods)) return;
-    if (IS_CTRL(mods)) printf("C-");
-    if (IS_ALT(mods)) printf("A-");
-    if (IS_HYPER(mods)) printf("H-");
-    if (IS_SHIFT(mods)) printf("S-");
+    if (mods->ctrl)  printf("C-");
+    if (mods->alt)   printf("A-");
+    if (mods->hyper) printf("H-");
+    if (mods->shift) printf("S-");
 }
 
 static void
 writeChordHint(Line* line)
 {
     printf("\"");
-    writeChordModStr(line->mods);
+    writeChordModStr(&line->mods);
     writeChordEscKey(&line->key);
     printf(" %s ", delim);
     writeChordRawString(&line->description, line);
     printf("\",\n");
 }
 
-static char
-getDelim(int* count, char a, char b)
-{
-    return (*count)-- > 1 ? a : b;
-}
-
 static void
-writeChordFlag(WkFlag flags, WkFlag flag, const char* repr, int* count)
+writeChordFlags(WkFlags* flags)
 {
-    if (IS_FLAG(flags, flag)) printf("%s%c", repr, getDelim(count, '|', ','));
-}
-
-static void
-writeChordFlags(WkFlag flags)
-{
-    int count = countFlags(flags);
-    if (count == 0)
-    {
-        printf("WK_FLAG_DEFAULTS, ");
-        return;
-    }
-
-    writeChordFlag(flags, WK_FLAG_KEEP, "WK_FLAG_KEEP", &count);
-    writeChordFlag(flags, WK_FLAG_INHERIT, "WK_FLAG_INHERIT", &count);
-    writeChordFlag(flags, WK_FLAG_UNHOOK, "WK_FLAG_UNHOOK", &count);
-    writeChordFlag(flags, WK_FLAG_NOBEFORE, "WK_FLAG_NOBEFORE", &count);
-    writeChordFlag(flags, WK_FLAG_NOAFTER, "WK_FLAG_NOAFTER", &count);
-    writeChordFlag(flags, WK_FLAG_WRITE, "WK_FLAG_WRITE", &count);
-    writeChordFlag(flags, WK_FLAG_SYNC_COMMAND, "WK_FLAG_SYNC_COMMAND", &count);
-    writeChordFlag(flags, WK_FLAG_BEFORE_ASYNC, "WK_FLAG_BEFORE_ASYNC", &count);
-    writeChordFlag(flags, WK_FLAG_AFTER_SYNC, "WK_FLAG_AFTER_SYNC", &count);
-    printf(" ");
+    printf(
+        "MAKE_FLAGS(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s), ",
+        (flags->keep ? "true" : "false"),
+        (flags->close ? "true" : "false"),
+        (flags->inherit ? "true" : "false"),
+        (flags->unhook ? "true" : "false"),
+        (flags->nobefore ? "true" : "false"),
+        (flags->noafter ? "true" : "false"),
+        (flags->write ? "true" : "false"),
+        (flags->syncCommand ? "true" : "false"),
+        (flags->beforeAsync ? "true" : "false"),
+        (flags->afterSync ? "true" : "false")
+    );
 }
 
 static void
 writeChordLine(Line* line, int indent)
 {
     printf("%*s", indent * 4, " ");
-    writeChordMods(line->mods);
+    writeChordMods(&line->mods);
     writeChordSpecial(&line->key);
+    printf("\n%*s", indent * 4, " ");
     writeChordKey(&line->key);
     writeChordString(&line->description, line);
     writeChordHint(line);
@@ -252,7 +231,7 @@ writeChordLine(Line* line, int indent)
 
     /* flags */
     printf("\n%*s", indent * 4, " ");
-    writeChordFlags(line->flags);
+    writeChordFlags(&line->flags);
 
     /* prefix */
     if (line->array.count != 0)

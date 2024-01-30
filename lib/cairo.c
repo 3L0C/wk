@@ -23,7 +23,6 @@
 #include "window.h"
 
 
-/* drawGrid(Cairo* cairo, WkProperties* props, uint32_t width, uint32_t height) */
 static Cairo* cairo;
 static WkProperties* properties;
 static uint32_t width;
@@ -231,6 +230,11 @@ drawGrid()
     pango_font_description_free(fontDesc);
 
     if (!setSourceRgba(WK_COLOR_FOREGROUND)) goto fail;
+
+    if (properties->debug)
+    {
+        debugChordsShallow(properties->chords, properties->chordCount);
+    }
 
     for (uint32_t i = 0; i < cols; i++)
     {

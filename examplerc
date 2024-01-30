@@ -8,9 +8,9 @@ e 'Echo keys' :before ${{echo first}} :after ${{echo last}}
         echo "%(key)"
     }}
 }
-t 'Tag & follow' :before ${{dwmc viewex %(index)}}
+t 'Tag & follow' :keep :before ${{dwmc viewex %(index)}}
 {
-    [arstneio] 'Tag %(index+1)' :keep ${{
+    [arstneio] 'Tag %(index+1)' ${{
         notify-send "dwmc" "Viewing tag %(index+1)"
     }}
 }

@@ -10,6 +10,12 @@
 #include "scanner.h"
 #include "token.h"
 
+static char
+getDelim(int* count, char a, char b)
+{
+    return ((*count)-- > 1 ? a : b);
+}
+
 static void
 printErrorToken(Token* token)
 {
@@ -107,27 +113,21 @@ debugScanner(const char* source)
 }
 
 static void
-printMods(int mod)
+printMods(WkMods* mods)
 {
     printf("       ");
-    if (!IS_MOD(mod))
+    if (!IS_MOD(*mods))
     {
-        printf("Mods: WK_MOD_NONE\n");
+        printf("Mods: NONE\n");
         return;
     }
 
+    int count = COUNT_MODS(*mods);
     printf("Mods: ");
-    const char* mods[4];
-    int idx = 0;
-    if (IS_CTRL(mod)) mods[idx++] = "WK_MOD_CTRL";
-    if (IS_ALT(mod)) mods[idx++] = "WK_MOD_ALT";
-    if (IS_HYPER(mod)) mods[idx++] = "WK_MOD_HYPER";
-    if (IS_SHIFT(mod)) mods[idx++] = "WK_MOD_SHIFT";
-
-    for (int i = 0; i < idx; i++)
-    {
-        printf("%s%s", mods[i], (i + 1 == idx) ? "\n" : "|");
-    }
+    if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
+    if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
+    if (mods->hyper) printf("HYPER%c", getDelim(&count, '|', '\n'));
+    if (mods->shift) printf("SHIFT%c", getDelim(&count, '|', '\n'));
 }
 
 static void
@@ -159,32 +159,27 @@ printTokenArray(Line* line, TokenArray* array, const char* message)
 }
 
 static void
-printFlag(WkFlag flags, WkFlag flag, const char* repr, const char delim)
-{
-    if (IS_FLAG(flags, flag)) printf("%s%c", repr, delim);
-}
-
-static void
-printFlags(WkFlag flags)
+printFlags(WkFlags* flags)
 {
     printf("       ");
-    if (flags == 0)
+    if (!HAS_FLAG(*flags))
     {
-        printf("Flags: WK_FLAG_DEFAULTS|%d\n", flags);
+        printf("Flags: WK_FLAG_DEFAULTS\n");
         return;
     }
 
+    int count = COUNT_FLAGS(*flags);
     printf("Flags: ");
-    printFlag(flags, WK_FLAG_KEEP, "WK_FLAG_KEEP", '|');
-    printFlag(flags, WK_FLAG_INHERIT, "WK_FLAG_INHERIT", '|');
-    printFlag(flags, WK_FLAG_UNHOOK, "WK_FLAG_UNHOOK", '|');
-    printFlag(flags, WK_FLAG_NOBEFORE, "WK_FLAG_NOBEFORE", '|');
-    printFlag(flags, WK_FLAG_NOAFTER, "WK_FLAG_NOAFTER", '|');
-    printFlag(flags, WK_FLAG_WRITE, "WK_FLAG_WRITE", '|');
-    printFlag(flags, WK_FLAG_SYNC_COMMAND, "WK_FLAG_SYNC_COMMAND", '|');
-    printFlag(flags, WK_FLAG_BEFORE_ASYNC, "WK_FLAG_BEFORE_ASYNC", '|');
-    printFlag(flags, WK_FLAG_AFTER_SYNC, "WK_FLAG_AFTER_SYNC", '|');
-    printf("%d\n", flags);
+    if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
+    if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
+    if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
+    if (flags->unhook) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
+    if (flags->nobefore) printf("NOBEFORE%c", getDelim(&count, '|', '\n'));
+    if (flags->noafter) printf("NOAFTER%c", getDelim(&count, '|', '\n'));
+    if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
+    if (flags->syncCommand) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
+    if (flags->beforeAsync) printf("BEFORE_ASYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->afterSync) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
 }
 
 void
@@ -194,8 +189,8 @@ disassembleLine(Line* line, size_t index)
 
     printf("[%04zu] Line\n", index);
     printf("       Index: %04d\n", line->index);
-    printFlags(line->flags);
-    printMods(line->mods);
+    printFlags(&line->flags);
+    printMods(&line->mods);
     printToken(line->key, "Key");
     printTokenArray(line, &line->description, "Description");
     printTokenArray(line, &line->command, "Command");

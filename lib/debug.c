@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -10,6 +11,12 @@
 #include "types.h"
 #include "util.h"
 
+static char
+getDelim(int* count, char a, char b)
+{
+    return ((*count)-- > 1 ? a : b);
+}
+
 static void
 debugInt(const char* text, int value)
 {
@@ -19,27 +26,20 @@ debugInt(const char* text, int value)
 }
 
 static void
-debugMod(WkMod mod)
+debugMod(const WkMods* mods)
 {
-    if (!IS_MOD(mod))
+    if (!IS_MOD(*mods))
     {
-        printf("[DEBUG] | Mods                WK_MOD_NONE|%u\n", mod);
+        printf("[DEBUG] | Mods                NONE\n");
         return;
     }
 
     printf("[DEBUG] | Mods                ");
-    const char* mods[4];
-    int idx = 0;
-    if (IS_CTRL(mod)) mods[idx++] = "CTRL";
-    if (IS_ALT(mod)) mods[idx++] = "ALT";
-    if (IS_HYPER(mod)) mods[idx++] = "HYPER";
-    if (IS_SHIFT(mod)) mods[idx++] = "SHIFT";
-
-    for (int i = 0; i < idx; i++)
-    {
-        printf("%s|", mods[i]);
-    }
-    printf("%u\n", mod);
+    int count = COUNT_MODS(*mods);
+    if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
+    if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
+    if (mods->hyper) printf("HYPER%c", getDelim(&count, '|', '\n'));
+    if (mods->shift) printf("SHIFT%c", getDelim(&count, '|', '\n'));
 }
 
 static void
@@ -90,24 +90,26 @@ debugString(const char* text, const char* value)
 }
 
 static void
-debugFlags(WkFlag flags)
+debugFlags(const WkFlags* flags)
 {
-    if (flags == 0)
+    if (!HAS_FLAG(*flags))
     {
-        printf("[DEBUG] | Flags:              WK_FLAG_DEFAULTS|%d\n", flags);
+        printf("[DEBUG] | Flags:              WK_FLAG_DEFAULTS\n");
         return;
     }
 
     printf("[DEBUG] | Flags:              ");
-    if (IS_FLAG(flags, WK_FLAG_KEEP)) printf("WK_FLAG_KEEP|");
-    if (IS_FLAG(flags, WK_FLAG_UNHOOK)) printf("WK_FLAG_UNHOOK|");
-    if (IS_FLAG(flags, WK_FLAG_NOBEFORE)) printf("WK_FLAG_NOBEFORE|");
-    if (IS_FLAG(flags, WK_FLAG_NOAFTER)) printf("WK_FLAG_NOAFTER|");
-    if (IS_FLAG(flags, WK_FLAG_WRITE)) printf("WK_FLAG_WRITE|");
-    if (IS_FLAG(flags, WK_FLAG_SYNC_COMMAND)) printf("WK_FLAG_SYNC_COMMAND|");
-    if (IS_FLAG(flags, WK_FLAG_BEFORE_ASYNC)) printf("WK_FLAG_BEFORE_ASYNC|");
-    if (IS_FLAG(flags, WK_FLAG_AFTER_SYNC)) printf("WK_FLAG_AFTER_SYNC|");
-    printf("%d\n", flags);
+    int count = COUNT_FLAGS(*flags);
+    if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
+    if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
+    if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
+    if (flags->unhook) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
+    if (flags->nobefore) printf("NOBEFORE%c", getDelim(&count, '|', '\n'));
+    if (flags->noafter) printf("NOAFTER%c", getDelim(&count, '|', '\n'));
+    if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
+    if (flags->syncCommand) printf("SYNCCOMMAND%c", getDelim(&count, '|', '\n'));
+    if (flags->beforeAsync) printf("BEFOREASYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->afterSync) printf("AFTERSYNC%c", getDelim(&count, '|', '\n'));
 }
 
 void
@@ -148,7 +150,7 @@ void
 debugChord(const Chord* chord)
 {
     printf("[DEBUG] ------------------ Chord -------------------\n");
-    debugMod(chord->mods);
+    debugMod(&chord->mods);
     debugSpecial(chord->special);
     debugString("Key", chord->key);
     debugString("Description", chord->description);
@@ -156,9 +158,18 @@ debugChord(const Chord* chord)
     debugString("Command", chord->command);
     debugString("Before", chord->before);
     debugString("After", chord->after);
-    debugFlags(chord->flags);
+    debugFlags(&chord->flags);
     debugPointer("Chords", chord->chords);
     printf("[DEBUG] --------------------------------------------\n");
+}
+
+void
+debugChords(const Chord* chords)
+{
+    for (uint32_t i = 0; chords[i].key; i++)
+    {
+        debugChord(&chords[i]);
+    }
 }
 
 void
@@ -230,7 +241,7 @@ void
 debugKey(const Key* key)
 {
     printf("[DEBUG] ------------------- Key --------------------\n");
-    debugMod(key->mods);
+    debugMod(&key->mods);
     if (debugSpecial(key->special))
     {
         printf("[DEBUG] | Key                 SPECIAL\n");

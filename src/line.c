@@ -76,12 +76,12 @@ initLine(Line* line)
     assert(line);
 
     line->index         = -1;
-    line->mods          = WK_MOD_NONE;
+    RESET_MODS(line->mods);
     initTokenArray(&line->description);
     initTokenArray(&line->command);
     initTokenArray(&line->before);
     initTokenArray(&line->after);
-    line->flags         = WK_FLAG_DEFAULTS;
+    RESET_FLAGS(line->flags);
     initLineArray(&line->array);
 }
 

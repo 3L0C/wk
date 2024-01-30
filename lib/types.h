@@ -3,39 +3,111 @@
 
 #include "common.h"
 
-#define IS_FLAG(flags, test)    (((flags) & (test)) == (test))
-#define IS_MOD(mod)             (mod)
-#define IS_CTRL(mod)            (IS_FLAG((mod), WK_MOD_CTRL))
-#define IS_ALT(mod)             (IS_FLAG((mod), WK_MOD_ALT))
-#define IS_HYPER(mod)           (IS_FLAG((mod), WK_MOD_HYPER))
-#define IS_SHIFT(mod)           (IS_FLAG((mod), WK_MOD_SHIFT))
-#define CHORD_FLAG(chord, flag) (IS_FLAG((chord)->flags, (flag)))
+/* mod macros */
+#define MAKE_MODS(                      \
+    _ctrl, _alt, _hyper, _shift         \
+)                                       \
+    (WkMods){                           \
+        .ctrl = (_ctrl),                \
+        .alt = (_alt),                  \
+        .hyper = (_hyper),              \
+        .shift = (_shift),              \
+    }
+#define RESET_MODS(mods)                \
+    ((mods).ctrl = false,               \
+     (mods).alt = false,                \
+     (mods).hyper = false,              \
+     (mods).shift = false)
+#define IS_MOD(mods)                    \
+    ((mods).ctrl    ||                  \
+     (mods).alt     ||                  \
+     (mods).hyper   ||                  \
+     (mods).shift)
+#define COUNT_MODS(mods)                \
+    ((mods).ctrl    +                   \
+     (mods).alt     +                   \
+     (mods).hyper   +                   \
+     (mods).shift)
 
+/* flag macros */
+#define MAKE_FLAGS(                     \
+    _keep, _close, _inherit, _unhook,   \
+    _nobefore, _noafter, _write,        \
+    _syncCommand, _beforeAsync,         \
+    _afterSync                          \
+)                                       \
+    (WkFlags){                          \
+        .keep = (_keep),                \
+        .close = (_close),              \
+        .inherit = (_inherit),          \
+        .unhook = (_unhook),            \
+        .nobefore = (_nobefore),        \
+        .noafter = (_noafter),          \
+        .write = (_write),              \
+        .syncCommand = (_syncCommand),  \
+        .beforeAsync = (_beforeAsync),  \
+        .afterSync = (_afterSync),      \
+    }
+#define RESET_FLAGS(flags)              \
+    ((flags).keep = false,              \
+     (flags).close = false,             \
+     (flags).inherit = false,           \
+     (flags).unhook = false,            \
+     (flags).nobefore = false,          \
+     (flags).noafter = false,           \
+     (flags).write = false,             \
+     (flags).syncCommand = false,       \
+     (flags).beforeAsync = false,       \
+     (flags).afterSync = false)
+#define HAS_FLAG(flags)                 \
+    ((flags).keep        ||             \
+     (flags).close       ||             \
+     (flags).inherit     ||             \
+     (flags).unhook      ||             \
+     (flags).nobefore    ||             \
+     (flags).noafter     ||             \
+     (flags).write       ||             \
+     (flags).syncCommand ||             \
+     (flags).beforeAsync ||             \
+     (flags).afterSync)
+#define COUNT_FLAGS(flags)              \
+    (((flags).keep)        +            \
+     ((flags).close)       +            \
+     ((flags).inherit)     +            \
+     ((flags).unhook)      +            \
+     ((flags).nobefore)    +            \
+     ((flags).noafter)     +            \
+     ((flags).write)       +            \
+     ((flags).syncCommand) +            \
+     ((flags).beforeAsync) +            \
+     ((flags).afterSync))
+
+/* chord macros */
 #define NULL_CHORD  \
-    {                                                       \
-    /*  mods,        special,         key,  desc, hint, */  \
-        WK_MOD_NONE, WK_SPECIAL_NONE, NULL, NULL, NULL,     \
-    /*  command, */                                         \
-        NULL,                                               \
-    /*  before, */                                          \
-        NULL,                                               \
-    /*  after, */                                           \
-        NULL,                                               \
-    /*  flags, */                                           \
-        WK_FLAG_DEFAULTS,                                   \
-        NULL                                                \
+    {                                   \
+    /*  mods,        special, */        \
+        (WkMods){0}, WK_SPECIAL_NONE,   \
+    /*  key,  desc, hint, */            \
+        NULL, NULL, NULL,               \
+    /*  command, */                     \
+        NULL,                           \
+    /*  before, */                      \
+        NULL,                           \
+    /*  after, */                       \
+        NULL,                           \
+    /*  flags,        chords */         \
+        (WkFlags){0}, NULL              \
     }
 #define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }
 #define CHORDS(...) { __VA_ARGS__, NULL_CHORD }
 
-typedef enum
+typedef struct
 {
-    WK_MOD_NONE     = (0),
-    WK_MOD_CTRL     = (1<<0),
-    WK_MOD_ALT      = (1<<1),
-    WK_MOD_HYPER    = (1<<2),
-    WK_MOD_SHIFT    = (1<<3),
-} WkMod;
+    bool ctrl:1;
+    bool alt:1;
+    bool hyper:1;
+    bool shift:1;
+} WkMods;
 
 typedef enum
 {
@@ -56,22 +128,23 @@ typedef enum
     WK_SPECIAL_BEGIN,
 } SpecialType;
 
-typedef enum
+typedef struct
 {
-    WK_FLAG_DEFAULTS        = (0),
-    WK_FLAG_KEEP            = (1<<0),
-    WK_FLAG_UNHOOK          = (1<<1),
-    WK_FLAG_NOBEFORE        = (1<<2),
-    WK_FLAG_NOAFTER         = (1<<3),
-    WK_FLAG_WRITE           = (1<<4),
-    WK_FLAG_SYNC_COMMAND    = (1<<5),
-    WK_FLAG_BEFORE_ASYNC    = (1<<6),
-    WK_FLAG_AFTER_SYNC      = (1<<7),
+    bool keep:1;
+    bool close:1;
+    bool inherit:1;
+    bool unhook:1;
+    bool nobefore:1;
+    bool noafter:1;
+    bool write:1;
+    bool syncCommand:1;
+    bool beforeAsync:1;
+    bool afterSync:1;
 } WkFlags;
 
 typedef struct Chord
 {
-    const WkMod mods;
+    const WkMods mods;
     const SpecialType special;
     const char* key;
     const char* description;
@@ -85,7 +158,7 @@ typedef struct Chord
 
 typedef struct
 {
-    WkMod mods;
+    WkMods mods;
     SpecialType special;
     const char* key;
     int len;
