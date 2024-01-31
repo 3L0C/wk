@@ -458,6 +458,10 @@ setHooksAndFlags(Line* parent, LineArray* children)
     for (size_t i = 0; i < children->count; i++)
     {
         Line* child = &children->lines[i];
+
+        /* NOTE Don't copy anything from parent if unhooked */
+        if (child->flags.unhook) continue;
+
         setFlags(&parent->flags, &child->flags);
         if (child->array.count && child->flags.inherit)
         {
