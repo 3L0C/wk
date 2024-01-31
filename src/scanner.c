@@ -290,13 +290,7 @@ checkMod(const char c)
 }
 
 static TokenType
-checkSpecial(
-    Scanner* scanner,
-    size_t start,
-    size_t length,
-    const char* rest,
-    TokenType type
-)
+checkSpecial(Scanner* scanner, size_t start, size_t length, const char* rest, TokenType type)
 {
     if (isKeyword(scanner, start, length, rest))
     {

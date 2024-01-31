@@ -11,23 +11,10 @@
 #include "debug.h"
 #include "line.h"
 #include "scanner.h"
+#include "compile.h"
 #include "token.h"
 #include "transpiler.h"
 #include "writer.h"
-
-typedef struct
-{
-    Scanner     scanner;
-    Token       current;
-    Token       previous;
-    bool        hadError;
-    bool        panicMode;
-    int         index;
-    Line        line;
-    LineArray*  lineDest;
-    LineArray*  linePrefix;
-    LineArray   lines;
-} Compiler;
 
 static void keyChord(Compiler* compiler);
 
@@ -540,27 +527,20 @@ keyChord(Compiler* compiler)
     if (compiler->panicMode) synchronize(compiler);
 }
 
-int
-transpileChords(const char* source, const char* delimiter, bool debugFlag)
+bool
+transpileChords(Compiler* compiler, const char* source, const char* delimiter, bool debugFlag)
 {
-    assert(source);
+    assert(compiler && source);
 
-    Compiler compiler;
     debug = debugFlag;
-    initCompiler(&compiler, source);
-    advance(&compiler);
-    while (!match(&compiler, TOKEN_EOF))
+    initCompiler(compiler, source);
+    advance(compiler);
+    while (!match(compiler, TOKEN_EOF))
     {
-        keyChord(&compiler);
+        keyChord(compiler);
     }
 
-    if (debug) debugLineArray(&compiler.lines);
+    if (debug) debugLineArray(&compiler->lines);
 
-    if (!compiler.hadError)
-    {
-        writeChords(&compiler.lines, delimiter);
-    }
-    freeLineArray(&compiler.lines);
-
-    return compiler.hadError;
+    return compiler->hadError;
 }

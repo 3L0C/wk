@@ -4,8 +4,9 @@
 #include "compile.h"
 
 bool
-compileChords(WkProperties* props, const char* source)
+compileChords(Compiler* compiler, WkProperties* props)
 {
-    assert(props && source);
+    assert(compiler && props);
+    /* TODO get compilation up and running */
     return true;
 }

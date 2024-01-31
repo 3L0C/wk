@@ -3,6 +3,9 @@
 
 #include "lib/common.h"
 
-int transpileChords(const char* source, const char* delimiter, bool debugFlag);
+#include "common.h"
+#include "compile.h"
+
+bool transpileChords(Compiler* compiler, const char* source, const char* delimiter, bool debugFlag);
 
 #endif /* WK_TRANSPILER_H_ */

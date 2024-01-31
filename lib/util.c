@@ -150,6 +150,7 @@ isUtf8StartByte(char byte)
 void
 pressKeys(WkProperties* props, const char* keys)
 {
+    assert(props && keys);
     return;
 }
 

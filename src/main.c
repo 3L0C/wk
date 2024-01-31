@@ -13,47 +13,88 @@
 #include "chords.h"
 #include "common.h"
 #include "compile.h"
+#include "line.h"
+#include "writer.h"
 #include "transpiler.h"
 
 static Client client;
-static WkProperties props;
+static WkProperties properties;
 
+/* Read the given '.wks' file, and transpile it into chords.h syntax. */
 static int
 transpile(void)
 {
     int result = EX_SOFTWARE;
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
-    result = transpileChords(source, client.delimiter, client.debug);
+    Compiler compiler;
+    if (!transpileChords(&compiler, source, client.delimiter, client.debug))
+    {
+        result = EX_DATAERR;
+        goto end;
+    }
+    writeChords(&compiler.lines, client.delimiter);
+
+end:
     free(source);
+    freeLineArray(&compiler.lines);
     return result;
 }
 
+/* Read stdin as though it were a '.wks' file,
+ * compile it into a Chord array, and execute like normal.
+ */
 static int
 runScript(void)
 {
+    int result = EX_SOFTWARE;
+
     if (!tryStdin(&client)) return EX_IOERR;
-    if (!compileChords(&props, client.script))
+    Compiler compiler;
+    if (!transpileChords(&compiler, client.script, client.delimiter, client.debug))
+    {
+        result = EX_DATAERR;
+        goto end;
+    }
+    if (!compileChords(&compiler, &properties))
     {
         free(client.script);
         return EX_DATAERR;
     }
-    pressKeys(&props, client.keys);
-    return run(&props);
+    if (client.keys) pressKeys(&properties, client.keys);
+    result = run(&properties);
+
+end:
+    free(client.script);
+    freeLineArray(&compiler.lines);
+    return result;
 }
 
+/* Read the given '.wks' file, compile it into a Chord array, and execute like normal. */
 static int
 runChordsFile(void)
 {
+    int result = EX_SOFTWARE;
     char* source = readFile(client.chordsFile);
     if (!source) return EX_IOERR;
-    if (!compileChords(&props, source))
+    Compiler compiler;
+    if (!transpileChords(&compiler, source, client.delimiter, client.debug))
     {
-        free(source);
-        return EX_DATAERR;
+        result = EX_DATAERR;
+        goto end;
     }
-    pressKeys(&props, client.keys);
-    return run(&props);
+    if (!compileChords(&compiler, &properties))
+    {
+        result = EX_DATAERR;
+        goto end;
+    }
+    if (client.keys) pressKeys(&properties, client.keys);
+    result = run(&properties);
+
+end:
+    free(source);
+    freeLineArray(&compiler.lines);
+    return result;
 }
 
 int
@@ -63,11 +104,11 @@ main(int argc, char** argv)
 
     initClient(&client, chords);
     parseArgs(&client, &argc, &argv);
-    initProperties(&props, &client);
+    initProperties(&properties, &client);
 
-    if (props.debug)
+    if (properties.debug)
     {
-        debugProperties(&props);
+        debugProperties(&properties);
         debugClient(&client);
     }
 
@@ -85,11 +126,11 @@ main(int argc, char** argv)
     }
     else
     {
-        if (props.debug)
+        if (properties.debug)
         {
-            debugChords(props.chords, 0);
+            debugChords(properties.chords, 0);
         }
-        result = run(&props);
+        result = run(&properties);
     }
 
     return result;
