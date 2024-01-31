@@ -147,11 +147,11 @@ typedef struct Chord
     WkMods mods;
     SpecialType special;
     const char* key;
-    const char* description;
-    const char* hint;
-    const char* command;
-    const char* before;
-    const char* after;
+    char* description;
+    char* hint;
+    char* command;
+    char* before;
+    char* after;
     WkFlags flags;
     struct Chord* chords;
 } Chord;
