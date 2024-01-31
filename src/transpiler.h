@@ -6,6 +6,6 @@
 #include "common.h"
 #include "compile.h"
 
-bool transpileChords(Compiler* compiler, const char* source, const char* delimiter, bool debugFlag);
+bool transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag);
 
 #endif /* WK_TRANSPILER_H_ */

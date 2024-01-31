@@ -22,5 +22,6 @@ typedef struct
 } Compiler;
 
 bool compileChords(Compiler* compiler, WkProperties* props);
+void initCompiler(Compiler* compiler, const char* source);
 
 #endif /* WK_COMPILE_H_ */

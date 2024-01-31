@@ -7,6 +7,7 @@
 #include "lib/common.h"
 #include "lib/debug.h"
 #include "lib/memory.h"
+#include "lib/types.h"
 #include "lib/util.h"
 #include "lib/window.h"
 
@@ -20,6 +21,22 @@
 static Client client;
 static WkProperties properties;
 
+static void
+freeChords(Chord* chords)
+{
+    while (chords->key)
+    {
+        free(chords->key);
+        free(chords->description);
+        free(chords->hint);
+        free(chords->command);
+        free(chords->before);
+        free(chords->after);
+        if (chords->chords) freeChords(chords->chords);
+    }
+    free(chords);
+}
+
 /* Read the given '.wks' file, and transpile it into chords.h syntax. */
 static int
 transpile(void)
@@ -28,7 +45,8 @@ transpile(void)
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
     Compiler compiler;
-    if (!transpileChords(&compiler, source, client.delimiter, client.debug))
+    initCompiler(&compiler, source);
+    if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         result = EX_DATAERR;
         goto end;
@@ -36,8 +54,8 @@ transpile(void)
     writeChords(&compiler.lines, client.delimiter);
 
 end:
-    free(source);
     freeLineArray(&compiler.lines);
+    free(source);
     return result;
 }
 
@@ -51,7 +69,8 @@ runScript(void)
 
     if (!tryStdin(&client)) return EX_IOERR;
     Compiler compiler;
-    if (!transpileChords(&compiler, client.script, client.delimiter, client.debug))
+    initCompiler(&compiler, client.script);
+    if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         result = EX_DATAERR;
         goto end;
@@ -65,8 +84,9 @@ runScript(void)
     result = run(&properties);
 
 end:
-    free(client.script);
+    freeChords(properties.chords);
     freeLineArray(&compiler.lines);
+    free(client.script);
     return result;
 }
 
@@ -78,7 +98,8 @@ runChordsFile(void)
     char* source = readFile(client.chordsFile);
     if (!source) return EX_IOERR;
     Compiler compiler;
-    if (!transpileChords(&compiler, source, client.delimiter, client.debug))
+    initCompiler(&compiler, source);
+    if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         result = EX_DATAERR;
         goto end;
@@ -92,8 +113,9 @@ runChordsFile(void)
     result = run(&properties);
 
 end:
-    free(source);
+    freeChords(properties.chords);
     freeLineArray(&compiler.lines);
+    free(source);
     return result;
 }
 

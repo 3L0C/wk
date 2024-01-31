@@ -146,7 +146,7 @@ typedef struct Chord
 {
     WkMods mods;
     SpecialType special;
-    const char* key;
+    char* key;
     char* description;
     char* hint;
     char* command;

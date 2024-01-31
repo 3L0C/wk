@@ -49,7 +49,7 @@ typedef struct
     WkHexColor colors[WK_COLOR_LAST];
     const char* shell;
     const char* font;
-    const Chord* chords;
+    Chord* chords;
     uint32_t chordCount;
     bool debug;
     CleanupFP cleanupfp;

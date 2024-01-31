@@ -20,19 +20,6 @@ static void keyChord(Compiler* compiler);
 
 static bool debug;
 
-static void
-initCompiler(Compiler* compiler, const char* source)
-{
-    initScanner(&compiler->scanner, source);
-    compiler->hadError      = false;
-    compiler->panicMode     = false;
-    compiler->index         = 0;
-    initLine(&compiler->line);
-    compiler->lineDest      = &compiler->lines;
-    compiler->linePrefix    = NULL;
-    initLineArray(&compiler->lines);
-}
-
 static LineArray*
 nextLineArray(Compiler* compiler)
 {
@@ -528,12 +515,11 @@ keyChord(Compiler* compiler)
 }
 
 bool
-transpileChords(Compiler* compiler, const char* source, const char* delimiter, bool debugFlag)
+transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
 {
-    assert(compiler && source);
+    assert(compiler);
 
     debug = debugFlag;
-    initCompiler(compiler, source);
     advance(compiler);
     while (!match(compiler, TOKEN_EOF))
     {
