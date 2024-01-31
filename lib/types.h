@@ -144,15 +144,15 @@ typedef struct
 
 typedef struct Chord
 {
-    const WkMods mods;
-    const SpecialType special;
+    WkMods mods;
+    SpecialType special;
     const char* key;
     const char* description;
     const char* hint;
     const char* command;
     const char* before;
     const char* after;
-    const WkFlags flags;
+    WkFlags flags;
     struct Chord* chords;
 } Chord;
 
