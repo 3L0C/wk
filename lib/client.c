@@ -7,7 +7,7 @@
 #include "types.h"
 
 void
-initClient(Client* client, const Chord* chords)
+initClient(Client* client, Chord* chords)
 {
     assert(client && chords);
 

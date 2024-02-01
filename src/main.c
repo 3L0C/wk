@@ -24,15 +24,15 @@ static WkProperties properties;
 static void
 freeChords(Chord* chords)
 {
-    while (chords->key)
+    for (size_t i = 0; chords[i].key; i++)
     {
-        free(chords->key);
-        free(chords->description);
-        free(chords->hint);
-        free(chords->command);
-        free(chords->before);
-        free(chords->after);
-        if (chords->chords) freeChords(chords->chords);
+        free(chords[i].key);
+        free(chords[i].description);
+        free(chords[i].hint);
+        free(chords[i].command);
+        free(chords[i].before);
+        free(chords[i].after);
+        if (chords[i].chords) freeChords(chords[i].chords);
     }
     free(chords);
 }
@@ -77,14 +77,15 @@ runScript(void)
     }
     if (!compileChords(&compiler, &properties))
     {
-        free(client.script);
-        return EX_DATAERR;
+        result = EX_DATAERR;
+        goto error;
     }
     if (client.keys) pressKeys(&properties, client.keys);
     result = run(&properties);
 
-end:
+error:
     freeChords(properties.chords);
+end:
     freeLineArray(&compiler.lines);
     free(client.script);
     return result;
@@ -107,13 +108,14 @@ runChordsFile(void)
     if (!compileChords(&compiler, &properties))
     {
         result = EX_DATAERR;
-        goto end;
+        goto error;
     }
     if (client.keys) pressKeys(&properties, client.keys);
     result = run(&properties);
 
-end:
+error:
     freeChords(properties.chords);
+end:
     freeLineArray(&compiler.lines);
     free(source);
     return result;

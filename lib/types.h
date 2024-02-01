@@ -126,7 +126,7 @@ typedef enum
     WK_SPECIAL_PAGE_DOWN,
     WK_SPECIAL_END,
     WK_SPECIAL_BEGIN,
-} SpecialType;
+} WkSpecial;
 
 typedef struct
 {
@@ -145,7 +145,7 @@ typedef struct
 typedef struct Chord
 {
     WkMods mods;
-    SpecialType special;
+    WkSpecial special;
     char* key;
     char* description;
     char* hint;
@@ -159,7 +159,7 @@ typedef struct Chord
 typedef struct
 {
     WkMods mods;
-    SpecialType special;
+    WkSpecial special;
     const char* key;
     int len;
 } Key;

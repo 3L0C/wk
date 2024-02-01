@@ -26,7 +26,7 @@ printErrorToken(Token* token)
 static void
 printSimpleToken(Token* token, const char* type)
 {
-    printf("[%04zu] TokenType: %-20s", token->line, type);
+    printf("[DEBUG] [%04zu] TokenType: %-20s", token->line, type);
     printf(" |  Lexeme: '%.*s'\n", (int)token->length, token->start);
 }
 
@@ -115,7 +115,7 @@ debugScanner(const char* source)
 static void
 printMods(WkMods* mods)
 {
-    printf("       ");
+    printf("[DEBUG]        ");
     if (!IS_MOD(*mods))
     {
         printf("Mods: NONE\n");
@@ -133,7 +133,7 @@ printMods(WkMods* mods)
 static void
 printToken(Token token, const char* message)
 {
-    printf("       ");
+    printf("[DEBUG]        ");
     printf("%s: '%.*s'", message, (int)token.length, token.start);
     printf("\n");
 }
@@ -141,7 +141,7 @@ printToken(Token token, const char* message)
 static void
 printTokenArray(Line* line, TokenArray* array, const char* message)
 {
-    printf("       ");
+    printf("[DEBUG]        ");
     printf("%s: ", message);
     if (array->count == 0) printf("None");
     for (size_t i = 0; i < array->count; i++)
@@ -161,7 +161,7 @@ printTokenArray(Line* line, TokenArray* array, const char* message)
 static void
 printFlags(WkFlags* flags)
 {
-    printf("       ");
+    printf("[DEBUG]        ");
     if (!HAS_FLAG(*flags))
     {
         printf("Flags: WK_FLAG_DEFAULTS\n");
@@ -187,8 +187,8 @@ disassembleLine(Line* line, size_t index)
 {
     assert(line);
 
-    printf("[%04zu] Line\n", index);
-    printf("       Index: %04d\n", line->index);
+    printf("[DEBUG] [%04zu] Line\n", index);
+    printf("[DEBUG]       Index: %04d\n", line->index);
     printFlags(&line->flags);
     printMods(&line->mods);
     printToken(line->key, "Key");
@@ -197,6 +197,22 @@ disassembleLine(Line* line, size_t index)
     printTokenArray(line, &line->before, "Before");
     printTokenArray(line, &line->after, "After");
     debugLineArray(&line->array);
+}
+
+void
+disassembleLineShallow(Line* line, size_t index)
+{
+    assert(line);
+
+    printf("[DEBUG] [%04zu] Line\n", index);
+    printf("[DEBUG]        Index: %04d\n", line->index);
+    printFlags(&line->flags);
+    printMods(&line->mods);
+    printToken(line->key, "Key");
+    printTokenArray(line, &line->description, "Description");
+    printTokenArray(line, &line->command, "Command");
+    printTokenArray(line, &line->before, "Before");
+    printTokenArray(line, &line->after, "After");
 }
 
 void

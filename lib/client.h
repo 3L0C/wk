@@ -29,10 +29,10 @@ typedef struct
     char* script;
     size_t scriptCapacity;
     size_t scriptCount;
-    const Chord* chords;
+    Chord* chords;
     bool debug;
 } Client;
 
-void initClient(Client* client, const Chord* chords);
+void initClient(Client* client, Chord* chords);
 
 #endif /* WK_CLIENT_H_ */

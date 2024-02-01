@@ -35,7 +35,6 @@ void freeLine(Line* line);
 void freeLineArray(LineArray* array);
 void initLine(Line* line);
 void initLineArray(LineArray* array);
-void printLineArray(LineArray* array);
 void writeLineArray(LineArray* array, Line* line);
 
 #endif /* WK_LINE_H_ */

@@ -61,7 +61,7 @@ debugPointer(const char* text, const void* value, unsigned int indent)
 }
 
 static bool
-debugSpecial(SpecialType special, unsigned int indent)
+debugSpecial(WkSpecial special, unsigned int indent)
 {
     printDebug(indent);
     printf("| Special             ");

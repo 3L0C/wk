@@ -30,7 +30,7 @@
 
 typedef struct
 {
-    SpecialType special;
+    WkSpecial special;
     KeySym keysym;
 } SpecialKeys;
 
@@ -459,7 +459,7 @@ grabkeyboard(void)
     return false;
 }
 
-static SpecialType
+static WkSpecial
 getSpecialKey(KeySym keysym)
 {
     for (size_t i = 0; i < specialkeysLen; i++)

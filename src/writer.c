@@ -32,7 +32,7 @@ writeChordsHeader(void)
         " * after\n"
         " * flags, chords\n"
         " */\n"
-        "const Chord chords[] = CHORDS(\n"
+        "Chord chords[] = CHORDS(\n"
     );
 }
 
@@ -63,7 +63,7 @@ writeChordSpecial(Token* token)
 {
     switch (token->type)
     {
-    /* is special */
+    /* Special key */
     case TOKEN_SPECIAL_LEFT:        printf("WK_SPECIAL_LEFT, ");       break;
     case TOKEN_SPECIAL_RIGHT:       printf("WK_SPECIAL_RIGHT, ");      break;
     case TOKEN_SPECIAL_UP:          printf("WK_SPECIAL_UP, ");         break;
@@ -78,7 +78,7 @@ writeChordSpecial(Token* token)
     case TOKEN_SPECIAL_PAGE_DOWN:   printf("WK_SPECIAL_PAGE_DOWN, ");  break;
     case TOKEN_SPECIAL_END:         printf("WK_SPECIAL_END, ");        break;
     case TOKEN_SPECIAL_BEGIN:       printf("WK_SPECIAL_BEGIN, ");      break;
-    /* not special */
+    /* Regular key */
     default: printf("WK_SPECIAL_NONE, "); break;
     }
 }
@@ -141,7 +141,6 @@ writeChordInterp(Token* token, Line* line)
     case TOKEN_DESC_INTERP: writeChordEscString(token, false); break;
     default: writeChordEscString(token, true); break;
     }
-
 }
 
 static void

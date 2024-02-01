@@ -526,7 +526,7 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
         keyChord(compiler);
     }
 
-    if (debug) debugLineArray(&compiler->lines);
+    /* if (debug) debugLineArray(&compiler->lines); */
 
-    return compiler->hadError;
+    return !compiler->hadError;
 }

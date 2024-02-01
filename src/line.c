@@ -96,17 +96,6 @@ initLineArray(LineArray* array)
 }
 
 void
-printLineArray(LineArray* array)
-{
-    assert(array);
-
-    for (size_t i = 0; i < array->count; i++)
-    {
-
-    }
-}
-
-void
 writeLineArray(LineArray* array, Line* line)
 {
     assert(array && line);
