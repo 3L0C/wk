@@ -41,7 +41,7 @@ freeChords(Chord* chords)
 static int
 transpile(void)
 {
-    int result = EX_SOFTWARE;
+    int result = EX_OK;
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
     Compiler compiler;
