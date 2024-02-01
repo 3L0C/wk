@@ -496,12 +496,15 @@ keypress(XKeyEvent* keyEvent)
     char buffer[32] = {0};
     int len;
     Key key = {0};
+    unsigned int state = keyEvent->state;
+
+    keyEvent->state &= ~(ControlMask);
 
     len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
 
     if (status == XLookupNone || status == XBufferOverflow) return WK_STATUS_RUNNING;
 
-    if (!processKey(&key, keyEvent->state, buffer, len, keysym)) return WK_STATUS_RUNNING;
+    if (!processKey(&key, state, buffer, len, keysym)) return WK_STATUS_RUNNING;
 
     return handleKeypress(properties, &key);
 
