@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "lib/util.h"
+
 #include "scanner.h"
 
 void
@@ -341,15 +343,17 @@ specialKey(Scanner* scanner)
 static Token
 key(Scanner* scanner, char c)
 {
-    if ((c & 0x80) == 0x80)
+    if (isUtf8StartByte(c))
     {
-        for (c <<= 1; (c & 0x80) == 0x80; c <<= 1)
+        /* NOTE scanning multi byte character */
+        while (isUtf8ContByte(peek(scanner)))
         {
-            advance(scanner);
+            c = advance(scanner);
         }
     }
     else
     {
+        /* NOTE possible special character */
         Scanner clone;
         cloneScanner(scanner, &clone);
         Token result = specialKey(&clone);

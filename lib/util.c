@@ -150,7 +150,7 @@ isUtf8ContByte(char byte)
 bool
 isUtf8StartByte(char byte)
 {
-    return (byte & 0xC0) != 0x80;
+    return (byte & 0x80) == 0x80 && (byte & 0xC0) != 0x80;
 }
 
 void
