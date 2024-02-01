@@ -261,6 +261,12 @@ parseArgs(Client* client, int* argc, char*** argv)
 #undef GET_ARG
 }
 
+void
+pressKeys(WkProperties* props, const char* keys)
+{
+
+}
+
 static void
 addLineToScript(Client* client, const char* line, const size_t n)
 {

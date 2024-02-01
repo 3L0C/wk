@@ -60,13 +60,22 @@ modsEqual(const WkMods* a, const WkMods* b)
 }
 
 static bool
+isSpecialKey(const Chord* chord, Key* key)
+{
+    return (
+        chord->special == key->special &&
+        modsEqual(&chord->mods, &key->mods)
+    );
+}
+
+static bool
 isKey(const Chord* chord, Key* key)
 {
-    if (strcmp(chord->key, key->key) == 0) return true;
+    if (key->special != WK_SPECIAL_NONE) return isSpecialKey(chord, key);
     return (
-        iscntrl(*key->key) &&
         modsEqual(&chord->mods, &key->mods) &&
-        chord->special == key->special
+        chord->special == key->special &&
+        strcmp(chord->key, key->key) == 0
     );
 }
 
@@ -151,13 +160,6 @@ bool
 isUtf8StartByte(char byte)
 {
     return (byte & 0x80) == 0x80 && (byte & 0xC0) != 0x80;
-}
-
-void
-pressKeys(WkProperties* props, const char* keys)
-{
-    assert(props && keys);
-    return;
 }
 
 static WkStatus
