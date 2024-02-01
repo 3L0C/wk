@@ -421,10 +421,10 @@ scanToken(Scanner* scanner)
     case '\'':
         makeCurrent(scanner);
         return description(scanner);
-    case '$':
+    case '%':
         if (!match(scanner, '{') || !match(scanner, '{'))
         {
-            return errorToken(scanner, "Expect '{{' after '$'");
+            return errorToken(scanner, "Expect '{{' after '%'");
         }
         makeCurrent(scanner);
         skipWhitespace(scanner);
