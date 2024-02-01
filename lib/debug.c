@@ -33,6 +33,24 @@ debugInt(const char* text, int value, unsigned int indent)
 }
 
 static void
+debugSize_t(const char* text, size_t value, unsigned int indent)
+{
+    static const int max = 20;
+    int len = strlen(text);
+    printDebug(indent);
+    printf("| %s%*s%04zu\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
+}
+
+static void
+debugUint32_t(const char* text, uint32_t value, unsigned int indent)
+{
+    static const int max = 20;
+    int len = strlen(text);
+    printDebug(indent);
+    printf("| %s%*s%04u\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
+}
+
+static void
 debugMod(const WkMods* mods, unsigned int indent)
 {
     printDebug(indent);
@@ -198,30 +216,36 @@ debugChordsShallow(const Chord* chords, uint32_t len)
 void
 debugClient(const Client* client)
 {
-    printf("[DEBUG] ------------------ Client ------------------\n");
-    printf("[DEBUG] | Delimiter:          '%s'\n", client->delimiter);
-    printf("[DEBUG] | Max cols:           %zu\n", client->maxCols);
-    printf("[DEBUG] | Window width:       %d\n", client->windowWidth);
-    printf("[DEBUG] | Window gap:         %d\n", client->windowGap);
-    printf("[DEBUG] | Width padding:      %u\n", client->wpadding);
-    printf("[DEBUG] | Height padding:     %u\n", client->hpadding);
-    printf("[DEBUG] | Window position:    %zu\n", client->windowPosition);
-    printf("[DEBUG] | Border width:       %zu\n", client->borderWidth);
-    printf("[DEBUG] | Foreground:         '%s'\n", client->foreground);
-    printf("[DEBUG] | Background:         '%s'\n", client->background);
-    printf("[DEBUG] | Border:             '%s'\n", client->border);
-    printf("[DEBUG] | Shell:              '%s'\n", client->shell);
-    printf("[DEBUG] | Font:               '%s'\n", client->font);
-    printf("[DEBUG] | Keys:               '%s'\n", client->keys);
-    printf("[DEBUG] | Transpile:          '%s'\n", client->transpile);
-    printf("[DEBUG] | Chords file:        '%s'\n", client->chordsFile);
-    printf("[DEBUG] | Try script:         %s\n", client->tryScript ? "True" : "False");
-    printf("[DEBUG] | Script:             '%s'\n", client->script);
-    printf("[DEBUG] | Script capacity:    %zu\n", client->scriptCapacity);
-    printf("[DEBUG] | Script count:       %zu\n", client->scriptCount);
-    printf("[DEBUG] | Chords:             Set\n");
-    printf("[DEBUG] | Debug:              True\n");
-    printf("[DEBUG] --------------------------------------------\n");
+    printDebug(0);
+    printf("------------------ Client ------------------\n");
+    debugString("Delimiter:", client->delimiter, 0);
+    debugSize_t("Max cols:", client->maxCols, 0);
+    debugInt("Window width:", client->windowWidth, 0);
+    debugInt("Window gap:", client->windowGap, 0);
+    debugUint32_t("Width padding:", client->wpadding, 0);
+    debugUint32_t("Height padding:", client->hpadding, 0);
+    debugString(
+        "Window position:",
+        (client->windowPosition == WK_WIN_POS_BOTTOM ? "Bottom" : "Top"),
+        0
+    );
+    debugSize_t("Border width:", client->borderWidth, 0);
+    debugString("Foreground:", client->foreground, 0);
+    debugString("Background:", client->background, 0);
+    debugString("Border:", client->border, 0);
+    debugString("Shell:", client->shell, 0);
+    debugString("Font:", client->font, 0);
+    debugString("Keys:", client->keys, 0);
+    debugString("Transpile:", client->transpile, 0);
+    debugString("Chords file:", client->chordsFile, 0);
+    debugString("Try script:", (client->tryScript ? "True" : "False"), 0);
+    debugString("Script:", client->script, 0);
+    debugSize_t("Script capacity:", client->scriptCapacity, 0);
+    debugSize_t("Script count:", client->scriptCount, 0);
+    debugString("Chords:", "Set", 0);
+    debugString("Debug:", "True", 0);
+    printDebug(0);
+    printf("--------------------------------------------\n");
 }
 
 static void
@@ -292,25 +316,31 @@ debugMsg(bool debug, const char* fmt, ...)
 void
 debugProperties(const WkProperties* props)
 {
-    printf("[DEBUG] ---------------- Properties ----------------\n");
-    printf("[DEBUG] | Delimiter:          '%s'\n", props->delimiter);
-    printf("[DEBUG] | Max cols:           %zu\n", props->maxCols);
-    printf("[DEBUG] | Window width:       %d\n", props->windowWidth);
-    printf("[DEBUG] | Window gap:         %d\n", props->windowGap);
-    printf("[DEBUG] | Width padding:      %u\n", props->wpadding);
-    printf("[DEBUG] | Height padding:     %u\n", props->hpadding);
-    printf("[DEBUG] | Cell height:        %u\n", props->cellHeight);
-    printf("[DEBUG] | Rows:               %u\n", props->rows);
-    printf("[DEBUG] | Cols:               %u\n", props->cols);
-    printf("[DEBUG] | Width:              %u\n", props->width);
-    printf("[DEBUG] | Height:             %u\n", props->height);
-    printf("[DEBUG] | Window position:    %s\n", (props->position == WK_WIN_POS_BOTTOM) ? "Bottom" : "Top");
-    printf("[DEBUG] | Border width:       %zu\n", props->borderWidth);
+    printDebug(0);
+    printf("---------------- Properties ----------------\n");
+    debugString("Delimiter:", props->delimiter, 0);
+    debugSize_t("Max cols:", props->maxCols, 0);
+    debugInt("Window width:", props->windowWidth, 0);
+    debugInt("Window gap:", props->windowGap, 0);
+    debugUint32_t("Width padding:", props->wpadding, 0);
+    debugUint32_t("Height padding:", props->hpadding, 0);
+    debugUint32_t("Cell height:", props->cellHeight, 0);
+    debugUint32_t("Rows:", props->rows, 0);
+    debugUint32_t("Cols:", props->cols, 0);
+    debugUint32_t("Width:", props->width, 0);
+    debugUint32_t("Height:", props->height, 0);
+    debugString(
+        "Window position:",
+        (props->position == WK_WIN_POS_BOTTOM ? "Bottom" : "Top"),
+        0
+    );
+    debugSize_t("Border width:", props->borderWidth, 0);
     debugHexColors(props->colors);
-    printf("[DEBUG] | Shell:              '%s'\n", props->shell);
-    printf("[DEBUG] | Font:               '%s'\n", props->font);
-    printf("[DEBUG] | Chords:             Set\n");
-    printf("[DEBUG] | Chord count:        %u\n", props->chordCount);
-    printf("[DEBUG] | Debug:              True\n");
-    printf("[DEBUG] --------------------------------------------\n");
+    debugString("Shell:", props->shell, 0);
+    debugString("Font:", props->font, 0);
+    debugString("Chords:", "Set", 0);
+    debugUint32_t("Chord count:", props->chordCount, 0);
+    debugString("Debug:", "True", 0);
+    printDebug(0);
+    printf("--------------------------------------------\n");
 }
