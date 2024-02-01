@@ -85,6 +85,7 @@ handlePrefix(WkProperties* props, const Chord* chord)
     debugMsg(props->debug, "Found prefix.");
 
     props->chords = chord->chords;
+    countChords(props);
     return WK_STATUS_DAMAGED;
 }
 
@@ -141,8 +142,8 @@ handleKeypress(WkProperties* props, Key* key)
             {
                 debugChord(&chords[i], 0);
                 debugKey(key);
+                debugMsg(props->debug, "Found match: '%s'.", chords[i].key);
             }
-            debugMsg(props->debug, "Found match: '%s'.", chords[i].key);
             return pressKey(props, &chords[i]);
         }
     }

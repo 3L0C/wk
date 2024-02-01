@@ -8,10 +8,15 @@
 
 #include "lib/client.h"
 #include "lib/common.h"
+#include "lib/debug.h"
 #include "lib/memory.h"
 #include "lib/properties.h"
+#include "lib/types.h"
+#include "lib/util.h"
+#include "lib/window.h"
 
 #include "common.h"
+#include "scanner.h"
 
 char*
 readFile(const char* path)
@@ -261,10 +266,133 @@ parseArgs(Client* client, int* argc, char*** argv)
 #undef GET_ARG
 }
 
-bool
+static bool
+addMod(Key* key, TokenType type)
+{
+    switch (type)
+    {
+    case TOKEN_MOD_CTRL: key->mods.ctrl = true; break;
+    case TOKEN_MOD_ALT: key->mods.alt = true; break;
+    case TOKEN_MOD_HYPER: key->mods.hyper = true; break;
+    case TOKEN_MOD_SHIFT: key->mods.shift = true; break;
+    default: return false;
+    }
+
+    return true;
+}
+
+static bool
+addSpecial(Key* key, TokenType type)
+{
+    key->key = NULL;
+
+    switch (type)
+    {
+    case TOKEN_SPECIAL_LEFT: key->special = WK_SPECIAL_LEFT; break;
+    case TOKEN_SPECIAL_RIGHT: key->special = WK_SPECIAL_RIGHT; break;
+    case TOKEN_SPECIAL_UP: key->special = WK_SPECIAL_UP; break;
+    case TOKEN_SPECIAL_DOWN: key->special = WK_SPECIAL_DOWN; break;
+    case TOKEN_SPECIAL_TAB: key->special = WK_SPECIAL_TAB; break;
+    case TOKEN_SPECIAL_SPACE: key->special = WK_SPECIAL_SPACE; break;
+    case TOKEN_SPECIAL_RETURN: key->special = WK_SPECIAL_RETURN; break;
+    case TOKEN_SPECIAL_DELETE: key->special = WK_SPECIAL_DELETE; break;
+    case TOKEN_SPECIAL_ESCAPE: key->special = WK_SPECIAL_ESCAPE; break;
+    case TOKEN_SPECIAL_HOME: key->special = WK_SPECIAL_HOME; break;
+    case TOKEN_SPECIAL_PAGE_UP: key->special = WK_SPECIAL_PAGE_UP; break;
+    case TOKEN_SPECIAL_PAGE_DOWN: key->special = WK_SPECIAL_PAGE_DOWN; break;
+    case TOKEN_SPECIAL_END: key->special = WK_SPECIAL_END; break;
+    case TOKEN_SPECIAL_BEGIN: key->special = WK_SPECIAL_BEGIN; break;
+    default: return false;
+    }
+
+    return true;
+}
+
+static WkStatus
+pressKey(WkProperties* props, Scanner* scanner)
+{
+    assert(props && scanner);
+
+    static const size_t bufmax = 32;
+    char buffer[bufmax];
+    memset(buffer, 0, 32);
+    Key key = {0};
+    Token token = scanToken(scanner);
+
+    while (addMod(&key, token.type))
+    {
+        token = scanToken(scanner);
+    }
+
+    if (token.type == TOKEN_KEY)
+    {
+        key.special = WK_SPECIAL_NONE;
+        if (token.length > bufmax)
+        {
+            errorMsg("Key is longer than max size of %zu: %04zu", bufmax, token.length);
+            return WK_STATUS_EXIT_SOFTWARE;
+        }
+        memcpy(buffer, token.start, token.length);
+        buffer[token.length] = '\0';
+        key.key = buffer;
+        key.len = token.length;
+    }
+    else if (!addSpecial(&key, token.type))
+    {
+        errorMsg(
+            "Key does not appear to be a regular key or a special key: '%.*s'.",
+            (int)token.length, token.start
+        );
+        return WK_STATUS_EXIT_SOFTWARE;
+    }
+
+    if (props->debug)
+    {
+        debugMsg(props->debug, "Trying to press key: '%.*s'.", (int)token.length, token.start);
+        debugKey(&key);
+    }
+
+    WkStatus status = handleKeypress(props, &key);
+
+    if (status == WK_STATUS_EXIT_SOFTWARE)
+    {
+        errorMsg("Could not press key: '%.*s'.", (int)token.length, token.start);
+        return status;
+    }
+
+    if (status == WK_STATUS_EXIT_OK)
+    {
+        token = scanToken(scanner);
+        if (token.type == TOKEN_EOF) return status;
+        return WK_STATUS_EXIT_SOFTWARE;
+    }
+
+    return status;
+}
+
+WkStatus
 pressKeys(WkProperties* props, const char* keys)
 {
-    return true;
+    Scanner scanner;
+    initScanner(&scanner, keys);
+    /* TokenType type = pressKey(props, &scanner); */
+    WkStatus status = pressKey(props, &scanner);
+
+    while (status == WK_STATUS_RUNNING)
+    {
+        status = pressKey(props, &scanner);
+    }
+
+    if (status != WK_STATUS_RUNNING && *scanner.current != '\0')
+    {
+        errorMsg(
+            "Reached end of chords but not end of keys: '%s'.",
+            (scanner.current == scanner.start) ? scanner.start : scanner.current - 1
+        );
+        return status;
+    }
+
+    return status;
 }
 
 static void

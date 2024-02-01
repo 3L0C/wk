@@ -83,14 +83,29 @@ runScript(void)
         result = EX_DATAERR;
         goto error;
     }
-    if (client.keys && !pressKeys(&properties, client.keys))
+    countChords(&properties);
+    if (client.keys)
     {
-        errorMsg("Keys not found in chords: '%s'.", client.keys);
-        result = EX_DATAERR;
-        goto error;
+        WkStatus status = pressKeys(&properties, client.keys);
+        if (status == WK_STATUS_EXIT_SOFTWARE)
+        {
+            result = EX_DATAERR;
+            goto error;
+        }
+        else if (status == WK_STATUS_EXIT_OK)
+        {
+            debugMsg(properties.debug, "Successfull pressed keys: '%s'.", client.keys);
+            result = EX_OK;
+        }
+        else
+        {
+            result = run(&properties);
+        }
     }
-
-    result = run(&properties);
+    else
+    {
+        result = run(&properties);
+    }
 
 error:
     freeChords(properties.chords);
@@ -119,14 +134,29 @@ runChordsFile(void)
         result = EX_DATAERR;
         goto error;
     }
-    if (client.keys && !pressKeys(&properties, client.keys))
+    countChords(&properties);
+    if (client.keys)
     {
-        errorMsg("Keys not found in chords: '%s'.", client.keys);
-        result = EX_DATAERR;
-        goto error;
+        WkStatus status = pressKeys(&properties, client.keys);
+        if (status == WK_STATUS_EXIT_SOFTWARE)
+        {
+            result = EX_DATAERR;
+            goto error;
+        }
+        else if (status == WK_STATUS_EXIT_OK)
+        {
+            debugMsg(properties.debug, "Successfull pressed keys: '%s'.", client.keys);
+            result = EX_OK;
+        }
+        else
+        {
+            result = run(&properties);
+        }
     }
-
-    result = run(&properties);
+    else
+    {
+        result = run(&properties);
+    }
 
 error:
     freeChords(properties.chords);
@@ -169,6 +199,7 @@ main(int argc, char** argv)
         {
             debugChords(properties.chords, 0);
         }
+        countChords(&properties);
         if (client.keys && !pressKeys(&properties, client.keys))
         {
             errorMsg("Keys not found in chords: '%s'.", client.keys);
