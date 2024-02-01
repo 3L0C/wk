@@ -73,15 +73,23 @@ runScript(void)
     initCompiler(&compiler, client.script);
     if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
+        errorMsg("Mallformed script: \n%s", client.script);
         result = EX_DATAERR;
         goto end;
     }
     if (!compileChords(&compiler, &properties))
     {
+        errorMsg("Could not compile script.");
         result = EX_DATAERR;
         goto error;
     }
-    if (client.keys) pressKeys(&properties, client.keys);
+    if (client.keys && !pressKeys(&properties, client.keys))
+    {
+        errorMsg("Keys not found in chords: '%s'.", client.keys);
+        result = EX_DATAERR;
+        goto error;
+    }
+
     result = run(&properties);
 
 error:
@@ -111,7 +119,13 @@ runChordsFile(void)
         result = EX_DATAERR;
         goto error;
     }
-    if (client.keys) pressKeys(&properties, client.keys);
+    if (client.keys && !pressKeys(&properties, client.keys))
+    {
+        errorMsg("Keys not found in chords: '%s'.", client.keys);
+        result = EX_DATAERR;
+        goto error;
+    }
+
     result = run(&properties);
 
 error:
@@ -154,6 +168,11 @@ main(int argc, char** argv)
         if (properties.debug)
         {
             debugChords(properties.chords, 0);
+        }
+        if (client.keys && !pressKeys(&properties, client.keys))
+        {
+            errorMsg("Keys not found in chords: '%s'.", client.keys);
+            return EX_DATAERR;
         }
         result = run(&properties);
     }

@@ -261,10 +261,10 @@ parseArgs(Client* client, int* argc, char*** argv)
 #undef GET_ARG
 }
 
-void
+bool
 pressKeys(WkProperties* props, const char* keys)
 {
-
+    return true;
 }
 
 static void
