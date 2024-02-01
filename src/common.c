@@ -69,13 +69,13 @@ usage(void)
         "    -t, --top                  Position window at top of screen.\n"
         "    -b, --bottom               Position window at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as chords.\n"
-        "    -m, --max-cols NUM         Set maximum columns to NUM.\n"
+        "    -m, --max-columns NUM      Set maximum columns to NUM.\n"
         "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
         "    -T, --transpile FILE       Transpile FILE to valid 'chords.h' syntax and print to stdout.\n"
         "    -c, --chords FILE          Use FILE for chords rather than those in 'chords.h'.\n"
-        "    --win-width NUM            Set window width to NUM.\n"
-        "    --win-gap NUM              Window gap between top/bottom of screen. Set to '-1' for a\n"
-        "                               gap of 1/10th of the screen height.\n"
+        "    -w, --width NUM            Set window width to NUM.\n"
+        "    -g, --gap NUM              Set window gap between top/bottom of screen.\n"
+        "                               Set to '-1' for a gap 1/10th the size of your screen height.\n"
         "    --border-width NUM         Set border width to NUM.\n"
         "    --wpadding NUM             Set left and right padding around hint text to NUM.\n"
         "    --hpadding NUM             Set up and down padding around hint text to NUM.\n"
@@ -118,20 +118,20 @@ parseArgs(Client* client, int* argc, char*** argv)
         { "bottom",         no_argument,        0, 'b' },
         { "script",         no_argument,        0, 's' },
         /*                  required argument           */
-        { "max-cols",       required_argument,  0, 'm' },
+        { "max-columns",    required_argument,  0, 'm' },
         { "press",          required_argument,  0, 'p' },
         { "transpile",      required_argument,  0, 'T' },
         { "chords",         required_argument,  0, 'c' },
-        { "win-width",      required_argument,  0, 0x090 },
-        { "win-gap",        required_argument,  0, 0x091 },
-        { "border-width",   required_argument,  0, 0x092 },
-        { "wpadding",       required_argument,  0, 0x093 },
-        { "hpadding",       required_argument,  0, 0x094 },
-        { "fg",             required_argument,  0, 0x095 },
-        { "bg",             required_argument,  0, 0x096 },
-        { "bd",             required_argument,  0, 0x097 },
-        { "shell",          required_argument,  0, 0x098 },
-        { "font",           required_argument,  0, 0x099 },
+        { "width",          required_argument,  0, 'w' },
+        { "gap",            required_argument,  0, 'g' },
+        { "border-width",   required_argument,  0, 0x090 },
+        { "wpadding",       required_argument,  0, 0x091 },
+        { "hpadding",       required_argument,  0, 0x092 },
+        { "fg",             required_argument,  0, 0x093 },
+        { "bg",             required_argument,  0, 0x094 },
+        { "bd",             required_argument,  0, 0x095 },
+        { "shell",          required_argument,  0, 0x096 },
+        { "font",           required_argument,  0, 0x097 },
         { 0, 0, 0, 0 }
     };
 
@@ -141,7 +141,7 @@ parseArgs(Client* client, int* argc, char*** argv)
     while (true)
     {
 
-        opt = getopt_long(*argc, *argv, ":hvDtbsm:p:T:c:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvDtbsm:p:T:c:w:g:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
@@ -166,7 +166,10 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->maxCols = (unsigned int)n;
             break;
         }
-        case 0x090:
+        case 'p': client->keys = optarg; break;
+        case 'T': client->transpile = optarg; break;
+        case 'c': client->chordsFile = optarg; break;
+        case 'w':
         {
             int n;
             if (!getNum(&n))
@@ -178,7 +181,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->windowWidth = n;
             break;
         }
-        case 0x091:
+        case 'g':
         {
             int n;
             if (!getNum(&n))
@@ -190,7 +193,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->windowGap = n;
             break;
         }
-        case 0x092:
+        case 0x090:
         {
             int n;
             if (!getNum(&n))
@@ -202,7 +205,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->borderWidth = (unsigned int)n;
             break;
         }
-        case 0x093:
+        case 0x091:
         {
             int n;
             if (!getNum(&n))
@@ -214,7 +217,7 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->wpadding = (unsigned int)n;
             break;
         }
-        case 0x094:
+        case 0x092:
         {
             int n;
             if (!getNum(&n))
@@ -226,14 +229,11 @@ parseArgs(Client* client, int* argc, char*** argv)
             client->hpadding = (unsigned int)n;
             break;
         }
-        case 0x095: client->foreground = optarg; break;
-        case 0x096: client->background = optarg; break;
-        case 0x097: client->border = optarg; break;
-        case 0x098: client->shell = optarg; break;
-        case 0x099: client->font = optarg; break;
-        case 'p': client->keys = optarg; break;
-        case 'T': client->transpile = optarg; break;
-        case 'c': client->chordsFile = optarg; break;
+        case 0x093: client->foreground = optarg; break;
+        case 0x094: client->background = optarg; break;
+        case 0x095: client->border = optarg; break;
+        case 0x096: client->shell = optarg; break;
+        case 0x097: client->font = optarg; break;
         /* Errors */
         case '?':
             usage();
