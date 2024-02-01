@@ -177,19 +177,47 @@ compileStringFromTokens(TokenArray* tokens, Line* line)
     return result;
 }
 
-static char*
-compileHintString(const char* key, const char* description)
+static void
+compileModsHint(char* hint, WkMods* mods)
 {
+    size_t index = 0;
+    if (mods->ctrl)
+    {
+        hint[index++] = 'C';
+        hint[index++] = '-';
+    }
+    if (mods->alt)
+    {
+        hint[index++] = 'M';
+        hint[index++] = '-';
+    }
+    if (mods->hyper)
+    {
+        hint[index++] = 'H';
+        hint[index++] = '-';
+    }
+    if (mods->shift)
+    {
+        hint[index++] = 'S';
+        hint[index++] = '-';
+    }
+}
+
+static char*
+compileHintString(WkMods* mods, const char* key, const char* description)
+{
+    size_t modslen = COUNT_MODS(*mods) * 2;
     size_t keylen = strlen(key);
     size_t desclen = strlen(description);
     /* +1 +1 for spaces on the sides of delimiter; +1 for null byte '\0' */
-    char* hint = ALLOCATE(char, keylen + 1 + delimLen + 1 + desclen + 1);
-    memcpy(hint, key, keylen); /* Copy key */
-    memcpy(&hint[keylen], " ", 1); /* Space */
-    memcpy(&hint[keylen + 1], delimiter, delimLen); /* Copy delimiter */
-    memcpy(&hint[keylen + 1 + delimLen], " ", 1); /* Space */
-    memcpy(&hint[keylen + 1 + delimLen + 1], description, desclen); /* Copy description */
-    hint[keylen + 1 + delimLen + 1 + desclen] = '\0';
+    char* hint = ALLOCATE(char, modslen + keylen + 1 + delimLen + 1 + desclen + 1);
+    compileModsHint(hint, mods);
+    memcpy(&hint[modslen], key, keylen); /* Copy key */
+    memcpy(&hint[modslen + keylen], " ", 1); /* Space */
+    memcpy(&hint[modslen + keylen + 1], delimiter, delimLen); /* Copy delimiter */
+    memcpy(&hint[modslen + keylen + 1 + delimLen], " ", 1); /* Space */
+    memcpy(&hint[modslen + keylen + 1 + delimLen + 1], description, desclen); /* Copy description */
+    hint[modslen + keylen + 1 + delimLen + 1 + desclen] = '\0';
     return hint;
 }
 
@@ -215,7 +243,7 @@ compileLine(Chord* chord, Line* line)
     compileSpecial(&chord->special, &line->key);
     chord->key = compileKey(&line->key);
     chord->description = compileStringFromTokens(&line->description, line);
-    chord->hint = compileHintString(chord->key, chord->description);
+    chord->hint = compileHintString(&chord->mods, chord->key, chord->description);
     chord->command = compileStringFromTokens(&line->command, line);
     chord->before = compileStringFromTokens(&line->before, line);
     chord->after = compileStringFromTokens(&line->after, line);
