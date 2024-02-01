@@ -148,11 +148,7 @@ isKeyword(Scanner* scanner, int start, int length, const char* rest)
 static TokenType
 checkKeyword(Scanner* scanner, size_t start, size_t length, const char* rest, TokenType type)
 {
-    if (isKeyword(scanner, start, length, rest))
-    {
-        return type;
-    }
-
+    if (isKeyword(scanner, start, length, rest)) return type;
     return TOKEN_ERROR;
 }
 
@@ -167,6 +163,13 @@ identifierType(Scanner* scanner)
         break;
     case 'b': return checkKeyword(scanner, 1, 5, "efore", TOKEN_BEFORE);
     case 'c': return checkKeyword(scanner, 1, 4, "lose", TOKEN_CLOSE);
+    case 'd':
+        if (isKeyword(scanner, 1, 10, "escription") || isKeyword(scanner, 1, 3, "esc"))
+        {
+            if (scanner->interpType == TOKEN_DESC_INTERP) return TOKEN_NO_INTERP;
+            return TOKEN_THIS_DESC;
+        }
+        break;
     case 'i':
         if (isKeyword(scanner, 1, 6, "ndex+1"))     return TOKEN_INDEX_ONE;
         if (isKeyword(scanner, 1, 4, "ndex"))       return TOKEN_INDEX;
@@ -193,6 +196,7 @@ identifier(Scanner* scanner)
     while (isAlpha(peek(scanner)) || isDigit(peek(scanner))) advance(scanner);
     TokenType type = identifierType(scanner);
     if (type == TOKEN_ERROR) return errorToken(scanner, "Invalid keyword");
+    if (type == TOKEN_NO_INTERP) return errorToken(scanner, "Cannot interpolate description within a description.");
     return makeToken(scanner, type);
 }
 

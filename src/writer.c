@@ -14,6 +14,7 @@
 static const char* delim;
 
 static void writeChordLines(LineArray* lines, int indent);
+static void writeChordRawString(TokenArray* array, Line* line);
 
 static void
 writeChordsHeader(void)
@@ -137,13 +138,14 @@ writeChordInterp(Token* token, Line* line)
     case TOKEN_INDEX:       printf("%d", line->index); break;
     case TOKEN_INDEX_ONE:   printf("%d", line->index + 1); break;
     case TOKEN_THIS_KEY:    writeChordEscKey(&line->key); break;
+    case TOKEN_THIS_DESC:   writeChordRawString(&line->description, line); break;
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
     case TOKEN_DESC_INTERP: writeChordEscString(token, false); break;
     default: writeChordEscString(token, true); break;
     }
 }
 
-static void
+void
 writeChordRawString(TokenArray* array, Line* line)
 {
     for (size_t i = 0; i < array->count; i++)

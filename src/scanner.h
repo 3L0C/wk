@@ -15,6 +15,7 @@ typedef enum
     TOKEN_INDEX,
     TOKEN_INDEX_ONE,
     TOKEN_THIS_KEY,
+    TOKEN_THIS_DESC,
     TOKEN_BEFORE,
     TOKEN_AFTER,
     TOKEN_KEEP,

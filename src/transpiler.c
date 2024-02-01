@@ -209,6 +209,7 @@ description(Compiler* compiler, TokenArray* dest)
         case TOKEN_DESC_INTERP: /* FALLTHROUGH */
         case TOKEN_DESCRIPTION:
         case TOKEN_THIS_KEY:
+        case TOKEN_THIS_DESC:
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         {
@@ -241,6 +242,7 @@ command(Compiler* compiler, TokenArray* dest)
         case TOKEN_COMM_INTERP: /* FALLTHROUGH */
         case TOKEN_COMMAND:
         case TOKEN_THIS_KEY:
+        case TOKEN_THIS_DESC:
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         {
@@ -341,6 +343,7 @@ isCommand(Compiler* compiler)
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
     case TOKEN_COMMAND:
     case TOKEN_THIS_KEY:
+    case TOKEN_THIS_DESC:
     case TOKEN_INDEX:
     case TOKEN_INDEX_ONE: return true;
     default: return false;
