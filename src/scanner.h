@@ -25,8 +25,8 @@ typedef enum
     TOKEN_NO_AFTER,
     TOKEN_WRITE,
     TOKEN_SYNC_CMD,
-    TOKEN_BEFORE_ASYNC,
-    TOKEN_AFTER_SYNC,
+    TOKEN_ASYNC_BEFORE,
+    TOKEN_SYNC_AFTER,
 
     /* literals */
     TOKEN_COMMAND,

@@ -274,7 +274,7 @@ addLineToScript(Client* client, const char* line, const size_t n)
     }
 
     /* careful not to copy the '\0' byte from getline() */
-    memcpy(client->script + (client->scriptCount ? client->scriptCount - 1 : 0), line, n);
+    memcpy(&client->script[client->scriptCount], line, n);
     client->scriptCount += n;
 }
 
@@ -289,7 +289,7 @@ tryStdin(Client* client)
 
     while ((n = getline(&line, &lineLength, stdin)) > 0)
     {
-        addLineToScript(client, line, n + 1);
+        addLineToScript(client, line, n);
     }
     free(line);
 

@@ -68,6 +68,7 @@ runScript(void)
     int result = EX_SOFTWARE;
 
     if (!tryStdin(&client)) return EX_IOERR;
+    debugMsg(properties.debug, "Contents of script:\n%s", client.script);
     Compiler compiler;
     initCompiler(&compiler, client.script);
     if (!transpileChords(&compiler, client.delimiter, client.debug))

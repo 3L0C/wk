@@ -55,6 +55,10 @@ disassembleToken(Token* token)
     case TOKEN_UNHOOK:              type = "TOKEN_UNHOOK";              break;
     case TOKEN_NO_BEFORE:           type = "TOKEN_NO_BEFORE";           break;
     case TOKEN_NO_AFTER:            type = "TOKEN_NO_AFTER";            break;
+    case TOKEN_WRITE:               type = "TOKEN_WRITE";               break;
+    case TOKEN_SYNC_CMD:            type = "TOKEN_SYNC_CMD";            break;
+    case TOKEN_ASYNC_BEFORE:        type = "TOKEN_ASYNC_BEFORE";        break;
+    case TOKEN_SYNC_AFTER:          type = "TOKEN_SYNC_AFTER";          break;
 
     /* literals */
     case TOKEN_COMMAND:             type = "TOKEN_COMMAND";             break;

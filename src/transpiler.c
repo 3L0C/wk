@@ -32,7 +32,7 @@ errorAt(Compiler* compiler, Token* token, const char* message)
     if (compiler->panicMode) return;
     compiler->panicMode = true;
 
-    fprintf(stderr, "[line %04zu] Error", token->line);
+    fprintf(stderr, "[ERROR] [line %04zu] Error", token->line);
 
     if (token->type == TOKEN_EOF)
     {
@@ -269,8 +269,8 @@ keywords(Compiler* compiler)
             consume(compiler, TOKEN_BEFORE, "Expected 'before' keyword.");
             command(compiler, &compiler->line.before);
             break;
-        case TOKEN_BEFORE_ASYNC:
-            consume(compiler, TOKEN_BEFORE_ASYNC, "Expect 'before-async' keyword.");
+        case TOKEN_ASYNC_BEFORE:
+            consume(compiler, TOKEN_ASYNC_BEFORE, "Expect 'async-before' keyword.");
             command(compiler, &compiler->line.before);
             compiler->line.flags.beforeAsync = true;
             break;
@@ -278,8 +278,8 @@ keywords(Compiler* compiler)
             consume(compiler, TOKEN_AFTER, "Expected 'after' keyword.");
             command(compiler, &compiler->line.after);
             break;
-        case TOKEN_AFTER_SYNC:
-            consume(compiler, TOKEN_AFTER_SYNC, "Expect 'after-sync' keyword.");
+        case TOKEN_SYNC_AFTER:
+            consume(compiler, TOKEN_SYNC_AFTER, "Expect 'sync-after' keyword.");
             command(compiler, &compiler->line.after);
             compiler->line.flags.afterSync = true;
             break;
@@ -526,7 +526,7 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
         keyChord(compiler);
     }
 
-    /* if (debug) debugLineArray(&compiler->lines); */
+    if (debug) debugLineArray(&compiler->lines);
 
     return !compiler->hadError;
 }

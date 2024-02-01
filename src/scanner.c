@@ -161,12 +161,9 @@ identifierType(Scanner* scanner)
     {
     case 'a':
         if (isKeyword(scanner, 1, 4, "fter"))       return TOKEN_AFTER;
-        if (isKeyword(scanner, 1, 10, "fter-sync")) return TOKEN_AFTER_SYNC;
+        if (isKeyword(scanner, 1, 11, "sync-before")) return TOKEN_ASYNC_BEFORE;
         break;
-    case 'b':
-        if (isKeyword(scanner, 1, 5, "efore"))          return TOKEN_BEFORE;
-        if (isKeyword(scanner, 1, 11, "efore-async"))   return TOKEN_BEFORE_ASYNC;
-        break;
+    case 'b': return checkKeyword(scanner, 1, 5, "efore", TOKEN_BEFORE);
     case 'c': return checkKeyword(scanner, 1, 4, "lose", TOKEN_CLOSE);
     case 'i':
         if (isKeyword(scanner, 1, 6, "ndex+1"))     return TOKEN_INDEX_ONE;
@@ -181,7 +178,7 @@ identifierType(Scanner* scanner)
         if (isKeyword(scanner, 1, 7, "o-after"))    return TOKEN_NO_AFTER;
         if (isKeyword(scanner, 1, 8, "o-before"))   return TOKEN_NO_BEFORE;
         break;
-    case 's': return checkKeyword(scanner, 1, 3, "ync", TOKEN_SYNC_CMD);
+    case 's': return checkKeyword(scanner, 1, 11, "ync-command", TOKEN_SYNC_CMD);
     case 'u': return checkKeyword(scanner, 1, 5, "nhook", TOKEN_UNHOOK);
     case 'w': return checkKeyword(scanner, 1, 4, "rite", TOKEN_WRITE);
     }
