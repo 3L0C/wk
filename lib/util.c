@@ -142,6 +142,12 @@ handleKeypress(WkProperties* props, Key* key)
 }
 
 bool
+isUtf8ContByte(char byte)
+{
+    return (byte & 0xC0) == 0x80;
+}
+
+bool
 isUtf8StartByte(char byte)
 {
     return (byte & 0xC0) != 0x80;

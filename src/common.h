@@ -6,6 +6,7 @@
 
 char* readFile(const char* path);
 void parseArgs(Client* client, int* argc, char*** argv);
+void pressKeys(WkProperties* props, const char* keys);
 bool tryStdin(Client* client);
 
 #endif /* WK_COMMON_H_ */
