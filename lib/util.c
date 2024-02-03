@@ -49,13 +49,21 @@ countChords(WkProperties* props)
 }
 
 static bool
-modsEqual(const WkMods* a, const WkMods* b)
+modsEqual(const WkMods* a, const WkMods* b, bool checkShift)
 {
+    if (checkShift)
+    {
+        return (
+            a->ctrl == b->ctrl &&
+            a->alt == b->alt &&
+            a->hyper == b->hyper &&
+            a->shift == b->shift
+        );
+    }
     return (
         a->ctrl == b->ctrl &&
         a->alt == b->alt &&
-        a->hyper == b->hyper &&
-        a->shift == b->shift
+        a->hyper == b->hyper
     );
 }
 
@@ -64,7 +72,7 @@ isSpecialKey(const Chord* chord, Key* key)
 {
     return (
         chord->special == key->special &&
-        modsEqual(&chord->mods, &key->mods)
+        modsEqual(&chord->mods, &key->mods, true)
     );
 }
 
@@ -73,7 +81,7 @@ isKey(const Chord* chord, Key* key)
 {
     if (key->special != WK_SPECIAL_NONE) return isSpecialKey(chord, key);
     return (
-        modsEqual(&chord->mods, &key->mods) &&
+        modsEqual(&chord->mods, &key->mods, false) &&
         chord->special == key->special &&
         strcmp(chord->key, key->key) == 0
     );
