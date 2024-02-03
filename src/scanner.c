@@ -207,7 +207,8 @@ description(Scanner* scanner)
     {
         switch (peek(scanner))
         {
-        case '\'': /* NOTE possible return */
+        /* case '\'': /\* NOTE possible return *\/ */
+        case '\"': /* NOTE possible return */
         {
             Token result = makeToken(scanner, TOKEN_DESCRIPTION);
             advance(scanner);
@@ -228,7 +229,8 @@ description(Scanner* scanner)
             break;
         }
         case '\\':
-            if (peekNext(scanner) == '\'')
+            /* if (peekNext(scanner) == '\'') */
+            if (peekNext(scanner) == '\"')
             {
                 advance(scanner);
             }
@@ -243,7 +245,7 @@ description(Scanner* scanner)
 static Token
 command(Scanner* scanner)
 {
-    int braces = 0;
+    static int32_t braces = 0;
     while (!isAtEnd(scanner))
     {
         char c = peek(scanner);
@@ -426,7 +428,8 @@ scanToken(Scanner* scanner)
     case ':': makeCurrent(scanner); return identifier(scanner);
 
     /* literals */
-    case '\'':
+    /* case '\'': */
+    case '\"':
         makeCurrent(scanner);
         return description(scanner);
     case '%':
