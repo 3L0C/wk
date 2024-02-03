@@ -17,6 +17,8 @@
 #include "token.h"
 
 static void compileLines(Chord* chords, LineArray* lines);
+static size_t countStringLengthFromTokens(TokenArray* tokens, Line* line);
+static char* compileStringFromTokens(TokenArray* tokens, Line* line);
 
 static const char* delimiter;
 static size_t delimLen;
@@ -88,6 +90,7 @@ countStringLengthFromToken(Token* token, Line* line)
     {
     case TOKEN_INDEX: return countCharactersInNumber(line->index);
     case TOKEN_INDEX_ONE: return countCharactersInNumber(line->index + 1);
+    case TOKEN_THIS_DESC: return countStringLengthFromTokens(&line->description, line);
     case TOKEN_THIS_KEY:    /* FALLTHROUGH */
     case TOKEN_COMM_INTERP:
     case TOKEN_DESC_INTERP: return token->length;
@@ -95,7 +98,7 @@ countStringLengthFromToken(Token* token, Line* line)
     }
 }
 
-static size_t
+size_t
 countStringLengthFromTokens(TokenArray* tokens, Line* line)
 {
     size_t result = 0;
@@ -128,6 +131,12 @@ compileStringFromToken(char* string, Token* token, Line* line)
     {
     case TOKEN_INDEX: return compileStringFromNumber(string, line->index);
     case TOKEN_INDEX_ONE: return compileStringFromNumber(string, line->index + 1);
+    case TOKEN_THIS_DESC:
+    {
+        source = compileStringFromTokens(&line->description, line);
+        length = countStringLengthFromTokens(&line->description, line);
+        break;
+    }
     case TOKEN_THIS_KEY:
     {
         source = line->key.start;
@@ -153,7 +162,7 @@ compileStringFromToken(char* string, Token* token, Line* line)
     return length;
 }
 
-static char*
+char*
 compileStringFromTokens(TokenArray* tokens, Line* line)
 {
     if (tokens->count == 0)

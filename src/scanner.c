@@ -164,7 +164,7 @@ identifierType(Scanner* scanner)
     case 'b': return checkKeyword(scanner, 1, 5, "efore", TOKEN_BEFORE);
     case 'c': return checkKeyword(scanner, 1, 4, "lose", TOKEN_CLOSE);
     case 'd':
-        if (isKeyword(scanner, 1, 10, "escription") || isKeyword(scanner, 1, 3, "esc"))
+        if (isKeyword(scanner, 1, 3, "esc") || isKeyword(scanner, 1, 10, "escription"))
         {
             if (scanner->interpType == TOKEN_DESC_INTERP) return TOKEN_NO_INTERP;
             return TOKEN_THIS_DESC;

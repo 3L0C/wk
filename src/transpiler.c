@@ -209,7 +209,6 @@ description(Compiler* compiler, TokenArray* dest)
         case TOKEN_DESC_INTERP: /* FALLTHROUGH */
         case TOKEN_DESCRIPTION:
         case TOKEN_THIS_KEY:
-        case TOKEN_THIS_DESC:
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         {
