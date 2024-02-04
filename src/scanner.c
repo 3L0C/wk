@@ -349,7 +349,7 @@ specialKey(Scanner* scanner)
 static Token
 key(Scanner* scanner, char c)
 {
-    if (isUtf8StartByte(c))
+    if (isUtf8MultiByteStartByte(c))
     {
         /* NOTE scanning multi byte character */
         while (isUtf8ContByte(peek(scanner)))

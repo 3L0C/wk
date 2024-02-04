@@ -168,6 +168,12 @@ isUtf8ContByte(char byte)
 bool
 isUtf8StartByte(char byte)
 {
+    return (byte & 0xC0) != 0x80;
+}
+
+bool
+isUtf8MultiByteStartByte(char byte)
+{
     return (byte & 0x80) == 0x80 && (byte & 0xC0) != 0x80;
 }
 
