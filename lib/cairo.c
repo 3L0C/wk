@@ -162,7 +162,7 @@ drawBorder()
 }
 
 static void
-drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cell_width)
+drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 {
     size_t len = strlen(text) + 1;
     int textw, texth;
@@ -174,10 +174,10 @@ drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cell_width
     do
     {
         len--;
-        while (!isUtf8StartByte(buffer[len])) len--;
+        while (len && !isUtf8StartByte(buffer[len])) len--;
         pango_layout_set_text(layout, buffer, len);
         pango_layout_get_pixel_size(layout, &textw, &texth);
-    } while (len && (uint32_t)textw > cell_width);
+    } while (len && (uint32_t)textw > cellw);
 
     for (int i = 0; len && i < 3; i++)
     {
@@ -196,7 +196,7 @@ drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cell_width
 }
 
 static void
-drawHintText(PangoLayout* layout, const char* text, uint32_t cell_width)
+drawHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 {
     assert(layout && text);
 
@@ -204,9 +204,9 @@ drawHintText(PangoLayout* layout, const char* text, uint32_t cell_width)
     pango_layout_set_text(layout, text, -1);
     pango_layout_get_pixel_size(layout, &w, &h);
 
-    if ((uint32_t)w > cell_width)
+    if ((uint32_t)w > cellw)
     {
-        drawTruncatedHintText(layout, text, cell_width);
+        drawTruncatedHintText(layout, text, cellw);
     }
 }
 
