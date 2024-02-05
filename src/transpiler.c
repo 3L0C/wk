@@ -284,13 +284,13 @@ keywords(Compiler* compiler)
             command(compiler, &compiler->line.after);
             compiler->line.flags.afterSync = true;
             break;
-        case TOKEN_KEEP:            compiler->line.flags.keep = true; break;
-        case TOKEN_INHERIT:         compiler->line.flags.inherit = true; break;
-        case TOKEN_UNHOOK:          compiler->line.flags.unhook = true; break;
-        case TOKEN_NO_BEFORE:       compiler->line.flags.nobefore = true; break;
-        case TOKEN_NO_AFTER:        compiler->line.flags.noafter = true; break;
-        case TOKEN_WRITE:           compiler->line.flags.write = true; break;
-        case TOKEN_SYNC_CMD:        compiler->line.flags.syncCommand = true; break;
+        case TOKEN_KEEP:        compiler->line.flags.keep = true; break;
+        case TOKEN_INHERIT:     compiler->line.flags.inherit = true; break;
+        case TOKEN_UNHOOK:      compiler->line.flags.unhook = true; break;
+        case TOKEN_NO_BEFORE:   compiler->line.flags.nobefore = true; break;
+        case TOKEN_NO_AFTER:    compiler->line.flags.noafter = true; break;
+        case TOKEN_WRITE:       compiler->line.flags.write = true; break;
+        case TOKEN_SYNC_CMD:    compiler->line.flags.syncCommand = true; break;
         default: return; /* not a keyword but not an error */
         }
         /* consume keyword */
