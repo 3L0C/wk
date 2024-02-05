@@ -192,7 +192,7 @@ disassembleLine(Line* line, size_t index)
     assert(line);
 
     printf("[DEBUG] [%04zu] Line\n", index);
-    printf("[DEBUG]       Index: %04d\n", line->index);
+    printf("[DEBUG]        Index: %04d\n", line->index);
     printFlags(&line->flags);
     printMods(&line->mods);
     printToken(line->key, "Key");

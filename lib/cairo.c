@@ -27,6 +27,8 @@ static Cairo* cairo;
 static WkProperties* properties;
 static uint32_t width;
 static uint32_t height;
+static int ellipsisWidth = -1;
+static int ellipsisHeight = -1;
 
 bool
 cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface)
@@ -164,35 +166,28 @@ drawBorder()
 static void
 drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 {
-    size_t len = strlen(text) + 1;
+    size_t len = strlen(text);
+    size_t beglen = len;
     int textw, texth;
-    char buffer[len];
-    memcpy(buffer, text, len);
+    char buffer[len + 1]; /* +1 for null byte '\0' */
+    memcpy(buffer, text, len + 1); /* +1 to copy null byte '\0' */
 
-    debugMsg(properties->debug, "Truncating hint: '%s'.", buffer);
+    pango_layout_set_text(layout, buffer, len);
+    pango_layout_get_pixel_size(layout, &textw, &texth);
 
-    do
+    while (len && (uint32_t)(textw + ellipsisWidth) > cellw)
     {
         len--;
         while (len && !isUtf8StartByte(buffer[len])) len--;
         pango_layout_set_text(layout, buffer, len);
         pango_layout_get_pixel_size(layout, &textw, &texth);
-    } while (len && (uint32_t)textw > cellw);
-
-    for (int i = 0; len && i < 3; i++)
-    {
-        len--;
-        while (!isUtf8StartByte(buffer[len])) len--;
     }
 
-    buffer[len + 0] = '.';
-    buffer[len + 1] = '.';
-    buffer[len + 2] = '.';
-    buffer[len + 3] = '\0';
-
-    debugMsg(properties->debug, "Truncated hint:  '%s'.", buffer);
-
-    pango_layout_set_text(layout, buffer, -1);
+    if (len < beglen && ellipsisWidth)
+    {
+        memcpy(buffer + len, "...", 4);
+        pango_layout_set_text(layout, buffer, -1);
+    }
 }
 
 static void
@@ -215,13 +210,19 @@ drawGrid()
 {
     assert(cairo && properties);
 
+    if (properties->borderWidth * 2 >= width)
+    {
+        errorMsg("Border is larger than windo width.");
+        goto end;
+    }
+
     uint32_t startx = properties->borderWidth;
     uint32_t starty = properties->borderWidth;
     uint32_t rows = properties->rows;
     uint32_t cols = properties->cols;
     uint32_t wpadding = properties->wpadding;
     uint32_t hpadding = properties->hpadding;
-    uint32_t cellWidth = width / cols;
+    uint32_t cellWidth = (width - (properties->borderWidth * 2)) / cols;
     uint32_t cellHeight = properties->cellHeight;
     uint32_t idx = 0;
     uint32_t count = properties->chordCount;
@@ -237,6 +238,26 @@ drawGrid()
     {
         debugProperties(properties);
         debugChordsShallow(properties->chords, properties->chordCount);
+        debugGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
+    }
+
+    if (ellipsisWidth == -1 || ellipsisHeight == -1)
+    {
+        pango_layout_set_text(layout, "...", -1);
+        pango_layout_get_pixel_size(layout, &ellipsisWidth, &ellipsisHeight);
+    }
+
+    if ((wpadding * 2) >= cellWidth)
+    {
+        errorMsg("Width padding is larger than cell size. Unable to draw anything.");
+        goto fail;
+    }
+
+    if ((uint32_t)ellipsisWidth > cellWidth - (wpadding * 2))
+    {
+        warnMsg("Not enough cell space to draw truncated hints.");
+        ellipsisWidth = 0;
+        ellipsisHeight = -1;
     }
 
     for (uint32_t i = 0; i < cols && idx < count; i++)
@@ -256,6 +277,7 @@ drawGrid()
 
 fail:
     g_object_unref(layout);
+end:
     return false;
 }
 

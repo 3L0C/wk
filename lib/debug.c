@@ -248,6 +248,27 @@ debugClient(const Client* client)
     printf("--------------------------------------------\n");
 }
 
+void
+debugGrid(
+    uint32_t startx, uint32_t starty, uint32_t rows, uint32_t cols, uint32_t wpadding,
+    uint32_t hpadding, uint32_t cellw, uint32_t cellh, uint32_t count
+)
+{
+    printDebug(0);
+    printf("------------------- Grid -------------------\n");
+    debugUint32_t("Start X:", startx, 0);
+    debugUint32_t("Start Y:", starty, 0);
+    debugUint32_t("Rows:", rows, 0);
+    debugUint32_t("Columns:", cols, 0);
+    debugUint32_t("Width padding:", wpadding, 0);
+    debugUint32_t("Height padding:", hpadding, 0);
+    debugUint32_t("Cell width:", cellw, 0);
+    debugUint32_t("Cell height:", cellh, 0);
+    debugUint32_t("Count:", count, 0);
+    printDebug(0);
+    printf("--------------------------------------------\n");
+}
+
 static void
 debugHexColor(const WkHexColor* color)
 {
@@ -263,12 +284,13 @@ debugHexColors(const WkHexColor* colors)
 {
     for (int i = 0; i < WK_COLOR_LAST; i++)
     {
+        printDebug(0);
         switch (i)
         {
-        case WK_COLOR_FOREGROUND: printf("[DEBUG] | Foreground color:\n"); break;
-        case WK_COLOR_BACKGROUND: printf("[DEBUG] | Background color:\n"); break;
-        case WK_COLOR_BORDER: printf("[DEBUG] | Border color:\n"); break;
-        default: errorMsg("[DEBUG] | Got unexpected color index: '%d'.", i); return;
+        case WK_COLOR_FOREGROUND: printf("| Foreground color:\n"); break;
+        case WK_COLOR_BACKGROUND: printf("| Background color:\n"); break;
+        case WK_COLOR_BORDER: printf("| Border color:\n"); break;
+        default: errorMsg("| Got unexpected color index: '%d'.", i); return;
         }
 
         debugHexColor(&colors[i]);
@@ -278,18 +300,21 @@ debugHexColors(const WkHexColor* colors)
 void
 debugKey(const Key* key)
 {
-    printf("[DEBUG] ------------------- Key --------------------\n");
+    printDebug(0);
+    printf("------------------- Key --------------------\n");
     debugMod(&key->mods, 0);
     if (debugSpecial(key->special, 0))
     {
-        printf("[DEBUG] | Key                 SPECIAL\n");
+        printDebug(0);
+        printf("| Key                 SPECIAL\n");
     }
     else
     {
         debugString("Key", key->key, 0);
     }
     debugInt("len", key->len, 0);
-    printf("[DEBUG] --------------------------------------------\n");
+    printDebug(0);
+    printf("--------------------------------------------\n");
 }
 
 void
