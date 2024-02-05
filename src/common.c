@@ -70,7 +70,7 @@ usage(void)
         "options:\n"
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
-        "    -D, --debug                Print debug information.\n"
+        "    -d, --debug                Print debug information.\n"
         "    -t, --top                  Position window at top of screen.\n"
         "    -b, --bottom               Position window at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as chords.\n"
@@ -146,15 +146,15 @@ parseArgs(Client* client, int* argc, char*** argv)
     while (true)
     {
 
-        opt = getopt_long(*argc, *argv, ":hvDtbsm:p:T:c:w:g:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvdtbsm:p:T:c:w:g:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
         {
         /* no argument */
         case 'h': usage(); exit(EXIT_FAILURE);
-        case 'v': puts(VERSION); exit(EXIT_SUCCESS);
-        case 'D': client->debug = true; break;
+        case 'v': puts("wk v"VERSION); exit(EXIT_SUCCESS);
+        case 'd': client->debug = true; break;
         case 't': client->windowPosition = WK_WIN_POS_TOP; break;
         case 'b': client->windowPosition = WK_WIN_POS_BOTTOM; break;
         case 's': client->tryScript = true; break;

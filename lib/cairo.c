@@ -237,8 +237,8 @@ drawGrid()
     if (properties->debug)
     {
         debugProperties(properties);
-        debugChordsShallow(properties->chords, properties->chordCount);
         debugGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
+        debugChordsShallow(properties->chords, properties->chordCount);
     }
 
     if (ellipsisWidth == -1 || ellipsisHeight == -1)

@@ -544,6 +544,7 @@ eventHandler(void)
             case WK_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
             }
             break;
+        case ButtonPress: return EX_SOFTWARE;
         case VisibilityNotify:
             if (ev.xvisibility.state != VisibilityUnobscured)
             {

@@ -138,7 +138,6 @@ handleKeypress(WkProperties* props, Key* key)
 
     if (props->debug)
     {
-        debugChordsShallow(chords, len);
         debugKey(key);
     }
 
