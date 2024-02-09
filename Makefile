@@ -24,8 +24,8 @@ XSOURCES    := $(wildcard $(X11_DIR)/*.c)
 XOBJECTS    := $(addprefix $(BUILD_DIR)/lib/x11/, $(notdir $(XSOURCES:.c=.o)))
 
 # wayland files
-WHEADERS    := $(wildcard $(WAY_DIR)/*.h)
-WSOURCES    := $(wildcard $(WAY_DIR)/*.c)
+WHEADERS    := $(wildcard $(WAY_DIR)/*.h) $(WAY_DIR)/wlr-layer-shell-unstable-v1.h
+WSOURCES    := $(wildcard $(WAY_DIR)/*.c) $(WAY_DIR)/wlr-layer-shell-unstable-v1.c $(WAY_DIR)/xdg-shell.c
 WOBJECTS    := $(addprefix $(BUILD_DIR)/lib/wayland/, $(notdir $(WSOURCES:.c=.o)))
 
 # common files
@@ -67,7 +67,16 @@ debug: options
 
 x11: all
 
-wayland: all
+$(WAY_DIR)/xdg-shell.c:
+	wayland-scanner private-code < "$$($(PKG_CONFIG) --variable=pkgdatadir wayland-protocols)/stable/xdg-shell/xdg-shell.xml" > $@
+
+$(WAY_DIR)/wlr-layer-shell-unstable-v1.h: $(WAY_DIR)/wlr-layer-shell-unstable-v1.xml
+	wayland-scanner client-header < $^ > $@
+
+$(WAY_DIR)/wlr-layer-shell-unstable-v1.c: $(WAY_DIR)/wlr-layer-shell-unstable-v1.xml
+	wayland-scanner private-code < $^ > $@
+
+wayland: $(WAY_DIR)/xdg-shell.c $(WAY_DIR)/wlr-layer-shell-unstable-v1.h $(WAY_DIR)/wlr-layer-shell-unstable-v1.c all
 
 options:
 	@ printf "%-8s = %s\n" "CFLAGS"  "$(CFLAGS)"
