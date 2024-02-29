@@ -375,10 +375,9 @@ pressKeys(WkProperties* props, const char* keys)
 {
     Scanner scanner;
     initScanner(&scanner, keys);
-    /* TokenType type = pressKey(props, &scanner); */
     WkStatus status = pressKey(props, &scanner);
 
-    while (status == WK_STATUS_RUNNING)
+    while (status == WK_STATUS_RUNNING || status == WK_STATUS_DAMAGED)
     {
         status = pressKey(props, &scanner);
     }
