@@ -200,9 +200,9 @@ main(int argc, char** argv)
             debugChords(properties.chords, 0);
         }
         countChords(&properties);
-        if (client.keys && !pressKeys(&properties, client.keys))
+        if (client.keys && statusIsError(pressKeys(&properties, client.keys)))
         {
-            errorMsg("Keys not found in chords: '%s'.", client.keys);
+            errorMsg("Key(s) not found in chords: '%s'.", client.keys);
             return EX_DATAERR;
         }
         result = run(&properties);

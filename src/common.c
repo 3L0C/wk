@@ -18,47 +18,10 @@
 #include "common.h"
 #include "scanner.h"
 
-char*
-readFile(const char* path)
+bool
+statusIsError(WkStatus status)
 {
-    assert(path);
-
-    FILE* file = fopen(path, "rb");
-    if (!file)
-    {
-        errorMsg("Could not open file '%s'.", path);
-        goto error;
-    }
-
-    fseek(file, 0L, SEEK_END);
-    size_t fileSize = ftell(file);
-    rewind(file);
-
-    char* buffer = (char*)malloc(fileSize + 1);
-    if (!buffer)
-    {
-        errorMsg("Not enough memory to read '%s'.", path);
-        goto alloc_error;
-    }
-
-    size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
-    if (bytesRead < fileSize)
-    {
-        errorMsg("Could not read file '%s'.", path);
-        goto read_error;
-    }
-
-    buffer[bytesRead] = '\0';
-    fclose(file);
-
-    return buffer;
-
-read_error:
-    free(buffer);
-alloc_error:
-    fclose(file);
-error:
-    return NULL;
+    return status == WK_STATUS_EXIT_SOFTWARE;
 }
 
 static void
@@ -370,6 +333,12 @@ pressKey(WkProperties* props, Scanner* scanner)
     return status;
 }
 
+static bool
+statusIsRunning(WkStatus status)
+{
+    return status == WK_STATUS_RUNNING || status == WK_STATUS_DAMAGED;
+}
+
 WkStatus
 pressKeys(WkProperties* props, const char* keys)
 {
@@ -377,12 +346,12 @@ pressKeys(WkProperties* props, const char* keys)
     initScanner(&scanner, keys);
     WkStatus status = pressKey(props, &scanner);
 
-    while (status == WK_STATUS_RUNNING || status == WK_STATUS_DAMAGED)
+    while (*scanner.current != '\0' && statusIsRunning(status))
     {
         status = pressKey(props, &scanner);
     }
 
-    if (status != WK_STATUS_RUNNING && *scanner.current != '\0')
+    if (status == WK_STATUS_EXIT_OK && *scanner.current != '\0')
     {
         errorMsg(
             "Reached end of chords but not end of keys: '%s'.",
@@ -392,6 +361,49 @@ pressKeys(WkProperties* props, const char* keys)
     }
 
     return status;
+}
+
+char*
+readFile(const char* path)
+{
+    assert(path);
+
+    FILE* file = fopen(path, "rb");
+    if (!file)
+    {
+        errorMsg("Could not open file '%s'.", path);
+        goto error;
+    }
+
+    fseek(file, 0L, SEEK_END);
+    size_t fileSize = ftell(file);
+    rewind(file);
+
+    char* buffer = (char*)malloc(fileSize + 1);
+    if (!buffer)
+    {
+        errorMsg("Not enough memory to read '%s'.", path);
+        goto alloc_error;
+    }
+
+    size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
+    if (bytesRead < fileSize)
+    {
+        errorMsg("Could not read file '%s'.", path);
+        goto read_error;
+    }
+
+    buffer[bytesRead] = '\0';
+    fclose(file);
+
+    return buffer;
+
+read_error:
+    free(buffer);
+alloc_error:
+    fclose(file);
+error:
+    return NULL;
 }
 
 static void
