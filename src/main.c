@@ -199,12 +199,23 @@ main(int argc, char** argv)
         {
             debugChords(properties.chords, 0);
         }
+
         countChords(&properties);
-        if (client.keys && statusIsError(pressKeys(&properties, client.keys)))
+
+        if (client.keys)
         {
-            errorMsg("Key(s) not found in chords: '%s'.", client.keys);
-            return EX_DATAERR;
+            WkStatus status = pressKeys(&properties, client.keys);
+            if (statusIsError(status))
+            {
+                errorMsg("Key(s) not found in chords: '%s'.", client.keys);
+                return EX_DATAERR;
+            }
+            else if (status == WK_STATUS_EXIT_OK)
+            {
+                return EX_OK;
+            }
         }
+
         result = run(&properties);
     }
 

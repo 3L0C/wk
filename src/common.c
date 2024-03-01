@@ -342,6 +342,8 @@ statusIsRunning(WkStatus status)
 WkStatus
 pressKeys(WkProperties* props, const char* keys)
 {
+    assert(props && keys);
+
     Scanner scanner;
     initScanner(&scanner, keys);
     WkStatus status = pressKey(props, &scanner);
