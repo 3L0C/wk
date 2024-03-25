@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <locale.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -17,6 +16,7 @@
 #include <X11/extensions/Xinerama.h>
 #include <unistd.h>
 
+#include "cairo.h"
 #include "lib/cairo.h"
 #include "lib/common.h"
 #include "lib/debug.h"
@@ -32,14 +32,14 @@ typedef struct
 {
     WkSpecial special;
     KeySym keysym;
-} SpecialKeys;
+} SpecialKey;
 
 static X11 x11;
 static WkX11Window* window = &x11.window;
 static WkProperties* properties;
 static bool debug;
 
-static const SpecialKeys specialkeys[] = {
+static const SpecialKey specialkeys[] = {
     { WK_SPECIAL_NONE,      XK_VoidSymbol },
     { WK_SPECIAL_LEFT,      XK_Left },
     { WK_SPECIAL_LEFT,      XK_KP_Left },
@@ -85,10 +85,11 @@ checkLocale(void)
 static cairo_surface_t*
 getThrowawaySurface(void)
 {
-    return cairo_xlib_surface_create(
-        window->display, window->drawable, window->visual,
-        window->width, window->height
-    );
+    return cairo_image_surface_create(CAIRO_FORMAT_ARGB32, window->width, window->height);
+    /* return cairo_xlib_surface_create( */
+    /*     window->display, window->drawable, window->visual, */
+    /*     window->width, window->height */
+    /* ); */
 }
 
 static bool
@@ -383,7 +384,6 @@ render(void)
     }
 
     Buffer* buffer = getBuffer();
-
     if (!buffer)
     {
         errorMsg("Could not get buffer while rendering.");
@@ -459,6 +459,15 @@ grabkeyboard(void)
     return false;
 }
 
+static void
+setKeyEventMods(WkMods* mods, unsigned int state)
+{
+    if (state & ControlMask) mods->ctrl = true;
+    if (state & Mod1Mask) mods->alt = true;
+    if (state & Mod4Mask) mods->hyper = true;
+    if (state & ShiftMask) mods->shift = true;
+}
+
 static WkSpecial
 getSpecialKey(KeySym keysym)
 {
@@ -467,15 +476,6 @@ getSpecialKey(KeySym keysym)
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
     }
     return WK_SPECIAL_NONE;
-}
-
-static void
-setKeyEventMods(WkMods* mods, unsigned int state)
-{
-    if (state & ControlMask) mods->ctrl = true;
-    if (state & Mod1Mask) mods->alt = true;
-    if (state & Mod4Mask) mods->hyper = true;
-    if (state & ShiftMask) mods->shift = true;
 }
 
 static bool
@@ -507,7 +507,6 @@ keypress(XKeyEvent* keyEvent)
     if (!processKey(&key, state, buffer, len, keysym)) return WK_STATUS_RUNNING;
 
     return handleKeypress(properties, &key);
-
 }
 
 static int

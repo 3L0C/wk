@@ -1,11 +1,9 @@
-#include <stdint.h>
 #include <stdlib.h>
 #include <sysexits.h>
 
 #include "common.h"
 #include "debug.h"
 #include "properties.h"
-#include "types.h"
 #include "window.h"
 
 #ifdef WK_X11_BACKEND
@@ -13,7 +11,7 @@
 #endif
 
 #ifdef WK_WAYLAND_BACKEND
-#include "wayland/window.h"
+#include "wayland/wayland.h"
 #endif
 
 int

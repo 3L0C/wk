@@ -81,7 +81,7 @@ parseArgs(Client* client, int* argc, char*** argv)
         /*                  no argument                 */
         { "help",           no_argument,        0, 'h' },
         { "version",        no_argument,        0, 'v' },
-        { "debug",          no_argument,        0, 'D' },
+        { "debug",          no_argument,        0, 'd' },
         { "top",            no_argument,        0, 't' },
         { "bottom",         no_argument,        0, 'b' },
         { "script",         no_argument,        0, 's' },

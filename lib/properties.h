@@ -52,6 +52,7 @@ typedef struct
     Chord* chords;
     uint32_t chordCount;
     bool debug;
+    bool dirty;
     CleanupFP cleanupfp;
     void* xp;
 } WkProperties;

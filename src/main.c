@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
@@ -6,7 +5,6 @@
 #include "lib/client.h"
 #include "lib/common.h"
 #include "lib/debug.h"
-#include "lib/memory.h"
 #include "lib/types.h"
 #include "lib/util.h"
 #include "lib/window.h"

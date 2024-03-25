@@ -3,10 +3,8 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
-#include "common.h"
 #include "client.h"
 #include "properties.h"
-#include "types.h"
 
 static bool
 initColor(WkHexColor* hexColor, const char* color)
@@ -82,6 +80,7 @@ initProperties(WkProperties* props, Client* client)
     props->chords = client->chords;
     props->chordCount = 0;
     props->debug = client->debug;
+    props->dirty = true;
     props->cleanupfp = NULL;
     props->xp = NULL;
 }

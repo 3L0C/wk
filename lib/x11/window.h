@@ -4,8 +4,6 @@
 #include <X11/Xlib.h>
 
 #include "lib/cairo.h"
-#include "lib/common.h"
-#include "lib/window.h"
 
 typedef struct
 {

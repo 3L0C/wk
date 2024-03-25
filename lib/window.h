@@ -2,7 +2,6 @@
 #define WK_LIB_WINDOW_H_
 
 #include "properties.h"
-#include "types.h"
 
 #define WINDOW_MIN_WIDTH 80
 

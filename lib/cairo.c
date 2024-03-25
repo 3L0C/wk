@@ -1,6 +1,4 @@
 #include <assert.h>
-#include <math.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -20,7 +18,6 @@
 #include "properties.h"
 #include "types.h"
 #include "util.h"
-#include "window.h"
 
 
 static Cairo* cairo;
