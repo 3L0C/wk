@@ -1,7 +1,6 @@
 #ifndef WK_CHORDS_H_
 #define WK_CHORDS_H_
 
-#include "lib/common.h"
 #include "lib/types.h"
 
 /* mods, specials,

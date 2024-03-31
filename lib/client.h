@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "common.h"
 #include "types.h"
 
 typedef struct

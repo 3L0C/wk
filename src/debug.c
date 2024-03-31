@@ -2,7 +2,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "lib/common.h"
 #include "lib/types.h"
 
 #include "debug.h"

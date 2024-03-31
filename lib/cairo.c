@@ -19,7 +19,6 @@
 #include "types.h"
 #include "util.h"
 
-
 static Cairo* cairo;
 static WkProperties* properties;
 static uint32_t width;

@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #include "lib/types.h"
-#include "lib/util.h"
 
 #include "line.h"
 #include "scanner.h"
@@ -23,7 +22,6 @@ writeChordsHeader(void)
         "#ifndef WK_CHORDS_H_\n"
         "#define WK_CHORDS_H_\n"
         "\n"
-        "#include \"lib/common.h\"\n"
         "#include \"lib/types.h\"\n"
         "\n"
         "/* mods, specials,\n"

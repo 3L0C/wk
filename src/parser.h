@@ -1,8 +1,6 @@
 #ifndef WK_PARSER_H_
 #define WK_PARSER_H_
 
-#include "lib/common.h"
-
 #include "scanner.h"
 
 typedef struct

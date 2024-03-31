@@ -16,7 +16,6 @@
 #include <X11/extensions/Xinerama.h>
 #include <unistd.h>
 
-#include "cairo.h"
 #include "lib/cairo.h"
 #include "lib/common.h"
 #include "lib/debug.h"

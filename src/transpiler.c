@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lib/common.h"
 #include "lib/memory.h"
 #include "lib/types.h"
 
@@ -14,7 +13,6 @@
 #include "compile.h"
 #include "token.h"
 #include "transpiler.h"
-#include "writer.h"
 
 static void keyChord(Compiler* compiler);
 

@@ -2,7 +2,6 @@
 #define WK_COMPILE_H_
 
 #include "lib/properties.h"
-#include "lib/window.h"
 
 #include "line.h"
 #include "scanner.h"

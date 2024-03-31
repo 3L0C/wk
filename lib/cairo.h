@@ -3,7 +3,6 @@
 
 #include <cairo.h>
 
-#include "common.h"
 #include "properties.h"
 
 typedef struct

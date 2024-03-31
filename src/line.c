@@ -6,9 +6,7 @@
 #include "lib/memory.h"
 #include "lib/types.h"
 
-#include "debug.h"
 #include "line.h"
-#include "scanner.h"
 #include "token.h"
 
 static void

@@ -6,7 +6,6 @@
 #include <wayland-client-protocol.h>
 #include <wayland-util.h>
 
-/* #include "lib/bemenu/renderers/wayland/wlr-layer-shell-unstable-v1.h" */
 #include "lib/cairo.h"
 #include "lib/properties.h"
 
@@ -30,10 +29,12 @@ typedef struct
     struct zwlr_layer_surface_v1* layerSurface;
     struct wl_shm* shm;
     Buffer buffers[2];
+    CairoPaint paint;
     uint32_t x;
-    uint32_t y;
+    uint32_t windowGap;
     uint32_t width;
     uint32_t height;
+    uint32_t maxWidth;
     uint32_t maxHeight;
     uint32_t hpadding; /* hmargin_size in bemenu */
     uint32_t wpadding; /* hmargin_size in bemenu */

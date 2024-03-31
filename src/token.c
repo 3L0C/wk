@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "lib/memory.h"
 
 #include "token.h"
-#include "debug.h"
 #include "scanner.h"
 
 static void

@@ -3,7 +3,6 @@
 
 #include "cairo.h"
 #include "client.h"
-#include "common.h"
 #include "properties.h"
 #include "types.h"
 
