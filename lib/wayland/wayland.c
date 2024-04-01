@@ -350,8 +350,6 @@ recreateWindows(WkProperties* props, Wayland* wayland)
     wl_list_init(&window->surfaceOutputs);
     window->wayland = wayland;
     window->position = props->position;
-    /* window->hpadding = props->hpadding; */
-    /* window->wpadding = props->wpadding; */
 
     /* TODO this should not be necessary, but Sway 1.8.1 does not trigger event
      * surface.enter before we actually need to render the first frame.
@@ -399,26 +397,6 @@ setMonitor(WkProperties* props, Wayland* wayland, int32_t monitor)
     assert(props && wayland);
     recreateWindows(props, wayland);
 }
-
-/* static void */
-/* setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName) */
-/* { */
-/*     printf("lib/wayland/wayland.c:setMonitorName:418\n"); */
-/*     assert(props && wayland); */
-
-/*     if (!monitorName) return; */
-
-/*     Output* output; */
-/*     wl_list_for_each(output, &wayland->outputs, link) */
-/*     { */
-/*         if (0 == strcmp(monitorName, output->name)) */
-/*         { */
-/*             wayland->selectedOutput = output; */
-/*             recreateWindows(props, wayland); */
-/*             return; */
-/*         } */
-/*     } */
-/* } */
 
 static void
 setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName)
@@ -511,7 +489,7 @@ runWayland(WkProperties* props)
         errorMsg("Failed to create Wayland structure.");
         return EX_SOFTWARE;
     }
-    debugMsg(true, "Successfully created Wayland structure.");
+    debugMsg(props->debug, "Successfully created Wayland structure.");
     WkStatus status = WK_STATUS_EXIT_SOFTWARE;
     render(props, &wayland);
     do
@@ -523,11 +501,9 @@ runWayland(WkProperties* props)
         case WK_STATUS_EXIT_OK: result = EX_OK; break;
         case WK_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
-        debugStatus(status);
-        if (!statusIsRunning(status)) break;
         render(props, &wayland);
     }
-    while (wl_display_dispatch(wayland.display) != -1);
+    while (statusIsRunning(status) && wl_display_dispatch(wayland.display) != -1);
 
     freeWayland(&wayland);
 

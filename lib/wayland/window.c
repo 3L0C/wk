@@ -13,6 +13,7 @@
 
 #include "lib/cairo.h"
 #include "lib/common.h"
+#include "lib/debug.h"
 #include "lib/memory.h"
 #include "lib/properties.h"
 
@@ -284,20 +285,17 @@ resizeWinWidth(WaylandWindow* window, WkProperties* props)
     Output* output = window->wayland->selectedOutput;
     if (windowWidth < 0)
     {
-        /* set width to half the size of the screen */
-        /* window->x = (output->width / 4); */
+        /* set width to half the size of the output */
         window->width = output->width / 2;
     }
     else if (windowWidth == 0 || (uint32_t)windowWidth > output->width)
     {
-        /* make the window as wide as the screen */
-        /* window->x = 0; */
+        /* make the window as wide as the output */
         window->width = output->width;
     }
     else
     {
         /* set the width to the desired user setting */
-        /* window->x = (output->width - windowWidth) / 2; /\* position in the middle *\/ */
         window->width = windowWidth;
     }
 }
@@ -305,35 +303,58 @@ resizeWinWidth(WaylandWindow* window, WkProperties* props)
 static void
 resizeWinHeight(WaylandWindow* window, WkProperties* props)
 {
-    int32_t windowGap = props->windowGap;
     Output* output = window->wayland->selectedOutput;
     window->maxHeight = output->height;
 
-    if (windowGap < 0)
-    {
-        window->windowGap = (output->height / 10);
-    }
-    else if (windowGap == 0 || (uint32_t)windowGap > output->height)
-    {
-        window->windowGap = 0;
-    }
-    else
-    {
-        window->windowGap = windowGap;
-    }
-
     if (window->height >= output->height)
     {
+        /* set the height to the size of the output */
         window->windowGap = 0;
         window->height = output->height;
     }
 }
 
 static void
+resizeWinGap(WaylandWindow* window, WkProperties* props)
+{
+    int32_t windowGap = props->windowGap;
+    Output* output = window->wayland->selectedOutput;
+
+    if (windowGap < 0)
+    {
+        /* set gap to 1/10th the size of the output */
+        debugMsg(props->debug, "Setting windowGap to 1/10th the screen height.");
+        window->windowGap = (output->height / 10);
+    }
+    /* else if (windowGap == 0 || (uint32_t)windowGap > output->height) */
+    else if ((uint32_t)windowGap > output->height)
+    {
+        /* make the window as large as possible */
+        debugMsg(
+            props->debug,
+            "Setting windowGap to maximum gapsize possible: %u.",
+            output->height - window->height
+        );
+        window->windowGap = output->height - window->height;
+    }
+    else
+    {
+        /* make the gap as large as the user wants */
+        debugMsg(props->debug, "Setting windowGap to user value: %u.", windowGap);
+        window->windowGap = windowGap;
+    }
+}
+
+
+static void
 resizeWindow(WaylandWindow* window, WkProperties* props)
 {
+    assert(window && props);
+
+    window->height = cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);
     resizeWinWidth(window, props);
     resizeWinHeight(window, props);
+    resizeWinGap(window, props);
 }
 
 static void
@@ -359,36 +380,11 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
     wl_display_roundtrip(display);
 }
 
-/* static void */
-/* moveResizeWindow(WaylandWindow* window, struct wl_display* display) */
-/* { */
-/*     fprintf(stderr, "lib/wayland/window.c:moveResizeWindow:360\n"); */
-/*     /\* uint32_t rootW = window->maxWidth; *\/ */
-/*     uint32_t rootH = window->maxHeight; */
-
-/*     window->y = (rootH / 10); */
-
-/*     if (window->position == WK_WIN_POS_BOTTOM) */
-/*     { */
-/*         window->y = rootH - window->height - window->y; */
-/*     } */
-
-/*     zwlr_layer_surface_v1_set_size( */
-/*         window->layerSurface, window->width * window->scale, window->height * window->scale */
-/*     ); */
-/*     zwlr_layer_surface_v1_set_anchor(window->layerSurface, window->alignAnchor); */
-/*     zwlr_layer_surface_v1_set_margin(window->layerSurface, window->y * window->scale, 0, 0, 0); */
-/*     wl_surface_commit(window->surface); */
-/*     wl_display_roundtrip(display); */
-/* } */
-
 bool
 windowRender(WaylandWindow* window, struct wl_display* display, WkProperties* props)
 {
     assert(window && props);
 
-    uint32_t oldh = window->height * window->scale;
-    window->height = cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);
     resizeWindow(window, props);
 
     Buffer* buffer = nextBuffer(window);
@@ -404,10 +400,6 @@ windowRender(WaylandWindow* window, struct wl_display* display, WkProperties* pr
     cairo_surface_flush(buffer->cairo.surface);
 
     moveResizeWindow(window, display);
-    if (oldh != window->height)
-    {
-        moveResizeWindow(window, display);
-    }
 
     wl_surface_damage_buffer(window->surface, 0, 0, buffer->width, buffer->height);
     wl_surface_attach(window->surface, buffer->buffer, 0, 0);
@@ -473,32 +465,6 @@ getWindowHeight(WaylandWindow* window, WkProperties* props)
     return cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);;
 }
 
-/* void */
-/* windowSetWidth( */
-/*     WaylandWindow* window, */
-/*     struct wl_display* display, */
-/*     uint32_t margin, */
-/*     float factor, */
-/*     WkProperties* props */
-/* ) */
-/* { */
-/*     fprintf(stderr, "lib/wayland/window.c:windowSetWidth:473\n"); */
-/*     assert(window); */
-
-/*     if (window->hpadding == margin && window->widthFactor == factor) return; */
-
-/*     window->hpadding = margin; */
-/*     window->widthFactor = factor; */
-
-/*     zwlr_layer_surface_v1_set_anchor(window->layerSurface, window->alignAnchor); */
-/*     zwlr_layer_surface_v1_set_size( */
-/*         window->layerSurface, getWindowWidth(window), getWindowHeight(window, props) */
-/*     ); */
-
-/*     wl_surface_commit(window->surface); */
-/*     wl_display_roundtrip(display); */
-/* } */
-
 void
 windowSetAlign(WaylandWindow* window, struct wl_display* display, WkWindowPosition position)
 {
@@ -513,21 +479,6 @@ windowSetAlign(WaylandWindow* window, struct wl_display* display, WkWindowPositi
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
 }
-
-/* void */
-/* windowSetYOffset(WaylandWindow* window, struct wl_display* display, int32_t yOffset) */
-/* { */
-/*     fprintf(stderr, "lib/wayland/window.c:windowSetYOffset:509\n"); */
-/*     assert(window); */
-
-/*     if (window->yOffset == yOffset) return; */
-
-/*     window->yOffset = yOffset; */
-
-/*     zwlr_layer_surface_v1_set_margin(window->layerSurface, window->yOffset, 0, 0, 0); */
-/*     wl_surface_commit(window->surface); */
-/*     wl_display_roundtrip(display); */
-/* } */
 
 void
 windowGrabKeyboard(WaylandWindow* window, struct wl_display* display, bool grab)
