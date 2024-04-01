@@ -511,7 +511,7 @@ runWayland(WkProperties* props)
         errorMsg("Failed to create Wayland structure.");
         return EX_SOFTWARE;
     }
-    debugMsg(true, "Successfully created Wayland structure.");
+    debugMsg(props->debug, "Successfully created Wayland structure.");
     WkStatus status = WK_STATUS_EXIT_SOFTWARE;
     render(props, &wayland);
     do
@@ -523,7 +523,6 @@ runWayland(WkProperties* props)
         case WK_STATUS_EXIT_OK: result = EX_OK; break;
         case WK_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
-        debugStatus(status);
         if (!statusIsRunning(status)) break;
         render(props, &wayland);
     }
