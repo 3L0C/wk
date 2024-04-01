@@ -5,6 +5,7 @@
 #include "client.h"
 #include "properties.h"
 #include "types.h"
+#include "window.h"
 
 void debugCairoPaint(const CairoPaint* paint);
 void debugChord(const Chord* chord, unsigned int indent);
@@ -16,5 +17,6 @@ void debugHexColors(const WkHexColor* colors);
 void debugKey(const Key* key);
 void debugMsg(bool debug, const char* fmt, ...);
 void debugProperties(const WkProperties* props);
+void debugStatus(WkStatus status);
 
 #endif /* WK_LIB_DEBUG_H_ */

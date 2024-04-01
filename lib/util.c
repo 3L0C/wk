@@ -255,3 +255,15 @@ spawn(WkProperties* props, const char* cmd, bool async)
     wait(NULL);
     return WK_STATUS_EXIT_OK;
 }
+
+bool
+statusIsError(WkStatus status)
+{
+    return status == WK_STATUS_EXIT_SOFTWARE;
+}
+
+bool
+statusIsRunning(WkStatus status)
+{
+    return status == WK_STATUS_RUNNING || status == WK_STATUS_DAMAGED;
+}

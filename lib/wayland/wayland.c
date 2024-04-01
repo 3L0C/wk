@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <sysexits.h>
+#include <unistd.h>
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 #include <wayland-util.h>
@@ -24,7 +25,9 @@
 #include "lib/window.h"
 
 #include "wayland.h"
+#include "registry.h"
 #include "window.h"
+#include "wlr-layer-shell-unstable-v1.h"
 
 typedef struct
 {
@@ -97,7 +100,7 @@ waitForEvents(Wayland* wayland)
                 return false;
             }
         }
-        else if (ep[i].data.ptr == &wayland->fds.repeat)
+        else if (ep[i].data.ptr == &wayland->fds.repeat && ep[i].events & EPOLLIN)
         {
             waylandRepeat(wayland);
         }
@@ -207,11 +210,12 @@ pollKey(WkProperties* props, Wayland* wayland)
 
     xkb_state_unref(cleanState);
 
+    wayland->input.keysym = XKB_KEY_NoSymbol;
     return handleKeypress(props, &key);
 
 exit:
     xkb_state_unref(cleanState);
-    return WK_STATUS_RUNNING;
+    return WK_STATUS_EXIT_SOFTWARE;
 }
 
 static bool
@@ -245,6 +249,7 @@ windowUpdateOutput(WaylandWindow* window)
 {
     int32_t maxScale = 1;
     uint32_t minMaxHeight = 0;
+    uint32_t minMaxWidth = 0;
 
     SurfaceOutput* surfaceOutput;
     wl_list_for_each(surfaceOutput, &window->surfaceOutputs, link)
@@ -254,9 +259,14 @@ windowUpdateOutput(WaylandWindow* window)
         {
             minMaxHeight = surfaceOutput->output->height;
         }
+        if (minMaxWidth == 0 || surfaceOutput->output->width < minMaxWidth)
+        {
+            minMaxWidth = surfaceOutput->output->width;
+        }
     }
 
     if (minMaxHeight != window->maxHeight) window->maxHeight = minMaxHeight;
+    if (minMaxWidth != window->maxWidth) window->maxWidth = minMaxWidth;
     if (maxScale != window->scale) window->scale = maxScale;
 }
 
@@ -340,8 +350,8 @@ recreateWindows(WkProperties* props, Wayland* wayland)
     wl_list_init(&window->surfaceOutputs);
     window->wayland = wayland;
     window->position = props->position;
-    window->hpadding = props->hpadding;
-    window->wpadding = props->wpadding;
+    /* window->hpadding = props->hpadding; */
+    /* window->wpadding = props->wpadding; */
 
     /* TODO this should not be necessary, but Sway 1.8.1 does not trigger event
      * surface.enter before we actually need to render the first frame.
@@ -362,9 +372,7 @@ recreateWindows(WkProperties* props, Wayland* wayland)
     }
 
     struct wl_output* wlOutput = NULL;
-    debugMsg(true, "Before.");
     if (output) wlOutput = output->output;
-    debugMsg(true, "After.");
 
     if (!windowCreate(
             window, wayland->display, wayland->shm, wlOutput, wayland->layerShell, surface, props
@@ -384,10 +392,75 @@ fail:
     return false;
 }
 
+static void
+setMonitor(WkProperties* props, Wayland* wayland, int32_t monitor)
+{
+    (void)monitor;
+    assert(props && wayland);
+    recreateWindows(props, wayland);
+}
+
+/* static void */
+/* setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName) */
+/* { */
+/*     printf("lib/wayland/wayland.c:setMonitorName:418\n"); */
+/*     assert(props && wayland); */
+
+/*     if (!monitorName) return; */
+
+/*     Output* output; */
+/*     wl_list_for_each(output, &wayland->outputs, link) */
+/*     { */
+/*         if (0 == strcmp(monitorName, output->name)) */
+/*         { */
+/*             wayland->selectedOutput = output; */
+/*             recreateWindows(props, wayland); */
+/*             return; */
+/*         } */
+/*     } */
+/* } */
+
+static void
+setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName)
+{
+    assert(props && wayland);
+
+    if (!monitorName) return;
+
+    Output* output;
+    wl_list_for_each(output, &wayland->outputs, link)
+    {
+        if (output->name && 0 == strcmp(monitorName, output->name))
+        {
+            wayland->selectedOutput = output;
+            recreateWindows(props, wayland);
+            return;
+        }
+    }
+
+    // If the specified monitor name is not found, set selectedOutput to the first available output
+    if (!wl_list_empty(&wayland->outputs))
+    {
+        wayland->selectedOutput = wl_container_of(wayland->outputs.next, output, link);
+        recreateWindows(props, wayland);
+    }
+}
+
 void
 freeWayland(Wayland* wayland)
 {
+    destroyWindows(wayland);
+    waylandRegistryDestroy(wayland);
+    xkb_context_unref(wayland->input.xkb.context);
 
+    if (wayland->display)
+    {
+        epoll_ctl(efd, EPOLL_CTL_DEL, wayland->fds.repeat, NULL);
+        epoll_ctl(efd, EPOLL_CTL_DEL, wayland->fds.display, NULL);
+        close(wayland->fds.repeat);
+        wl_display_flush(wayland->display);
+        wl_display_disconnect(wayland->display);
+    }
 }
 
 bool
@@ -406,8 +479,22 @@ initWayland(WkProperties* props, Wayland* wayland)
     wayland->fds.repeat = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
     wayland->input.repeatFd = &wayland->fds.repeat;
     wayland->input.keyPending = false;
+    setMonitorName(props, wayland, "focused");
 
     if (!recreateWindows(props, wayland)) goto fail;
+
+    if (!efd && (efd = epoll_create1(EPOLL_CLOEXEC)) < 0) goto fail;
+
+    struct epoll_event ep;
+    ep.events = EPOLLIN | EPOLLERR | EPOLLHUP;
+    ep.data.ptr = &wayland->fds.display;
+    epoll_ctl(efd, EPOLL_CTL_ADD, wayland->fds.display, &ep);
+
+    struct epoll_event ep2;
+    ep2.events = EPOLLIN;
+    ep2.data.ptr = &wayland->fds.repeat;
+    epoll_ctl(efd, EPOLL_CTL_ADD, wayland->fds.repeat, &ep2);
+    return true;
 
 fail:
     freeWayland(wayland);
@@ -417,14 +504,38 @@ fail:
 int
 runWayland(WkProperties* props)
 {
-    Wayland wayland;
-    initWayland(props, &wayland);
+    Wayland wayland = {0};
+    int result = EX_SOFTWARE;
+    if (!initWayland(props, &wayland))
+    {
+        errorMsg("Failed to create Wayland structure.");
+        return EX_SOFTWARE;
+    }
+    debugMsg(true, "Successfully created Wayland structure.");
+    WkStatus status = WK_STATUS_EXIT_SOFTWARE;
+    render(props, &wayland);
+    do
+    {
+        switch (status = pollKey(props, &wayland))
+        {
+        case WK_STATUS_RUNNING: break;
+        case WK_STATUS_DAMAGED: recreateWindows(props, &wayland); break;
+        case WK_STATUS_EXIT_OK: result = EX_OK; break;
+        case WK_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
+        }
+        debugStatus(status);
+        if (!statusIsRunning(status)) break;
+        render(props, &wayland);
+    }
+    while (wl_display_dispatch(wayland.display) != -1);
+
+    freeWayland(&wayland);
+
     if (false)
     {
-        pollPointer(NULL);
-        pollKey(NULL, NULL);
-        render(NULL, NULL);
+        setMonitor(props, &wayland, -1);
+        pollPointer(&wayland);
     }
-    printf("wayland\n");
-    return EX_OK;
+
+    return result;
 }

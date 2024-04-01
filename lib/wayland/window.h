@@ -30,20 +30,20 @@ typedef struct
     struct wl_shm* shm;
     Buffer buffers[2];
     CairoPaint paint;
-    uint32_t x;
+    /* uint32_t x; */
     uint32_t windowGap;
     uint32_t width;
     uint32_t height;
     uint32_t maxWidth;
     uint32_t maxHeight;
-    uint32_t hpadding; /* hmargin_size in bemenu */
-    uint32_t wpadding; /* hmargin_size in bemenu */
-    float widthFactor;
+    /* uint32_t hpadding; /\* hmargin_size in bemenu *\/ */
+    /* uint32_t wpadding; /\* hmargin_size in bemenu *\/ */
+    /* float widthFactor; */
     int32_t scale;
     uint32_t displayed;
     struct wl_list link;
     WkWindowPosition position;
-    int32_t yOffset;
+    /* int32_t yOffset; */
     uint32_t alignAnchor;
     bool renderPending;
     void (*render)(Cairo* cairo, WkProperties* props);

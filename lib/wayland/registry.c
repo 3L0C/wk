@@ -1,9 +1,4 @@
-#include "lib/bemenu/renderers/wayland/wlr-layer-shell-unstable-v1.h"
-#include "lib/common.h"
-#include "wayland.h"
-
 #include <assert.h>
-#include <bits/types/struct_itimerspec.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -18,6 +13,11 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon-names.h>
 #include <xkbcommon/xkbcommon.h>
+
+#include "lib/common.h"
+
+#include "wayland.h"
+#include "wlr-layer-shell-unstable-v1.h"
 
 const char* WK_XKB_MASK_NAMES[MASK_LAST] = {
     XKB_MOD_NAME_SHIFT,
@@ -460,7 +460,7 @@ seatHandleCapabilities(void* data, struct wl_seat* seat, enum wl_seat_capability
 
     if (caps & WL_SEAT_CAPABILITY_POINTER)
     {
-        input->touch = wl_seat_get_touch(seat);
+        input->pointer = wl_seat_get_pointer(seat);
         wl_pointer_add_listener(input->pointer, &pointerListener, data);
     }
 
@@ -549,6 +549,7 @@ displayHandleName(void* data, struct wl_output* wlOut, const char* name)
 {
     (void)wlOut;
     Output* output = data;
+    if (output->name) free(output->name);
     output->name = strdup(name);
 }
 
@@ -637,7 +638,6 @@ waylandRepeat(Wayland* wayland)
             wayland->input.repeatKey + 8
         );
     }
-
     press(
         &wayland->input,
         wayland->input.repeatKeysym,

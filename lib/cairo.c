@@ -119,7 +119,7 @@ cairoInitPaint(WkProperties* props, CairoPaint* paint)
 static bool
 setSourceRgba(WkColor type)
 {
-    CairoColor* color;
+    CairoColor* color = NULL;
 
     switch (type)
     {

@@ -9,7 +9,7 @@
 #include "debug.h"
 #include "properties.h"
 #include "types.h"
-#include "util.h"
+#include "window.h"
 
 static char
 getDelim(int* count, char a, char b)
@@ -368,4 +368,18 @@ debugProperties(const WkProperties* props)
     debugString("Debug:", "True", 0);
     printDebug(0);
     printf("--------------------------------------------\n");
+}
+
+void
+debugStatus(WkStatus status)
+{
+    printDebug(0);
+    switch (status)
+    {
+    case WK_STATUS_RUNNING: printf("WK_STATUS_RUNNING\n"); break;
+    case WK_STATUS_DAMAGED: printf("WK_STATUS_DAMAGED\n"); break;
+    case WK_STATUS_EXIT_OK: printf("WK_STATUS_EXIT_OK\n"); break;
+    case WK_STATUS_EXIT_SOFTWARE: printf("WK_STATUS_EXIT_SOFTWARE\n"); break;
+    default: printf("WK_STATUS_UNKNOWN\n"); break;
+    }
 }

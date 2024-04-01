@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "config/config.h"
+
 #include "client.h"
-#include "common.h"
-#include "config.h"
 #include "types.h"
 
 void
