@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
+#include "config/chords.h"
+
 #include "lib/client.h"
 #include "lib/common.h"
 #include "lib/debug.h"
@@ -9,7 +11,6 @@
 #include "lib/util.h"
 #include "lib/window.h"
 
-#include "chords.h"
 #include "common.h"
 #include "compile.h"
 #include "line.h"

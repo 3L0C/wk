@@ -28,6 +28,6 @@ run(WkProperties* props)
     debugMsg(props->debug, "Running on x11.");
     return runX11(props);
 #endif
-    errorMsg("Can only run under X11 and Wayland.");
+    errorMsg("Can only run under X11 and/or Wayland.");
     return EX_SOFTWARE;
 }
