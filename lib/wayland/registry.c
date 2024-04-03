@@ -326,8 +326,13 @@ pointerHandleButton(
 )
 {
     debugMsg(debug, "lib/wayland/registry.c:pointerHandleButton:328");
-    /* TODO exit when mouse button is pressed */
-    (void)data, (void)pointer, (void)serial, (void)time, (void)button, (void)state;
+    (void)pointer;
+    Input* input = data;
+    input->pointerEvent.eventMask |= POINTER_EVENT_BUTTON;
+    input->pointerEvent.time = time;
+    input->pointerEvent.serial = serial;
+    input->pointerEvent.button = button;
+    input->pointerEvent.state |= state;
 }
 
 static void
