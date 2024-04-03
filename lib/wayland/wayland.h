@@ -9,6 +9,18 @@
 
 #include "registry.h"
 
+typedef enum
+{
+    POINTER_EVENT_ENTER         = 1 << 0,
+    POINTER_EVENT_LEAVE         = 1 << 1,
+    POINTER_EVENT_MOTION        = 1 << 2,
+    POINTER_EVENT_BUTTON        = 1 << 3,
+    POINTER_EVENT_AXIS          = 1 << 4,
+    POINTER_EVENT_AXIS_SOURCE   = 1 << 5,
+    POINTER_EVENT_AXIS_STOP     = 1 << 6,
+    POINTER_EVENT_AXIS_DISCRETE = 1 << 7,
+} PointerEventMask;
+
 typedef struct
 {
     struct xkb_state* state;
