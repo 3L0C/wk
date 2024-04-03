@@ -69,10 +69,12 @@ static const SpecialKey specialkeys[] = {
 static const size_t specialkeysLen = sizeof(specialkeys) / sizeof(specialkeys[0]);
 
 static int efd;
+static bool debug = false;
 
 static void
 renderWindowsIfPending(WkProperties* props, Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:renderWindowsIfPending:77");
     WaylandWindow* window;
     wl_list_for_each(window, &wayland->windows, link)
     {
@@ -84,6 +86,7 @@ renderWindowsIfPending(WkProperties* props, Wayland* wayland)
 static bool
 waitForEvents(Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:waitForEvents:89");
     wl_display_dispatch_pending(wayland->display);
 
     if (wl_display_flush(wayland->display) < 0 && errno != EAGAIN) return false;
@@ -100,7 +103,7 @@ waitForEvents(Wayland* wayland)
                 return false;
             }
         }
-        else if (ep[i].data.ptr == &wayland->fds.repeat && ep[i].events & EPOLLIN)
+        else if (ep[i].data.ptr == &wayland->fds.repeat)
         {
             waylandRepeat(wayland);
         }
@@ -112,6 +115,7 @@ waitForEvents(Wayland* wayland)
 static void
 scheduleWindowsRenderIfDirty(WkProperties* props, Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:scheduleWindowsRenderIfDirty:118");
     WaylandWindow* window;
     wl_list_for_each(window, &wayland->windows, link)
     {
@@ -128,6 +132,7 @@ scheduleWindowsRenderIfDirty(WkProperties* props, Wayland* wayland)
 static bool
 render(WkProperties* props, Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:render:135");
     scheduleWindowsRenderIfDirty(props, wayland);
     if (!waitForEvents(wayland)) return false;
     renderWindowsIfPending(props, wayland);
@@ -138,6 +143,7 @@ render(WkProperties* props, Wayland* wayland)
 static struct xkb_state*
 xkbCleanState(struct xkb_state* oldState, uint32_t group)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:xkbCleanState:146");
     // Create a new xkb_state as a copy of the original state
     struct xkb_state* newState = xkb_state_new(xkb_state_get_keymap(oldState));
 
@@ -155,6 +161,7 @@ xkbCleanState(struct xkb_state* oldState, uint32_t group)
 static void
 setKeyEventMods(WkMods* wkMods, uint32_t mods)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:setKeyEventMods:164");
     if (mods & MOD_CTRL) wkMods->ctrl = true;
     if (mods & MOD_ALT) wkMods->alt = true;
     if (mods & MOD_LOGO) wkMods->hyper = true;
@@ -164,6 +171,7 @@ setKeyEventMods(WkMods* wkMods, uint32_t mods)
 static WkSpecial
 getSpecialKey(xkb_keysym_t keysym)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:getSpecialKey:174");
     for (size_t i = 0; i < specialkeysLen; i++)
     {
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
@@ -174,6 +182,7 @@ getSpecialKey(xkb_keysym_t keysym)
 static bool
 processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, size_t len)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:processKey:185");
     key->key = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, mods);
@@ -184,9 +193,13 @@ processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, siz
 static WkStatus
 pollKey(WkProperties* props, Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:pollKey:196");
     assert(props && wayland);
 
-    if (wayland->input.keysym == XKB_KEY_NoSymbol) return WK_STATUS_RUNNING;
+    if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
+    {
+        return WK_STATUS_RUNNING;
+    }
 
     xkb_keysym_t keysym = wayland->input.keysym;
     uint32_t mods = wayland->input.modifiers;
@@ -209,8 +222,8 @@ pollKey(WkProperties* props, Wayland* wayland)
     if (!processKey(&key, keysym, mods, buffer, len)) goto exit;
 
     xkb_state_unref(cleanState);
+    wayland->input.keyPending = false;
 
-    wayland->input.keysym = XKB_KEY_NoSymbol;
     return handleKeypress(props, &key);
 
 exit:
@@ -221,6 +234,10 @@ exit:
 static bool
 pollPointer(Wayland* wayland)
 {
+    assert(wayland);
+
+    debugMsg(debug, "lib/wayland/wayland.c:pollPointer:239");
+
     bool result = false;
     PointerEvent* event = &wayland->input.pointerEvent;
     if (event->state & WL_POINTER_BUTTON_STATE_PRESSED ||
@@ -236,6 +253,7 @@ pollPointer(Wayland* wayland)
 static void
 destroyWindows(Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:destroyWindows:256");
     WaylandWindow* window;
     wl_list_for_each(window, &wayland->windows, link)
     {
@@ -247,6 +265,7 @@ destroyWindows(Wayland* wayland)
 static void
 windowUpdateOutput(WaylandWindow* window)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:windowUpdateOutput:268");
     int32_t maxScale = 1;
     uint32_t minMaxHeight = 0;
     uint32_t minMaxWidth = 0;
@@ -273,6 +292,7 @@ windowUpdateOutput(WaylandWindow* window)
 static void
 surfaceEnter(void* data, struct wl_surface* surface, struct wl_output* wlOutput)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:surfaceEnter:295");
     (void)surface;
     WaylandWindow* window = data;
     Wayland* wayland = window->wayland;
@@ -295,6 +315,7 @@ surfaceEnter(void* data, struct wl_surface* surface, struct wl_output* wlOutput)
 static void
 surfaceLeave(void* data, struct wl_surface* surface, struct wl_output* wlOutput)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:surfaceLeave:318");
     (void)surface;
     WaylandWindow* window = data;
 
@@ -319,6 +340,7 @@ static const struct wl_surface_listener surfaceListener = {
 static void
 setOverlap(Wayland* wayland, bool overlap)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:setOverlap:343");
     assert(wayland);
 
     WaylandWindow* window;
@@ -331,6 +353,7 @@ setOverlap(Wayland* wayland, bool overlap)
 static void
 grabKeyboard(Wayland* wayland, bool grab)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:grabKeyboard:356");
     assert(wayland);
 
     WaylandWindow* window;
@@ -343,6 +366,7 @@ grabKeyboard(Wayland* wayland, bool grab)
 static bool
 recreateWindows(WkProperties* props, Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:recreateWindows:369");
     assert(wayland);
 
     destroyWindows(wayland);
@@ -390,43 +414,38 @@ fail:
     return false;
 }
 
-static void
-setMonitor(WkProperties* props, Wayland* wayland, int32_t monitor)
-{
-    (void)monitor;
-    assert(props && wayland);
-    recreateWindows(props, wayland);
-}
+/* static void */
+/* setMonitor(WkProperties* props, Wayland* wayland, int32_t monitor) */
+/* { */
+/*     debugMsg(debug, "lib/wayland/wayland.c:setMonitor:420"); */
+/*     (void)monitor; */
+/*     assert(props && wayland); */
+/*     recreateWindows(props, wayland); */
+/* } */
 
-static void
-setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName)
-{
-    assert(props && wayland);
+/* static void */
+/* setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName) */
+/* { */
+/*     assert(props && wayland); */
 
-    if (!monitorName) return;
+/*     if (!monitorName) return; */
 
-    Output* output;
-    wl_list_for_each(output, &wayland->outputs, link)
-    {
-        if (output->name && 0 == strcmp(monitorName, output->name))
-        {
-            wayland->selectedOutput = output;
-            recreateWindows(props, wayland);
-            return;
-        }
-    }
-
-    // If the specified monitor name is not found, set selectedOutput to the first available output
-    if (!wl_list_empty(&wayland->outputs))
-    {
-        wayland->selectedOutput = wl_container_of(wayland->outputs.next, output, link);
-        recreateWindows(props, wayland);
-    }
-}
+/*     Output* output; */
+/*     wl_list_for_each(output, &wayland->outputs, link) */
+/*     { */
+/*         if (0 == strcmp(monitorName, output->name)) */
+/*         { */
+/*             wayland->selectedOutput = output; */
+/*             recreateWindows(props, wayland); */
+/*             return; */
+/*         } */
+/*     } */
+/* } */
 
 void
 freeWayland(Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:freeWayland:448");
     destroyWindows(wayland);
     waylandRegistryDestroy(wayland);
     xkb_context_unref(wayland->input.xkb.context);
@@ -444,6 +463,7 @@ freeWayland(Wayland* wayland)
 bool
 initWayland(WkProperties* props, Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/wayland.c:initWayland:466");
     assert(props && wayland);
 
     wl_list_init(&wayland->windows);
@@ -451,15 +471,14 @@ initWayland(WkProperties* props, Wayland* wayland)
 
     if (!(wayland->display = wl_display_connect(NULL))) goto fail;
     if (!(wayland->input.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS))) goto fail;
-    if (!waylandRegistryRegister(wayland)) goto fail;
+    if (!waylandRegistryRegister(wayland, props)) goto fail;
 
     wayland->fds.display = wl_display_get_fd(wayland->display);
     wayland->fds.repeat = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
     wayland->input.repeatFd = &wayland->fds.repeat;
     wayland->input.keyPending = false;
-    setMonitorName(props, wayland, "focused");
 
-    if (!recreateWindows(props, wayland)) goto fail;
+    recreateWindows(props, wayland);
 
     if (!efd && (efd = epoll_create1(EPOLL_CLOEXEC)) < 0) goto fail;
 
@@ -482,6 +501,11 @@ fail:
 int
 runWayland(WkProperties* props)
 {
+    assert(props);
+
+    debug = props->debug;
+
+    debugMsg(debug, "lib/wayland/wayland.c:runWayland:508");
     Wayland wayland = {0};
     int result = EX_SOFTWARE;
     if (!initWayland(props, &wayland))
@@ -501,15 +525,20 @@ runWayland(WkProperties* props)
         case WK_STATUS_EXIT_OK: result = EX_OK; break;
         case WK_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
+
+        /* Exit on pointer events */
+        if (pollPointer(&wayland)) break;
+
         render(props, &wayland);
     }
-    while (statusIsRunning(status) && wl_display_dispatch(wayland.display) != -1);
+    while (statusIsRunning(status));
 
     freeWayland(&wayland);
 
     if (false)
     {
-        setMonitor(props, &wayland, -1);
+        /* setMonitor(props, &wayland, -1); */
+        /* setMonitorName(props, &wayland, NULL); */
         pollPointer(&wayland);
     }
 

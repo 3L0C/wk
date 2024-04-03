@@ -15,6 +15,8 @@
 #include <xkbcommon/xkbcommon.h>
 
 #include "lib/common.h"
+#include "lib/debug.h"
+#include "lib/properties.h"
 
 #include "wayland.h"
 #include "wlr-layer-shell-unstable-v1.h"
@@ -40,9 +42,12 @@ const XkbModBit WK_XKB_MODS[MASK_LAST] = {
     MOD_MOD5,
 };
 
+static bool debug = false;
+
 static void
 shmFormat(void* data, struct wl_shm* wl_shm, uint32_t format)
 {
+    debugMsg(debug, "lib/wayland/registry.c:shmFormat:50");
     (void)wl_shm;
     Wayland* wayland = data;
     wayland->formats |= (1 << format);
@@ -55,6 +60,7 @@ struct wl_shm_listener shmListener = {
 static void
 keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, int fd, uint32_t size)
 {
+    debugMsg(debug, "lib/wayland/registry.c:keyboardHandleKeymap:63");
     (void)keyboard;
     Input* input = data;
 
@@ -111,6 +117,7 @@ keyboardHandleEnter(
     struct wl_array* keys
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:keyboardHandleEnter:120");
     (void)data, (void)keyboard, (void)serial, (void)surface, (void)keys;
 }
 
@@ -122,6 +129,7 @@ keyboardHandleLeave(
     struct wl_surface* surface
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:keyboardHandleLeave:132");
     (void)keyboard, (void)serial, (void)surface;
     Input* input = data;
     struct itimerspec its = {
@@ -136,6 +144,7 @@ keyboardHandleLeave(
 static void
 press(Input* input, xkb_keysym_t keysym, uint32_t key, enum wl_keyboard_key_state state)
 {
+    debugMsg(debug, "lib/wayland/registry.c:press:147");
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
         input->keysym = keysym;
@@ -161,6 +170,7 @@ keyboardHandleKey(
     uint32_t stateW
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:keyboardHandleKey:173");
     (void)keyboard, (void)serial, (void)time;
     Input* input = data;
     enum wl_keyboard_key_state state = stateW;
@@ -206,6 +216,7 @@ keyboardHandleModifiers(
     uint32_t group
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:keyboardHandleModifiers:219");
     (void)keyboard, (void)serial;
     Input* input = data;
     input->xkb.group = group;
@@ -225,6 +236,7 @@ keyboardHandleModifiers(
 static void
 setRepeatInfo(Input* input, int32_t rate, int32_t delay)
 {
+    debugMsg(debug, "lib/wayland/registry.c:setRepeatInfo:239");
     assert(input);
 
     input->repeatRate.sec = input->repeatRate.nsec = 0;
@@ -250,6 +262,7 @@ setRepeatInfo(Input* input, int32_t rate, int32_t delay)
 static void
 keyboardHandleRepeatInfo(void *data, struct wl_keyboard* keyboard, int32_t rate, int32_t delay)
 {
+    debugMsg(debug, "lib/wayland/registry.c:keyboardHandleRepeatInfo:265");
     (void)keyboard;
     setRepeatInfo(data, rate, delay);
 }
@@ -263,36 +276,42 @@ pointerHandleAxis(
     wl_fixed_t value
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleAxis:279");
     (void)data, (void)pointer, (void)time, (void)axis, (void)value;
 }
 
 static void
 pointerHandleAxisSource(void* data, struct wl_pointer* pointer, uint32_t axisSource)
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleAxisSource:286");
     (void)pointer, (void)pointer, (void)axisSource;
 }
 
 static void
 pointerHandleAxisStop(void* data, struct wl_pointer* pointer, uint32_t time, uint32_t axis)
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleAxisStop:293");
     (void)data, (void)pointer, (void)time, (void)axis;
 }
 
 static void
 pointerHandleAxisDiscrete(void* data, struct wl_pointer* pointer, uint32_t axis, int32_t discrete)
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleAxisDiscrete:300");
     (void)data, (void)pointer, (void)axis, (void)discrete;
 }
 
 static void
 pointerHandleAxisRelativeDirection(void* data, struct wl_pointer* pointer, uint32_t a, uint32_t b)
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleAxisRelativeDirection:307");
     (void)data, (void)pointer, (void)a, (void)b;
 }
 
 static void
 pointerHandleAxisValue120(void* data, struct wl_pointer* pointer, uint32_t a, int32_t b)
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleAxisValue120:314");
     (void)data, (void)pointer, (void)a, (void)b;
 }
 
@@ -306,6 +325,7 @@ pointerHandleButton(
     uint32_t state
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleButton:328");
     /* TODO exit when mouse button is pressed */
     (void)data, (void)pointer, (void)serial, (void)time, (void)button, (void)state;
 }
@@ -320,12 +340,14 @@ pointerHandleEnter(
     wl_fixed_t surfaceY
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleEnter:343");
     (void)data, (void)pointer, (void)serial, (void)surface, (void)surfaceX, (void)surfaceY;
 }
 
 static void
 pointerHandleFrame(void* data, struct wl_pointer* pointer)
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleFrame:350");
     (void)data, (void)pointer;
 }
 
@@ -337,6 +359,7 @@ pointerHandleLeave(
     struct wl_surface* surface
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleLeave:362");
     (void)data, (void)pointer, (void)serial, (void)surface;
 }
 
@@ -349,12 +372,14 @@ pointerHandleMotion(
     wl_fixed_t surfaceY
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:pointerHandleMotion:375");
     (void)data, (void)pointer, (void)time, (void)surfaceX, (void)surfaceY;
 }
 
 static void
 touchHandleCancel(void* data, struct wl_touch* touch)
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleCancel:382");
     (void)data, (void)touch;
 }
 
@@ -370,6 +395,7 @@ touchHandleDown(
     wl_fixed_t y
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleDown:398");
     /* TODO exit on touch event */
     (void)data, (void)touch, (void)serial, (void)time, (void)surface, (void)id, (void)x, (void)y;
 }
@@ -377,6 +403,7 @@ touchHandleDown(
 static void
 touchHandleFrame(void* data, struct wl_touch* touch)
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleFrame:406");
     (void)data, (void)touch;
 }
 
@@ -390,24 +417,28 @@ touchHandleMotion(
     wl_fixed_t y
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleMotion:420");
     (void)data, (void)touch, (void)time, (void)id, (void)x, (void)y;
 }
 
 static void
 touchHandleOrientation(void* data, struct wl_touch* touch, int32_t id, wl_fixed_t orientation)
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleOrientation:427");
     (void)data, (void)touch, (void)id, (void)orientation;
 }
 
 static void
 touchHandleShape(void* data, struct wl_touch* touch, int32_t id, wl_fixed_t major, wl_fixed_t minor)
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleShape:434");
     (void)data, (void)touch, (void)id, (void)major, (void)minor;
 }
 
 static void
 touchHandleUp(void* data, struct wl_touch* touch, uint32_t serial, uint32_t time, int32_t id)
 {
+    debugMsg(debug, "lib/wayland/registry.c:touchHandleUp:441");
     /* TODO exit on touch event */
     (void)data, (void)touch, (void)serial, (void)time, (void)id;
 }
@@ -448,6 +479,7 @@ static const struct wl_touch_listener touchListener = {
 static void
 seatHandleCapabilities(void* data, struct wl_seat* seat, enum wl_seat_capability caps)
 {
+    debugMsg(debug, "lib/wayland/registry.c:seatHandleCapabilities:482");
     Input* input = data;
 
     if (!input->seat) input->seat = seat;
@@ -485,6 +517,7 @@ seatHandleCapabilities(void* data, struct wl_seat* seat, enum wl_seat_capability
 static void
 seatHandleName(void* data, struct wl_seat* seat, const char* name)
 {
+    debugMsg(debug, "lib/wayland/registry.c:seatHandleName:520");
     (void)data, (void)seat, (void)name;
 }
 
@@ -496,12 +529,14 @@ static struct wl_seat_listener seatListener = {
 static void
 displayHandleDescription(void* data, struct wl_output* wlOut, const char* description)
 {
+    debugMsg(debug, "lib/wayland/registry.c:displayHandleDescription:532");
     (void)data, (void)wlOut, (void)description;
 }
 
 static void
 displayHandleDone(void* data, struct wl_output* output)
 {
+    debugMsg(debug, "lib/wayland/registry.c:displayHandleDone:539");
     (void)data, (void)output;
 }
 
@@ -519,6 +554,7 @@ displayHandleGeometry(
     int transform
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:displayHandleGeometry:557");
     (void)data, (void)output, (void)x, (void)y, (void)physicalw,
         (void)physicalh, (void)subpixel, (void)make, (void)model, (void)transform;
 }
@@ -533,6 +569,7 @@ displayHandleMode(
     int refresh
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:displayHandleMode:572");
     (void)wlOut, (void)refresh;
 
     Output* output = data;
@@ -547,6 +584,7 @@ displayHandleMode(
 static void
 displayHandleName(void* data, struct wl_output* wlOut, const char* name)
 {
+    debugMsg(debug, "lib/wayland/registry.c:displayHandleName:587");
     (void)wlOut;
     Output* output = data;
     if (output->name) free(output->name);
@@ -556,6 +594,7 @@ displayHandleName(void* data, struct wl_output* wlOut, const char* name)
 static void
 displayHandleScale(void* data, struct wl_output* wlOut, int32_t scale)
 {
+    debugMsg(debug, "lib/wayland/registry.c:displayHandleScale:597");
     (void)wlOut;
     Output* output = data;
     assert(scale > 0);
@@ -580,29 +619,35 @@ registryHandleGlobal(
     uint32_t version
 )
 {
+    debugMsg(debug, "lib/wayland/registry.c:registryHandleGlobal:622");
     (void)version;
     Wayland* wayland = data;
 
     if (strcmp(interface, wl_compositor_interface.name) == 0)
     {
+        debugMsg(debug, "Handling compositor interface.");
         wayland->compositor = wl_registry_bind(registry, id, &wl_compositor_interface, 4);
     }
     else if (strcmp(interface, zwlr_layer_shell_v1_interface.name) == 0)
     {
+        debugMsg(debug, "Handling layer shell.");
         wayland->layerShell = wl_registry_bind(registry, id, &zwlr_layer_shell_v1_interface, 2);
     }
     else if (strcmp(interface, wl_seat_interface.name) == 0)
     {
+        debugMsg(debug, "Handling seat.");
         wayland->seat = wl_registry_bind(registry, id, &wl_seat_interface, 7);
         wl_seat_add_listener(wayland->seat, &seatListener, &wayland->input);
     }
     else if (strcmp(interface, wl_shm_interface.name) == 0)
     {
+        debugMsg(debug, "Handling shm.");
         wayland->shm = wl_registry_bind(registry, id, &wl_shm_interface, 1);
         wl_shm_add_listener(wayland->shm, &shmListener, data);
     }
     else if (strcmp(interface, wl_output_interface.name) == 0)
     {
+        debugMsg(debug, "Handling output interface.");
         struct wl_output* wlOut = wl_registry_bind(registry, id, &wl_output_interface, 4);
         Output* output = calloc(1, sizeof(Output));
         output->output = wlOut;
@@ -614,6 +659,7 @@ registryHandleGlobal(
 static void
 registryHandleGlobalRemove(void* data, struct wl_registry* registry, uint32_t name)
 {
+    debugMsg(debug, "lib/wayland/registry.c:registryHandleGlobalRemove:662");
     (void)data, (void)registry, (void)name;
 }
 
@@ -625,6 +671,7 @@ static const struct wl_registry_listener registryListener = {
 void
 waylandRepeat(Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/registry.c:waylandRepeat:674");
     assert(wayland);
 
     uint64_t exp;
@@ -649,6 +696,7 @@ waylandRepeat(Wayland* wayland)
 void
 waylandRegistryDestroy(Wayland* wayland)
 {
+    debugMsg(debug, "lib/wayland/registry.c:waylandRegistryDestroy:699");
     assert(wayland);
 
     if (wayland->shm) wl_shm_destroy(wayland->shm);
@@ -661,10 +709,12 @@ waylandRegistryDestroy(Wayland* wayland)
 }
 
 bool
-waylandRegistryRegister(Wayland* wayland)
+waylandRegistryRegister(Wayland* wayland, WkProperties* props)
 {
-    assert(wayland);
+    assert(wayland && props);
 
+    debug = props->debug;
+    debugMsg(debug, "lib/wayland/registry.c:waylandRegistryRegister:717");
     if (!(wayland->registry = wl_display_get_registry(wayland->display))) return false;
 
     wl_registry_add_listener(wayland->registry, &registryListener, wayland);
