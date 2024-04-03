@@ -87,6 +87,12 @@ CFLAGS      += $(X11_CFLAGS) $(WAY_CFLAGS)
 LDFLAGS     += $(X11_LDFLAGS) $(WAY_LDFLAGS)
 endif
 
+ifeq (1,$(words $(filter all,$(MAKECMDGOALS))))
+TARGET_OBJS += $(X11_OBJS) $(WAY_OBJS)
+CFLAGS      += $(X11_CFLAGS) $(WAY_CFLAGS)
+LDFLAGS     += $(X11_LDFLAGS) $(WAY_LDFLAGS)
+endif
+
 # Targets
 all: $(BUILD_DIR)/$(NAME)
 
