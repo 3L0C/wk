@@ -149,10 +149,10 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS) $(LIB_HDRS)
 
 # Config files
 $(CONF_DIR)/config.h:
-	cp config.def.h $@
+	cp $(CONF_DIR)/config.def.h $@
 
 $(CONF_DIR)/chords.h:
-	cp chords.def.h $@
+	cp $(CONF_DIR)/chords.def.h $@
 
 clean:
 	rm -rf $(BUILD_DIR)
