@@ -22,7 +22,6 @@
 #include "lib/properties.h"
 #include "lib/types.h"
 #include "lib/util.h"
-#include "lib/window.h"
 
 #include "debug.h"
 #include "window.h"
@@ -443,10 +442,11 @@ grabkeyboard(void)
     /* try to grab keyboard, we may have to wait for another process to ungrab */
     for (i = 0; i < 1000; i++)
     {
-        if (XGrabKeyboard(window->display,
-                          DefaultRootWindow(window->display),
-                          True, GrabModeAsync, GrabModeAsync,
-                          CurrentTime) == GrabSuccess)
+        if (XGrabKeyboard(
+                window->display,
+                DefaultRootWindow(window->display),
+                True, GrabModeAsync, GrabModeAsync, CurrentTime
+            ) == GrabSuccess)
         {
             return true;
         }
@@ -477,14 +477,18 @@ getSpecialKey(KeySym keysym)
     return WK_SPECIAL_NONE;
 }
 
-static bool
-processKey(Key* key, unsigned int state, const char* buffer, int len, KeySym keysym)
+static WkKeyType
+processKey(Key* key, unsigned int state, KeySym keysym, const char* buffer, int len)
 {
     key->key = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, state);
     key->special = getSpecialKey(keysym);
-    return (*key->key != '\0' || key->special != WK_SPECIAL_NONE);
+    if (keyIsStrictlyMod(key)) return WK_KEY_IS_STRICTLY_MOD;
+    if (keyIsSpecial(key)) return WK_KEY_IS_SPECIAL;
+    if (keyIsNormal(key)) return WK_KEY_IS_NORMAL;
+    return WK_KEY_IS_UNKNOWN;
+    /* return (*key->key != '\0' || key->special != WK_SPECIAL_NONE); */
 }
 
 static WkStatus
@@ -503,9 +507,19 @@ keypress(XKeyEvent* keyEvent)
 
     if (status == XLookupNone || status == XBufferOverflow) return WK_STATUS_RUNNING;
 
-    if (!processKey(&key, state, buffer, len, keysym)) return WK_STATUS_RUNNING;
+    switch (processKey(&key, state, keysym, buffer, len))
+    {
+    case WK_KEY_IS_STRICTLY_MOD: return WK_STATUS_RUNNING;
+    case WK_KEY_IS_SPECIAL: /* FALLTHROUGH */
+    case WK_KEY_IS_NORMAL: return handleKeypress(properties, &key);
+    case WK_KEY_IS_UNKNOWN:
+        debugMsg(debug, "Encountered an unknown key. Most likely a modifier key press event.");
+        if (debug) debugKey(&key);
+        return WK_STATUS_RUNNING;
+    default: errorMsg("Got an unkown return value from 'processKey'."); break;
+    }
 
-    return handleKeypress(properties, &key);
+    return WK_STATUS_EXIT_SOFTWARE;
 }
 
 static int

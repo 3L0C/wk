@@ -4,6 +4,10 @@
 #include "common.h"
 
 /* mod macros */
+#define IS_MOD_FLAG(mods)    (((mods) & MOD_CTRL) || \
+                              ((mods) & MOD_ALT)  || \
+                              ((mods) & MOD_LOGO) || \
+                              ((mods) & MOD_SHIFT))
 #define MAKE_MODS(                      \
     _ctrl, _alt, _hyper, _shift         \
 )                                       \
@@ -101,6 +105,14 @@
 #define PREFIX(...) (Chord[]){ __VA_ARGS__, NULL_CHORD }
 #define CHORDS(...) { __VA_ARGS__, NULL_CHORD }
 
+typedef enum
+{
+    WK_KEY_IS_STRICTLY_MOD,
+    WK_KEY_IS_SPECIAL,
+    WK_KEY_IS_NORMAL,
+    WK_KEY_IS_UNKNOWN,
+} WkKeyType;
+
 typedef struct
 {
     bool ctrl:1;
@@ -127,6 +139,14 @@ typedef enum
     WK_SPECIAL_END,
     WK_SPECIAL_BEGIN,
 } WkSpecial;
+
+typedef enum
+{
+    WK_STATUS_RUNNING,
+    WK_STATUS_DAMAGED,
+    WK_STATUS_EXIT_OK,
+    WK_STATUS_EXIT_SOFTWARE,
+} WkStatus;
 
 typedef struct
 {
@@ -163,5 +183,9 @@ typedef struct
     const char* key;
     int len;
 } Key;
+
+bool keyIsNormal(Key* key);
+bool keyIsSpecial(Key* key);
+bool keyIsStrictlyMod(Key* key);
 
 #endif /* WK_LIB_TYPES_H_ */

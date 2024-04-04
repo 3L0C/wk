@@ -179,7 +179,7 @@ getSpecialKey(xkb_keysym_t keysym)
     return WK_SPECIAL_NONE;
 }
 
-static bool
+static WkKeyType
 processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, size_t len)
 {
     debugMsg(debug, "lib/wayland/wayland.c:processKey:185");
@@ -187,7 +187,10 @@ processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, siz
     key->len = len;
     setKeyEventMods(&key->mods, mods);
     key->special = getSpecialKey(keysym);
-    return (*key->key != '\0' || key->special != WK_SPECIAL_NONE);
+    if (keyIsStrictlyMod(key)) return WK_KEY_IS_STRICTLY_MOD;
+    if (keyIsNormal(key)) return WK_KEY_IS_NORMAL;
+    if (keyIsSpecial(key)) return WK_KEY_IS_SPECIAL;
+    return WK_KEY_IS_UNKNOWN;
 }
 
 static WkStatus
@@ -198,6 +201,7 @@ pollKey(WkProperties* props, Wayland* wayland)
 
     if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
     {
+        wayland->input.keyPending = false;
         return WK_STATUS_RUNNING;
     }
 
@@ -211,23 +215,30 @@ pollKey(WkProperties* props, Wayland* wayland)
         cleanState, wayland->input.code, buffer, size
     );
 
+    /* Cleanup */
+    xkb_state_unref(cleanState);
+    wayland->input.keyPending = false;
+
     if (len > size)
     {
         errorMsg(
             "Buffer too small when polling key. Buffer size '%zu', key length '%zu'.", size, len
         );
-        goto exit;
+        return WK_STATUS_EXIT_SOFTWARE;
     }
 
-    if (!processKey(&key, keysym, mods, buffer, len)) goto exit;
+    switch (processKey(&key, keysym, mods, buffer, len))
+    {
+    case WK_KEY_IS_STRICTLY_MOD: return WK_STATUS_RUNNING;
+    case WK_KEY_IS_SPECIAL: /* FALLTHROUGH */
+    case WK_KEY_IS_NORMAL: return handleKeypress(props, &key);
+    case WK_KEY_IS_UNKNOWN:
+        errorMsg("Encountered an unknown key.");
+        if (debug) debugKey(&key);
+        return WK_STATUS_EXIT_SOFTWARE;
+    default: errorMsg("Got an unkown return value from 'processKey'."); break;
+    }
 
-    xkb_state_unref(cleanState);
-    wayland->input.keyPending = false;
-
-    return handleKeypress(props, &key);
-
-exit:
-    xkb_state_unref(cleanState);
     return WK_STATUS_EXIT_SOFTWARE;
 }
 
@@ -414,34 +425,6 @@ fail:
     return false;
 }
 
-/* static void */
-/* setMonitor(WkProperties* props, Wayland* wayland, int32_t monitor) */
-/* { */
-/*     debugMsg(debug, "lib/wayland/wayland.c:setMonitor:420"); */
-/*     (void)monitor; */
-/*     assert(props && wayland); */
-/*     recreateWindows(props, wayland); */
-/* } */
-
-/* static void */
-/* setMonitorName(WkProperties* props, Wayland* wayland, char* monitorName) */
-/* { */
-/*     assert(props && wayland); */
-
-/*     if (!monitorName) return; */
-
-/*     Output* output; */
-/*     wl_list_for_each(output, &wayland->outputs, link) */
-/*     { */
-/*         if (0 == strcmp(monitorName, output->name)) */
-/*         { */
-/*             wayland->selectedOutput = output; */
-/*             recreateWindows(props, wayland); */
-/*             return; */
-/*         } */
-/*     } */
-/* } */
-
 void
 freeWayland(Wayland* wayland)
 {
@@ -515,9 +498,9 @@ runWayland(WkProperties* props)
     }
     debugMsg(props->debug, "Successfully created Wayland structure.");
     WkStatus status = WK_STATUS_EXIT_SOFTWARE;
-    render(props, &wayland);
     do
     {
+        render(props, &wayland);
         switch (status = pollKey(props, &wayland))
         {
         case WK_STATUS_RUNNING: break;
@@ -529,18 +512,11 @@ runWayland(WkProperties* props)
         /* Exit on pointer events */
         if (pollPointer(&wayland)) break;
 
-        render(props, &wayland);
+        debugStatus(status);
     }
     while (statusIsRunning(status));
 
     freeWayland(&wayland);
-
-    if (false)
-    {
-        /* setMonitor(props, &wayland, -1); */
-        /* setMonitorName(props, &wayland, NULL); */
-        pollPointer(&wayland);
-    }
 
     return result;
 }

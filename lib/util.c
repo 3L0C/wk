@@ -15,7 +15,6 @@
 #include "properties.h"
 #include "types.h"
 #include "util.h"
-#include "window.h"
 
 void
 calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols)
@@ -69,6 +68,7 @@ static bool
 isSpecialKey(const Chord* chord, Key* key)
 {
     return (
+        key->special != WK_SPECIAL_NONE &&
         chord->special == key->special &&
         modsEqual(&chord->mods, &key->mods, true)
     );
@@ -77,7 +77,7 @@ isSpecialKey(const Chord* chord, Key* key)
 static bool
 isKey(const Chord* chord, Key* key)
 {
-    if (key->special != WK_SPECIAL_NONE) return isSpecialKey(chord, key);
+    if (isSpecialKey(chord, key)) return true;
     return (
         modsEqual(&chord->mods, &key->mods, false) &&
         chord->special == key->special &&
@@ -115,7 +115,6 @@ handleCommands(WkProperties* props, const Chord* chord)
     if (chord->before) spawn(props, chord->before, chord->flags.beforeAsync);
     handleCommand(props, chord);
     if (chord->after) spawn(props, chord->after, !chord->flags.afterSync);
-    /* FIXME should keep return damaged or running? */
     return chord->flags.keep ? WK_STATUS_RUNNING : WK_STATUS_EXIT_OK;
 }
 
@@ -134,23 +133,24 @@ handleKeypress(WkProperties* props, Key* key)
     uint32_t len = props->chordCount;
     const Chord* chords = props->chords;
 
-    if (props->debug)
-    {
-        debugKey(key);
-    }
-
     for (uint32_t i = 0; i < len; i++)
     {
         if (isKey(&chords[i], key))
         {
             if (props->debug)
             {
+                debugMsg(props->debug, "Found match: '%s'.", chords[i].key);
                 debugChord(&chords[i], 0);
                 debugKey(key);
-                debugMsg(props->debug, "Found match: '%s'.", chords[i].key);
             }
             return pressKey(props, &chords[i]);
         }
+    }
+
+    if (props->debug)
+    {
+        debugMsg(props->debug, "Did not find a match for keypress.");
+        debugKey(key);
     }
 
     return WK_STATUS_EXIT_SOFTWARE;

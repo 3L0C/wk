@@ -110,6 +110,38 @@ debugSpecial(WkSpecial special, unsigned int indent)
     return flag;
 }
 
+static bool
+debugSpecialRepr(WkSpecial special, unsigned int indent)
+{
+    printDebug(indent);
+    printf("| Key                 ");
+    const char* text = NULL;
+    bool flag = true;
+
+    switch (special)
+    {
+    case WK_SPECIAL_NONE:       text = "NONE";          flag = false; break;
+    case WK_SPECIAL_LEFT:       text = "'Left'";        break;
+    case WK_SPECIAL_RIGHT:      text = "'Right'";       break;
+    case WK_SPECIAL_UP:         text = "'Up'";          break;
+    case WK_SPECIAL_DOWN:       text = "'Down'";        break;
+    case WK_SPECIAL_TAB:        text = "'TAB'";         break;
+    case WK_SPECIAL_SPACE:      text = "'SPC'";         break;
+    case WK_SPECIAL_RETURN:     text = "'RET'";         break;
+    case WK_SPECIAL_DELETE:     text = "'DEL'";         break;
+    case WK_SPECIAL_ESCAPE:     text = "'ESC'";         break;
+    case WK_SPECIAL_HOME:       text = "'Home'";        break;
+    case WK_SPECIAL_PAGE_UP:    text = "'PgUp'";        break;
+    case WK_SPECIAL_PAGE_DOWN:  text = "'PgDown'";      break;
+    case WK_SPECIAL_END:        text = "'End'";         break;
+    case WK_SPECIAL_BEGIN:      text = "'Begin'";       break;
+    default: text = "UNKNOWN"; flag = false; break;
+    }
+
+    printf("%s\n", text);
+    return flag;
+}
+
 static void
 debugString(const char* text, const char* value, unsigned int indent)
 {
@@ -305,8 +337,9 @@ debugKey(const Key* key)
     debugMod(&key->mods, 0);
     if (debugSpecial(key->special, 0))
     {
-        printDebug(0);
-        printf("| Key                 SPECIAL\n");
+        /* printDebug(0); */
+        debugSpecialRepr(key->special, 0);
+        /* printf("| Key                 SPECIAL\n"); */
     }
     else
     {
