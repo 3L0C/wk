@@ -1,0 +1,320 @@
+#+title: WKS(5) WKS Configuration Manual
+#+author: 3L0C
+#+date: April 3, 2024
+
+* NAME
+wks - source file for *wk*​(1)
+
+* DESCRIPTION
+*wk* can generate key-chords using *wks* syntax.
+
+* GRAMMAR RULES
+The following are /ideally/ the formal grammar rules for
+*wks*. I have tried to note where behavior differs from the
+expectation. If anything is not behaving as you expect,
+please see *CONTACT* below to reach out.
+
+#+begin_example
+key_chord     -> prefix
+               | chord
+               | chord_array ;
+
+prefix        -> key description keyword* '{' ( key_chord )* '}' ;
+
+chord         -> key description keyword* command ;
+
+chord_array   -> '[' ( key | key_pair )+ ']' description keyword* command ;
+
+key_pair      -> '(' key description ')' ;
+
+key           -> modifier* ( '\\'[\\\[\]{}#":]
+                           | [^\s\[\]{}#":]
+                           | special_key ) ;
+
+special_key   -> ( 'Left' |  'Right'   |  'Up'        |  'Down'
+                 | 'TAB'  |  'SPC'     |  'RET'       |  'DEL' |  'ESC'
+                 | 'Home' |  'PgUp'    |  'PgDown'    |  'End' |  'Begin' ) ;
+
+modifier      -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+
+description   -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+
+command       -> '%{{' ( . | interpolation )* '}}' ;
+
+interpolation -> '%(' identifier ')' ;
+
+identifier    -> ( 'key'
+                 | 'index'
+                 | 'index+1'
+                 | 'desc'
+                 | 'description' ) ;
+
+keyword       -> ':' ( hook | flag ) ;
+
+hook          -> ( 'before'
+                 | 'after'
+                 | 'async-before'
+                 | 'sync-after' ) command ;
+
+flag          -> ( 'keep'
+                 | 'close'
+                 | 'inherit'
+                 | 'unhook'
+                 | 'no-before'
+                 | 'no-after'
+                 | 'write'
+                 | 'sync-command' ) ;
+#+end_example
+
+** KEY CHORD
+A *key chord* is the top-level construct in the grammar
+and represents a complete key chord definition. It can be
+either a *prefix*, a *chord*, or a *chord array*.
+
+** PREFIX
+A *prefix* is a type of *key chord* that acts as a container
+for other key chords. It consists of a *key*, a
+*description*, zero or more *keyword*​s, and a block of *key
+chord*​s enclosed in curly braces *{}*. The *key* triggers
+the *prefix*, and the inner *key chords* become accessible
+once the *prefix* is activated.
+
+** CHORD
+A *chord* is a basic *key chord* that represents a single
+action or *command*. It consists of a *key*, a
+*description*, zero or more *keyword*​s, and a *command*.
+When the specified *key* is triggered, the associated
+*command* is executed.
+
+** CHORD ARRAY
+A *chord array* is a compact way to define multiple key
+chords with similar properties. It starts with an opening
+square bracket *[*, followed by one or more *key*​s or
+*key pair*​s, and ends with a closing square bracket *]*.
+After the closing bracket, it includes a *description*,
+zero or more *keyword*​s, and a *command*. Each *key*
+within the *chord array* represents a separate *chord*
+that shares the same *description*, *keyword*​s, and
+*command*. A *chord array* will not produce a *prefix*
+array. During parsing, an error will be thrown if no command
+is supplied, just the same as a *chord*.
+
+See *KEY PAIR* below for a description of the behavior of
+*key pair*​s within a *chord array*.
+
+** KEY PAIR
+A *key pair* is a construct that is only valid within a
+*chord array*. It is used to associate a *key* with a
+specific *description*. It consists of a *key* and a
+*description* enclosed in parentheses *()*. The *key pair*
+allows for individual key chords within a *chord array* to
+have a different *description* while sharing the same
+*keyword*​s and *command*.
+
+** KEY
+A *key* represents the trigger or activator for a *key
+chord*. It consists of zero or more *modifier*​s followed
+by either a single printable *UTF-8* character, or a
+*special key*. Certain characters have special meaning and
+they cannot be used unless escaped.
+
+All of the following characters must be preceded by a
+backslash *\* to be interpreted as a *key*:
+
+#+begin_quote
+- *[* :: Begins a *chord array*.
+- *]* :: Ends a *chord array*.
+- *{* :: Begins a *prefix* block.
+- *}* :: Ends a *prefix* block.
+- *#* :: Begins a comment.
+- *"* :: Begins and ends a *description*.
+- *:* :: Begins a *keyword*.
+#+end_quote
+
+** SPECIAL KEY
+A *special key* represents a non-printable key that can be used as a *key*.
+
+The following are valid *special key*​s:
+
+#+begin_quote
+_Left_,  _Right_,  _Up_,      _Down_,
+_TAB_,   _SPC_,    _RET_,     _DEL_,       _ESC_,
+_Home_,  _PgUp_,   _PgDown_,  _End_, and   _Begin_
+#+end_quote
+
+** MODIFIER
+A *modifier* is a prefix that can be added before a
+*key* to modify its behavior. It consists of a single
+letter (*C*, *H*, *M*, or *S*) followed by a hyphen *-*.
+The modifiers represent the following:
+
+#+begin_quote
+- *C-* :: _Control_ key
+- *H-* :: _Hyper_ key
+- *M-* :: _Meta_ key
+- *S-* :: _Shift_ key
+#+end_quote
+
+A *modifier* can precede another *modifier* before a *key*.
+/NOTE/ that a *modifier* can be given more than once
+according to the grammar, but there is no practical benefit
+to this. Additionally, the *S-* (_Shift_) *modifier* can be
+given before a printable character, but it will be ignored.
+It is only considered when it precedes a *special key*.
+
+** DESCRIPTION
+A *description* provides a human-readable explanation or
+label for a key chord. It is enclosed in double quotes *"*.
+If a double quote needs to be included within the
+*description*, it must be escaped with a backslash. An
+*interpolation* may be used with a *description* as well.
+See *INTERPOLATION* below for a full explanation.
+
+** COMMAND
+A *command* represents the action or functionality triggered
+by a *key chord*. It is enclosed in *%{{* and *}}* delimiters.
+The content within the delimiters can be any valid *command*
+just as you would supply it at the command-line. An
+*interpolation* may be used with a *command*. See
+*INTERPOLATION* below for a full explanation.
+
+*NOTE* any *command* given to the _before_, or _sync-after_
+*hook*​s is blocking. Additionally, if the _sync-command_
+*flag* is given, the the current *chord*'s *command* becomes
+blocking. Depending on the *command*, *wk* may never regain
+control. This is a serious concern as *wk* only releases
+the keyboard after it has completed or encountered an
+error.  This could leave the user with an unresponsive
+keyboard until they restart their system. Think carefully
+before using a *command* in a blocking fashion, and if
+possible, use the non-blocking alternatives.
+
+** INTERPOLATION
+An *interpolation* works the same way in *wks* as it does in
+many programming languages. An *interpolation* may be given
+within a *description* or a *command*, except where
+otherwise noted. An *interpolation* begins with the *%(*
+delimiter and ends with a closing parentheses *)*. Within
+these delimiters, a single identifier must be given.
+
+** IDENTIFIER
+The following identifiers are valid within an *interpolation*:
+
+#+begin_quote
+- _key_ ::
+  The _key_ *identifier* corresponds to the *key* of the
+  current *chord*. This makes the most sense to use within a
+  *chord array* or for a *chord* that may change frequently
+  or is not know ahead of time.
+- _index_ ::
+  The _index_ *identifier* corresponds to the 0 base index of
+  the current *chord* or *prefix* within the current scope.
+  *NOTE* a *prefix* starts a new scope.
+- _index+1_ ::
+  The _index+1_ *identifier* corresponds to the 1 base index
+  of the current *chord* or *prefix* within the current
+  scope. *NOTE* a *prefix* starts a new scope.
+- _desc_ and _description_ ::
+  The _desc_ and _description_ *identifier*​s correspond to the
+  *description* of the current *chord* or *prefix*. Neither
+  *identifier* may not be given within a *description*. An
+  error will be thrown in the case where this is attempted.
+#+end_quote
+
+** KEYWORD
+A *keyword* is an optional instruction to modify the
+behavior of a *chord* or *prefix*. Is starts with a colon
+*:* followed by a *hook* or a *flag*.
+
+** HOOK
+A *hook* is a convenient way to add a *command* to a
+*chord*. The *hook* *command* is executed in accordance with
+the specification for the type of *hook*.
+
+The following are valid *hook*​s:
+
+#+begin_quote
+- _before_ *command* ::
+  The *command* given to the _before_ *hook* is executed
+  before the current *chord*'s *command*, as the name
+  implies. The *chord*'s *command* will not run until the
+  _before_ *command* completes execution. See the *COMMAND*
+  section for best practices regarding blocking *command*​s.
+- _after_ *command* ::
+  The *command* given to the _after_ *hook* is executed
+  after the current *chord*'s *command*, as the name
+  implies. The _after_ *command* is executed as a separate
+  non-blocking process like a *chord*'s command, meaning
+  *wk* will not wait for the _after_ *command* to complete
+  before it continues its business.
+- _async-before_ *command* ::
+  The *command* given to the _async-before_ *hook* is
+  executed before the current *chord*'s *command*, as the
+  name implies. Additionally, it is executed as a separate
+  non-blocking process. The *chord*'s *command* will run
+  right after the _async-before_ *command* is dispatched,
+  regardless of if or when the _async-before_ *command* has
+  completed.
+- _sync-after_ *command* ::
+  The *command* given to the _sync-after_ *hook* is executed
+  after the current *chord*'s *command*, as the name
+  implies. The _sync-after_ *command* is executed as a
+  blocking process, meaning *wk* may never close if the
+  *command* does not complete execution. See the *COMMAND*
+  section for best practices regarding blocking *command*​s.
+#+end_quote
+
+** FLAG
+A *flag* is a convenient way to modify the behavior of a
+*chord* or *prefix*. When given to a *prefix* the *flag* is
+passed on to all *chord*​s and *chord array*​s in the
+*prefix*, but not any children *prefix*​es.
+
+The following are valid *flag*​s:
+
+#+begin_quote
+- _keep_ ::
+  Normally, after executing a *chord*, *wk* will close. By
+  supplying the _keep_ flag, the *wk* window will persist
+  for any *chord* that is given the _keep_ *flag*. This
+  includes explicitly supplying the *flag* and when it is
+  inherited from a surrounding *prefix*.
+- _close_ ::
+  The _close_ *flag* is the default behavior for any
+  *chord*. However, a *chord* may inherit the _keep_ *flag*
+  from a surrounding *prefix*. When this new behavior is
+  undesired specifying the _close_ flag will restore the
+  default behavior and end the *wk* program after the
+  *chord* is completed.
+- _inherit_ ::
+  The _inherit_ *flag* is only relevant to a child *prefix*
+  that wants to _inherit_ *flag*​s and *hook*​s from the
+  parent *prefix*. Inheritance is not the norm, hence this
+  *flag* must be given explicitly.
+- _unhook_ ::
+  The _unhook_ *flag* causes a child *chord* to ignore all
+  *flag*​s and *hook*​s present in the parent. This does not
+  effect those given to the *chord* explicitly.
+- _no-before_ ::
+  The _no-before_ *flag* prevents a child *chord* from
+  inheriting a _before_ or _async-before_ *hook* present in
+  the parent *prefix*.
+- _no-after_ ::
+  The _no-after_ *flag* prevents a child *chord* from
+  inheriting an _after_ or _sync-after_ *hook* present in
+  the parent *prefix*.
+- _write_ ::
+  By default, *wk* will execute a *chord* *command* as though
+  it were a shell command. When the _write_ *flag* is
+  present, the *command* of the affected *chord* is simply
+  written to the standard output.
+- _sync-command_ ::
+  By default, *wk* will execute a *chord* *command* in a
+  separate process to prevent any hangup for a *command* that
+  may never exit. If it makes more sense for *wk* to wait
+  for the command to complete before it continues, then
+  provide the _sync-command_ *flag*. *NOTE* that this could
+  prevent *wk* from closing which is concerning as it
+  retains control of the user keyboard throughout execution.
+  You may need to restart your system if used improperly.
+#+end_quote
