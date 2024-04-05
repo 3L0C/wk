@@ -5,7 +5,6 @@
 
 #include "properties.h"
 #include "types.h"
-#include "window.h"
 
 void calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols);
 void countChords(WkProperties* props);

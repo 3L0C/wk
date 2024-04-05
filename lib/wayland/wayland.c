@@ -22,7 +22,6 @@
 #include "lib/properties.h"
 #include "lib/types.h"
 #include "lib/util.h"
-#include "lib/window.h"
 
 #include "wayland.h"
 #include "registry.h"

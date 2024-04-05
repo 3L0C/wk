@@ -292,7 +292,13 @@ keywords(Compiler* compiler)
         default: return; /* not a keyword but not an error */
         }
         /* consume keyword */
-        if (type != TOKEN_BEFORE && type != TOKEN_AFTER) advance(compiler);
+        if (type != TOKEN_BEFORE &&
+            type != TOKEN_AFTER  &&
+            type != TOKEN_ASYNC_BEFORE &&
+            type != TOKEN_SYNC_AFTER)
+        {
+            advance(compiler);
+        }
     }
 }
 

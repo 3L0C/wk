@@ -49,3 +49,9 @@ e "Emacs" :before %{{dwmc viewex 1}}
     }
     r "Roam" :unhook %{{emacsclient -c -a '' "$HOME/ewiki/20230620214854-startpage.org"}}
 }
+t "test"
+{
+    [%Z] "hmm" %{{}}
+    [\"!\"\#$%&'\(\)*+,-./0123456789\:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ] "hmm" %{{}}
+    [\[\\\]^_`abcdefghijklmnopqrstuvwxyz\{|\}~] "..." %{{}}
+}

@@ -9,7 +9,6 @@
 #include "debug.h"
 #include "properties.h"
 #include "types.h"
-#include "window.h"
 
 static char
 getDelim(int* count, char a, char b)
