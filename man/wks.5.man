@@ -21,12 +21,12 @@ prefix        -> key description keyword* \[aq]{\[aq] ( key_chord )* \[aq]}\[aq]
 
 chord         -> key description keyword* command ;
 
-chord_array   -> \[aq][\[aq] ( key | key_pair )+ \[aq]]\[aq] description keyword* command ;
+chord_array   -> \[aq][\[aq] ( key | chord_expr )+ \[aq]]\[aq] description keyword* command ;
 
-key_pair      -> \[aq](\[aq] key description \[aq])\[aq] ;
+chord_expr    -> \[aq](\[aq] chord \[aq])\[aq] ;
 
-key           -> modifier* ( \[aq]\[rs]\[rs]\[aq][\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:]
-                           | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:]
+key           -> modifier* ( \[aq]\[rs]\[rs]\[aq][\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:()]
+                           | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:()]
                            | special_key ) ;
 
 special_key   -> ( \[aq]Left\[aq] |  \[aq]Right\[aq]   |  \[aq]Up\[aq]        |  \[aq]Down\[aq]

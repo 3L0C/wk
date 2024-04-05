@@ -23,12 +23,12 @@ prefix        -> key description keyword* '{' ( key_chord )* '}' ;
 
 chord         -> key description keyword* command ;
 
-chord_array   -> '[' ( key | key_pair )+ ']' description keyword* command ;
+chord_array   -> '[' ( key | chord_expr )+ ']' description keyword* command ;
 
-key_pair      -> '(' key description ')' ;
+chord_expr    -> '(' chord ')' ;
 
-key           -> modifier* ( '\\'[\\\[\]{}#":]
-                           | [^\s\[\]{}#":]
+key           -> modifier* ( '\\'[\\\[\]{}#":()]
+                           | [^\s\[\]{}#":()]
                            | special_key ) ;
 
 special_key   -> ( 'Left' |  'Right'   |  'Up'        |  'Down'
