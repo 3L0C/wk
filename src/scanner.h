@@ -10,6 +10,8 @@ typedef enum
     TOKEN_RIGHT_BRACKET,
     TOKEN_LEFT_BRACE,
     TOKEN_RIGHT_BRACE,
+    TOKEN_LEFT_PAREN,
+    TOKEN_RIGHT_PAREN,
 
     /* keywords */
     TOKEN_INDEX,

@@ -424,6 +424,8 @@ scanToken(Scanner* scanner)
     case ']': return makeToken(scanner, TOKEN_RIGHT_BRACKET);
     case '{': return makeToken(scanner, TOKEN_LEFT_BRACE);
     case '}': return makeToken(scanner, TOKEN_RIGHT_BRACE);
+    case '(': return makeToken(scanner, TOKEN_LEFT_PAREN);
+    case ')': return makeToken(scanner, TOKEN_RIGHT_PAREN);
 
     /* keywords */
     case ':': makeCurrent(scanner); return identifier(scanner);
