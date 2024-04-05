@@ -31,6 +31,7 @@ struct Line
 };
 
 void copyLine(Line* from, Line* to);
+void copyMissing(Line* from, Line* to);
 void freeLine(Line* line);
 void freeLineArray(LineArray* array);
 void initLine(Line* line);

@@ -38,7 +38,20 @@ copyLine(Line* from, Line* to)
     copyTokenArray(&from->command, &to->command);
     copyTokenArray(&from->before, &to->before);
     copyTokenArray(&from->after, &to->after);
-    to->flags       = from->flags;
+    COPY_FLAGS(from->flags, to->flags);
+    copyLineArray(&from->array, &to->array);
+}
+
+void
+copyMissing(Line* from, Line* to)
+{
+    assert(from && to);
+
+    if (to->description.count == 0) copyTokenArray(&from->description, &to->description);
+    if (to->command.count == 0) copyTokenArray(&from->command, &to->command);
+    if (to->before.count == 0) copyTokenArray(&from->before, &to->before);
+    if (to->after.count == 0) copyTokenArray(&from->after, &to->after);
+    if (!HAS_FLAG(to->flags)) COPY_FLAGS(from->flags, to->flags);
     copyLineArray(&from->array, &to->array);
 }
 

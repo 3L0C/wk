@@ -85,6 +85,20 @@
      ((flags).syncCommand) +            \
      ((flags).beforeAsync) +            \
      ((flags).afterSync))
+#define COPY_FLAGS(from, to)                    \
+    do                                          \
+    {                                           \
+        (to).keep = (from).keep;                \
+        (to).close = (from).close;              \
+        (to).inherit = (from).inherit;          \
+        (to).unhook = (from).unhook;            \
+        (to).nobefore = (from).nobefore;        \
+        (to).noafter = (from).noafter;          \
+        (to).write = (from).write;              \
+        (to).syncCommand = (from).syncCommand;  \
+        (to).beforeAsync = (from).beforeAsync;  \
+        (to).afterSync = (from).afterSync;      \
+    } while (false)
 
 /* chord macros */
 #define NULL_CHORD  \
