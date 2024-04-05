@@ -156,7 +156,7 @@ identifierType(Scanner* scanner)
     switch (*scanner->start)
     {
     case 'a':
-        if (isKeyword(scanner, 1, 4, "fter"))       return TOKEN_AFTER;
+        if (isKeyword(scanner, 1, 4, "fter")) return TOKEN_AFTER;
         if (isKeyword(scanner, 1, 11, "sync-before")) return TOKEN_ASYNC_BEFORE;
         break;
     case 'b': return checkKeyword(scanner, 1, 5, "efore", TOKEN_BEFORE);
@@ -169,19 +169,22 @@ identifierType(Scanner* scanner)
         }
         break;
     case 'i':
-        if (isKeyword(scanner, 1, 6, "ndex+1"))     return TOKEN_INDEX_ONE;
-        if (isKeyword(scanner, 1, 4, "ndex"))       return TOKEN_INDEX;
-        if (isKeyword(scanner, 1, 6, "nherit"))     return TOKEN_INHERIT;
+        if (isKeyword(scanner, 1, 6, "ndex+1")) return TOKEN_INDEX_ONE;
+        if (isKeyword(scanner, 1, 4, "ndex")) return TOKEN_INDEX;
+        if (isKeyword(scanner, 1, 6, "nherit")) return TOKEN_INHERIT;
         break;
     case 'k':
-        if (isKeyword(scanner, 1, 3, "eep"))        return TOKEN_KEEP;
-        if (isKeyword(scanner, 1, 2, "ey"))         return TOKEN_THIS_KEY;
+        if (isKeyword(scanner, 1, 3, "eep")) return TOKEN_KEEP;
+        if (isKeyword(scanner, 1, 2, "ey")) return TOKEN_THIS_KEY;
         break;
     case 'n':
-        if (isKeyword(scanner, 1, 7, "o-after"))    return TOKEN_NO_AFTER;
-        if (isKeyword(scanner, 1, 8, "o-before"))   return TOKEN_NO_BEFORE;
+        if (isKeyword(scanner, 1, 7, "o-after")) return TOKEN_NO_AFTER;
+        if (isKeyword(scanner, 1, 8, "o-before")) return TOKEN_NO_BEFORE;
         break;
-    case 's': return checkKeyword(scanner, 1, 11, "ync-command", TOKEN_SYNC_CMD);
+    case 's':
+        if (isKeyword(scanner, 1, 11, "ync-command")) return TOKEN_SYNC_CMD;
+        if (isKeyword(scanner, 1, 9, "ync-after")) return TOKEN_SYNC_AFTER;
+        break;
     case 'u': return checkKeyword(scanner, 1, 5, "nhook", TOKEN_UNHOOK);
     case 'w': return checkKeyword(scanner, 1, 4, "rite", TOKEN_WRITE);
     }
@@ -280,7 +283,7 @@ command(Scanner* scanner)
 }
 
 static TokenType
-checkMod(const char c)
+getMod(const char c)
 {
     switch (c)
     {
@@ -431,10 +434,17 @@ scanToken(Scanner* scanner)
         makeCurrent(scanner);
         return description(scanner);
     case '%':
-        if (!match(scanner, '{') || !match(scanner, '{'))
+        if (peek(scanner) != '{')
         {
-            return errorToken(scanner, "Expect '{{' after '%'");
+            return key(scanner, c);
         }
+        else if (match(scanner, '{') && !match(scanner, '{'))
+        {
+            return errorToken(
+                scanner, "Expected '{' after '%{'. '{' must be escaped if it is meant to be a key."
+            );
+        }
+
         makeCurrent(scanner);
         skipWhitespace(scanner);
         return command(scanner);
@@ -446,7 +456,7 @@ scanToken(Scanner* scanner)
     case 'S':
         if (match(scanner, '-'))
         {
-            return makeToken(scanner, checkMod(c));
+            return makeToken(scanner, getMod(c));
         }
         return key(scanner, c);
     default: return key(scanner, c);
