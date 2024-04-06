@@ -14,6 +14,7 @@ typedef enum
     TOKEN_RIGHT_PAREN,
 
     /* keywords */
+    TOKEN_INCLUDE,
     TOKEN_INDEX,
     TOKEN_INDEX_ONE,
     TOKEN_THIS_KEY,
@@ -85,7 +86,13 @@ typedef struct
     size_t messageLength;
 } Token;
 
+char advance(Scanner* scanner);
+Token identifier(Scanner* scanner);
 void initScanner(Scanner* scanner, const char* source);
+bool isAtEnd(const Scanner* scanner);
+bool match(Scanner* scanner, const char expected);
+char peek(const Scanner* scanner);
+char peekNext(const Scanner* scanner);
 Token scanToken(Scanner* scanner);
 
 #endif /* WK_SCANNER_H_ */

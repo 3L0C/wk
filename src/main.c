@@ -14,6 +14,7 @@
 #include "common.h"
 #include "compile.h"
 #include "line.h"
+#include "preprocessor.h"
 #include "writer.h"
 #include "transpiler.h"
 
@@ -43,6 +44,7 @@ transpile(void)
     int result = EX_OK;
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
+    source = runPreprocessor(source, client.transpile);
     Compiler compiler;
     initCompiler(&compiler, source);
     if (!transpileChords(&compiler, client.delimiter, client.debug))

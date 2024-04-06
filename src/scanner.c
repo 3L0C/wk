@@ -49,33 +49,33 @@ isAlpha(const char c)
             c == '+' || c == '-' || c == '_';
 }
 
-static bool
+bool
 isAtEnd(const Scanner* scanner)
 {
     return *scanner->current == '\0';
 }
 
-static char
+char
 advance(Scanner* scanner)
 {
     scanner->current++;
     return scanner->current[-1];
 }
 
-static char
+char
 peek(const Scanner* scanner)
 {
     return *scanner->current;
 }
 
-static char
+char
 peekNext(const Scanner* scanner)
 {
     if (isAtEnd(scanner)) return '\0';
     return scanner->current[1];
 }
 
-static bool
+bool
 match(Scanner* scanner, const char expected)
 {
     if (isAtEnd(scanner)) return false;
@@ -191,7 +191,7 @@ identifierType(Scanner* scanner)
     return TOKEN_ERROR;
 }
 
-static Token
+Token
 identifier(Scanner* scanner)
 {
     while (isAlpha(peek(scanner)) || isDigit(peek(scanner))) advance(scanner);
