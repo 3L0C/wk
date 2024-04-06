@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -29,29 +30,32 @@ usage(void)
         "    -d, --debug                Print debug information.\n"
         "    -t, --top                  Position window at top of screen.\n"
         "    -b, --bottom               Position window at bottom of screen.\n"
-        "    -s, --script               Read script from stdin to use as chords.\n"
-        "    -m, --max-columns NUM      Set maximum columns to NUM.\n"
+        "    -s, --script               Read script from stdin to use as key chords.\n"
+        "    -m, --max-columns INT      Set maximum columns to INT.\n"
         "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
         "    -T, --transpile FILE       Transpile FILE to valid 'chords.h' syntax and print to stdout.\n"
-        "    -c, --chords FILE          Use FILE for chords rather than those in 'chords.h'.\n"
-        "    -w, --width NUM            Set window width to NUM.\n"
-        "    -g, --gap NUM              Set window gap between top/bottom of screen.\n"
+        "    -c, --chords FILE          Use FILE for key chords rather than those in 'chords.h'.\n"
+        "    -w, --width INT            Set window width to INT.\n"
+        "    -g, --gap INT              Set window gap between top/bottom of screen to INT.\n"
         "                               Set to '-1' for a gap 1/10th the size of your screen height.\n"
-        "    --border-width NUM         Set border width to NUM.\n"
-        "    --wpadding NUM             Set left and right padding around hint text to NUM.\n"
-        "    --hpadding NUM             Set up and down padding around hint text to NUM.\n"
+        "    --border-width INT         Set border width to INT.\n"
+        "    --border-radius NUM        Set border radius to NUM.\n"
+        "    --wpadding INT             Set left and right padding around hint text to INT.\n"
+        "    --hpadding INT             Set up and down padding around hint text to INT.\n"
         "    --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').\n"
         "    --bg COLOR                 Set window background to COLOR (e.g., '#F1CD39').\n"
         "    --bd COLOR                 Set window border to COLOR (e.g., '#F1CD39').\n"
         "    --shell STRING             Set shell to STRING (e.g., '/bin/sh').\n"
         "    --font STRING              Set font to STRING. Should be a valid Pango font description\n"
-        "                               (e.g., 'monospace, M+ 1c, ..., 16').\n",
+        "                               (e.g., 'monospace, M+ 1c, ..., 16').\n"
+        "\n"
+        "run `man 1 wk` for more info on each option.\n",
         stderr
     );
 }
 
 static bool
-getNum(int* num)
+getInt(int* num)
 {
     *num = atoi(optarg);
     if (*num != 0) return true;
@@ -60,6 +64,15 @@ getNum(int* num)
         if (optarg[i] != '0') return false;
     }
     return true;
+}
+
+static bool
+getNum(double* num)
+{
+    errno = 0;
+    char* end;
+    *num = strtod(optarg, &end);
+    return (!(errno != 0 && *num == 0.0) && end != optarg);
 }
 
 void
@@ -86,13 +99,14 @@ parseArgs(Client* client, int* argc, char*** argv)
         { "width",          required_argument,  0, 'w' },
         { "gap",            required_argument,  0, 'g' },
         { "border-width",   required_argument,  0, 0x090 },
-        { "wpadding",       required_argument,  0, 0x091 },
-        { "hpadding",       required_argument,  0, 0x092 },
-        { "fg",             required_argument,  0, 0x093 },
-        { "bg",             required_argument,  0, 0x094 },
-        { "bd",             required_argument,  0, 0x095 },
-        { "shell",          required_argument,  0, 0x096 },
-        { "font",           required_argument,  0, 0x097 },
+        { "border-radius",  required_argument,  0, 0x091 },
+        { "wpadding",       required_argument,  0, 0x092 },
+        { "hpadding",       required_argument,  0, 0x093 },
+        { "fg",             required_argument,  0, 0x094 },
+        { "bg",             required_argument,  0, 0x095 },
+        { "bd",             required_argument,  0, 0x096 },
+        { "shell",          required_argument,  0, 0x097 },
+        { "font",           required_argument,  0, 0x098 },
         { 0, 0, 0, 0 }
     };
 
@@ -117,12 +131,12 @@ parseArgs(Client* client, int* argc, char*** argv)
         /* requires argument */
         case 'm':
         {
-            int n;
-            if (!getNum(&n))
+            int n = 0;
+            if (!getInt(&n))
             {
-                usage();
-                errorMsg("Could not convert '%s' into a number.", optarg);
-                exit(EXIT_FAILURE);
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value of max-cols: %u.", client->maxCols);
+                break;
             }
             client->maxCols = (unsigned int)n;
             break;
@@ -132,69 +146,81 @@ parseArgs(Client* client, int* argc, char*** argv)
         case 'c': client->chordsFile = optarg; break;
         case 'w':
         {
-            int n;
-            if (!getNum(&n))
+            int n = 0;
+            if (!getInt(&n))
             {
-                usage();
-                errorMsg("Could not convert '%s' into a number.", optarg);
-                exit(EXIT_FAILURE);
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value for max-cols: %u.", client->maxCols);
+                break;
             }
             client->windowWidth = n;
             break;
         }
         case 'g':
         {
-            int n;
-            if (!getNum(&n))
+            int n = 0;
+            if (!getInt(&n))
             {
-                usage();
-                errorMsg("Could not convert '%s' into a number.", optarg);
-                exit(EXIT_FAILURE);
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value for window-gap: %u.", client->windowGap);
+                break;
             }
             client->windowGap = n;
             break;
         }
         case 0x090:
         {
-            int n;
-            if (!getNum(&n))
+            int n = 0;
+            if (!getInt(&n))
             {
-                usage();
-                errorMsg("Could not convert '%s' into a number.", optarg);
-                exit(EXIT_FAILURE);
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value for border-width: %u.", client->borderWidth);
+                break;
             }
             client->borderWidth = (unsigned int)n;
             break;
         }
         case 0x091:
         {
-            int n;
+            double n = 0.0;
             if (!getNum(&n))
             {
-                usage();
-                errorMsg("Could not convert '%s' into a number.", optarg);
-                exit(EXIT_FAILURE);
+                warnMsg("Could not convert '%s' into a number.", optarg);
+                warnMsg("Using default value for border-radius: %u.", client->borderRadius);
+                break;
             }
-            client->wpadding = (unsigned int)n;
+            client->borderRadius = n;
             break;
         }
         case 0x092:
         {
-            int n;
-            if (!getNum(&n))
+            int n = 0;
+            if (!getInt(&n))
             {
-                usage();
-                errorMsg("Could not convert '%s' into a number.", optarg);
-                exit(EXIT_FAILURE);
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value for wpadding: %u.", client->wpadding);
+                break;
+            }
+            client->wpadding = (unsigned int)n;
+            break;
+        }
+        case 0x093:
+        {
+            int n = 0;
+            if (!getInt(&n))
+            {
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value for hpadding: %u.", client->hpadding);
+                break;
             }
             client->hpadding = (unsigned int)n;
             break;
         }
-        case 0x093: client->foreground = optarg; break;
-        case 0x094: client->background = optarg; break;
-        case 0x095: client->border = optarg; break;
-        case 0x096: client->shell = optarg; break;
-        case 0x097: client->font = optarg; break;
+        case 0x094: client->foreground = optarg; break;
+        case 0x095: client->background = optarg; break;
+        case 0x096: client->border = optarg; break;
+        case 0x097: client->shell = optarg; break;
+        case 0x098: client->font = optarg; break;
         /* Errors */
         case '?':
             usage();
