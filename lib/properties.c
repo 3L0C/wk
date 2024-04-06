@@ -74,6 +74,7 @@ initProperties(WkProperties* props, Client* client)
     props->height = 0;
     props->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
     props->borderWidth = client->borderWidth;
+    props->borderRadius = client->borderRadius;
     initColors(props->colors, client);
     props->shell = client->shell;
     props->font = client->font;

@@ -19,6 +19,7 @@ initClient(Client* client, Chord* chords)
     client->hpadding = heightPadding;
     client->windowPosition = windowPosition;
     client->borderWidth = borderWidth;
+    client->borderRadius = borderRadius;
     client->foreground = foreground;
     client->background = background;
     client->border = border;

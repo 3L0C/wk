@@ -16,6 +16,7 @@ typedef struct
     uint32_t hpadding;
     size_t windowPosition;
     size_t borderWidth;
+    double borderRadius;
     const char* foreground;
     const char* background;
     const char* border;

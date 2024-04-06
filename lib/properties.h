@@ -46,6 +46,7 @@ typedef struct
     uint32_t height;
     WkWindowPosition position;
     size_t borderWidth;
+    double borderRadius;
     WkHexColor colors[WK_COLOR_LAST];
     const char* shell;
     const char* font;

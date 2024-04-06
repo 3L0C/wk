@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -133,6 +134,23 @@ setSourceRgba(WkColor type)
     return true;
 }
 
+static void
+cairoDrawRoundedPath(double radius)
+{
+    cairo_t* cr = cairo->cr;
+    double degrees = M_PI / 180;
+    double x = properties->borderWidth / 2.0;
+    double y = properties->borderWidth / 2.0;
+    double w = width - properties->borderWidth;
+    double h = height - properties->borderWidth;
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + w - radius, y + radius, radius, -90 * degrees, 0 * degrees);
+    cairo_arc(cr, x + w - radius, y + h - radius, radius, 0 * degrees, 90 * degrees);
+    cairo_arc(cr, x + radius, y + h - radius, radius, 90 * degrees, 180 * degrees);
+    cairo_arc(cr, x + radius, y + radius, radius, 180 * degrees, 270 * degrees);
+    cairo_close_path(cr);
+}
+
 static bool
 drawBackground()
 {
@@ -140,7 +158,14 @@ drawBackground()
 
     if (!setSourceRgba(WK_COLOR_BACKGROUND)) return false;
 
-    cairo_paint(cairo->cr);
+    double radius = properties->borderRadius;
+
+    if (!radius) {
+        cairo_paint(cairo->cr);
+    } else {
+        cairoDrawRoundedPath(radius);
+        cairo_fill(cairo->cr);
+    }
 
     return true;
 }
@@ -153,7 +178,19 @@ drawBorder()
     double lineW = cairo_get_line_width(cairo->cr);
     cairo_set_line_width(cairo->cr, properties->borderWidth);
     if (!setSourceRgba(WK_COLOR_BORDER)) return false;
-    cairo_rectangle(cairo->cr, 0, 0, width, height);
+
+    double radius = properties->borderRadius;
+
+    if (!radius) {
+        double x = properties->borderWidth / 2.0;
+        double y = properties->borderWidth / 2.0;
+        double w = width - properties->borderWidth;
+        double h = height - properties->borderWidth;
+        cairo_rectangle(cairo->cr, x, y, w, h);
+    } else {
+        cairoDrawRoundedPath(radius);
+    }
+
     cairo_stroke(cairo->cr);
     cairo_set_line_width(cairo->cr, lineW);
     return true;
