@@ -7,7 +7,7 @@
 #include "client.h"
 #include "common.h"
 #include "debug.h"
-#include "properties.h"
+#include "menu.h"
 #include "types.h"
 
 static char
@@ -350,28 +350,7 @@ debugKey(const Key* key)
 }
 
 void
-debugMsg(bool debug, const char* fmt, ...)
-{
-    if (!debug) return;
-
-    assert(fmt);
-
-    static const int debugLen = strlen("[DEBUG] ");
-
-    int len = strlen(fmt) + 1; /* 1 = '\0' */
-    char format[len + debugLen];
-    memcpy(format, "[DEBUG] ", debugLen);
-    memcpy(format + debugLen, fmt, len);
-    va_list ap;
-    va_start(ap, fmt);
-    vprintf(format, ap);
-    va_end(ap);
-
-    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stdout);
-}
-
-void
-debugProperties(const WkProperties* props)
+debugMenu(const WkMenu* props)
 {
     printDebug(0);
     printf("---------------- Properties ----------------\n");
@@ -400,6 +379,27 @@ debugProperties(const WkProperties* props)
     debugString("Debug:", "True", 0);
     printDebug(0);
     printf("--------------------------------------------\n");
+}
+
+void
+debugMsg(bool debug, const char* fmt, ...)
+{
+    if (!debug) return;
+
+    assert(fmt);
+
+    static const int debugLen = strlen("[DEBUG] ");
+
+    int len = strlen(fmt) + 1; /* 1 = '\0' */
+    char format[len + debugLen];
+    memcpy(format, "[DEBUG] ", debugLen);
+    memcpy(format + debugLen, fmt, len);
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(format, ap);
+    va_end(ap);
+
+    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stdout);
 }
 
 void

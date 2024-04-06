@@ -5,7 +5,7 @@
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
 
-#include "lib/properties.h"
+#include "lib/menu.h"
 
 #include "registry.h"
 
@@ -124,7 +124,7 @@ typedef struct Wayland
 } Wayland;
 
 void freeWayland(Wayland* wayland);
-bool initWayland(WkProperties* props, Wayland* wayland);
-int  runWayland(WkProperties* props);
+bool initWayland(WkMenu* props, Wayland* wayland);
+int  runWayland(WkMenu* props);
 
 #endif /* WK_WAYLAND_WAYLAND_H_ */

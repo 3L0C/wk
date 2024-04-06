@@ -1,7 +1,7 @@
 #ifndef WK_COMPILE_H_
 #define WK_COMPILE_H_
 
-#include "lib/properties.h"
+#include "lib/menu.h"
 
 #include "line.h"
 #include "scanner.h"
@@ -20,7 +20,7 @@ typedef struct
     LineArray   lines;
 } Compiler;
 
-bool compileChords(Compiler* compiler, WkProperties* props);
+bool compileChords(Compiler* compiler, WkMenu* menu);
 void initCompiler(Compiler* compiler, const char* source);
 
 #endif /* WK_COMPILE_H_ */

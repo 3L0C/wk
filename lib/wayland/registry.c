@@ -16,7 +16,7 @@
 
 #include "lib/common.h"
 #include "lib/debug.h"
-#include "lib/properties.h"
+#include "lib/menu.h"
 
 #include "wayland.h"
 #include "wlr-layer-shell-unstable-v1.h"
@@ -714,7 +714,7 @@ waylandRegistryDestroy(Wayland* wayland)
 }
 
 bool
-waylandRegistryRegister(Wayland* wayland, WkProperties* props)
+waylandRegistryRegister(Wayland* wayland, WkMenu* props)
 {
     assert(wayland && props);
 

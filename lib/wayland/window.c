@@ -15,7 +15,7 @@
 #include "lib/common.h"
 #include "lib/debug.h"
 #include "lib/memory.h"
-#include "lib/properties.h"
+#include "lib/menu.h"
 
 #include "wayland.h"
 #include "window.h"
@@ -292,7 +292,7 @@ getThrowawaySurface(WaylandWindow* window)
 }
 
 static void
-resizeWinWidth(WaylandWindow* window, WkProperties* props)
+resizeWinWidth(WaylandWindow* window, WkMenu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinWidth:297");
     int32_t windowWidth = props->windowWidth;
@@ -316,7 +316,7 @@ resizeWinWidth(WaylandWindow* window, WkProperties* props)
 }
 
 static void
-resizeWinHeight(WaylandWindow* window, WkProperties* props)
+resizeWinHeight(WaylandWindow* window, WkMenu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinHeight:321");
     /* Output* output = window->wayland->selectedOutput; */
@@ -331,7 +331,7 @@ resizeWinHeight(WaylandWindow* window, WkProperties* props)
 }
 
 static void
-resizeWinGap(WaylandWindow* window, WkProperties* props)
+resizeWinGap(WaylandWindow* window, WkMenu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinGap:336");
     int32_t windowGap = props->windowGap;
@@ -364,7 +364,7 @@ resizeWinGap(WaylandWindow* window, WkProperties* props)
 
 
 static void
-resizeWindow(WaylandWindow* window, WkProperties* props)
+resizeWindow(WaylandWindow* window, WkMenu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWindow:369");
     assert(window && props);
@@ -400,7 +400,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
 }
 
 bool
-windowRender(WaylandWindow* window, struct wl_display* display, WkProperties* props)
+windowRender(WaylandWindow* window, struct wl_display* display, WkMenu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:windowRender:405");
     assert(window && props);
@@ -484,7 +484,7 @@ getWindowWidth(WaylandWindow* window)
 }
 
 static uint32_t
-getWindowHeight(WaylandWindow* window, WkProperties* props)
+getWindowHeight(WaylandWindow* window, WkMenu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:getWindowHeight:489");
     return cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);;
@@ -532,7 +532,7 @@ windowCreate(
     struct wl_output* wlOutput,
     struct zwlr_layer_shell_v1* layerShell,
     struct wl_surface* surface,
-    WkProperties* props
+    WkMenu* props
 )
 {
     debugMsg(debug, "lib/wayland/window.c:windowCreate:538");

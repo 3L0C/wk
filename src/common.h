@@ -2,10 +2,10 @@
 #define WK_COMMON_H_
 
 #include "lib/client.h"
-#include "lib/window.h"
+#include "lib/menu.h"
 
 void parseArgs(Client* client, int* argc, char*** argv);
-WkStatus pressKeys(WkProperties* props, const char* keys);
+WkStatus pressKeys(WkMenu* menu, const char* keys);
 char* readFile(const char* path);
 bool tryStdin(Client* client);
 

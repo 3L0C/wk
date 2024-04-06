@@ -10,10 +10,9 @@
 #include "lib/common.h"
 #include "lib/debug.h"
 #include "lib/memory.h"
-#include "lib/properties.h"
+#include "lib/menu.h"
 #include "lib/types.h"
 #include "lib/util.h"
-#include "lib/window.h"
 
 #include "common.h"
 #include "scanner.h"
@@ -266,7 +265,7 @@ addSpecial(Key* key, TokenType type)
 }
 
 static WkStatus
-pressKey(WkProperties* props, Scanner* scanner)
+pressKey(WkMenu* props, Scanner* scanner)
 {
     assert(props && scanner);
 
@@ -328,7 +327,7 @@ pressKey(WkProperties* props, Scanner* scanner)
 }
 
 WkStatus
-pressKeys(WkProperties* props, const char* keys)
+pressKeys(WkMenu* props, const char* keys)
 {
     assert(props && keys);
 

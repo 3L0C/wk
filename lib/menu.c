@@ -4,7 +4,7 @@
 #include <sysexits.h>
 
 #include "client.h"
-#include "properties.h"
+#include "menu.h"
 
 static bool
 initColor(WkHexColor* hexColor, const char* color)
@@ -57,32 +57,32 @@ initColors(WkHexColor* hexColors, Client* client)
 }
 
 void
-initProperties(WkProperties* props, Client* client)
+initMenu(WkMenu* menu, Client* client)
 {
-    assert(props && client);
+    assert(menu && client);
 
-    props->delimiter = client->delimiter;
-    props->maxCols = client->maxCols;
-    props->windowWidth = client->windowWidth;
-    props->windowGap = client->windowGap;
-    props->wpadding = client->wpadding;
-    props->hpadding = client->hpadding;
-    props->cellHeight = 0;
-    props->rows = 0;
-    props->cols = 0;
-    props->width = 0;
-    props->height = 0;
-    props->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
-    props->borderWidth = client->borderWidth;
-    props->borderRadius = client->borderRadius;
-    initColors(props->colors, client);
-    props->shell = client->shell;
-    props->font = client->font;
-    props->chords = client->chords;
-    props->chordCount = 0;
-    props->debug = client->debug;
-    props->dirty = true;
-    props->cleanupfp = NULL;
-    props->xp = NULL;
+    menu->delimiter = client->delimiter;
+    menu->maxCols = client->maxCols;
+    menu->windowWidth = client->windowWidth;
+    menu->windowGap = client->windowGap;
+    menu->wpadding = client->wpadding;
+    menu->hpadding = client->hpadding;
+    menu->cellHeight = 0;
+    menu->rows = 0;
+    menu->cols = 0;
+    menu->width = 0;
+    menu->height = 0;
+    menu->position = (client->windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
+    menu->borderWidth = client->borderWidth;
+    menu->borderRadius = client->borderRadius;
+    initColors(menu->colors, client);
+    menu->shell = client->shell;
+    menu->font = client->font;
+    menu->chords = client->chords;
+    menu->chordCount = 0;
+    menu->debug = client->debug;
+    menu->dirty = true;
+    menu->cleanupfp = NULL;
+    menu->xp = NULL;
 }
 

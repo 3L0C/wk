@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "debug.h"
-#include "properties.h"
+#include "menu.h"
 #include "types.h"
 #include "util.h"
 
@@ -34,7 +34,7 @@ calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint
 }
 
 void
-countChords(WkProperties* props)
+countChords(WkMenu* props)
 {
     assert(props);
 
@@ -86,7 +86,7 @@ isKey(const Chord* chord, Key* key)
 }
 
 static WkStatus
-handlePrefix(WkProperties* props, const Chord* chord)
+handlePrefix(WkMenu* props, const Chord* chord)
 {
     debugMsg(props->debug, "Found prefix.");
 
@@ -96,7 +96,7 @@ handlePrefix(WkProperties* props, const Chord* chord)
 }
 
 static void
-handleCommand(WkProperties* props, const Chord* chord)
+handleCommand(WkMenu* props, const Chord* chord)
 {
     if (chord->flags.write)
     {
@@ -107,7 +107,7 @@ handleCommand(WkProperties* props, const Chord* chord)
 }
 
 static WkStatus
-handleCommands(WkProperties* props, const Chord* chord)
+handleCommands(WkMenu* props, const Chord* chord)
 {
     /* no command */
     if (!chord->command) return WK_STATUS_EXIT_OK;
@@ -119,7 +119,7 @@ handleCommands(WkProperties* props, const Chord* chord)
 }
 
 static WkStatus
-pressKey(WkProperties* props, const Chord* chord)
+pressKey(WkMenu* props, const Chord* chord)
 {
     assert(props && chord);
 
@@ -128,7 +128,7 @@ pressKey(WkProperties* props, const Chord* chord)
 }
 
 WkStatus
-handleKeypress(WkProperties* props, Key* key)
+handleKeypress(WkMenu* props, Key* key)
 {
     uint32_t len = props->chordCount;
     const Chord* chords = props->chords;
@@ -212,7 +212,7 @@ spawnAsync(const char* shell, const char* cmd)
 }
 
 WkStatus
-spawn(WkProperties* props, const char* cmd, bool async)
+spawn(WkMenu* props, const char* cmd, bool async)
 {
     assert(props && cmd);
 

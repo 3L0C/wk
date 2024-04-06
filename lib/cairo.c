@@ -16,12 +16,12 @@
 #include "cairo.h"
 #include "common.h"
 #include "debug.h"
-#include "properties.h"
+#include "menu.h"
 #include "types.h"
 #include "util.h"
 
 static Cairo* cairo;
-static WkProperties* properties;
+static WkMenu* mainMenu;
 static uint32_t width;
 static uint32_t height;
 static int ellipsisWidth = -1;
@@ -53,19 +53,19 @@ cairoDestroy(Cairo* cairo)
 }
 
 uint32_t
-cairoGetHeight(WkProperties* props, cairo_surface_t* surface, uint32_t maxHeight)
+cairoGetHeight(WkMenu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 {
-    assert(props && surface);
+    assert(menu && surface);
 
     uint32_t height = 0;
-    countChords(props);
+    countChords(menu);
 
     cairo_t* cr = cairo_create(surface);
     PangoLayout* layout = pango_cairo_create_layout(cr);
-    PangoFontDescription* fontDesc = pango_font_description_from_string(props->font);
+    PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
     PangoRectangle rect;
 
-    calculateGrid(props->chordCount, props->maxCols, &props->rows, &props->cols);
+    calculateGrid(menu->chordCount, menu->maxCols, &menu->rows, &menu->cols);
 
     pango_layout_set_text(
         layout,
@@ -83,8 +83,8 @@ cairoGetHeight(WkProperties* props, cairo_surface_t* surface, uint32_t maxHeight
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
 
-    props->cellHeight = (rect.height + props->hpadding * 2);
-    height = props->cellHeight * props->rows + (props->borderWidth * 2);
+    menu->cellHeight = (rect.height + menu->hpadding * 2);
+    height = menu->cellHeight * menu->rows + (menu->borderWidth * 2);
     return height > maxHeight ? maxHeight : height;
 }
 
@@ -111,10 +111,10 @@ cairoSetColors(CairoPaint* paint, WkHexColor* colors)
 }
 
 void
-cairoInitPaint(WkProperties* props, CairoPaint* paint)
+cairoInitPaint(WkMenu* menu, CairoPaint* paint)
 {
-    cairoSetColors(paint, props->colors);
-    paint->font = props->font;
+    cairoSetColors(paint, menu->colors);
+    paint->font = menu->font;
 }
 
 static bool
@@ -139,10 +139,10 @@ cairoDrawRoundedPath(double radius)
 {
     cairo_t* cr = cairo->cr;
     double degrees = M_PI / 180;
-    double x = properties->borderWidth / 2.0;
-    double y = properties->borderWidth / 2.0;
-    double w = width - properties->borderWidth;
-    double h = height - properties->borderWidth;
+    double x = mainMenu->borderWidth / 2.0;
+    double y = mainMenu->borderWidth / 2.0;
+    double w = width - mainMenu->borderWidth;
+    double h = height - mainMenu->borderWidth;
     cairo_new_sub_path(cr);
     cairo_arc(cr, x + w - radius, y + radius, radius, -90 * degrees, 0 * degrees);
     cairo_arc(cr, x + w - radius, y + h - radius, radius, 0 * degrees, 90 * degrees);
@@ -154,11 +154,11 @@ cairoDrawRoundedPath(double radius)
 static bool
 drawBackground()
 {
-    assert(cairo && properties);
+    assert(cairo && mainMenu);
 
     if (!setSourceRgba(WK_COLOR_BACKGROUND)) return false;
 
-    double radius = properties->borderRadius;
+    double radius = mainMenu->borderRadius;
 
     if (!radius) {
         cairo_paint(cairo->cr);
@@ -173,19 +173,19 @@ drawBackground()
 static bool
 drawBorder()
 {
-    assert(cairo && properties);
+    assert(cairo && mainMenu);
 
     double lineW = cairo_get_line_width(cairo->cr);
-    cairo_set_line_width(cairo->cr, properties->borderWidth);
+    cairo_set_line_width(cairo->cr, mainMenu->borderWidth);
     if (!setSourceRgba(WK_COLOR_BORDER)) return false;
 
-    double radius = properties->borderRadius;
+    double radius = mainMenu->borderRadius;
 
     if (!radius) {
-        double x = properties->borderWidth / 2.0;
-        double y = properties->borderWidth / 2.0;
-        double w = width - properties->borderWidth;
-        double h = height - properties->borderWidth;
+        double x = mainMenu->borderWidth / 2.0;
+        double y = mainMenu->borderWidth / 2.0;
+        double w = width - mainMenu->borderWidth;
+        double h = height - mainMenu->borderWidth;
         cairo_rectangle(cairo->cr, x, y, w, h);
     } else {
         cairoDrawRoundedPath(radius);
@@ -241,37 +241,37 @@ drawHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 static bool
 drawGrid()
 {
-    assert(cairo && properties);
+    assert(cairo && mainMenu);
 
-    if (properties->borderWidth * 2 >= width)
+    if (mainMenu->borderWidth * 2 >= width)
     {
         errorMsg("Border is larger than windo width.");
         goto end;
     }
 
-    uint32_t startx = properties->borderWidth;
-    uint32_t starty = properties->borderWidth;
-    uint32_t rows = properties->rows;
-    uint32_t cols = properties->cols;
-    uint32_t wpadding = properties->wpadding;
-    uint32_t hpadding = properties->hpadding;
-    uint32_t cellWidth = (width - (properties->borderWidth * 2)) / cols;
-    uint32_t cellHeight = properties->cellHeight;
+    uint32_t startx = mainMenu->borderWidth;
+    uint32_t starty = mainMenu->borderWidth;
+    uint32_t rows = mainMenu->rows;
+    uint32_t cols = mainMenu->cols;
+    uint32_t wpadding = mainMenu->wpadding;
+    uint32_t hpadding = mainMenu->hpadding;
+    uint32_t cellWidth = (width - (mainMenu->borderWidth * 2)) / cols;
+    uint32_t cellHeight = mainMenu->cellHeight;
     uint32_t idx = 0;
-    uint32_t count = properties->chordCount;
+    uint32_t count = mainMenu->chordCount;
     PangoLayout* layout = pango_cairo_create_layout(cairo->cr);
-    PangoFontDescription* fontDesc = pango_font_description_from_string(properties->font);
+    PangoFontDescription* fontDesc = pango_font_description_from_string(mainMenu->font);
 
     pango_layout_set_font_description(layout, fontDesc);
     pango_font_description_free(fontDesc);
 
     if (!setSourceRgba(WK_COLOR_FOREGROUND)) goto fail;
 
-    if (properties->debug)
+    if (mainMenu->debug)
     {
-        debugProperties(properties);
+        debugMenu(mainMenu);
         debugGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
-        debugChordsShallow(properties->chords, properties->chordCount);
+        debugChordsShallow(mainMenu->chords, mainMenu->chordCount);
     }
 
     if (ellipsisWidth == -1 || ellipsisHeight == -1)
@@ -299,7 +299,7 @@ drawGrid()
         for (uint32_t j = 0; j < rows && idx < count; j++, idx++)
         {
             uint32_t y = starty + (j * cellHeight) + hpadding;
-            drawHintText(layout, properties->chords[idx].hint, cellWidth - (wpadding * 2));
+            drawHintText(layout, mainMenu->chords[idx].hint, cellWidth - (wpadding * 2));
             cairo_move_to(cairo->cr, x, y);
             pango_cairo_show_layout(cairo->cr, layout);
         }
@@ -315,14 +315,14 @@ end:
 }
 
 void
-cairoPaint(Cairo* cr, WkProperties* props)
+cairoPaint(Cairo* cr, WkMenu* menu)
 {
-    assert(cr && props);
+    assert(cr && menu);
 
     cairo = cr;
-    properties = props;
-    width = props->width;
-    height = props->height;
+    mainMenu = menu;
+    width = menu->width;
+    height = menu->height;
 
     height /= cairo->scale;
 

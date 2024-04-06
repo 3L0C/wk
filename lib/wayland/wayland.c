@@ -19,7 +19,7 @@
 #include "lib/cairo.h"
 #include "lib/common.h"
 #include "lib/debug.h"
-#include "lib/properties.h"
+#include "lib/menu.h"
 #include "lib/types.h"
 #include "lib/util.h"
 
@@ -71,7 +71,7 @@ static int efd;
 static bool debug = false;
 
 static void
-renderWindowsIfPending(WkProperties* props, Wayland* wayland)
+renderWindowsIfPending(WkMenu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:renderWindowsIfPending:77");
     WaylandWindow* window;
@@ -112,7 +112,7 @@ waitForEvents(Wayland* wayland)
 }
 
 static void
-scheduleWindowsRenderIfDirty(WkProperties* props, Wayland* wayland)
+scheduleWindowsRenderIfDirty(WkMenu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:scheduleWindowsRenderIfDirty:118");
     WaylandWindow* window;
@@ -129,7 +129,7 @@ scheduleWindowsRenderIfDirty(WkProperties* props, Wayland* wayland)
 }
 
 static bool
-render(WkProperties* props, Wayland* wayland)
+render(WkMenu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:render:135");
     scheduleWindowsRenderIfDirty(props, wayland);
@@ -193,7 +193,7 @@ processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, siz
 }
 
 static WkStatus
-pollKey(WkProperties* props, Wayland* wayland)
+pollKey(WkMenu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:pollKey:196");
     assert(props && wayland);
@@ -374,7 +374,7 @@ grabKeyboard(Wayland* wayland, bool grab)
 }
 
 static bool
-recreateWindows(WkProperties* props, Wayland* wayland)
+recreateWindows(WkMenu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:recreateWindows:369");
     assert(wayland);
@@ -443,7 +443,7 @@ freeWayland(Wayland* wayland)
 }
 
 bool
-initWayland(WkProperties* props, Wayland* wayland)
+initWayland(WkMenu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:initWayland:466");
     assert(props && wayland);
@@ -481,7 +481,7 @@ fail:
 }
 
 int
-runWayland(WkProperties* props)
+runWayland(WkMenu* props)
 {
     assert(props);
 

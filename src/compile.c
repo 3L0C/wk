@@ -8,6 +8,7 @@
 #include "lib/common.h"
 #include "lib/debug.h"
 #include "lib/memory.h"
+#include "lib/menu.h"
 #include "lib/types.h"
 
 #include "compile.h"
@@ -304,9 +305,9 @@ compileLines(Chord* chords, LineArray* lines)
 }
 
 bool
-compileChords(Compiler* compiler, WkProperties* props)
+compileChords(Compiler* compiler, WkMenu* menu)
 {
-    assert(compiler && props);
+    assert(compiler && menu);
 
     if (compiler->lines.count == 0)
     {
@@ -317,18 +318,18 @@ compileChords(Compiler* compiler, WkProperties* props)
     LineArray* lines = &compiler->lines;
     Chord* chords = ALLOCATE(Chord, lines->count + 1); /* +1 for NULL_CHORD */
 
-    delimiter = props->delimiter;
+    delimiter = menu->delimiter;
     delimLen = strlen(delimiter);
-    debug = props->debug;
+    debug = menu->debug;
 
     compileLines(chords, lines);
 
-    if (props->debug)
+    if (menu->debug)
     {
         debugChords(chords, 0);
     }
 
-    props->chords = chords;
+    menu->chords = chords;
     return true;
 }
 

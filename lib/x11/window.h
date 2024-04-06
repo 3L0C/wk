@@ -4,6 +4,7 @@
 #include <X11/Xlib.h>
 
 #include "lib/cairo.h"
+#include "lib/menu.h"
 
 typedef struct
 {
@@ -37,16 +38,16 @@ typedef struct
         uint32_t x, y, w, h;
     } root;
     CairoPaint paint;
-    void (*render)(Cairo* cairo, WkProperties* props);
+    void (*render)(Cairo* cairo, WkMenu* menu);
 } WkX11Window;
 
 typedef struct
 {
     Display* dispaly;
     WkX11Window window;
-    WkProperties* props;
+    WkMenu* menu;
 } X11;
 
-int runX11(WkProperties* props);
+int runX11(WkMenu* menu);
 
 #endif /* WK_X11_WINDOW_H_ */

@@ -7,7 +7,7 @@
 #include <wayland-util.h>
 
 #include "lib/cairo.h"
-#include "lib/properties.h"
+#include "lib/menu.h"
 
 #include "wlr-layer-shell-unstable-v1.h"
 
@@ -46,23 +46,23 @@ typedef struct
     /* int32_t yOffset; */
     uint32_t alignAnchor;
     bool renderPending;
-    void (*render)(Cairo* cairo, WkProperties* props);
+    void (*render)(Cairo* cairo, WkMenu* menu);
 } WaylandWindow;
 
 void windowScheduleRender(WaylandWindow* window);
-bool windowRender(WaylandWindow* window, struct wl_display* display, WkProperties* props);
+bool windowRender(WaylandWindow* window, struct wl_display* display, WkMenu* menu);
 void windowDestroy(WaylandWindow* window);
 void windowSetWidth(WaylandWindow* window,
                     struct wl_display* display,
                     uint32_t margin,
                     float factor,
-                    WkProperties* props);
+                    WkMenu* menu);
 void windowSetAlign(WaylandWindow* window, struct wl_display* display, WkWindowPosition position);
 void windowSetYOffset(WaylandWindow* window, struct wl_display* display, int32_t yOffset);
 void windowGrabKeyboard(WaylandWindow* window, struct wl_display* display, bool grab);
 void windowSetOverlap(WaylandWindow* window, struct wl_display* display, bool overlap);
 bool windowCreate(WaylandWindow* window, struct wl_display* display, struct wl_shm* shm,
                   struct wl_output* wlOutput, struct zwlr_layer_shell_v1* layerShell,
-                  struct wl_surface* surface, WkProperties* props);
+                  struct wl_surface* surface, WkMenu* menu);
 
 #endif /* WK_WAYLAND_WINDOW_H_ */

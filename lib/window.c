@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "debug.h"
-#include "properties.h"
+#include "menu.h"
 #include "window.h"
 
 #ifdef WK_X11_BACKEND
@@ -15,7 +15,7 @@
 #endif
 
 int
-run(WkProperties* props)
+displayMenu(WkMenu* props)
 {
 #ifdef WK_WAYLAND_BACKEND
     if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "lib/properties.h"
+#include "lib/menu.h"
 
 typedef struct Wayland Wayland;
 
@@ -37,6 +37,6 @@ extern const XkbModBit WK_XKB_MODS[MASK_LAST];
 
 void waylandRepeat(Wayland* wayland);
 void waylandRegistryDestroy(Wayland* wayland);
-bool waylandRegistryRegister(Wayland* wayland, WkProperties* props);
+bool waylandRegistryRegister(Wayland* wayland, WkMenu* props);
 
 #endif /* WK_WAYLAND_REGISTRY_H_ */

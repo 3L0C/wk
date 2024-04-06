@@ -3,7 +3,7 @@
 
 #include <cairo.h>
 
-#include "properties.h"
+#include "menu.h"
 
 typedef struct
 {
@@ -30,8 +30,8 @@ typedef struct
 
 bool cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface);
 void cairoDestroy(Cairo* cairo);
-uint32_t cairoGetHeight(WkProperties* props, cairo_surface_t* surface, uint32_t maxHeight);
-void cairoInitPaint(WkProperties* props, CairoPaint* paint);
-void cairoPaint(Cairo* cairo, WkProperties* props);
+uint32_t cairoGetHeight(WkMenu* props, cairo_surface_t* surface, uint32_t maxHeight);
+void cairoInitPaint(WkMenu* props, CairoPaint* paint);
+void cairoPaint(Cairo* cairo, WkMenu* props);
 
 #endif /* WK_LIB_CAIRO_H_ */

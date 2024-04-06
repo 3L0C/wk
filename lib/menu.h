@@ -1,5 +1,5 @@
-#ifndef WK_LIB_PROPERTIES_H_
-#define WK_LIB_PROPERTIES_H_
+#ifndef WK_LIB_MENU_H_
+#define WK_LIB_MENU_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -56,8 +56,8 @@ typedef struct
     bool dirty;
     CleanupFP cleanupfp;
     void* xp;
-} WkProperties;
+} WkMenu;
 
-void initProperties(WkProperties* props, Client* client);
+void initMenu(WkMenu* props, Client* client);
 
-#endif /* WK_LIB_PROPERTIES_H_ */
+#endif /* WK_LIB_MENU_H_ */

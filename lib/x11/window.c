@@ -19,7 +19,7 @@
 #include "lib/cairo.h"
 #include "lib/common.h"
 #include "lib/debug.h"
-#include "lib/properties.h"
+#include "lib/menu.h"
 #include "lib/types.h"
 #include "lib/util.h"
 
@@ -34,7 +34,7 @@ typedef struct
 
 static X11 x11;
 static WkX11Window* window = &x11.window;
-static WkProperties* properties;
+static WkMenu* mainMenu;
 static bool debug;
 
 static const SpecialKey specialkeys[] = {
@@ -93,14 +93,14 @@ getThrowawaySurface(void)
 static bool
 desiriedPos(WkWindowPosition pos)
 {
-    assert(x11.props);
-    return x11.props->position == pos;
+    assert(x11.menu);
+    return x11.menu->position == pos;
 }
 
 static void
 resizeWinWidth(void)
 {
-    int32_t windowWidth = properties->windowWidth;
+    int32_t windowWidth = mainMenu->windowWidth;
     struct display* root = &window->root;
     if (windowWidth < 0)
     {
@@ -125,7 +125,7 @@ resizeWinWidth(void)
 static void
 resizeWinHeight(void)
 {
-    int32_t windowGap = properties->windowGap;
+    int32_t windowGap = mainMenu->windowGap;
     struct display* root = &window->root;
     window->maxHeight = root->h;
 
@@ -243,7 +243,7 @@ setMonitor(void)
             window->root.h = DisplayHeight(window->display, window->screen);
         }
 
-    window->height = cairoGetHeight(properties, getThrowawaySurface(), window->root.h);
+    window->height = cairoGetHeight(mainMenu, getThrowawaySurface(), window->root.h);
 
     resizeWindow();
 #undef INTERSECT
@@ -274,7 +274,7 @@ initX11(void)
     if (!x11.dispaly) return false;
     window->screen = DefaultScreen(display);
     window->width = window->height = 1;
-    window->border = properties->borderWidth;
+    window->border = mainMenu->borderWidth;
     window->monitor = -1;
     window->visual = DefaultVisual(display, window->screen);
     XSetWindowAttributes wa = {
@@ -313,7 +313,7 @@ initX11(void)
     setMonitor();
     window->render = cairoPaint;
     initBuffer();
-    cairoInitPaint(properties, &window->paint);
+    cairoInitPaint(mainMenu, &window->paint);
     if (debug) debugWindow(window);
     return true;
 }
@@ -370,7 +370,7 @@ static bool
 render(void)
 {
     uint32_t oldh = window->height;
-    window->height = cairoGetHeight(properties, getThrowawaySurface(), window->root.h);
+    window->height = cairoGetHeight(mainMenu, getThrowawaySurface(), window->root.h);
     resizeWinHeight();
 
     if (oldh != window->height)
@@ -388,9 +388,9 @@ render(void)
         return false;
     }
 
-    properties->width = buffer->width;
-    properties->height = buffer->height;
-    window->render(&buffer->cairo, properties);
+    mainMenu->width = buffer->width;
+    mainMenu->height = buffer->height;
+    window->render(&buffer->cairo, mainMenu);
     cairo_surface_flush(buffer->cairo.surface);
     XFlush(window->display);
 
@@ -511,7 +511,7 @@ keypress(XKeyEvent* keyEvent)
     {
     case WK_KEY_IS_STRICTLY_MOD: return WK_STATUS_RUNNING;
     case WK_KEY_IS_SPECIAL: /* FALLTHROUGH */
-    case WK_KEY_IS_NORMAL: return handleKeypress(properties, &key);
+    case WK_KEY_IS_NORMAL: return handleKeypress(mainMenu, &key);
     case WK_KEY_IS_UNKNOWN:
         debugMsg(debug, "Encountered an unknown key. Most likely a modifier key press event.");
         if (debug) debugKey(&key);
@@ -571,16 +571,16 @@ eventHandler(void)
 }
 
 int
-runX11(WkProperties* props)
+runX11(WkMenu* menu)
 {
-    assert(props);
+    assert(menu);
 
     int result = EX_SOFTWARE;
     checkLocale();
-    properties = x11.props = props;
-    properties->cleanupfp = cleanupAsync;
-    properties->xp = &x11;
-    debug = properties->debug;
+    mainMenu = x11.menu = menu;
+    mainMenu->cleanupfp = cleanupAsync;
+    mainMenu->xp = &x11;
+    debug = mainMenu->debug;
     if (!initX11()) return result;
     grabkeyboard();
     render();

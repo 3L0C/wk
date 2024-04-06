@@ -18,7 +18,7 @@
 #include "transpiler.h"
 
 static Client client;
-static WkProperties properties;
+static WkMenu properties;
 
 static void
 freeChords(Chord* chords)
@@ -98,12 +98,12 @@ runScript(void)
         }
         else
         {
-            result = run(&properties);
+            result = displayMenu(&properties);
         }
     }
     else
     {
-        result = run(&properties);
+        result = displayMenu(&properties);
     }
 
 error:
@@ -149,12 +149,12 @@ runChordsFile(void)
         }
         else
         {
-            result = run(&properties);
+            result = displayMenu(&properties);
         }
     }
     else
     {
-        result = run(&properties);
+        result = displayMenu(&properties);
     }
 
 error:
@@ -172,11 +172,11 @@ main(int argc, char** argv)
 
     initClient(&client, chords);
     parseArgs(&client, &argc, &argv);
-    initProperties(&properties, &client);
+    initMenu(&properties, &client);
 
     if (properties.debug)
     {
-        debugProperties(&properties);
+        debugMenu(&properties);
         debugClient(&client);
     }
 
@@ -215,7 +215,7 @@ main(int argc, char** argv)
             }
         }
 
-        result = run(&properties);
+        result = displayMenu(&properties);
     }
 
     return result;
