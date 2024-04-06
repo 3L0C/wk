@@ -2,7 +2,7 @@
 #define WK_CONFIG_H_
 
 /* Seperator when displaying chords. */
-static const char* delimiter = "->";
+static const char* delimiter = " -> ";
 /* Max number of columns to use. */
 static const unsigned int maxCols = 4;
 /* Window width. Set to '-1' for 1/2 the width of your screen. */

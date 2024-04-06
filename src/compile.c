@@ -218,15 +218,17 @@ compileHintString(WkMods* mods, const char* key, const char* description)
     size_t modslen = COUNT_MODS(*mods) * 2;
     size_t keylen = strlen(key);
     size_t desclen = strlen(description);
-    /* +1 +1 for spaces on the sides of delimiter; +1 for null byte '\0' */
-    char* hint = ALLOCATE(char, modslen + keylen + 1 + delimLen + 1 + desclen + 1);
+    /* +1 for null byte '\0'. */
+    char* hint = ALLOCATE(char, modslen + keylen + delimLen + desclen + 1);
     compileModsHint(hint, mods);
-    memcpy(&hint[modslen], key, keylen); /* Copy key */
-    memcpy(&hint[modslen + keylen], " ", 1); /* Space */
-    memcpy(&hint[modslen + keylen + 1], delimiter, delimLen); /* Copy delimiter */
-    memcpy(&hint[modslen + keylen + 1 + delimLen], " ", 1); /* Space */
-    memcpy(&hint[modslen + keylen + 1 + delimLen + 1], description, desclen); /* Copy description */
-    hint[modslen + keylen + 1 + delimLen + 1 + desclen] = '\0';
+    /* Copy key. */
+    memcpy(&hint[modslen], key, keylen);
+    /* Copy delimiter. */
+    memcpy(&hint[modslen + keylen], delimiter, delimLen);
+    /* Copy description. */
+    memcpy(&hint[modslen + keylen + delimLen], description, desclen);
+    /* End hint. */
+    hint[modslen + keylen + delimLen + desclen] = '\0';
     return hint;
 }
 
