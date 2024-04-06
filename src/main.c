@@ -18,7 +18,7 @@
 #include "transpiler.h"
 
 static Client client;
-static WkMenu properties;
+static WkMenu mainMenu;
 
 static void
 freeChords(Chord* chords)
@@ -67,7 +67,7 @@ runScript(void)
     int result = EX_SOFTWARE;
 
     if (!tryStdin(&client)) return EX_IOERR;
-    debugMsg(properties.debug, "Contents of script:\n%s", client.script);
+    debugMsg(mainMenu.debug, "Contents of script:\n%s", client.script);
     Compiler compiler;
     initCompiler(&compiler, client.script);
     if (!transpileChords(&compiler, client.delimiter, client.debug))
@@ -76,16 +76,16 @@ runScript(void)
         result = EX_DATAERR;
         goto end;
     }
-    if (!compileChords(&compiler, &properties))
+    if (!compileChords(&compiler, &mainMenu))
     {
         errorMsg("Could not compile script.");
         result = EX_DATAERR;
         goto error;
     }
-    countChords(&properties);
+    countChords(&mainMenu);
     if (client.keys)
     {
-        WkStatus status = pressKeys(&properties, client.keys);
+        WkStatus status = pressKeys(&mainMenu, client.keys);
         if (status == WK_STATUS_EXIT_SOFTWARE)
         {
             result = EX_DATAERR;
@@ -93,21 +93,21 @@ runScript(void)
         }
         else if (status == WK_STATUS_EXIT_OK)
         {
-            debugMsg(properties.debug, "Successfull pressed keys: '%s'.", client.keys);
+            debugMsg(mainMenu.debug, "Successfull pressed keys: '%s'.", client.keys);
             result = EX_OK;
         }
         else
         {
-            result = displayMenu(&properties);
+            result = displayMenu(&mainMenu);
         }
     }
     else
     {
-        result = displayMenu(&properties);
+        result = displayMenu(&mainMenu);
     }
 
 error:
-    freeChords(properties.chords);
+    freeChords(mainMenu.chords);
 end:
     freeLineArray(&compiler.lines);
     free(client.script);
@@ -128,15 +128,15 @@ runChordsFile(void)
         result = EX_DATAERR;
         goto end;
     }
-    if (!compileChords(&compiler, &properties))
+    if (!compileChords(&compiler, &mainMenu))
     {
         result = EX_DATAERR;
         goto error;
     }
-    countChords(&properties);
+    countChords(&mainMenu);
     if (client.keys)
     {
-        WkStatus status = pressKeys(&properties, client.keys);
+        WkStatus status = pressKeys(&mainMenu, client.keys);
         if (status == WK_STATUS_EXIT_SOFTWARE)
         {
             result = EX_DATAERR;
@@ -144,21 +144,21 @@ runChordsFile(void)
         }
         else if (status == WK_STATUS_EXIT_OK)
         {
-            debugMsg(properties.debug, "Successfull pressed keys: '%s'.", client.keys);
+            debugMsg(mainMenu.debug, "Successfull pressed keys: '%s'.", client.keys);
             result = EX_OK;
         }
         else
         {
-            result = displayMenu(&properties);
+            result = displayMenu(&mainMenu);
         }
     }
     else
     {
-        result = displayMenu(&properties);
+        result = displayMenu(&mainMenu);
     }
 
 error:
-    freeChords(properties.chords);
+    freeChords(mainMenu.chords);
 end:
     freeLineArray(&compiler.lines);
     free(source);
@@ -172,11 +172,11 @@ main(int argc, char** argv)
 
     initClient(&client, chords);
     parseArgs(&client, &argc, &argv);
-    initMenu(&properties, &client);
+    initMenu(&mainMenu, &client);
 
-    if (properties.debug)
+    if (mainMenu.debug)
     {
-        debugMenu(&properties);
+        debugMenu(&mainMenu);
         debugClient(&client);
     }
 
@@ -194,16 +194,16 @@ main(int argc, char** argv)
     }
     else
     {
-        if (properties.debug)
+        if (mainMenu.debug)
         {
-            debugChords(properties.chords, 0);
+            debugChords(mainMenu.chords, 0);
         }
 
-        countChords(&properties);
+        countChords(&mainMenu);
 
         if (client.keys)
         {
-            WkStatus status = pressKeys(&properties, client.keys);
+            WkStatus status = pressKeys(&mainMenu, client.keys);
             if (statusIsError(status))
             {
                 errorMsg("Key(s) not found in chords: '%s'.", client.keys);
@@ -215,7 +215,7 @@ main(int argc, char** argv)
             }
         }
 
-        result = displayMenu(&properties);
+        result = displayMenu(&mainMenu);
     }
 
     return result;
