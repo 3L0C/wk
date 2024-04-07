@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -83,42 +84,63 @@ appendToResult(
     *resultCount += (includeEnd - includeStart);
 }
 
-static void
-getPath(const char* start, const char* end, char** path, const char* sourcePath)
+static char*
+getLitteralIncludePath(const char* start, const char* end)
 {
-    /* If the include path is an absolute file, just copy the path directly. */
-    if (*start == '/')
+    size_t pathLen = end - start;
+    char* path = ALLOCATE(char, pathLen);
+    memcpy(path, start, pathLen);
+    path[pathLen] = '\0';
+    return path;
+}
+
+static size_t
+getBaseDirLength(const char* sourcePath)
+{
+    /* current moves through the 'sourcePath'
+     * lastDir tracks the character past the last '/'
+     * for 'sourcePath' '/home/john/wks/main.wks'
+     * lastDir will point at the 'm' in main.
+     * for 'sourcePath' 'wks/main.wks' the same is true.
+     * for 'sourcePath' 'main.wks' it will still point at 'm'.
+     * The function returns the length of the baseDir,
+     * relative or absolute makes no difference here. */
+    const char* current = sourcePath;
+    const char* lastDir = sourcePath;
+
+    while (*current != '\0')
     {
-        size_t pathLen = end - start;
-        *path = ALLOCATE(char, pathLen);
-        memcpy(*path, start, pathLen);
-        (*path)[pathLen] = '\0';
-        return;
-    }
-    else if (*sourcePath == '/')
-    {
-        /* NOTE could implement a different function to get the sourcePath
-         * length i.e. '/home/john/wks/main.wks' would return the length
-         * until the last '/' in the path. In this case it would be 15.
-         * Because we have to check this in either case, there may be no
-         * to distinguish an absolute vs relative sourcePath. */
-        /* Check to see if the path is relative to */
-        size_t pathLen = end - start;
-        *path = ALLOCATE(char, pathLen);
-        memcpy(*path, start, pathLen);
-        (*path)[pathLen] = '\0';
-        return;
-    }
-    else
-    {
-        /* Check to see if the path is relative to */
-        size_t pathLen = end - start;
-        *path = ALLOCATE(char, pathLen);
-        memcpy(*path, start, pathLen);
-        (*path)[pathLen] = '\0';
-        return;
+        char c = *current++;
+        if (c == '/') lastDir = current;
     }
 
+    return lastDir - sourcePath;
+}
+
+static char*
+getIncludeFilePath(const char* start, const char* end, const char* sourcePath)
+{
+    /* If the include path is an absolute file, just copy the path directly. */
+    if (*start == '/') return getLitteralIncludePath(start, end);
+
+    /* NOTE could implement a different function to get the sourcePath
+     * length i.e. '/home/john/wks/main.wks' would return the length
+     * until the last '/' in the path. In this case it would be 15.
+     * Because we have to check this in either case, there may be no
+     * to distinguish an absolute vs relative sourcePath. */
+    size_t baseLen = getBaseDirLength(sourcePath);
+
+    /* sourcePath is a relative file from the PWD. Just use the path
+     * from the include directive. */
+    if (baseLen == 0) return getLitteralIncludePath(start, end);
+
+    /* sourcePath is not in the PWD, return the sourcePath where the include
+     * should be appended to. */
+    char* result = ALLOCATE(char, baseLen + (end - start));
+    memcpy(result, sourcePath, baseLen);
+    memcpy(&result[baseLen], start, end - start);
+    result[baseLen + (end - start)] = '\0';
+    return result;
 }
 
 char*
@@ -162,8 +184,9 @@ runPreprocessor(const char* source, const char* sourcePath)
         /* Update `scannerStart` for the next go around. */
         scannerStart = scanner.current;
 
-        char* includePath = NULL;
-        getPath(includeStart, scanner.current, &includePath, sourcePath);
+        /* Get the path to the included file */
+        char* includePath = getIncludeFilePath(includeStart, scanner.current, sourcePath);
+
     }
 
     hadError = oldError;
