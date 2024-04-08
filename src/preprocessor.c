@@ -4,9 +4,11 @@
 #include <string.h>
 
 #include "lib/common.h"
-
-#include "preprocessor.h"
 #include "lib/memory.h"
+#include "lib/string.h"
+
+#include "common.h"
+#include "preprocessor.h"
 #include "scanner.h"
 
 static bool hadError = false;
@@ -16,12 +18,12 @@ isValidInclude(Scanner* scanner, const char** includeStart)
 {
     assert(scanner);
 
-    /* `:include`s may only come after a new line.
-     * There may be space between the new line and the
-     * `:include` instruction, though. */
+    /* `:include`s may only come after a new line. */
     if (advanceScanner(scanner) != '\n') return false;
 
-    /* Skip any comments or whitespace or such. */
+    /* Skip any comments or whitespace or such as
+     * there may be space between the new line and the
+     * `:include` instruction, which is not an issue. */
     skipWhitespace(scanner);
 
     /* If not at the start of an include directive return. */
@@ -73,27 +75,6 @@ isValidInclude(Scanner* scanner, const char** includeStart)
 fail:
     hadError = true;
     return false;
-}
-
-static void
-appendToResult(
-    const char* scannerStart,
-    const char* includeStart,
-    char** result,
-    size_t* resultCapacity,
-    size_t* resultCount
-)
-{
-    size_t scannedLen = includeStart - scannerStart;
-    while (*resultCount + scannedLen + 1 > *resultCapacity)
-    {
-        size_t oldCapacity = *resultCapacity;
-        *resultCapacity = GROW_CAPACITY(oldCapacity);
-        *result = GROW_ARRAY(char, *result, oldCapacity, *resultCapacity);
-    }
-
-    memcpy(&(*result)[*resultCount], includeStart, scannedLen);
-    *resultCount += scannedLen;
 }
 
 static char*
@@ -171,9 +152,8 @@ runPreprocessor(const char* source, const char* sourcePath)
     }
 
     bool oldError = hadError;
-    char* result = NULL;
-    size_t resultCapacity = 0;
-    size_t resultCount = 0;
+    String result = {0};
+    initString(&result);
 
     Scanner scanner = {0};
     initScanner(&scanner, source);
@@ -190,23 +170,59 @@ runPreprocessor(const char* source, const char* sourcePath)
         if (!isValidInclude(&scanner, &includeStart)) continue;
 
         /* No error, first append the current scanner contents to result. */
-        appendToResult(
-            scannerStart, includeStart, &result, &resultCapacity, &resultCount
-        );
+        appendToString(&result, scannerStart, includeStart - scannerStart);
 
         /* Update `scannerStart` for the next go around. */
         scannerStart = scanner.current;
 
         /* Get the path to the included file */
-        char* includePath = getIncludeFilePath(includeStart, scanner.current, sourcePath);
+        char* includeFilePath = getIncludeFilePath(includeStart, scanner.current, sourcePath);
+        if (!includeFilePath)
+        {
+            errorMsg("Failed to get the included file path.");
+            goto fail;
+        }
 
+        /* Try to read the included file */
+        char* includeSource = readFile(includeFilePath);
+        if (!includeSource)
+        {
+            free(includeFilePath);
+            goto fail;
+        }
+
+        /* Run preprocessor on the included file */
+        char* includeResult = runPreprocessor(includeSource, includeFilePath);
+        if (!includeResult)
+        {
+            free(includeFilePath);
+            goto fail;
+        }
+
+        /* Append the result. */
+        size_t includeResultLen = strlen(includeResult);
+        appendToString(&result, includeResult, includeResultLen);
+
+        /* Cleanup allocated strings. */
+        free(includeFilePath);
+        free(includeResult);
     }
 
+    /* Ensure entire source was processed. This should never execute as all
+     * errors within the loop should goto fail. */
+    if (!isAtEnd(&scanner))
+    {
+        errorMsg("Unexpected early exit while running preprocessor on file: '%s'.", sourcePath);
+        goto fail;
+    }
+
+    appendToString(&result, scannerStart, scanner.current - scannerStart);
+
     hadError = oldError;
-    return NULL;
+    return result.string;
 
 fail:
     hadError = oldError;
-    errorMsg("Failed but didn't cleanup! For shame...");
+    freeString(&result);
     return NULL;
 }
