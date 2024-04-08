@@ -7,6 +7,7 @@
 #include "lib/client.h"
 #include "lib/common.h"
 #include "lib/debug.h"
+#include "lib/string.h"
 #include "lib/types.h"
 #include "lib/util.h"
 #include "lib/window.h"
@@ -71,7 +72,7 @@ runScript(void)
     if (!tryStdin(&client)) return EX_IOERR;
     debugMsg(mainMenu.debug, "Contents of script:\n%s", client.script);
     Compiler compiler;
-    initCompiler(&compiler, client.script);
+    initCompiler(&compiler, client.script.string);
     if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         errorMsg("Mallformed script: \n%s", client.script);
@@ -112,7 +113,7 @@ error:
     freeChords(mainMenu.chords);
 end:
     freeLineArray(&compiler.lines);
-    free(client.script);
+    freeString(&client.script);
     return result;
 }
 

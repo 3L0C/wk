@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "string.h"
 #include "types.h"
 
 typedef struct
@@ -26,9 +27,10 @@ typedef struct
     const char* transpile;
     const char* chordsFile;
     bool tryScript;
-    char* script;
-    size_t scriptCapacity;
-    size_t scriptCount;
+    String script;
+    /* char* script; */
+    /* size_t scriptCapacity; */
+    /* size_t scriptCount; */
     Chord* chords;
     bool debug;
 } Client;

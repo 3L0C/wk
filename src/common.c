@@ -10,8 +10,8 @@
 #include "lib/client.h"
 #include "lib/common.h"
 #include "lib/debug.h"
-#include "lib/memory.h"
 #include "lib/menu.h"
+#include "lib/string.h"
 #include "lib/types.h"
 #include "lib/util.h"
 
@@ -421,22 +421,22 @@ error:
     return NULL;
 }
 
-static void
-addLineToScript(Client* client, const char* line, const size_t n)
-{
-    while (client->scriptCount + n + 1 > client->scriptCapacity)
-    {
-        size_t oldCapacity = client->scriptCapacity;
-        client->scriptCapacity = GROW_CAPACITY(oldCapacity);
-        client->script = GROW_ARRAY(
-            char, client->script, oldCapacity, client->scriptCapacity
-        );
-    }
+/* static void */
+/* addLineToScript(Client* client, const char* line, const size_t n) */
+/* { */
+/*     while (client->scriptCount + n + 1 > client->scriptCapacity) */
+/*     { */
+/*         size_t oldCapacity = client->scriptCapacity; */
+/*         client->scriptCapacity = GROW_CAPACITY(oldCapacity); */
+/*         client->script = GROW_ARRAY( */
+/*             char, client->script, oldCapacity, client->scriptCapacity */
+/*         ); */
+/*     } */
 
-    memcpy(&client->script[client->scriptCount], line, n);
-    client->script[client->scriptCount + n] = '\0';
-    client->scriptCount += n;
-}
+/*     memcpy(client->script + client->scriptCount, line, n); */
+/*     client->script[client->scriptCount + n] = '\0'; */
+/*     client->scriptCount += n; */
+/* } */
 
 bool
 tryStdin(Client* client)
@@ -449,7 +449,8 @@ tryStdin(Client* client)
 
     while ((n = getline(&line, &lineLength, stdin)) > 0)
     {
-        addLineToScript(client, line, n);
+        /* addLineToScript(client, line, n); */
+        appendToString(&client->script, line, n);
     }
     free(line);
 

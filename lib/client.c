@@ -4,6 +4,7 @@
 #include "config/config.h"
 
 #include "client.h"
+#include "string.h"
 #include "types.h"
 
 void
@@ -29,9 +30,10 @@ initClient(Client* client, Chord* chords)
     client->transpile = NULL;
     client->chordsFile = NULL;
     client->tryScript = false;
-    client->script = NULL;
-    client->scriptCapacity = 0;
-    client->scriptCount = 0;
+    initString(&client->script);
+    /* client->script = NULL; */
+    /* client->scriptCapacity = 0; */
+    /* client->scriptCount = 0; */
     client->chords = chords;
     client->debug = false;
 }
