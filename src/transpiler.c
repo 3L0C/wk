@@ -62,7 +62,7 @@ errorAtCurrent(Compiler* compiler, const char* message)
 }
 
 static void
-advance(Compiler* compiler)
+advanceCompiler(Compiler* compiler)
 {
     compiler->previous = compiler->current;
 
@@ -81,7 +81,7 @@ consume(Compiler* compiler, TokenType type, const char* message)
 {
     if (compiler->current.type == type)
     {
-        advance(compiler);
+        advanceCompiler(compiler);
         return;
     }
 
@@ -95,10 +95,10 @@ check(Compiler* compiler, TokenType type)
 }
 
 static bool
-match(Compiler* compiler, TokenType type)
+matchCompiler(Compiler* compiler, TokenType type)
 {
     if (!check(compiler, type)) return false;
-    advance(compiler);
+    advanceCompiler(compiler);
     return true;
 }
 
@@ -147,7 +147,7 @@ mods(Compiler* compiler, Line* lineDest)
     while (isMod(currentType(compiler)))
     {
         addMod(currentType(compiler), &lineDest->mods);
-        advance(compiler);
+        advanceCompiler(compiler);
     }
 }
 
@@ -187,7 +187,7 @@ key(Compiler* compiler, Line* lineDest)
          return;
     }
     lineDest->key = currentToken(compiler);
-    advance(compiler); /* consume the key */
+    advanceCompiler(compiler); /* consume the key */
 }
 
 static void
@@ -217,7 +217,7 @@ description(Compiler* compiler, TokenArray* dest)
         default: errorAtCurrent(compiler, "Malformed description."); return;
         }
         if (check(compiler, TOKEN_DESCRIPTION)) break;
-        advance(compiler);
+        advanceCompiler(compiler);
     }
     consume(compiler, TOKEN_DESCRIPTION, "Expected description.");
 }
@@ -254,7 +254,7 @@ command(Compiler* compiler, TokenArray* dest)
         default: errorAtCurrent(compiler, "Malformed command."); return;
         }
         if (check(compiler, TOKEN_COMMAND)) break;
-        advance(compiler);
+        advanceCompiler(compiler);
     }
     consume(compiler, TOKEN_COMMAND, "Expected command.");
 }
@@ -301,7 +301,7 @@ keywords(Compiler* compiler, Line* lineDest)
             type != TOKEN_ASYNC_BEFORE &&
             type != TOKEN_SYNC_AFTER)
         {
-            advance(compiler);
+            advanceCompiler(compiler);
         }
     }
 }
@@ -338,7 +338,7 @@ chord(Compiler* compiler)
 /*     { */
 /*         Token token = currentToken(compiler); */
 /*         writeTokenArray(keys, &token); */
-/*         advance(compiler); */
+/*         advanceCompiler(compiler); */
 /*     } */
 /* } */
 
@@ -384,7 +384,7 @@ chordArray(Compiler* compiler)
         Line line = {0};
         initLine(&line);
         line.index = compiler->index++;
-        if (match(compiler, TOKEN_LEFT_PAREN))
+        if (matchCompiler(compiler, TOKEN_LEFT_PAREN))
         {
             mods(compiler, &line);
             key(compiler, &line);
@@ -561,18 +561,18 @@ synchronize(Compiler* compiler)
         case TOKEN_KEY: return;
         default: break;
         }
-        advance(compiler);
+        advanceCompiler(compiler);
     }
 }
 
 static void
 keyChord(Compiler* compiler)
 {
-    if (match(compiler, TOKEN_LEFT_BRACKET))
+    if (matchCompiler(compiler, TOKEN_LEFT_BRACKET))
     {
         chordArray(compiler); /* [abcd] 'desc' ${{echo %(key)}} */
     }
-    else if (match(compiler, TOKEN_LEFT_BRACE))
+    else if (matchCompiler(compiler, TOKEN_LEFT_BRACE))
     {
         prefix(compiler);
     }
@@ -589,8 +589,8 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
     assert(compiler);
 
     debug = debugFlag;
-    advance(compiler);
-    while (!match(compiler, TOKEN_EOF))
+    advanceCompiler(compiler);
+    while (!matchCompiler(compiler, TOKEN_EOF))
     {
         keyChord(compiler);
     }

@@ -29,8 +29,8 @@ cloneScanner(Scanner* scanner, Scanner* clone)
     clone->isInterpolation = scanner->isInterpolation;
 }
 
-static void
-makeCurrent(Scanner* scanner)
+void
+makeScannerCurrent(Scanner* scanner)
 {
     scanner->start = scanner->current;
 }
@@ -56,7 +56,7 @@ isAtEnd(const Scanner* scanner)
 }
 
 char
-advance(Scanner* scanner)
+advanceScanner(Scanner* scanner)
 {
     scanner->current++;
     return scanner->current[-1];
@@ -76,7 +76,7 @@ peekNext(const Scanner* scanner)
 }
 
 bool
-match(Scanner* scanner, const char expected)
+matchScanner(Scanner* scanner, const char expected)
 {
     if (isAtEnd(scanner)) return false;
     if (*scanner->current != expected) return false;
@@ -112,7 +112,7 @@ errorToken(const Scanner* scanner, const char* message)
     return token;
 }
 
-static void
+void
 skipWhitespace(Scanner* scanner)
 {
     while (true)
@@ -124,12 +124,12 @@ skipWhitespace(Scanner* scanner)
         case ' ' :
         case '\r':
         case '\t':
-            advance(scanner);
+            advanceScanner(scanner);
             break;
         case '#':
-            while (peek(scanner) != '\n' && !isAtEnd(scanner)) advance(scanner);
+            while (peek(scanner) != '\n' && !isAtEnd(scanner)) advanceScanner(scanner);
             break;
-        default: makeCurrent(scanner); return;
+        default: makeScannerCurrent(scanner); return;
         }
     }
 }
@@ -194,7 +194,7 @@ identifierType(Scanner* scanner)
 Token
 identifier(Scanner* scanner)
 {
-    while (isAlpha(peek(scanner)) || isDigit(peek(scanner))) advance(scanner);
+    while (isAlpha(peek(scanner)) || isDigit(peek(scanner))) advanceScanner(scanner);
     TokenType type = identifierType(scanner);
     if (type == TOKEN_ERROR) return errorToken(scanner, "Invalid keyword");
     if (type == TOKEN_NO_INTERP) return errorToken(scanner, "Cannot interpolate description within a description.");
@@ -212,7 +212,7 @@ description(Scanner* scanner)
         case '\"': /* NOTE possible return */
         {
             Token result = makeToken(scanner, TOKEN_DESCRIPTION);
-            advance(scanner);
+            advanceScanner(scanner);
             return result;
         }
         case '\n': scanner->line++; break;
@@ -223,8 +223,8 @@ description(Scanner* scanner)
                 scanner->isInterpolation = true;
                 scanner->interpType = TOKEN_DESC_INTERP;
                 Token result = makeToken(scanner, TOKEN_DESC_INTERP);
-                advance(scanner); /* % */
-                advance(scanner); /* ( */
+                advanceScanner(scanner); /* % */
+                advanceScanner(scanner); /* ( */
                 return result;
             }
             break;
@@ -233,11 +233,11 @@ description(Scanner* scanner)
             /* if (peekNext(scanner) == '\'') */
             if (peekNext(scanner) == '\"')
             {
-                advance(scanner);
+                advanceScanner(scanner);
             }
             break;
         }
-        advance(scanner);
+        advanceScanner(scanner);
     }
 
     return errorToken(scanner, "Unterminated string");
@@ -258,8 +258,8 @@ command(Scanner* scanner)
             if (peekNext(scanner) == '}' && braces == 0)
             {
                 Token result = makeToken(scanner, TOKEN_COMMAND);
-                advance(scanner); /* '}' */
-                advance(scanner); /* '}' */
+                advanceScanner(scanner); /* '}' */
+                advanceScanner(scanner); /* '}' */
                 return result;
             }
             braces--;
@@ -270,13 +270,13 @@ command(Scanner* scanner)
                 scanner->isInterpolation = true;
                 scanner->interpType = TOKEN_COMM_INTERP;
                 Token result = makeToken(scanner, TOKEN_COMM_INTERP);
-                advance(scanner); /* % */
-                advance(scanner); /* ( */
+                advanceScanner(scanner); /* % */
+                advanceScanner(scanner); /* ( */
                 return result;
             }
             break;
         }
-        advance(scanner);
+        advanceScanner(scanner);
     }
 
     return errorToken(scanner, "Expected '}}' but got end of file");
@@ -341,7 +341,7 @@ specialType(Scanner* scanner)
 static Token
 specialKey(Scanner* scanner)
 {
-    while (isAlpha(peek(scanner))) advance(scanner);
+    while (isAlpha(peek(scanner))) advanceScanner(scanner);
     TokenType type = specialType(scanner);
     if (type == TOKEN_ERROR) return errorToken(scanner, "Invalid special key");
     return makeToken(scanner, type);
@@ -355,7 +355,7 @@ key(Scanner* scanner, char c)
         /* NOTE scanning multi byte character */
         while (isUtf8ContByte(peek(scanner)))
         {
-            c = advance(scanner);
+            c = advanceScanner(scanner);
         }
     }
     else
@@ -384,13 +384,13 @@ scanInterpolation(Scanner* scanner)
         return makeToken(scanner, TOKEN_EOF);
     }
 
-    char c = advance(scanner);
+    char c = advanceScanner(scanner);
 
     switch (c)
     {
     case ')':
         scanner->isInterpolation = false;
-        makeCurrent(scanner);
+        makeScannerCurrent(scanner);
         if (scanner->interpType == TOKEN_DESC_INTERP)
         {
             return description(scanner);
@@ -415,7 +415,7 @@ scanToken(Scanner* scanner)
     skipWhitespace(scanner);
     if (isAtEnd(scanner)) return makeToken(scanner, TOKEN_EOF);
 
-    char c = advance(scanner);
+    char c = advanceScanner(scanner);
 
     switch (c)
     {
@@ -428,38 +428,35 @@ scanToken(Scanner* scanner)
     case ')': return makeToken(scanner, TOKEN_RIGHT_PAREN);
 
     /* keywords */
-    case ':': makeCurrent(scanner); return identifier(scanner);
+    case ':': makeScannerCurrent(scanner); return identifier(scanner);
 
     /* literals */
-    /* case '\'': */
     case '\"':
-        makeCurrent(scanner);
+        makeScannerCurrent(scanner);
         return description(scanner);
     case '%':
         if (peek(scanner) != '{')
         {
             return key(scanner, c);
         }
-        else if (match(scanner, '{') && !match(scanner, '{'))
+        else if (matchScanner(scanner, '{') && !matchScanner(scanner, '{'))
         {
             return errorToken(
                 scanner, "Expected '{' after '%{'. '{' must be escaped if it is meant to be a key."
             );
         }
 
-        makeCurrent(scanner);
+        makeScannerCurrent(scanner);
         skipWhitespace(scanner);
         return command(scanner);
-    case '\\': makeCurrent(scanner); return key(scanner, advance(scanner));
+    case '\\': makeScannerCurrent(scanner); return key(scanner, advanceScanner(scanner));
+
     /* keys */
     case 'C': /* FALLTHROUGH */
     case 'H':
     case 'M':
     case 'S':
-        if (match(scanner, '-'))
-        {
-            return makeToken(scanner, getMod(c));
-        }
+        if (matchScanner(scanner, '-')) return makeToken(scanner, getMod(c));
         return key(scanner, c);
     default: return key(scanner, c);
     }

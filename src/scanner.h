@@ -86,13 +86,15 @@ typedef struct
     size_t messageLength;
 } Token;
 
-char advance(Scanner* scanner);
+char advanceScanner(Scanner* scanner);
 Token identifier(Scanner* scanner);
 void initScanner(Scanner* scanner, const char* source);
 bool isAtEnd(const Scanner* scanner);
-bool match(Scanner* scanner, const char expected);
+void makeScannerCurrent(Scanner* scanner);
+bool matchScanner(Scanner* scanner, const char expected);
 char peek(const Scanner* scanner);
 char peekNext(const Scanner* scanner);
 Token scanToken(Scanner* scanner);
+void skipWhitespace(Scanner* scanner);
 
 #endif /* WK_SCANNER_H_ */
