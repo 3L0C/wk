@@ -14,22 +14,32 @@ static bool hadError = false;
 static bool
 isValidInclude(Scanner* scanner, const char** includeStart)
 {
+    assert(scanner);
+
+    /* `:include`s may only come after a new line.
+     * There may be space between the new line and the
+     * `:include` instruction, though. */
+    if (advanceScanner(scanner) != '\n') return false;
+
+    /* Skip any comments or whitespace or such. */
+    skipWhitespace(scanner);
+
     /* If not at the start of an include directive return. */
-    if (!match(scanner, ':')) return false;
+    if (!matchScanner(scanner, ':')) return false;
 
     /* Get the type of identifier, may be a typical hook or flag. */
+    makeScannerCurrent(scanner);
     Token token = identifier(scanner);
     if (token.type != TOKEN_INCLUDE) return false;
 
     /* Get the first '"' after the `include` */
-    while (!isAtEnd(scanner) && peek(scanner) != '"') advance(scanner);
+    while (!isAtEnd(scanner) && peek(scanner) != '"') advanceScanner(scanner);
 
     /* Got eof or missing beginning '"' */
-    if (!match(scanner, '"'))
+    if (!matchScanner(scanner, '"'))
     {
         errorMsg("Expect '\"' after `:include` preprocessor directive.");
-        hadError = true;
-        return false;
+        goto fail;
     }
 
     /* Got starting quote, set includeStart and find closing '"' */
@@ -38,50 +48,52 @@ isValidInclude(Scanner* scanner, const char** includeStart)
     {
         /* User's can escape double quotes in file names.
          * NOTE it is unlikely that a filename ends in a '\' character
-         * but in the case where it does the preproccessor will throw an error
+         * but in the case where it does the preprocessor will throw an error
          * as either the closing '"' will not be found, or
          * if one is found the 'filename' is most likely invalid. */
-        char c = advance(scanner);
+        char c = advanceScanner(scanner);
         if (c == '\\' && peek(scanner) == '"')
         {
-            advance(scanner);
+            advanceScanner(scanner);
         }
     }
 
     /* Expect a closing '"' to the `include` directive. */
-    if (!match(scanner, '"'))
+    if (!matchScanner(scanner, '"'))
     {
         errorMsg("Expect closing '\"' for `:include` preprocessor directive.");
-        hadError = true;
-        return false;
+        goto fail;
     }
 
     /* No errors, valid `include` with includeStart set.
      * Check to make sure the `include` provided an actual filename
      * and not an empty string. */
     return *includeStart != scanner->current;
+
+fail:
+    hadError = true;
+    return false;
 }
 
 static void
 appendToResult(
     const char* scannerStart,
     const char* includeStart,
-    const char* includeEnd,
     char** result,
     size_t* resultCapacity,
     size_t* resultCount
 )
 {
     size_t scannedLen = includeStart - scannerStart;
-    while (*resultCount + scannedLen > *resultCapacity)
+    while (*resultCount + scannedLen + 1 > *resultCapacity)
     {
         size_t oldCapacity = *resultCapacity;
         *resultCapacity = GROW_CAPACITY(oldCapacity);
         *result = GROW_ARRAY(char, *result, oldCapacity, *resultCapacity);
     }
 
-    memcpy(&(*result)[*resultCount], includeStart, includeEnd - includeStart);
-    *resultCount += (includeEnd - includeStart);
+    memcpy(&(*result)[*resultCount], includeStart, scannedLen);
+    *resultCount += scannedLen;
 }
 
 static char*
@@ -97,6 +109,8 @@ getLitteralIncludePath(const char* start, const char* end)
 static size_t
 getBaseDirLength(const char* sourcePath)
 {
+    assert(sourcePath);
+
     /* current moves through the 'sourcePath'
      * lastDir tracks the character past the last '/'
      * for 'sourcePath' '/home/john/wks/main.wks'
@@ -136,7 +150,7 @@ getIncludeFilePath(const char* start, const char* end, const char* sourcePath)
 
     /* sourcePath is not in the PWD, return the sourcePath where the include
      * should be appended to. */
-    char* result = ALLOCATE(char, baseLen + (end - start));
+    char* result = ALLOCATE(char, baseLen + (end - start) + 1); /* +1 for null byte */
     memcpy(result, sourcePath, baseLen);
     memcpy(&result[baseLen], start, end - start);
     result[baseLen + (end - start)] = '\0';
@@ -167,18 +181,17 @@ runPreprocessor(const char* source, const char* sourcePath)
 
     while (!isAtEnd(&scanner))
     {
+        /* Fail on error. `hadError` is modified by `isValidInclude` */
+        if (hadError) goto fail;
+
         const char* includeStart = NULL;
 
-        /* If `isValidInclude` failed because of an error, fail. */
-        if (!isValidInclude(&scanner, &includeStart) && hadError)
-        {
-            goto fail;
-            return NULL;
-        }
+        /* If `isValidInclude` failed continue. */
+        if (!isValidInclude(&scanner, &includeStart)) continue;
 
         /* No error, first append the current scanner contents to result. */
         appendToResult(
-            scannerStart, includeStart, scanner.current, &result, &resultCapacity, &resultCount
+            scannerStart, includeStart, &result, &resultCapacity, &resultCount
         );
 
         /* Update `scannerStart` for the next go around. */
