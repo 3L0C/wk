@@ -424,7 +424,7 @@ error:
 static void
 addLineToScript(Client* client, const char* line, const size_t n)
 {
-    while (client->scriptCount + n > client->scriptCapacity)
+    while (client->scriptCount + n + 1 > client->scriptCapacity)
     {
         size_t oldCapacity = client->scriptCapacity;
         client->scriptCapacity = GROW_CAPACITY(oldCapacity);
@@ -433,8 +433,8 @@ addLineToScript(Client* client, const char* line, const size_t n)
         );
     }
 
-    /* careful not to copy the '\0' byte from getline() */
     memcpy(&client->script[client->scriptCount], line, n);
+    client->script[client->scriptCount + n] = '\0';
     client->scriptCount += n;
 }
 
