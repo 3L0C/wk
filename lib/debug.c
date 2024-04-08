@@ -270,9 +270,9 @@ debugClient(const Client* client)
     debugString("Transpile:", client->transpile, 0);
     debugString("Chords file:", client->chordsFile, 0);
     debugString("Try script:", (client->tryScript ? "True" : "False"), 0);
-    debugString("Script:", client->script, 0);
-    debugSize_t("Script capacity:", client->scriptCapacity, 0);
-    debugSize_t("Script count:", client->scriptCount, 0);
+    debugString("Script:", client->script.string, 0);
+    debugSize_t("Script capacity:", client->script.capacity, 0);
+    debugSize_t("Script count:", client->script.count, 0);
     debugString("Chords:", "Set", 0);
     debugString("Debug:", "True", 0);
     printDebug(0);
