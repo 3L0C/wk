@@ -46,18 +46,27 @@ transpile(void)
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
     source = runPreprocessor(source, client.transpile);
-    Compiler compiler;
-    initCompiler(&compiler, source);
-    if (!transpileChords(&compiler, client.delimiter, client.debug))
+    if (!source)
     {
+        errorMsg("Failed while running preprocessor on given file.");
         result = EX_DATAERR;
         goto end;
     }
+    printf("%s", source);
+    Compiler compiler;
+    initCompiler(&compiler, source);
+    goto fail;
+    if (!transpileChords(&compiler, client.delimiter, client.debug))
+    {
+        result = EX_DATAERR;
+        goto fail;
+    }
     writeChords(&compiler.lines, client.delimiter);
 
-end:
+fail:
     freeLineArray(&compiler.lines);
     free(source);
+end:
     return result;
 }
 
