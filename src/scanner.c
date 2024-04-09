@@ -12,6 +12,7 @@ initScanner(Scanner* scanner, const char* source)
 {
     assert(scanner && source);
 
+    scanner->head = source;
     scanner->start = source;
     scanner->current = source;
     scanner->line = 1;
@@ -22,6 +23,7 @@ initScanner(Scanner* scanner, const char* source)
 static void
 cloneScanner(Scanner* scanner, Scanner* clone)
 {
+    clone->head = scanner->head;
     clone->start = scanner->start;
     clone->current = scanner->current;
     clone->line = scanner->line;
@@ -172,6 +174,7 @@ identifierType(Scanner* scanner)
         if (isKeyword(scanner, 1, 6, "ndex+1")) return TOKEN_INDEX_ONE;
         if (isKeyword(scanner, 1, 4, "ndex")) return TOKEN_INDEX;
         if (isKeyword(scanner, 1, 6, "nherit")) return TOKEN_INHERIT;
+        if (isKeyword(scanner, 1, 6, "nclude")) return TOKEN_INCLUDE;
         break;
     case 'k':
         if (isKeyword(scanner, 1, 3, "eep")) return TOKEN_KEEP;

@@ -69,6 +69,7 @@ typedef enum
 
 typedef struct
 {
+    const char* head;
     const char* start;
     const char* current;
     size_t line;

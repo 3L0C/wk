@@ -11,7 +11,9 @@ typedef struct
 } String;
 
 void appendToString(String* string, const char* source, size_t len);
-void initString(String* string);
 void freeString(String* string);
+void initFromCharString(String* string, char* source);
+void initString(String* string);
+void rtrimString(String* string);
 
 #endif /* WK_LIB_STRING_H_ */

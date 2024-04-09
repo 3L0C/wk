@@ -1,6 +1,8 @@
+#include <ctype.h>
+#include <string.h>
+
 #include "string.h"
 #include "memory.h"
-#include <string.h>
 
 void
 appendToString(String *string, const char* source, size_t len)
@@ -14,9 +16,27 @@ appendToString(String *string, const char* source, size_t len)
         );
     }
 
-    memcpy(string->string, source, len);
+    memcpy(string->string + string->count, source, len);
     string->count += len;
     string->string[string->count] = '\0';
+}
+
+void
+freeString(String* string)
+{
+    FREE_ARRAY(char, string->string, string->count);
+    string->string = NULL;
+    string->count = 0;
+    string->capacity = 0;
+}
+
+void
+initFromCharString(String* string, char* source)
+{
+    size_t len = strlen(source);
+    string->string = source;
+    string->count = len;
+    string->capacity = len;
 }
 
 void
@@ -28,10 +48,12 @@ initString(String *string)
 }
 
 void
-freeString(String* string)
+rtrimString(String* string)
 {
-    FREE_ARRAY(char, string->string, string->count);
-    string->string = NULL;
-    string->count = 0;
-    string->capacity = 0;
+    while (string->count > 0 && isspace(string->string[string->count - 1]))
+    {
+        string->count--;
+    }
+
+    string->string[string->count] = '\0';
 }

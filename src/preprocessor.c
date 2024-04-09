@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "lib/common.h"
+#include "lib/debug.h"
 #include "lib/memory.h"
 #include "lib/string.h"
 
@@ -12,22 +13,30 @@
 #include "scanner.h"
 
 static bool hadError = false;
+static bool debug = false;
 
 static bool
-isValidInclude(Scanner* scanner, const char** includeStart)
+isValidInclude(Scanner* scanner, const char** includeStart, const char** includeFileStart)
 {
-    assert(scanner);
+    assert(scanner && includeStart);
 
-    /* `:include`s may only come after a new line. */
-    if (advanceScanner(scanner) != '\n') return false;
+    /* `:include`s may only come at the start of a file, or after a new line. */
+    if (scanner->head != scanner->current && advanceScanner(scanner) != '\n') return false;
 
     /* Skip any comments or whitespace or such as
      * there may be space between the new line and the
      * `:include` instruction, which is not an issue. */
     skipWhitespace(scanner);
 
-    /* If not at the start of an include directive return. */
-    if (!matchScanner(scanner, ':')) return false;
+    /* Possibly at start of a keyword, possibly `:include`. Set start point. */
+    *includeStart = scanner->current;
+
+    /* If not at the start of an include directive, return. */
+    if (!matchScanner(scanner, ':'))
+    {
+        advanceScanner(scanner);
+        return false;
+    }
 
     /* Get the type of identifier, may be a typical hook or flag. */
     makeScannerCurrent(scanner);
@@ -44,8 +53,10 @@ isValidInclude(Scanner* scanner, const char** includeStart)
         goto fail;
     }
 
-    /* Got starting quote, set includeStart and find closing '"' */
-    *includeStart = scanner->current;
+    /* Set `includeFileStart` to begining of potential filename */
+    *includeFileStart = scanner->current;
+
+    /* Find closing '"' */
     while (!isAtEnd(scanner) && peek(scanner) != '"')
     {
         /* User's can escape double quotes in file names.
@@ -139,7 +150,7 @@ getIncludeFilePath(const char* start, const char* end, const char* sourcePath)
 }
 
 char*
-runPreprocessor(const char* source, const char* sourcePath)
+runPreprocessor(const char* source, const char* sourcePath, bool localDebug)
 {
     assert(source);
 
@@ -152,12 +163,17 @@ runPreprocessor(const char* source, const char* sourcePath)
     }
 
     bool oldError = hadError;
+    bool oldDebug = debug;
+    debug = localDebug;
     String result = {0};
     initString(&result);
 
     Scanner scanner = {0};
     initScanner(&scanner, source);
     const char* scannerStart = scanner.start;
+    char* includeFilePath = NULL;
+    char* includeSource = NULL;
+    char* includeResult = NULL;
 
     while (!isAtEnd(&scanner))
     {
@@ -165,47 +181,58 @@ runPreprocessor(const char* source, const char* sourcePath)
         if (hadError) goto fail;
 
         const char* includeStart = NULL;
+        const char* includeFileStart = NULL;
 
         /* If `isValidInclude` failed continue. */
-        if (!isValidInclude(&scanner, &includeStart)) continue;
+        if (!isValidInclude(&scanner, &includeStart, &includeFileStart)) continue;
 
         /* No error, first append the current scanner contents to result. */
         appendToString(&result, scannerStart, includeStart - scannerStart);
+        debugMsg(debug, "Appending '%*s' to result.", includeStart - scannerStart, scannerStart);
+        debugMsg(debug, "Length of append: '%zd'.", includeStart - scannerStart);
+        debugMsg(debug, "Pre include result: '%s'.", result.string);
 
         /* Update `scannerStart` for the next go around. */
         scannerStart = scanner.current;
 
         /* Get the path to the included file */
-        char* includeFilePath = getIncludeFilePath(includeStart, scanner.current, sourcePath);
+        includeFilePath = getIncludeFilePath(includeFileStart, scanner.current - 1, sourcePath);
         if (!includeFilePath)
         {
             errorMsg("Failed to get the included file path.");
             goto fail;
         }
 
+        debugMsg(debug, "Included file path: '%s'.", includeFilePath);
+
         /* Try to read the included file */
-        char* includeSource = readFile(includeFilePath);
-        if (!includeSource)
+        includeSource = readFile(includeFilePath);
+        if (!includeSource) goto fail;
+
+        debugMsg(debug, "Included file contents: '%s'.", includeSource);
+
+        /* Run preprocessor on the included file */
+        includeResult = runPreprocessor(includeSource, includeFilePath, localDebug);
+        if (!includeResult)
         {
-            free(includeFilePath);
+            errorMsg("Failed to get preprocessor result.");
             goto fail;
         }
 
-        /* Run preprocessor on the included file */
-        char* includeResult = runPreprocessor(includeSource, includeFilePath);
-        if (!includeResult)
-        {
-            free(includeFilePath);
-            goto fail;
-        }
+        debugMsg(debug, "Preprocessor result: '%s'.", includeResult);
 
         /* Append the result. */
         size_t includeResultLen = strlen(includeResult);
         appendToString(&result, includeResult, includeResultLen);
+        debugMsg(debug, "Post include result: '%s'.", result.string);
 
         /* Cleanup allocated strings. */
         free(includeFilePath);
+        free(includeSource);
         free(includeResult);
+        includeFilePath = NULL;
+        includeSource = NULL;
+        includeResult = NULL;
     }
 
     /* Ensure entire source was processed. This should never execute as all
@@ -218,11 +245,21 @@ runPreprocessor(const char* source, const char* sourcePath)
 
     appendToString(&result, scannerStart, scanner.current - scannerStart);
 
+    rtrimString(&result);
+
+    debugMsg(debug, "Returning final result: '%s'.", result.string);
+
     hadError = oldError;
+    debug = oldDebug;
+
     return result.string;
 
 fail:
     hadError = oldError;
+    debug = oldDebug;
+    free(includeFilePath);
+    free(includeSource);
+    free(includeResult);
     freeString(&result);
     return NULL;
 }

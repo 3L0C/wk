@@ -45,14 +45,14 @@ transpile(void)
     int result = EX_OK;
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
-    source = runPreprocessor(source, client.transpile);
-    if (!source)
+    char* processedSource = runPreprocessor(source, client.transpile, client.debug);
+    if (!processedSource)
     {
         errorMsg("Failed while running preprocessor on given file.");
         result = EX_DATAERR;
         goto end;
     }
-    printf("%s", source);
+    debugMsg(client.debug, "Contents of preprocessed source: '%s'.", processedSource);
     Compiler compiler;
     initCompiler(&compiler, source);
     goto fail;
@@ -65,8 +65,9 @@ transpile(void)
 
 fail:
     freeLineArray(&compiler.lines);
-    free(source);
+    free(processedSource);
 end:
+    free(source);
     return result;
 }
 
