@@ -10,7 +10,6 @@
 #include "lib/string.h"
 #include "lib/types.h"
 #include "lib/util.h"
-#include "lib/window.h"
 
 #include "common.h"
 #include "compile.h"
@@ -43,8 +42,11 @@ static int
 transpile(void)
 {
     int result = EX_OK;
+    /* Read given file to `source` and exit if read failed. */
     char* source = readFile(client.transpile);
     if (!source) return EX_IOERR;
+
+    /* Run preprocessor on `source` and fail if file is mallformed or other error. */
     char* processedSource = runPreprocessor(source, client.transpile, client.debug);
     if (!processedSource)
     {
@@ -53,13 +55,19 @@ transpile(void)
         goto end;
     }
     debugMsg(client.debug, "Contents of preprocessed source: '%s'.", processedSource);
+
+    /* Begin compilation. */
     Compiler compiler;
     initCompiler(&compiler, processedSource);
+
+    /* File is mallformed, fail. */
     if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         result = EX_DATAERR;
         goto fail;
     }
+
+    /* Well formed file, write to stdout. */
     writeChords(&compiler.lines, client.delimiter);
 
 fail:
@@ -78,50 +86,71 @@ runScript(void)
 {
     int result = EX_SOFTWARE;
 
+    /* Exit on failure to read stdin. */
     if (!tryStdin(&client)) return EX_IOERR;
-    debugMsg(mainMenu.debug, "Contents of script:\n%s", client.script);
+
+    /* Run preprocessor on `script` and fail if mallformed or other error. */
+    char* processedSource = runPreprocessor(client.script.string, NULL, client.debug);
+    if (!processedSource)
+    {
+        errorMsg("Failed while running preprocessor on given file.");
+        result = EX_DATAERR;
+        goto end;
+    }
+    debugMsg(mainMenu.debug, "Contents of script:\n%s", processedSource);
+
+    /* Begin compilation */
     Compiler compiler;
     initCompiler(&compiler, client.script.string);
+
+    /* User script is mallformed, fail. */
     if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         errorMsg("Mallformed script: \n%s", client.script);
         result = EX_DATAERR;
-        goto end;
+        goto fail;
     }
+
+    /* Compile lines, fail if there is nothing to compile. */
     if (!compileChords(&compiler, &mainMenu))
     {
         errorMsg("Could not compile script.");
         result = EX_DATAERR;
-        goto error;
+        goto fail;
     }
+
+    /* Last bit of prep before running script. */
     countChords(&mainMenu);
+    WkStatus status = WK_STATUS_RUNNING;
+
+    /* Pre-press keys */
     if (client.keys)
     {
-        WkStatus status = pressKeys(&mainMenu, client.keys);
-        if (status == WK_STATUS_EXIT_SOFTWARE)
-        {
-            result = EX_DATAERR;
-            goto error;
-        }
-        else if (status == WK_STATUS_EXIT_OK)
-        {
-            debugMsg(mainMenu.debug, "Successfull pressed keys: '%s'.", client.keys);
-            result = EX_OK;
-        }
-        else
-        {
-            result = displayMenu(&mainMenu);
-        }
+        status = pressKeys(&mainMenu, client.keys);
+    }
+
+    /* If keys were pre-pressed there may be nothing to do, or an error to report. */
+    if (status == WK_STATUS_EXIT_SOFTWARE)
+    {
+        errorMsg("Key(s) not found in key chords: '%s'.", client.keys);
+        result = EX_DATAERR;
+        goto fail;
+    }
+    else if (status == WK_STATUS_EXIT_OK)
+    {
+        debugMsg(mainMenu.debug, "Successfully pressed keys: '%s'.", client.keys);
+        result = EX_OK;
     }
     else
     {
         result = displayMenu(&mainMenu);
     }
 
-error:
+fail:
     freeChords(mainMenu.chords);
-end:
     freeLineArray(&compiler.lines);
+    free(processedSource);
+end:
     freeString(&client.script);
     return result;
 }
@@ -131,49 +160,109 @@ static int
 runChordsFile(void)
 {
     int result = EX_SOFTWARE;
+
+    /* Exit on failure to read source file. */
     char* source = readFile(client.chordsFile);
     if (!source) return EX_IOERR;
-    Compiler compiler;
-    initCompiler(&compiler, source);
-    if (!transpileChords(&compiler, client.delimiter, client.debug))
+
+    /* Run preprocessor on `chordsFile` and fail if mallformed or other error. */
+    char* processedSource = runPreprocessor(source, client.chordsFile, client.debug);
+    if (!processedSource)
     {
+        errorMsg("Failed while running preprocessor on given file.");
         result = EX_DATAERR;
         goto end;
     }
+    debugMsg(client.debug, "Contents of preprocessed source: '%s'.", processedSource);
+
+    /* Begin compilation */
+    Compiler compiler;
+    initCompiler(&compiler, source);
+
+    /* User file is mallformed, fail. */
+    if (!transpileChords(&compiler, client.delimiter, client.debug))
+    {
+        result = EX_DATAERR;
+        goto fail;
+    }
+
+    /* Compile lines, fail if there is nothing to compile. */
     if (!compileChords(&compiler, &mainMenu))
     {
         result = EX_DATAERR;
-        goto error;
+        goto fail;
     }
+
+    /* Last bit of prep before running script. */
     countChords(&mainMenu);
+    WkStatus status = WK_STATUS_RUNNING;
+
+    /* Pre-press keys */
     if (client.keys)
     {
-        WkStatus status = pressKeys(&mainMenu, client.keys);
-        if (status == WK_STATUS_EXIT_SOFTWARE)
-        {
-            result = EX_DATAERR;
-            goto error;
-        }
-        else if (status == WK_STATUS_EXIT_OK)
-        {
-            debugMsg(mainMenu.debug, "Successfull pressed keys: '%s'.", client.keys);
-            result = EX_OK;
-        }
-        else
-        {
-            result = displayMenu(&mainMenu);
-        }
+        status = pressKeys(&mainMenu, client.keys);
+    }
+
+    /* If keys were pre-pressed there may be nothing to do, or an error to report. */
+    if (status == WK_STATUS_EXIT_SOFTWARE)
+    {
+        errorMsg("Key(s) not found in key chords: '%s'.", client.keys);
+        result = EX_DATAERR;
+        goto fail;
+    }
+    else if (status == WK_STATUS_EXIT_OK)
+    {
+        debugMsg(mainMenu.debug, "Successfully pressed keys: '%s'.", client.keys);
+        result = EX_OK;
     }
     else
     {
         result = displayMenu(&mainMenu);
     }
 
-error:
+fail:
     freeChords(mainMenu.chords);
-end:
     freeLineArray(&compiler.lines);
+    free(processedSource);
+end:
     free(source);
+    return result;
+}
+
+/* Execute precompiled key chords. */
+static int
+runBuiltinKeyChords()
+{
+    int result = EX_SOFTWARE;
+
+    if (mainMenu.debug) debugChords(mainMenu.chords, 0);
+
+    /* Initial setup */
+    countChords(&mainMenu);
+    WkStatus status = WK_STATUS_RUNNING;
+
+    /* Pre-press keys */
+    if (client.keys)
+    {
+        status = pressKeys(&mainMenu, client.keys);
+    }
+
+    /* If keys were pre-pressed there may be nothing to do, or an error to report. */
+    if (status == WK_STATUS_EXIT_SOFTWARE)
+    {
+        errorMsg("Key(s) not found in key chords: '%s'.", client.keys);
+        result = EX_DATAERR;
+    }
+    else if (status == WK_STATUS_EXIT_OK)
+    {
+        debugMsg(mainMenu.debug, "Successfully pressed keys: '%s'.", client.keys);
+        result = EX_OK;
+    }
+    else
+    {
+        result = displayMenu(&mainMenu);
+    }
+
     return result;
 }
 
@@ -206,28 +295,7 @@ main(int argc, char** argv)
     }
     else
     {
-        if (mainMenu.debug)
-        {
-            debugChords(mainMenu.chords, 0);
-        }
-
-        countChords(&mainMenu);
-
-        if (client.keys)
-        {
-            WkStatus status = pressKeys(&mainMenu, client.keys);
-            if (statusIsError(status))
-            {
-                errorMsg("Key(s) not found in chords: '%s'.", client.keys);
-                return EX_DATAERR;
-            }
-            else if (status == WK_STATUS_EXIT_OK)
-            {
-                return EX_OK;
-            }
-        }
-
-        result = displayMenu(&mainMenu);
+        result = runBuiltinKeyChords();
     }
 
     return result;
