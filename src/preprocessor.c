@@ -188,9 +188,6 @@ runPreprocessor(const char* source, const char* sourcePath, bool localDebug)
 
         /* No error, first append the current scanner contents to result. */
         appendToString(&result, scannerStart, includeStart - scannerStart);
-        debugMsg(debug, "Appending '%*s' to result.", includeStart - scannerStart, scannerStart);
-        debugMsg(debug, "Length of append: '%zd'.", includeStart - scannerStart);
-        debugMsg(debug, "Pre include result: '%s'.", result.string);
 
         /* Update `scannerStart` for the next go around. */
         scannerStart = scanner.current;
@@ -203,13 +200,9 @@ runPreprocessor(const char* source, const char* sourcePath, bool localDebug)
             goto fail;
         }
 
-        debugMsg(debug, "Included file path: '%s'.", includeFilePath);
-
         /* Try to read the included file */
         includeSource = readFile(includeFilePath);
         if (!includeSource) goto fail;
-
-        debugMsg(debug, "Included file contents: '%s'.", includeSource);
 
         /* Run preprocessor on the included file */
         includeResult = runPreprocessor(includeSource, includeFilePath, localDebug);
@@ -219,12 +212,9 @@ runPreprocessor(const char* source, const char* sourcePath, bool localDebug)
             goto fail;
         }
 
-        debugMsg(debug, "Preprocessor result: '%s'.", includeResult);
-
         /* Append the result. */
         size_t includeResultLen = strlen(includeResult);
         appendToString(&result, includeResult, includeResultLen);
-        debugMsg(debug, "Post include result: '%s'.", result.string);
 
         /* Cleanup allocated strings. */
         free(includeFilePath);
@@ -244,10 +234,6 @@ runPreprocessor(const char* source, const char* sourcePath, bool localDebug)
     }
 
     appendToString(&result, scannerStart, scanner.current - scannerStart);
-
-    rtrimString(&result);
-
-    debugMsg(debug, "Returning final result: '%s'.", result.string);
 
     hadError = oldError;
     debug = oldDebug;
