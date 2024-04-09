@@ -8,6 +8,8 @@
 #include "client.h"
 #include "types.h"
 
+#define MENU_MIN_WIDTH 80
+
 typedef enum
 {
     WK_WIN_POS_BOTTOM,
@@ -59,5 +61,6 @@ typedef struct
 } WkMenu;
 
 void initMenu(WkMenu* props, Client* client);
+int displayMenu(WkMenu* menu);
 
 #endif /* WK_LIB_MENU_H_ */
