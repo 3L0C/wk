@@ -1,0 +1,5 @@
+:include "include_mpv_example.wks"
+b "Browsers"
+{
+    f "Firefox" %{{firefox}}
+}

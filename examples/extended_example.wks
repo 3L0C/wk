@@ -1,0 +1,33 @@
+# Some chord expressions
+[
+    abc
+    (d "What will happen..." :keep %{{echo "Well??"}})
+    efg
+] "Let us see" %{{echo "here we go!"}}
+# Hmm...
+h "H prefix"
+{
+    [
+        abc
+        (d "...")
+        efg
+    ] "..." %{{echo "well.."}}
+}
+# Hmm...
+i "I wonder prefix"
+{
+    j "..."
+    {
+        [
+            abc
+            d
+            d
+            d
+            d
+            d
+            d
+            d
+            efg
+        ] "..." %{{echo "well.."}}
+    }
+}
