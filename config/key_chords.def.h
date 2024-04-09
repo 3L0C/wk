@@ -1,7 +1,9 @@
-#ifndef WK_CHORDS_H_
-#define WK_CHORDS_H_
+#ifndef WK_CONFIG_KEY_CHORDS_H_
+#define WK_CONFIG_KEY_CHORDS_H_
 
-#include "lib/types.h"
+#include <stddef.h>
+
+#include "src/common/types.h"
 
 /* mods, specials,
  * key, description, hint,
@@ -10,7 +12,7 @@
  * after
  * flags, chords
  */
-Chord chords[] = CHORDS(
+WkKeyChord keyChords[] = KEY_CHORDS(
     {
         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
         "b", "Browser", "b -> Browser",
@@ -373,4 +375,4 @@ Chord chords[] = CHORDS(
     }
 );
 
-#endif /* WK_CHORDS_H_ */
+#endif /* WK_CONFIG_KEY_CHORDS_H_ */
