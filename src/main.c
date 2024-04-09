@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
-#include "config/chords.h"
+#include "config/key_chords.h"
 
 #include "lib/client.h"
 #include "lib/common.h"
@@ -54,8 +54,7 @@ transpile(void)
     }
     debugMsg(client.debug, "Contents of preprocessed source: '%s'.", processedSource);
     Compiler compiler;
-    initCompiler(&compiler, source);
-    goto fail;
+    initCompiler(&compiler, processedSource);
     if (!transpileChords(&compiler, client.delimiter, client.debug))
     {
         result = EX_DATAERR;

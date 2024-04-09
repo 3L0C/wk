@@ -24,7 +24,7 @@ X11_DIR     := $(LIB_DIR)/x11
 WAY_DIR     := $(LIB_DIR)/wayland
 
 # Common files
-HEADERS     := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h $(CONF_DIR)/chords.h
+HEADERS     := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h $(CONF_DIR)/key_chords.h
 SOURCES     := $(wildcard $(SOURCE_DIR)/*.c)
 OBJECTS     := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.o)))
 MANFILES    := $(wildcard $(MAN_DIR)/*.1)
@@ -157,14 +157,14 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS) $(LIB_HDRS)
 $(CONF_DIR)/config.h:
 	cp $(CONF_DIR)/config.def.h $@
 
-$(CONF_DIR)/chords.h:
-	cp $(CONF_DIR)/chords.def.h $@
+$(CONF_DIR)/key_chords.h:
+	cp $(CONF_DIR)/key_chords.def.h $@
 
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -rf $(NAME)
 # rm -rf config.h
-# rm -rf chords.h
+# rm -rf key_chords.h
 
 dist: clean
 	mkdir -p $(NAME)-$(VERSION)/src
@@ -179,9 +179,9 @@ install: $(BUILD_DIR)/$(NAME)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f $(NAME) $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/$(NAME)
-# mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-# cp -R $(MANFILES) $(MAN_DIR)
-# chmod 644 $(patsubst %,$(MAN_DIR)/%,$(notdir $(MAN)))
+	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
+	cp -R $(MANFILES) $(MAN_DIR)
+	chmod 644 $(patsubst %,$(MAN_DIR)/%,$(notdir $(MAN)))
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)
