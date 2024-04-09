@@ -182,7 +182,7 @@ writeChordHint(Line* line)
     printf("\"");
     writeChordModStr(&line->mods);
     writeChordEscKey(&line->key);
-    printf(" %s ", delim);
+    printf("%s", delim);
     writeChordRawString(&line->description, line);
     printf("\",\n");
 }
