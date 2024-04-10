@@ -103,8 +103,8 @@ of \f[I]chord expressions\f[R] within a \f[I]chord array\f[R].
 .SS CHORD EXPRESSION
 A \f[I]chord expression\f[R] is a construct that is only valid within a
 \f[I]chord array\f[R].
-The \f[I]chord expression\f[R] begins with an opening parentheses
-\f[B](\f[R] followed by a \f[I]key\f[R] and \f[I]description\f[R].
+A \f[I]chord expression\f[R] begins with an opening parentheses,
+\f[B](\f[R], followed by a \f[I]key\f[R] and \f[I]description\f[R].
 After the \f[I]description\f[R], \f[I]hooks\f[R], \f[I]flags\f[R], and a
 \f[I]command\f[R] may be given just as one would expect in a standard
 \f[I]chord\f[R].
@@ -120,43 +120,55 @@ closing parentheses, \f[B])\f[R], to be valid.
 See \f[B]EXAMPLES\f[R] below to see how a \f[I]chord expression\f[R]
 might be handy.
 .SS KEY
-A \f[B]key\f[R] represents the trigger or activator for a \f[B]key
+A \f[I]key\f[R] represents the trigger or activator for a \f[I]key
 chord\f[R].
-It consists of zero or more \f[B]modifier\f[R]​s followed by either a
-single printable \f[B]UTF-8\f[R] character, or a \f[B]special key\f[R].
+It consists of zero or more \f[I]modifiers\f[R] followed by either a
+single printable \f[I]UTF-8\f[R] character, or a \f[I]special key\f[R].
 Certain characters have special meaning and they cannot be used unless
 escaped.
 .PP
-All of the following characters must be preceded by a backslash
-\f[B]\[rs]\f[R] to be interpreted as a \f[B]key\f[R]:
+All of the following characters must be preceded by a backslash,
+\f[B]\[rs]\f[R], to be interpreted as a \f[I]key\f[R]:
 .RS
 .TP
 \f[B][\f[R]
-Begins a \f[B]chord array\f[R].
+Begins a \f[I]chord array\f[R].
 .TP
 \f[B]]\f[R]
-Ends a \f[B]chord array\f[R].
+Ends a \f[I]chord array\f[R].
 .TP
 \f[B]{\f[R]
-Begins a \f[B]prefix\f[R] block.
+Begins a \f[I]prefix\f[R] block.
 .TP
 \f[B]}\f[R]
-Ends a \f[B]prefix\f[R] block.
+Ends a \f[I]prefix\f[R] block.
 .TP
 \f[B]#\f[R]
 Begins a comment.
 .TP
 \f[B]\[dq]\f[R]
-Begins and ends a \f[B]description\f[R].
+Begins and ends a \f[I]description\f[R].
 .TP
 \f[B]:\f[R]
-Begins a \f[B]keyword\f[R].
+Begins a \f[I]keyword\f[R].
+.TP
+\f[B](\f[R]
+Begins a \f[I]chord expression\f[R].
+.TP
+\f[B])\f[R]
+Ends a \f[I]chord expression\f[R].
 .RE
-.SS SPECIAL KEY
-A \f[B]special key\f[R] represents a non-printable key that can be used
-as a \f[B]key\f[R].
 .PP
-The following are valid \f[B]special key\f[R]​s:
+While the above are required to be escaped to be interpreted as a
+\f[I]key\f[R], it is not an error to escape any \f[I]UTF-8\f[R]
+character meant to be a \f[I]key\f[R].
+The \f[I]UTF-8\f[R] character need only be a printable character that is
+not a \f[I]special key\f[R] as defined below.
+.SS SPECIAL KEY
+The \f[I]special keys\f[R] cover (mostly) non-printable keys that can be
+used as a \f[I]key\f[R].
+.PP
+The following are valid \f[I]special key​s\f[R]:
 .RS
 .PP
 \f[I]Left\f[R], \f[I]Right\f[R], \f[I]Up\f[R], \f[I]Down\f[R],
@@ -164,9 +176,20 @@ The following are valid \f[B]special key\f[R]​s:
 \f[I]ESC\f[R], \f[I]Home\f[R], \f[I]PgUp\f[R], \f[I]PgDown\f[R],
 \f[I]End\f[R], and \f[I]Begin\f[R]
 .RE
+.PP
+\f[B]NOTE\f[R] that several of the \f[I]special keys\f[R] are
+technically printable, and will be recognized as a regular \f[I]key\f[R]
+if escaped with a backslash, \f[B]/\f[R].
+You escape a normal \f[B]space\f[R] for use in your \f[I]key
+chords\f[R], but when you hit \f[B]space\f[R] it will be recognized as a
+\f[I]special key\f[R] and will fail to match the \f[B]space\f[R]
+\f[I]key\f[R] that you might expect.
+In short, use the special forms listed above to ensure the corresponding
+keypress events trigger the desired \f[I]key chord\f[R].
 .SS MODIFIER
-A \f[B]modifier\f[R] is a prefix that can be added before a
-\f[B]key\f[R] to modify its behavior.
+A \f[I]modifier\f[R] is a prefix that can be added before any other
+\f[I]modifier\f[R], \f[I]key\f[R], or \f[I]special key\f[R] to specify
+the matching keypress.
 It consists of a single letter (\f[B]C\f[R], \f[B]H\f[R], \f[B]M\f[R],
 or \f[B]S\f[R]) followed by a hyphen \f[B]-\f[R].
 The modifiers represent the following:
@@ -185,43 +208,42 @@ The modifiers represent the following:
 \f[I]Shift\f[R] key
 .RE
 .PP
-A \f[B]modifier\f[R] can precede another \f[B]modifier\f[R] before a
-\f[B]key\f[R].
-\f[I]NOTE\f[R] that a \f[B]modifier\f[R] can be given more than once
+\f[B]NOTE\f[R] that a \f[I]modifier\f[R] can be given more than once
 according to the grammar, but there is no practical benefit to this.
-Additionally, the \f[B]S-\f[R] (\f[I]Shift\f[R]) \f[B]modifier\f[R] can
-be given before a printable character, but it will be ignored.
-It is only considered when it precedes a \f[B]special key\f[R].
+Additionally, the \f[B]S-\f[R] (\f[I]Shift\f[R]) \f[I]modifier\f[R] can
+be given before \f[I]UTF-8\f[R] \f[I]keys\f[R], but it will be ignored.
+It is only considered when it precedes a \f[I]special key\f[R].
 .SS DESCRIPTION
-A \f[B]description\f[R] provides a human-readable explanation or label
-for a key chord.
-It is enclosed in double quotes \f[B]\[dq]\f[R].
-If a double quote needs to be included within the \f[B]description\f[R],
+A \f[I]description\f[R] provides a human-readable explanation or label
+for a \f[I]key chord\f[R].
+It is enclosed in double quotes, \f[B]\[dq]\f[R].
+If a double quote needs to be included within the \f[I]description\f[R],
 it must be escaped with a backslash.
-An \f[B]interpolation\f[R] may be used with a \f[B]description\f[R] as
+.PP
+An \f[I]interpolation\f[R] may be used with a \f[I]description\f[R] as
 well.
 See \f[B]INTERPOLATION\f[R] below for a full explanation.
 .SS COMMAND
-A \f[B]command\f[R] represents the action or functionality triggered by
-a \f[B]key chord\f[R].
+A \f[I]command\f[R] represents the action or functionality triggered by
+a \f[I]chord\f[R].
 It is enclosed in \f[B]%{{\f[R] and \f[B]}}\f[R] delimiters.
-The content within the delimiters can be any valid \f[B]command\f[R]
-just as you would supply it at the command-line.
-An \f[B]interpolation\f[R] may be used with a \f[B]command\f[R].
+The content within the delimiters can be any valid shell
+\f[I]command\f[R] just as you would supply it at the command-line.
+.PP
+An \f[I]interpolation\f[R] may be used with a \f[I]command\f[R].
 See \f[B]INTERPOLATION\f[R] below for a full explanation.
 .PP
-\f[B]NOTE\f[R] any \f[B]command\f[R] given to the \f[I]before\f[R], or
-\f[I]sync-after\f[R] \f[B]hook\f[R]​s is blocking.
-Additionally, if the \f[I]sync-command\f[R] \f[B]flag\f[R] is given, the
-the current \f[B]chord\f[R]\[aq]s \f[B]command\f[R] becomes blocking.
-Depending on the \f[B]command\f[R], \f[B]wk\f[R] may never regain
+\f[B]NOTE\f[R] any \f[I]command\f[R] given to the \f[I]before\f[R], or
+\f[I]sync-after\f[R] \f[I]hooks\f[R] will be run in a blocking manner.
+Additionally, if the \f[I]sync-command\f[R] \f[I]flag\f[R] is given, the
+the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R] becomes blocking.
+Depending on the \f[I]command\f[R], \f[B]wk\f[R] may never regain
 control.
 This is a serious concern as \f[B]wk\f[R] only releases the keyboard
 after it has completed or encountered an error.
 This could leave the user with an unresponsive keyboard until they
 restart their system.
-Think carefully before using a \f[B]command\f[R] in a blocking fashion,
-and if possible, use the non-blocking alternatives.
+Think carefully before using a \f[I]command\f[R] in a blocking fashion.
 .SS INTERPOLATION
 An \f[B]interpolation\f[R] works the same way in \f[B]wks\f[R] as it
 does in many programming languages.

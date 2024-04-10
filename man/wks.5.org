@@ -103,8 +103,8 @@ See *CHORD EXPRESSION* below for a description of the behavior of
 
 ** CHORD EXPRESSION
 A /chord expression/ is a construct that is only valid
-within a /chord array/. The /chord expression/ begins with
-an opening parentheses *(* followed by a /key/ and
+within a /chord array/. A /chord expression/ begins with
+an opening parentheses, *(*, followed by a /key/ and
 /description/. After the /description/, /hooks/, /flags/,
 and a /command/ may be given just as one would expect in a
 standard /chord/. However, the /chord expression/ does not
@@ -118,82 +118,101 @@ parentheses, *)*, to be valid. See *EXAMPLES* below to see
 how a /chord expression/ might be handy.
 
 ** KEY
-A *key* represents the trigger or activator for a *key
-chord*. It consists of zero or more *modifier*​s followed
-by either a single printable *UTF-8* character, or a
-*special key*. Certain characters have special meaning and
+A /key/ represents the trigger or activator for a /key
+chord/. It consists of zero or more /modifiers/ followed
+by either a single printable /UTF-8/ character, or a
+/special key/. Certain characters have special meaning and
 they cannot be used unless escaped.
 
 All of the following characters must be preceded by a
-backslash *\* to be interpreted as a *key*:
+backslash, *\*, to be interpreted as a /key/:
 
 #+begin_quote
-- *[* :: Begins a *chord array*.
-- *]* :: Ends a *chord array*.
-- *{* :: Begins a *prefix* block.
-- *}* :: Ends a *prefix* block.
+- *[* :: Begins a /chord array/.
+- *]* :: Ends a /chord array/.
+- *{* :: Begins a /prefix/ block.
+- *}* :: Ends a /prefix/ block.
 - *#* :: Begins a comment.
-- *"* :: Begins and ends a *description*.
-- *:* :: Begins a *keyword*.
+- *"* :: Begins and ends a /description/.
+- *:* :: Begins a /keyword/.
+- *(* :: Begins a /chord expression/.
+- *)* :: Ends a /chord expression/.
 #+end_quote
+
+While the above are required to be escaped to be interpreted
+as a /key/, it is not an error to escape any /UTF-8/
+character meant to be a /key/. The /UTF-8/ character need
+only be a printable character that is not a /special key/ as
+defined below.
 
 ** SPECIAL KEY
-A *special key* represents a non-printable key that can be used as a *key*.
+The /special keys/ cover (mostly) non-printable keys that can be used as a /key/.
 
-The following are valid *special key*​s:
+The following are valid /special key​s/:
 
 #+begin_quote
-_Left_,  _Right_,  _Up_,      _Down_,
-_TAB_,   _SPC_,    _RET_,     _DEL_,       _ESC_,
-_Home_,  _PgUp_,   _PgDown_,  _End_, and   _Begin_
+/Left/,  /Right/,  /Up/,      /Down/,
+/TAB/,   /SPC/,    /RET/,     /DEL/,       /ESC/,
+/Home/,  /PgUp/,   /PgDown/,  /End/, and   /Begin/
 #+end_quote
+
+*NOTE* that several of the /special keys/ are technically
+printable, and will be recognized as a regular /key/ if
+escaped with a backslash, */*. You escape a normal *space* for
+use in your /key chords/, but when you hit *space* it will
+be recognized as a /special key/ and will fail to match the
+*space* /key/ that you might expect. In short, use the
+special forms listed above to ensure the corresponding
+keypress events trigger the desired /key chord/.
 
 ** MODIFIER
-A *modifier* is a prefix that can be added before a
-*key* to modify its behavior. It consists of a single
-letter (*C*, *H*, *M*, or *S*) followed by a hyphen *-*.
-The modifiers represent the following:
+A /modifier/ is a prefix that can be added before any other
+/modifier/, /key/, or /special key/ to specify the matching
+keypress.  It consists of a single letter (*C*, *H*, *M*, or
+*S*) followed by a hyphen *-*.  The modifiers represent the
+following:
 
 #+begin_quote
-- *C-* :: _Control_ key
-- *H-* :: _Hyper_ key
-- *M-* :: _Meta_ key
-- *S-* :: _Shift_ key
+- *C-* :: /Control/ key
+- *H-* :: /Hyper/ key
+- *M-* :: /Meta/ key
+- *S-* :: /Shift/ key
 #+end_quote
 
-A *modifier* can precede another *modifier* before a *key*.
-/NOTE/ that a *modifier* can be given more than once
+*NOTE* that a /modifier/ can be given more than once
 according to the grammar, but there is no practical benefit
-to this. Additionally, the *S-* (_Shift_) *modifier* can be
-given before a printable character, but it will be ignored.
-It is only considered when it precedes a *special key*.
+to this. Additionally, the *S-* (/Shift/) /modifier/ can be
+given before /UTF-8/ /keys/, but it will be ignored. It is
+only considered when it precedes a /special key/.
 
 ** DESCRIPTION
-A *description* provides a human-readable explanation or
-label for a key chord. It is enclosed in double quotes *"*.
-If a double quote needs to be included within the
-*description*, it must be escaped with a backslash. An
-*interpolation* may be used with a *description* as well.
+A /description/ provides a human-readable explanation or
+label for a /key chord/. It is enclosed in double quotes,
+*"*. If a double quote needs to be included within the
+/description/, it must be escaped with a backslash.
+
+An /interpolation/ may be used with a /description/ as well.
 See *INTERPOLATION* below for a full explanation.
 
 ** COMMAND
-A *command* represents the action or functionality triggered
-by a *key chord*. It is enclosed in *%{{* and *}}* delimiters.
-The content within the delimiters can be any valid *command*
-just as you would supply it at the command-line. An
-*interpolation* may be used with a *command*. See
+A /command/ represents the action or functionality triggered
+by a /chord/. It is enclosed in *%{{* and *}}* delimiters.
+The content within the delimiters can be any valid shell
+/command/ just as you would supply it at the command-line.
+
+An /interpolation/ may be used with a /command/. See
 *INTERPOLATION* below for a full explanation.
 
-*NOTE* any *command* given to the _before_, or _sync-after_
-*hook*​s is blocking. Additionally, if the _sync-command_
-*flag* is given, the the current *chord*'s *command* becomes
-blocking. Depending on the *command*, *wk* may never regain
-control. This is a serious concern as *wk* only releases
-the keyboard after it has completed or encountered an
-error.  This could leave the user with an unresponsive
-keyboard until they restart their system. Think carefully
-before using a *command* in a blocking fashion, and if
-possible, use the non-blocking alternatives.
+*NOTE* any /command/ given to the /before/, or /sync-after/
+/hooks/ will be run in a blocking manner. Additionally, if
+the /sync-command/ /flag/ is given, the the current
+/chord/'s /command/ becomes blocking. Depending on the
+/command/, *wk* may never regain control. This is a serious
+concern as *wk* only releases the keyboard after it has
+completed or encountered an  error.  This could leave the
+user with an unresponsive keyboard until they restart their
+system. Think carefully before using a /command/ in a
+blocking fashion.
 
 ** INTERPOLATION
 An *interpolation* works the same way in *wks* as it does in
