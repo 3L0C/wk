@@ -14,14 +14,22 @@ typedef enum
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
 
-    /* keywords */
+    /* preprocessor directives */
     TOKEN_INCLUDE,
+
+    /* identifiers */
+    TOKEN_THIS_KEY,
     TOKEN_INDEX,
     TOKEN_INDEX_ONE,
-    TOKEN_THIS_KEY,
     TOKEN_THIS_DESC,
+
+    /* hooks */
     TOKEN_BEFORE,
     TOKEN_AFTER,
+    TOKEN_SYNC_BEFORE,
+    TOKEN_SYNC_AFTER,
+
+    /* flags */
     TOKEN_KEEP,
     TOKEN_CLOSE,
     TOKEN_INHERIT,
@@ -30,13 +38,13 @@ typedef enum
     TOKEN_NO_AFTER,
     TOKEN_WRITE,
     TOKEN_SYNC_CMD,
-    TOKEN_ASYNC_BEFORE,
-    TOKEN_SYNC_AFTER,
 
     /* literals */
     TOKEN_COMMAND,
-    TOKEN_COMM_INTERP,
     TOKEN_DESCRIPTION,
+
+    /* interpolations */
+    TOKEN_COMM_INTERP,
     TOKEN_DESC_INTERP,
 
     /* keys */
@@ -48,7 +56,7 @@ typedef enum
     TOKEN_MOD_HYPER,
     TOKEN_MOD_SHIFT,
 
-    /* specials */
+    /* special keys */
     TOKEN_SPECIAL_LEFT,
     TOKEN_SPECIAL_RIGHT,
     TOKEN_SPECIAL_UP,
@@ -89,7 +97,7 @@ typedef struct
 } Token;
 
 char advanceScanner(Scanner* scanner);
-Token identifier(Scanner* scanner);
+Token getKeyword(Scanner* scanner);
 void initScanner(Scanner* scanner, const char* source);
 bool isAtEnd(const Scanner* scanner);
 void makeScannerCurrent(Scanner* scanner);

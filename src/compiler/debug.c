@@ -58,7 +58,7 @@ disassembleToken(Token* token)
     case TOKEN_NO_AFTER:            type = "TOKEN_NO_AFTER";            break;
     case TOKEN_WRITE:               type = "TOKEN_WRITE";               break;
     case TOKEN_SYNC_CMD:            type = "TOKEN_SYNC_CMD";            break;
-    case TOKEN_ASYNC_BEFORE:        type = "TOKEN_ASYNC_BEFORE";        break;
+    case TOKEN_SYNC_BEFORE:         type = "TOKEN_SYNC_BEFORE";         break;
     case TOKEN_SYNC_AFTER:          type = "TOKEN_SYNC_AFTER";          break;
 
     /* literals */
@@ -183,7 +183,7 @@ printFlags(WkFlags* flags)
     if (flags->noafter) printf("NOAFTER%c", getDelim(&count, '|', '\n'));
     if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
     if (flags->syncCommand) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
-    if (flags->beforeAsync) printf("BEFORE_ASYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->beforeSync) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
     if (flags->afterSync) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
 }
 

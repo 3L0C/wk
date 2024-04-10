@@ -268,10 +268,10 @@ keywords(Compiler* compiler, Line* lineDest)
             consume(compiler, TOKEN_BEFORE, "Expected 'before' keyword.");
             command(compiler, &lineDest->before);
             break;
-        case TOKEN_ASYNC_BEFORE:
-            consume(compiler, TOKEN_ASYNC_BEFORE, "Expect 'async-before' keyword.");
+        case TOKEN_SYNC_BEFORE:
+            consume(compiler, TOKEN_SYNC_BEFORE, "Expect 'sync-before' keyword.");
             command(compiler, &lineDest->before);
-            compiler->line.flags.beforeAsync = true;
+            compiler->line.flags.beforeSync = true;
             break;
         case TOKEN_AFTER:
             consume(compiler, TOKEN_AFTER, "Expected 'after' keyword.");
@@ -294,7 +294,7 @@ keywords(Compiler* compiler, Line* lineDest)
         /* consume keyword */
         if (type != TOKEN_BEFORE &&
             type != TOKEN_AFTER  &&
-            type != TOKEN_ASYNC_BEFORE &&
+            type != TOKEN_SYNC_BEFORE &&
             type != TOKEN_SYNC_AFTER)
         {
             advanceCompiler(compiler);
@@ -403,7 +403,7 @@ setFlags(WkFlags* parent, WkFlags* child)
     if (parent->keep && !child->close) child->keep = parent->keep;
     if (parent->write) child->write = parent->write;
     if (parent->syncCommand) child->syncCommand = parent->syncCommand;
-    if (parent->beforeAsync) child->beforeAsync = parent->beforeAsync;
+    if (parent->beforeSync) child->beforeSync = parent->beforeSync;
     if (parent->afterSync) child->afterSync = parent->afterSync;
 }
 

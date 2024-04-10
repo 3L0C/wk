@@ -37,7 +37,7 @@
 #define MAKE_FLAGS(                     \
     _keep, _close, _inherit, _unhook,   \
     _nobefore, _noafter, _write,        \
-    _syncCommand, _beforeAsync,         \
+    _syncCommand, _beforeSync,         \
     _afterSync                          \
 )                                       \
     (WkFlags){                          \
@@ -49,7 +49,7 @@
         .noafter = (_noafter),          \
         .write = (_write),              \
         .syncCommand = (_syncCommand),  \
-        .beforeAsync = (_beforeAsync),  \
+        .beforeSync = (_beforeSync),  \
         .afterSync = (_afterSync),      \
     }
 #define RESET_FLAGS(flags)              \
@@ -61,7 +61,7 @@
      (flags).noafter = false,           \
      (flags).write = false,             \
      (flags).syncCommand = false,       \
-     (flags).beforeAsync = false,       \
+     (flags).beforeSync = false,       \
      (flags).afterSync = false)
 #define HAS_FLAG(flags)                 \
     ((flags).keep        ||             \
@@ -72,7 +72,7 @@
      (flags).noafter     ||             \
      (flags).write       ||             \
      (flags).syncCommand ||             \
-     (flags).beforeAsync ||             \
+     (flags).beforeSync ||             \
      (flags).afterSync)
 #define COUNT_FLAGS(flags)              \
     (((flags).keep)        +            \
@@ -83,7 +83,7 @@
      ((flags).noafter)     +            \
      ((flags).write)       +            \
      ((flags).syncCommand) +            \
-     ((flags).beforeAsync) +            \
+     ((flags).beforeSync) +            \
      ((flags).afterSync))
 #define COPY_FLAGS(from, to)                    \
     do                                          \
@@ -96,7 +96,7 @@
         (to).noafter = (from).noafter;          \
         (to).write = (from).write;              \
         (to).syncCommand = (from).syncCommand;  \
-        (to).beforeAsync = (from).beforeAsync;  \
+        (to).beforeSync = (from).beforeSync;  \
         (to).afterSync = (from).afterSync;      \
     } while (false)
 
@@ -164,7 +164,7 @@ typedef struct
     bool noafter:1;
     bool write:1;
     bool syncCommand:1;
-    bool beforeAsync:1;
+    bool beforeSync:1;
     bool afterSync:1;
 } WkFlags;
 

@@ -239,16 +239,6 @@ static void
 compileFlags(WkFlags* from, WkFlags* to)
 {
     COPY_FLAGS(*from, *to);
-    /* a->keep = b->keep; */
-    /* a->close = b->close; */
-    /* a->inherit = b->inherit; */
-    /* a->unhook = b->unhook; */
-    /* a->nobefore = b->nobefore; */
-    /* a->noafter = b->noafter; */
-    /* a->write = b->write; */
-    /* a->syncCommand = b->syncCommand; */
-    /* a->beforeAsync = b->beforeAsync; */
-    /* a->afterSync = b->afterSync; */
 }
 
 static void

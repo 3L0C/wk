@@ -166,12 +166,12 @@ debugFlags(const WkFlags* flags, unsigned int indent)
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
     if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
     if (flags->unhook) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
-    if (flags->nobefore) printf("NOBEFORE%c", getDelim(&count, '|', '\n'));
-    if (flags->noafter) printf("NOAFTER%c", getDelim(&count, '|', '\n'));
+    if (flags->nobefore) printf("NO_BEFORE%c", getDelim(&count, '|', '\n'));
+    if (flags->noafter) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
     if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
-    if (flags->syncCommand) printf("SYNCCOMMAND%c", getDelim(&count, '|', '\n'));
-    if (flags->beforeAsync) printf("BEFOREASYNC%c", getDelim(&count, '|', '\n'));
-    if (flags->afterSync) printf("AFTERSYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->syncCommand) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
+    if (flags->beforeSync) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->afterSync) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
 }
 
 void

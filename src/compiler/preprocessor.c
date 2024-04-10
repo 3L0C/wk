@@ -40,7 +40,7 @@ isValidInclude(Scanner* scanner, const char** includeStart, const char** include
 
     /* Get the type of identifier, may be a typical hook or flag. */
     makeScannerCurrent(scanner);
-    Token token = identifier(scanner);
+    Token token = getKeyword(scanner);
     if (token.type != TOKEN_INCLUDE) return false;
 
     /* Get the first '"' after the `include` */

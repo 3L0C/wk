@@ -104,7 +104,7 @@ handleCommand(WkMenu* props, const WkKeyChord* keyChord)
         printf("%s\n", keyChord->command);
         return;
     }
-    spawn(props, keyChord->command, !keyChord->flags.syncCommand);
+    spawn(props, keyChord->command, keyChord->flags.syncCommand);
 }
 
 static WkStatus
@@ -113,9 +113,9 @@ handleCommands(WkMenu* props, const WkKeyChord* keyChord)
     /* no command */
     if (!keyChord->command) return WK_STATUS_EXIT_OK;
 
-    if (keyChord->before) spawn(props, keyChord->before, keyChord->flags.beforeAsync);
+    if (keyChord->before) spawn(props, keyChord->before, keyChord->flags.beforeSync);
     handleCommand(props, keyChord);
-    if (keyChord->after) spawn(props, keyChord->after, !keyChord->flags.afterSync);
+    if (keyChord->after) spawn(props, keyChord->after, keyChord->flags.afterSync);
     return keyChord->flags.keep ? WK_STATUS_RUNNING : WK_STATUS_EXIT_OK;
 }
 
@@ -213,7 +213,7 @@ spawnAsync(const char* shell, const char* cmd)
 }
 
 WkStatus
-spawn(WkMenu* menu, const char* cmd, bool async)
+spawn(WkMenu* menu, const char* cmd, bool sync)
 {
     assert(menu && cmd);
 
@@ -229,18 +229,18 @@ spawn(WkMenu* menu, const char* cmd, bool async)
     if (child == 0)
     {
         if (menu->xp && menu->cleanupfp) menu->cleanupfp(menu->xp);
-        if (async)
+        if (sync)
         {
-            spawnAsync(menu->shell, cmd);
+            spawnSync(menu->shell, cmd);
         }
         else
         {
-            spawnSync(menu->shell, cmd);
+            spawnAsync(menu->shell, cmd);
         }
         exit(EX_OK);
     }
 
-    if (!async)
+    if (sync)
     {
         int status;
         if (waitpid(child, &status, 0) == -1)

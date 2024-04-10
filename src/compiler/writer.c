@@ -204,7 +204,7 @@ writeChordFlags(WkFlags* flags)
         (flags->noafter ? "true" : "false"),
         (flags->write ? "true" : "false"),
         (flags->syncCommand ? "true" : "false"),
-        (flags->beforeAsync ? "true" : "false"),
+        (flags->beforeSync ? "true" : "false"),
         (flags->afterSync ? "true" : "false")
     );
 }
