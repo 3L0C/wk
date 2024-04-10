@@ -236,9 +236,9 @@ compileHintString(WkMods* mods, const char* key, const char* description)
 }
 
 static void
-compileFlags(WkFlags* a, WkFlags* b)
+compileFlags(WkFlags* from, WkFlags* to)
 {
-    COPY_FLAGS(*a, *b);
+    COPY_FLAGS(*from, *to);
     /* a->keep = b->keep; */
     /* a->close = b->close; */
     /* a->inherit = b->inherit; */
@@ -262,7 +262,7 @@ compileLine(WkKeyChord* keyChord, Line* line)
     keyChord->command = compileStringFromTokens(&line->command, line);
     keyChord->before = compileStringFromTokens(&line->before, line);
     keyChord->after = compileStringFromTokens(&line->after, line);
-    compileFlags(&keyChord->flags, &line->flags);
+    compileFlags(&line->flags, &keyChord->flags);
 
     /* prefix */
     if (line->array.count)
@@ -283,7 +283,7 @@ compileLine(WkKeyChord* keyChord, Line* line)
 }
 
 static void
-compileNullChord(WkKeyChord* keyChord)
+compileNullKeyChord(WkKeyChord* keyChord)
 {
     RESET_MODS(keyChord->mods);
     keyChord->special = WK_SPECIAL_NONE;
@@ -304,11 +304,11 @@ compileLines(WkKeyChord* keyChords, LineArray* lines)
     {
         compileLine(&keyChords[i], &lines->lines[i]);
     }
-    compileNullChord(&keyChords[count]);
+    compileNullKeyChord(&keyChords[count]);
 }
 
 bool
-compileChords(Compiler* compiler, WkMenu* menu)
+compileKeyChords(Compiler* compiler, WkMenu* menu)
 {
     assert(compiler && menu);
 

@@ -113,7 +113,7 @@ runScript(void)
     }
 
     /* Compile lines, fail if there is nothing to compile. */
-    if (!compileChords(&compiler, &mainMenu))
+    if (!compileKeyChords(&compiler, &mainMenu))
     {
         errorMsg("Could not compile script.");
         result = EX_DATAERR;
@@ -188,7 +188,7 @@ runChordsFile(void)
     }
 
     /* Compile lines, fail if there is nothing to compile. */
-    if (!compileChords(&compiler, &mainMenu))
+    if (!compileKeyChords(&compiler, &mainMenu))
     {
         result = EX_DATAERR;
         goto fail;

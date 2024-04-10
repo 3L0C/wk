@@ -48,7 +48,7 @@ usage(void)
         "    -m, --max-columns INT      Set maximum columns to INT.\n"
         "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
         "    -T, --transpile FILE       Transpile FILE to valid 'chords.h' syntax and print to stdout.\n"
-        "    -c, --chords FILE          Use FILE for key chords rather than those in 'chords.h'.\n"
+        "    -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.\n"
         "    -w, --width INT            Set window width to INT.\n"
         "    -g, --gap INT              Set window gap between top/bottom of screen to INT.\n"
         "                               Set to '-1' for a gap 1/10th the size of your screen height.\n"
@@ -109,7 +109,7 @@ parseArgs(WkMenu* menu, int* argc, char*** argv)
         { "max-columns",    required_argument,  0, 'm' },
         { "press",          required_argument,  0, 'p' },
         { "transpile",      required_argument,  0, 'T' },
-        { "chords",         required_argument,  0, 'c' },
+        { "key-chords",     required_argument,  0, 'k' },
         { "width",          required_argument,  0, 'w' },
         { "gap",            required_argument,  0, 'g' },
         { "border-width",   required_argument,  0, 0x090 },
@@ -157,7 +157,7 @@ parseArgs(WkMenu* menu, int* argc, char*** argv)
         }
         case 'p': menu->client.keys = optarg; break;
         case 'T': menu->client.transpile = optarg; break;
-        case 'c': menu->client.keyChordsFile = optarg; break;
+        case 'k': menu->client.keyChordsFile = optarg; break;
         case 'w':
         {
             int n = 0;

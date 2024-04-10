@@ -22,7 +22,7 @@ typedef struct
     LineArray   lines;
 } Compiler;
 
-bool compileChords(Compiler* compiler, WkMenu* menu);
+bool compileKeyChords(Compiler* compiler, WkMenu* menu);
 void initCompiler(Compiler* compiler, const char* source);
 
 #endif /* WK_COMPILER_COMPILE_H_ */

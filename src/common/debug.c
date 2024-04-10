@@ -292,7 +292,7 @@ void
 debugMenu(const WkMenu* menu)
 {
     printDebug(0);
-    printf("---------------- Properties ----------------\n");
+    printf("------------------- Menu -------------------\n");
     debugString("Delimiter:", menu->delimiter, 0);
     debugSize_t("Max cols:", menu->maxCols, 0);
     debugInt("Window width:", menu->windowWidth, 0);

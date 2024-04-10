@@ -5,6 +5,7 @@
 #include <string.h>
 
 /* common includes */
+#include "common/debug.h"
 #include "common/types.h"
 
 /* local includes */
@@ -344,14 +345,14 @@ chordArray(Compiler* compiler)
     LineArray lines = {0};
     initLineArray(&lines);
     while (!checkCompiler(compiler, TOKEN_EOF) &&
-            !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
+           !checkCompiler(compiler, TOKEN_RIGHT_BRACKET))
     {
         if (!isKey(compiler) &&
             !isMod(currentType(compiler)) &&
             !checkCompiler(compiler, TOKEN_LEFT_PAREN))
         {
             errorAtCurrent(compiler, "Chord arrays may only contain modifiers, keys, and key pairs.");
-            return;
+            goto end;
         }
 
         Line line = {0};
@@ -389,6 +390,7 @@ chordArray(Compiler* compiler)
         writeLineArray(compiler->lineDest, line);
     }
 
+end:
     freeLine(&compiler->line);
     freeLineArray(&lines);
 }
@@ -544,7 +546,11 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
         keyChord(compiler);
     }
 
-    if (debug) debugLineArray(&compiler->lines);
+    if (debug)
+    {
+        debugMsg(debug, "Completed transpile. Debuging line array.");
+        debugLineArray(&compiler->lines);
+    }
 
     return !compiler->hadError;
 }
