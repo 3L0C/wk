@@ -5,7 +5,6 @@
 #include <string.h>
 
 /* common includes */
-/* #include "lib/memory.h" */
 #include "common/types.h"
 
 /* local includes */
@@ -51,12 +50,6 @@ errorAt(Compiler* compiler, Token* token, const char* message)
     compiler->hadError = true;
 }
 
-/* static void */
-/* error(Compiler* compiler, const char* message) */
-/* { */
-/*     errorAt(compiler, &compiler->previous, message); */
-/* } */
-
 static void
 errorAtCurrent(Compiler* compiler, const char* message)
 {
@@ -91,7 +84,7 @@ consume(Compiler* compiler, TokenType type, const char* message)
 }
 
 static bool
-check(Compiler* compiler, TokenType type)
+checkCompiler(Compiler* compiler, TokenType type)
 {
     return compiler->current.type == type;
 }
@@ -99,7 +92,7 @@ check(Compiler* compiler, TokenType type)
 static bool
 matchCompiler(Compiler* compiler, TokenType type)
 {
-    if (!check(compiler, type)) return false;
+    if (!checkCompiler(compiler, type)) return false;
     advanceCompiler(compiler);
     return true;
 }
@@ -196,13 +189,13 @@ static void
 description(Compiler* compiler, TokenArray* dest)
 {
     if (compiler->panicMode) return;
-    if (!check(compiler, TOKEN_DESC_INTERP) &&
-        !check(compiler, TOKEN_DESCRIPTION))
+    if (!checkCompiler(compiler, TOKEN_DESC_INTERP) &&
+        !checkCompiler(compiler, TOKEN_DESCRIPTION))
     {
         errorAtCurrent(compiler, "Expected description.");
         return;
     }
-    while (!check(compiler, TOKEN_EOF))
+    while (!checkCompiler(compiler, TOKEN_EOF))
     {
         switch (currentType(compiler))
         {
@@ -218,7 +211,7 @@ description(Compiler* compiler, TokenArray* dest)
         }
         default: errorAtCurrent(compiler, "Malformed description."); return;
         }
-        if (check(compiler, TOKEN_DESCRIPTION)) break;
+        if (checkCompiler(compiler, TOKEN_DESCRIPTION)) break;
         advanceCompiler(compiler);
     }
     consume(compiler, TOKEN_DESCRIPTION, "Expected description.");
@@ -230,15 +223,15 @@ command(Compiler* compiler, TokenArray* dest)
     if (compiler->panicMode) return;
 
     /* no longer in a chord expression but not an error */
-    if (check(compiler, TOKEN_RIGHT_PAREN)) return;
+    if (checkCompiler(compiler, TOKEN_RIGHT_PAREN)) return;
 
-    if (!check(compiler, TOKEN_COMM_INTERP) &&
-        !check(compiler, TOKEN_COMMAND))
+    if (!checkCompiler(compiler, TOKEN_COMM_INTERP) &&
+        !checkCompiler(compiler, TOKEN_COMMAND))
     {
         errorAtCurrent(compiler, "Expected command.");
         return;
     }
-    while (!check(compiler, TOKEN_EOF))
+    while (!checkCompiler(compiler, TOKEN_EOF))
     {
         switch (currentType(compiler))
         {
@@ -255,7 +248,7 @@ command(Compiler* compiler, TokenArray* dest)
         }
         default: errorAtCurrent(compiler, "Malformed command."); return;
         }
-        if (check(compiler, TOKEN_COMMAND)) break;
+        if (checkCompiler(compiler, TOKEN_COMMAND)) break;
         advanceCompiler(compiler);
     }
     consume(compiler, TOKEN_COMMAND, "Expected command.");
@@ -265,7 +258,7 @@ static void
 keywords(Compiler* compiler, Line* lineDest)
 {
     if (compiler->panicMode) return;
-    while (!check(compiler, TOKEN_EOF))
+    while (!checkCompiler(compiler, TOKEN_EOF))
     {
         TokenType type = currentType(compiler);
         switch (type)
@@ -320,51 +313,29 @@ chord(Compiler* compiler)
     keywords(compiler, &compiler->line);
 
     /* check for prefix */
-    if (check(compiler, TOKEN_LEFT_BRACE)) return;
+    if (checkCompiler(compiler, TOKEN_LEFT_BRACE)) return;
 
     command(compiler, &compiler->line.command);
 
+    /* check for brace after command */
+    if (checkCompiler(compiler, TOKEN_LEFT_BRACE))
+    {
+        errorAtCurrent(compiler, "Expected end of Key Chord but got '{'.");
+        goto end;
+    };
+
     writeLineArray(compiler->lineDest, &compiler->line);
+
+end:
     freeLine(&compiler->line);
 }
-
-/* static void */
-/* getKeys(Compiler* compiler, TokenArray* keys) */
-/* { */
-/*     if (!isKey(compiler) && !isMod(currentType(compiler))) */
-/*     { */
-/*         errorAtCurrent(compiler, "Expect key or modifier after '['"); */
-/*         return; */
-/*     } */
-/*     while (isKey(compiler) || isMod(currentType(compiler))) */
-/*     { */
-/*         Token token = currentToken(compiler); */
-/*         writeTokenArray(keys, &token); */
-/*         advanceCompiler(compiler); */
-/*     } */
-/* } */
-
-/* static bool */
-/* isCommand(Compiler* compiler) */
-/* { */
-/*     switch (currentType(compiler)) */
-/*     { */
-/*     case TOKEN_COMM_INTERP: /\* FALLTHROUGH *\/ */
-/*     case TOKEN_COMMAND: */
-/*     case TOKEN_THIS_KEY: */
-/*     case TOKEN_THIS_DESC: */
-/*     case TOKEN_INDEX: */
-/*     case TOKEN_INDEX_ONE: return true; */
-/*     default: return false; */
-/*     } */
-/* } */
 
 static void
 chordArray(Compiler* compiler)
 {
     if (!isKey(compiler) &&
         !isMod(currentType(compiler)) &&
-        !check(compiler, TOKEN_LEFT_PAREN))
+        !checkCompiler(compiler, TOKEN_LEFT_PAREN))
     {
         errorAtCurrent(compiler, "Expect key or modifier after '['.");
         return;
@@ -372,12 +343,12 @@ chordArray(Compiler* compiler)
 
     LineArray lines = {0};
     initLineArray(&lines);
-    while (currentType(compiler) != TOKEN_RIGHT_BRACKET &&
-           currentType(compiler) != TOKEN_EOF)
+    while (!checkCompiler(compiler, TOKEN_EOF) &&
+            !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
     {
         if (!isKey(compiler) &&
             !isMod(currentType(compiler)) &&
-            !check(compiler, TOKEN_LEFT_PAREN))
+            !checkCompiler(compiler, TOKEN_LEFT_PAREN))
         {
             errorAtCurrent(compiler, "Chord arrays may only contain modifiers, keys, and key pairs.");
             return;
@@ -420,38 +391,6 @@ chordArray(Compiler* compiler)
 
     freeLine(&compiler->line);
     freeLineArray(&lines);
-
-    /* TokenArray keys; */
-    /* initTokenArray(&keys); */
-    /* getKeys(compiler, &keys); */
-    /* consume(compiler, TOKEN_RIGHT_BRACKET, "Expect ']' after key list."); */
-    /* description(compiler, &compiler->line.description); */
-    /* keywords(compiler, &compiler->line); */
-    /* if (!isCommand(compiler)) */
-    /* { */
-    /*     error(compiler, "Expect command."); */
-    /*     return; */
-    /* } */
-    /* command(compiler, &compiler->line.command); */
-    /* size_t mods = 0; */
-    /* for (size_t i = 0; i < keys.count; i++) */
-    /* { */
-    /*     Line line; */
-    /*     initLine(&line); */
-    /*     copyLine(&compiler->line, &line); */
-    /*     line.index = i - mods; */
-    /*     while (isMod(keys.tokens[i].type) && i < keys.count) */
-    /*     { */
-    /*         addMod(keys.tokens[i].type, &line.mods); */
-    /*         i++; */
-    /*         mods++; */
-    /*     } */
-    /*     line.key = keys.tokens[i]; */
-    /*     writeLineArray(compiler->lineDest, &line); */
-    /*     freeLine(&line); */
-    /* } */
-    /* freeLine(&compiler->line); */
-    /* FREE_ARRAY(TokenArray, keys.tokens, keys.capacity); */
 }
 
 static void
@@ -537,7 +476,7 @@ prefix(Compiler* compiler)
     initLine(&compiler->line);
 
     /* scan chords/prefixes */
-    while (!check(compiler, TOKEN_EOF) && !check(compiler, TOKEN_RIGHT_BRACE))
+    while (!checkCompiler(compiler, TOKEN_EOF) && !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
     {
         keyChord(compiler);
     }
@@ -554,13 +493,21 @@ synchronize(Compiler* compiler)
 {
     compiler->panicMode = false;
 
-    while (currentType(compiler) != TOKEN_EOF)
+    while (!checkCompiler(compiler, TOKEN_EOF))
     {
         switch (currentType(compiler))
         {
         case TOKEN_LEFT_BRACKET: /* FALLTHROUGH */
-        case TOKEN_LEFT_BRACE:
         case TOKEN_KEY: return;
+        case TOKEN_LEFT_BRACE:
+        {
+            while (!checkCompiler(compiler, TOKEN_EOF) &&
+                   !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
+            {
+                advanceCompiler(compiler);
+            }
+            break;
+        }
         default: break;
         }
         advanceCompiler(compiler);
@@ -572,7 +519,7 @@ keyChord(Compiler* compiler)
 {
     if (matchCompiler(compiler, TOKEN_LEFT_BRACKET))
     {
-        chordArray(compiler); /* [abcd] 'desc' ${{echo %(key)}} */
+        chordArray(compiler); /* [abcd] 'desc' %{{echo %(key)}} */
     }
     else if (matchCompiler(compiler, TOKEN_LEFT_BRACE))
     {

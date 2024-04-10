@@ -24,6 +24,8 @@ writeChordsHeader(void)
         "#ifndef WK_CONFIG_KEY_CHORDS_H_\n"
         "#define WK_CONFIG_KEY_CHORDS_H_\n"
         "\n"
+        "#include <stddef.h>\n"
+        "\n"
         "#include \"src/common/types.h\"\n"
         "\n"
         "/* mods, specials,\n"

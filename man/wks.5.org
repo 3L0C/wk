@@ -1,6 +1,5 @@
-#+title: WKS(5) WKS Configuration Manual
+#+title: WKS(5)
 #+author: 3L0C
-#+date: April 3, 2024
 
 * NAME
 wks - source file for *wk*​(1)
@@ -15,101 +14,108 @@ expectation. If anything is not behaving as you expect,
 please see *CONTACT* below to reach out.
 
 #+begin_example
-key_chord     -> prefix
-               | chord
-               | chord_array ;
+key_chord        -> prefix
+                  | chord
+                  | chord_array ;
 
-prefix        -> key description keyword* '{' ( key_chord )* '}' ;
+prefix           -> key description keyword* '{' ( key_chord )* '}' ;
 
-chord         -> key description keyword* command ;
+chord            -> key description keyword* command ;
 
-chord_array   -> '[' ( key | chord_expr )+ ']' description keyword* command ;
+chord_array      -> '[' ( key | chord_expression )+ ']' description keyword* command ;
 
-chord_expr    -> '(' chord ')' ;
+chord_expression -> '(' chord ')' ;
 
-key           -> modifier* ( '\\'[\\\[\]{}#":()]
-                           | [^\s\[\]{}#":()]
-                           | special_key ) ;
+key              -> modifier* ( '\\'[\\\[\]{}#":()]
+                              | [^\s\[\]{}#":()]
+                              | special_key ) ;
 
-special_key   -> ( 'Left' |  'Right'   |  'Up'        |  'Down'
-                 | 'TAB'  |  'SPC'     |  'RET'       |  'DEL' |  'ESC'
-                 | 'Home' |  'PgUp'    |  'PgDown'    |  'End' |  'Begin' ) ;
+special_key      -> ( 'Left' | 'Right' | 'Up'     | 'Down'
+                    | 'TAB'  | 'SPC'   | 'RET'    | 'DEL'  | 'ESC'
+                    | 'Home' | 'PgUp'  | 'PgDown' | 'End'  | 'Begin' ) ;
 
-modifier      -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+modifier         -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
 
-description   -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+description      -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
 
-command       -> '%{{' ( . | interpolation )* '}}' ;
+command          -> '%{{' ( . | interpolation )* '}}' ;
 
-interpolation -> '%(' identifier ')' ;
+interpolation    -> '%(' identifier ')' ;
 
-identifier    -> ( 'key'
-                 | 'index'
-                 | 'index+1'
-                 | 'desc'
-                 | 'description' ) ;
+identifier       -> ( 'key'
+                    | 'index'
+                    | 'index+1'
+                    | 'desc'
+                    | 'description' ) ;
 
-keyword       -> ':' ( hook | flag ) ;
+keyword          -> ':' ( hook | flag ) ;
 
-hook          -> ( 'before'
-                 | 'after'
-                 | 'async-before'
-                 | 'sync-after' ) command ;
+hook             -> ( 'before'
+                    | 'after'
+                    | 'async-before'
+                    | 'sync-after' ) command ;
 
-flag          -> ( 'keep'
-                 | 'close'
-                 | 'inherit'
-                 | 'unhook'
-                 | 'no-before'
-                 | 'no-after'
-                 | 'write'
-                 | 'sync-command' ) ;
+flag             -> ( 'keep'
+                    | 'close'
+                    | 'inherit'
+                    | 'unhook'
+                    | 'no-before'
+                    | 'no-after'
+                    | 'write'
+                    | 'sync-command' ) ;
 #+end_example
 
 ** KEY CHORD
-A *key chord* is the top-level construct in the grammar
+A /key chord/ is the top-level construct in the grammar
 and represents a complete key chord definition. It can be
-either a *prefix*, a *chord*, or a *chord array*.
+either a /prefix/, a /chord/, or a /chord array/.
 
 ** PREFIX
-A *prefix* is a type of *key chord* that acts as a container
-for other key chords. It consists of a *key*, a
-*description*, zero or more *keyword*​s, and a block of *key
-chord*​s enclosed in curly braces *{}*. The *key* triggers
-the *prefix*, and the inner *key chords* become accessible
-once the *prefix* is activated.
+A /prefix/ is a type of /key chord/ that acts as a container
+for other key chords. It consists of a /key/, a
+/description/, zero or more /keywords/, and a block of /key
+chords/ enclosed in curly braces *{}*. The /key/ triggers
+the /prefix/, and the inner /key chords/ become accessible
+once the /prefix/ is activated.
 
 ** CHORD
-A *chord* is a basic *key chord* that represents a single
-action or *command*. It consists of a *key*, a
-*description*, zero or more *keyword*​s, and a *command*.
-When the specified *key* is triggered, the associated
-*command* is executed.
+A /chord/ is a basic /key chord/ that represents a single
+action or /command/. It consists of a /key/, a
+/description/, zero or more /keywords/, and a /command/.
+When the specified /key/ is triggered, the associated
+/command/ is executed.
 
 ** CHORD ARRAY
-A *chord array* is a compact way to define multiple key
+A /chord array/ is a compact way to define multiple key
 chords with similar properties. It starts with an opening
-square bracket *[*, followed by one or more *key*​s or
-*key pair*​s, and ends with a closing square bracket *]*.
-After the closing bracket, it includes a *description*,
-zero or more *keyword*​s, and a *command*. Each *key*
-within the *chord array* represents a separate *chord*
-that shares the same *description*, *keyword*​s, and
-*command*. A *chord array* will not produce a *prefix*
+square bracket *[*, followed by one or more /keys/ or
+/chord expressions/, and ends with a closing square bracket *]*.
+After the closing bracket, it includes a /description/,
+zero or more /keywords/, and a /command/. Each /key/
+within the /chord array/ represents a separate /chord/
+that shares the same /description/, /keywords/, and
+/command/. A /chord array/ will not produce a /prefix/
 array. During parsing, an error will be thrown if no command
-is supplied, just the same as a *chord*.
+is supplied, just the same as a /chord/.
 
-See *KEY PAIR* below for a description of the behavior of
-*key pair*​s within a *chord array*.
+See *CHORD EXPRESSION* below for a description of the behavior of
+/chord expressions/ within a /chord array/.
 
-** KEY PAIR
-A *key pair* is a construct that is only valid within a
-*chord array*. It is used to associate a *key* with a
-specific *description*. It consists of a *key* and a
-*description* enclosed in parentheses *()*. The *key pair*
-allows for individual key chords within a *chord array* to
-have a different *description* while sharing the same
-*keyword*​s and *command*.
+** CHORD EXPRESSION
+A /chord expression/ is a construct that is only valid
+within a /chord array/. The /chord expression/ begins with
+an opening parentheses *(* followed by a /key/ and
+/description/. After the /description/, /hooks/, /flags/,
+and a /command/ may be given just as one would expect in a
+standard /chord/. However, the /chord expression/ does not
+require anything more than the /key/ and /description/. This
+means it is possible to give a /key/, /description/, and a
+/flag/ but no /hooks/ or /command/ and vice versa. That is
+because anything missing from the /chord expression/ will be
+filled in by the surrounding /chord array/. In any case, the
+/chord expression/ must be terminated by a closing
+parentheses, *)*, to be valid. See *EXAMPLES* below to see
+how a /chord expression/ might be handy.
 
 ** KEY
 A *key* represents the trigger or activator for a *key

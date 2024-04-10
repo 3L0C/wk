@@ -1,6 +1,5 @@
-#+title: WK(1) WK User Manual
+#+title: WK(1)
 #+author: 3L0C
-#+date: April 3, 2024
 
 * NAME
 

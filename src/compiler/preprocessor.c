@@ -21,7 +21,7 @@ isValidInclude(Scanner* scanner, const char** includeStart, const char** include
     assert(scanner && includeStart);
 
     /* `:include`s may only come at the start of a file, or after a new line. */
-    if (scanner->head != scanner->current && advanceScanner(scanner) != '\n') return false;
+    /* if (scanner->head != scanner->current && advanceScanner(scanner) != '\n') return false; */
 
     /* Skip any comments or whitespace or such as
      * there may be space between the new line and the

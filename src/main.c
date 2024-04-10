@@ -63,6 +63,7 @@ transpile(void)
     /* File is mallformed, fail. */
     if (!transpileChords(&compiler, mainMenu.delimiter, mainMenu.debug))
     {
+        errorMsg("Mallformed `wks` file. Use `man 5 wks` to learn about proper syntax.");
         result = EX_DATAERR;
         goto fail;
     }
