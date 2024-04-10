@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 /* common includes */
+#include "common/common.h"
 #include "common/util.h"
 
 /* local includes */
@@ -166,7 +167,7 @@ seekToCharType(Scanner* scanner, CharType charType)
     }
     case CHAR_TYPE_INTERP_END:
     {
-        while (!isAtEnd(scanner) && !matchScanner(scanner, ')')) advanceScanner(scanner);
+        while (!isAtEnd(scanner) && peek(scanner) != ')') advanceScanner(scanner);
         break;
     }
     default: return CHAR_TYPE_STATUS_ERROR;
@@ -178,9 +179,6 @@ static Token
 getHook(Scanner* scanner)
 {
     assert(scanner);
-
-    /* Consume the '^' */
-    makeScannerCurrent(scanner);
 
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_WHITESPACE) == CHAR_TYPE_STATUS_ERROR)
@@ -213,9 +211,6 @@ getFlag(Scanner* scanner)
 {
     assert(scanner);
 
-    /* Consume the '+' */
-    makeScannerCurrent(scanner);
-
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_WHITESPACE) == CHAR_TYPE_STATUS_ERROR)
     {
@@ -246,7 +241,7 @@ getFlag(Scanner* scanner)
     return makeToken(scanner, result);
 }
 
-static Token
+Token
 getPreprocessorCommand(Scanner* scanner)
 {
     assert(scanner);
@@ -268,14 +263,6 @@ getPreprocessorCommand(Scanner* scanner)
 
     if (result == TOKEN_ERROR) return errorToken(scanner, "Got unexpected preprocessor command.");
     return makeToken(scanner, result);
-}
-
-Token
-getKeyword(Scanner* scanner)
-{
-    if (matchScanner(scanner, '^')) return getHook(scanner);
-    if (matchScanner(scanner, '+')) return getFlag(scanner);
-    return getPreprocessorCommand(scanner);
 }
 
 static Token
@@ -456,9 +443,6 @@ checkInterpolation(Scanner* scanner)
 {
     assert(scanner);
 
-    /* Consume the '+' */
-    makeScannerCurrent(scanner);
-
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_INTERP_END) == CHAR_TYPE_STATUS_ERROR)
     {
@@ -485,11 +469,11 @@ checkInterpolation(Scanner* scanner)
             {
                 return errorToken(scanner, "Cannot interpolate description within a description.");
             }
-            result = TOKEN_UNHOOK;
+            result = TOKEN_THIS_DESC;
         }
         break;
     }
-    default: break;
+    default: errorMsg("Unexpected inrepolation start: '%c'.", *scanner->start); break;
     }
 
     if (result == TOKEN_ERROR) return errorToken(scanner, "Got unexpected interpolation identifier.");
@@ -549,8 +533,10 @@ scanToken(Scanner* scanner)
     case '(': return makeToken(scanner, TOKEN_LEFT_PAREN);
     case ')': return makeToken(scanner, TOKEN_RIGHT_PAREN);
 
-    /* keyword can be on a preprocessors command, hook, or flag */
-    case ':': makeScannerCurrent(scanner); return getKeyword(scanner);
+    /* Hooks, flags, and preprocessor commands */
+    case '^': makeScannerCurrent(scanner); return getHook(scanner);
+    case '+': makeScannerCurrent(scanner); return getFlag(scanner);
+    case ':': makeScannerCurrent(scanner); return getPreprocessorCommand(scanner);
 
     /* literals */
     case '\"':

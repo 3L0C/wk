@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,18 +37,19 @@ errorAt(Compiler* compiler, Token* token, const char* message)
 
     if (token->type == TOKEN_EOF)
     {
-        fprintf(stderr, " at end");
+        fprintf(stderr, " at end: ");
     }
     else if (token->type == TOKEN_ERROR)
     {
-        fprintf(stderr, " at line %04zu", token->line);
+        fprintf(stderr, " at line %04zu: ", token->line);
+        fprintf(stderr, "'%.*s'\n\t", (int)token->length, token->start);
     }
     else
     {
-        fprintf(stderr, " at '%.*s'", (int)token->length, token->start);
+        fprintf(stderr, " at '%.*s': ", (int)token->length, token->start);
     }
 
-    fprintf(stderr, ": %s\n", message);
+    fprintf(stderr, "%s\n", message);
     compiler->hadError = true;
 }
 
@@ -469,6 +471,8 @@ prefix(Compiler* compiler)
     /* backup information */
     LineArray* parent = compiler->linePrefix;
     LineArray* dest = compiler->lineDest;
+    uint32_t outerIndex = compiler->index;
+    compiler->index = 0;
 
     /* advance line */
     compiler->linePrefix = compiler->lineDest;
@@ -488,6 +492,7 @@ prefix(Compiler* compiler)
     setHooksAndFlags(getLastLine(compiler->linePrefix), compiler->lineDest);
     compiler->linePrefix = parent;
     compiler->lineDest = dest;
+    compiler->index = outerIndex;
 }
 
 static void

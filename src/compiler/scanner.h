@@ -97,7 +97,7 @@ typedef struct
 } Token;
 
 char advanceScanner(Scanner* scanner);
-Token getKeyword(Scanner* scanner);
+Token getPreprocessorCommand(Scanner* scanner);
 void initScanner(Scanner* scanner, const char* source);
 bool isAtEnd(const Scanner* scanner);
 void makeScannerCurrent(Scanner* scanner);

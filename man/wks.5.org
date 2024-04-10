@@ -48,21 +48,23 @@ identifier       -> ( 'key'
                     | 'desc'
                     | 'description' ) ;
 
-keyword          -> ':' ( hook | flag ) ;
+keyword          -> ( hook | flag | preprocessor_cmd ) ;
 
-hook             -> ( 'before'
-                    | 'after'
-                    | 'async-before'
-                    | 'sync-after' ) command ;
+hook             -> '^' ( 'before'
+                        | 'after'
+                        | 'sync-before'
+                        | 'sync-after' ) command ;
 
-flag             -> ( 'keep'
-                    | 'close'
-                    | 'inherit'
-                    | 'unhook'
-                    | 'no-before'
-                    | 'no-after'
-                    | 'write'
-                    | 'sync-command' ) ;
+flag             -> '+' ( 'keep'
+                        | 'close'
+                        | 'inherit'
+                        | 'unhook'
+                        | 'no-before'
+                        | 'no-after'
+                        | 'write'
+                        | 'sync-command' ) ;
+
+preprocessor_cmd ->  ':include' '"' [^"]+ '"' ;
 #+end_example
 
 ** KEY CHORD
@@ -215,39 +217,42 @@ system. Think carefully before using a /command/ in a
 blocking fashion.
 
 ** INTERPOLATION
-An *interpolation* works the same way in *wks* as it does in
-many programming languages. An *interpolation* may be given
-within a *description* or a *command*, except where
-otherwise noted. An *interpolation* begins with the *%(*
-delimiter and ends with a closing parentheses *)*. Within
+An /interpolation/ works the same way in *wks* as it does in
+many programming languages. An /interpolation/ may be given
+within a /description/ or a /command/, except where
+otherwise noted. An /interpolation/ begins with the *%(*
+delimiter and ends with a closing parentheses, *)*. Within
 these delimiters, a single identifier must be given.
 
 ** IDENTIFIER
-The following identifiers are valid within an *interpolation*:
+The following identifiers are valid within an /interpolation/:
 
 #+begin_quote
-- _key_ ::
-  The _key_ *identifier* corresponds to the *key* of the
-  current *chord*. This makes the most sense to use within a
-  *chord array* or for a *chord* that may change frequently
+- /key/ ::
+  The /key/ /identifier/ corresponds to the /key/ of the
+  current /chord/. This makes the most sense to use within a
+  /chord array/ or for a /chord/ that may change frequently
   or is not know ahead of time.
-- _index_ ::
-  The _index_ *identifier* corresponds to the 0 base index of
-  the current *chord* or *prefix* within the current scope.
-  *NOTE* a *prefix* starts a new scope.
-- _index+1_ ::
-  The _index+1_ *identifier* corresponds to the 1 base index
-  of the current *chord* or *prefix* within the current
-  scope. *NOTE* a *prefix* starts a new scope.
-- _desc_ and _description_ ::
-  The _desc_ and _description_ *identifier*​s correspond to the
-  *description* of the current *chord* or *prefix*. Neither
-  *identifier* may not be given within a *description*. An
+
+- /index/ ::
+  The /index/ /identifier/ corresponds to the 0 base index of
+  the current /chord/ or /prefix/ within the current scope.
+  *NOTE* a /prefix/ starts a new scope.
+
+- /index+1/ ::
+  The /index+1/ /identifier/ corresponds to the 1 base index
+  of the current /chord/ or /prefix/ within the current
+  scope. *NOTE* a /prefix/ starts a new scope.
+
+- /desc/ and /description/ ::
+  The /desc/ and /description/ /identifiers/ correspond to the
+  /description/ of the current /chord/ or /prefix/. Neither
+  /identifier/ may not be given within a /description/. An
   error will be thrown in the case where this is attempted.
 #+end_quote
 
 ** KEYWORD
-A *keyword* is an optional instruction to modify the
+A /keyword/ is an optional instruction to modify the
 behavior of a *chord* or *prefix*. Is starts with a colon
 *:* followed by a *hook* or a *flag*.
 
@@ -272,13 +277,13 @@ The following are valid *hook*​s:
   non-blocking process like a *chord*'s command, meaning
   *wk* will not wait for the _after_ *command* to complete
   before it continues its business.
-- _async-before_ *command* ::
-  The *command* given to the _async-before_ *hook* is
+- _sync-before_ *command* ::
+  The *command* given to the _sync-before_ *hook* is
   executed before the current *chord*'s *command*, as the
   name implies. Additionally, it is executed as a separate
   non-blocking process. The *chord*'s *command* will run
-  right after the _async-before_ *command* is dispatched,
-  regardless of if or when the _async-before_ *command* has
+  right after the _sync-before_ *command* is dispatched,
+  regardless of if or when the _sync-before_ *command* has
   completed.
 - _sync-after_ *command* ::
   The *command* given to the _sync-after_ *hook* is executed
@@ -322,7 +327,7 @@ The following are valid *flag*​s:
   effect those given to the *chord* explicitly.
 - _no-before_ ::
   The _no-before_ *flag* prevents a child *chord* from
-  inheriting a _before_ or _async-before_ *hook* present in
+  inheriting a _before_ or _sync-before_ *hook* present in
   the parent *prefix*.
 - _no-after_ ::
   The _no-after_ *flag* prevents a child *chord* from

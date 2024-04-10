@@ -1,6 +1,8 @@
 #ifndef WK_COMPILER_COMPILE_H_
 #define WK_COMPILER_COMPILE_H_
 
+#include <stdint.h>
+
 /* common includes */
 #include "common/menu.h"
 
@@ -15,7 +17,7 @@ typedef struct
     Token       previous;
     bool        hadError;
     bool        panicMode;
-    int         index;
+    uint32_t    index;
     Line        line;
     LineArray*  lineDest;
     LineArray*  linePrefix;
