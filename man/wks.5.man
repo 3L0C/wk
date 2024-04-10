@@ -13,55 +13,57 @@ If anything is not behaving as you expect, please see \f[B]CONTACT\f[R]
 below to reach out.
 .IP
 .EX
-key_chord        -> prefix
-                  | chord
-                  | chord_array ;
+key_chord          -> prefix
+                    | chord
+                    | chord_array ;
 
-prefix           -> key description keyword* \[aq]{\[aq] ( key_chord )* \[aq]}\[aq] ;
+prefix             -> key description keyword* \[aq]{\[aq] ( key_chord )* \[aq]}\[aq] ;
 
-chord            -> key description keyword* command ;
+chord              -> key description keyword* command ;
 
-chord_array      -> \[aq][\[aq] ( key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
+chord_array        -> \[aq][\[aq] ( key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
 
-chord_expression -> \[aq](\[aq] chord \[aq])\[aq] ;
+chord_expression   -> \[aq](\[aq] chord \[aq])\[aq] ;
 
-key              -> modifier* ( \[aq]\[rs]\[rs]\[aq][\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:()]
-                              | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:()]
-                              | special_key ) ;
+key                -> modifier* ( \[aq]\[rs]\[rs]\[aq][\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:\[ha]+()]
+                                | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:\[ha]+()]
+                                | special_key ) ;
 
-special_key      -> ( \[aq]Left\[aq] | \[aq]Right\[aq] | \[aq]Up\[aq]     | \[aq]Down\[aq]
-                    | \[aq]TAB\[aq]  | \[aq]SPC\[aq]   | \[aq]RET\[aq]    | \[aq]DEL\[aq]  | \[aq]ESC\[aq]
-                    | \[aq]Home\[aq] | \[aq]PgUp\[aq]  | \[aq]PgDown\[aq] | \[aq]End\[aq]  | \[aq]Begin\[aq] ) ;
+special_key        -> ( \[aq]Left\[aq] | \[aq]Right\[aq] | \[aq]Up\[aq]     | \[aq]Down\[aq]
+                      | \[aq]TAB\[aq]  | \[aq]SPC\[aq]   | \[aq]RET\[aq]    | \[aq]DEL\[aq]  | \[aq]ESC\[aq]
+                      | \[aq]Home\[aq] | \[aq]PgUp\[aq]  | \[aq]PgDown\[aq] | \[aq]End\[aq]  | \[aq]Begin\[aq] ) ;
 
-modifier         -> ( \[aq]C\[aq] | \[aq]H\[aq] | \[aq]M\[aq] | \[aq]S\[aq] ) \[aq]-\[aq] ;
+modifier           -> ( \[aq]C\[aq] | \[aq]H\[aq] | \[aq]M\[aq] | \[aq]S\[aq] ) \[aq]-\[aq] ;
 
-description      -> \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] | interpolation )* \[aq]\[dq]\[aq] ;
+description        -> \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] | interpolation )* \[aq]\[dq]\[aq] ;
 
-command          -> \[aq]%{{\[aq] ( . | interpolation )* \[aq]}}\[aq] ;
+command            -> \[aq]%{{\[aq] ( . | interpolation )* \[aq]}}\[aq] ;
 
-interpolation    -> \[aq]%(\[aq] identifier \[aq])\[aq] ;
+interpolation      -> \[aq]%(\[aq] identifier \[aq])\[aq] ;
 
-identifier       -> ( \[aq]key\[aq]
-                    | \[aq]index\[aq]
-                    | \[aq]index+1\[aq]
-                    | \[aq]desc\[aq]
-                    | \[aq]description\[aq] ) ;
+identifier         -> ( \[aq]key\[aq]
+                      | \[aq]index\[aq]
+                      | \[aq]index+1\[aq]
+                      | \[aq]desc\[aq]
+                      | \[aq]description\[aq] ) ;
 
-keyword          -> \[aq]:\[aq] ( hook | flag ) ;
+keyword            -> ( hook | flag ) ;
 
-hook             -> ( \[aq]before\[aq]
-                    | \[aq]after\[aq]
-                    | \[aq]async-before\[aq]
-                    | \[aq]sync-after\[aq] ) command ;
+hook               -> \[aq]\[ha]\[aq] ( \[aq]before\[aq]
+                          | \[aq]after\[aq]
+                          | \[aq]sync-before\[aq]
+                          | \[aq]sync-after\[aq] ) command ;
 
-flag             -> ( \[aq]keep\[aq]
-                    | \[aq]close\[aq]
-                    | \[aq]inherit\[aq]
-                    | \[aq]unhook\[aq]
-                    | \[aq]no-before\[aq]
-                    | \[aq]no-after\[aq]
-                    | \[aq]write\[aq]
-                    | \[aq]sync-command\[aq] ) ;
+flag               -> \[aq]+\[aq] ( \[aq]keep\[aq]
+                          | \[aq]close\[aq]
+                          | \[aq]inherit\[aq]
+                          | \[aq]unhook\[aq]
+                          | \[aq]no-before\[aq]
+                          | \[aq]no-after\[aq]
+                          | \[aq]write\[aq]
+                          | \[aq]sync-command\[aq] ) ;
+
+preprocessor_macro -> \[aq]:\[aq] ( \[aq]include\[aq] \[aq]\[dq]\[aq] [\[ha]\[dq]]+ \[aq]\[dq]\[aq] ) ;
 .EE
 .SS KEY CHORD
 A \f[I]key chord\f[R] is the top-level construct in the grammar and
@@ -103,12 +105,12 @@ of \f[I]chord expressions\f[R] within a \f[I]chord array\f[R].
 .SS CHORD EXPRESSION
 A \f[I]chord expression\f[R] is a construct that is only valid within a
 \f[I]chord array\f[R].
-A \f[I]chord expression\f[R] begins with an opening parentheses,
+A \f[I]chord expression\f[R] begins with an opening parentheses
 \f[B](\f[R], followed by a \f[I]key\f[R] and \f[I]description\f[R].
-After the \f[I]description\f[R], \f[I]hooks\f[R], \f[I]flags\f[R], and a
-\f[I]command\f[R] may be given just as one would expect in a standard
+After the \f[I]description\f[R], zero or more \f[I]keywords\f[R] and a
+\f[I]command\f[R] may be given, just as one would expect in a standard
 \f[I]chord\f[R].
-However, the \f[I]chord expression\f[R] does not require anything more
+However, a \f[I]chord expression\f[R] does not require anything more
 than the \f[I]key\f[R] and \f[I]description\f[R].
 This means it is possible to give a \f[I]key\f[R],
 \f[I]description\f[R], and a \f[I]flag\f[R] but no \f[I]hooks\f[R] or
@@ -116,9 +118,7 @@ This means it is possible to give a \f[I]key\f[R],
 That is because anything missing from the \f[I]chord expression\f[R]
 will be filled in by the surrounding \f[I]chord array\f[R].
 In any case, the \f[I]chord expression\f[R] must be terminated by a
-closing parentheses, \f[B])\f[R], to be valid.
-See \f[B]EXAMPLES\f[R] below to see how a \f[I]chord expression\f[R]
-might be handy.
+closing parentheses \f[B])\f[R], to be valid.
 .SS KEY
 A \f[I]key\f[R] represents the trigger or activator for a \f[I]key
 chord\f[R].
@@ -127,7 +127,7 @@ single printable \f[I]UTF-8\f[R] character, or a \f[I]special key\f[R].
 Certain characters have special meaning and they cannot be used unless
 escaped.
 .PP
-All of the following characters must be preceded by a backslash,
+All of the following characters must be preceded by a backslash
 \f[B]\[rs]\f[R], to be interpreted as a \f[I]key\f[R]:
 .RS
 .TP
@@ -150,7 +150,13 @@ Begins a comment.
 Begins and ends a \f[I]description\f[R].
 .TP
 \f[B]:\f[R]
-Begins a \f[I]keyword\f[R].
+Begins a \f[I]preprocessor macro\f[R].
+.TP
+*^*^
+Begins a \f[I]hook\f[R].
+.TP
+\f[B]+\f[R]
+Begins a \f[I]flag\f[R].
 .TP
 \f[B](\f[R]
 Begins a \f[I]chord expression\f[R].
@@ -162,13 +168,13 @@ Ends a \f[I]chord expression\f[R].
 While the above are required to be escaped to be interpreted as a
 \f[I]key\f[R], it is not an error to escape any \f[I]UTF-8\f[R]
 character meant to be a \f[I]key\f[R].
-The \f[I]UTF-8\f[R] character need only be a printable character that is
-not a \f[I]special key\f[R] as defined below.
+The caveat is that the character meant to be a \f[I]key\f[R] needs to be
+printable and not a predefined \f[I]special key\f[R] as defined below.
 .SS SPECIAL KEY
 The \f[I]special keys\f[R] cover (mostly) non-printable keys that can be
 used as a \f[I]key\f[R].
 .PP
-The following are valid \f[I]special key​s\f[R]:
+The following are recognized /special key​/ forms:
 .RS
 .PP
 \f[I]Left\f[R], \f[I]Right\f[R], \f[I]Up\f[R], \f[I]Down\f[R],
@@ -179,13 +185,14 @@ The following are valid \f[I]special key​s\f[R]:
 .PP
 \f[B]NOTE\f[R] that several of the \f[I]special keys\f[R] are
 technically printable, and will be recognized as a regular \f[I]key\f[R]
-if escaped with a backslash, \f[B]/\f[R].
-You escape a normal \f[B]space\f[R] for use in your \f[I]key
+if escaped with a backslash \f[B]\[rs]\f[R].
+You may escape a normal \f[B]space\f[R] for use in your \f[I]key
 chords\f[R], but when you hit \f[B]space\f[R] it will be recognized as a
 \f[I]special key\f[R] and will fail to match the \f[B]space\f[R]
-\f[I]key\f[R] that you might expect.
-In short, use the special forms listed above to ensure the corresponding
-keypress events trigger the desired \f[I]key chord\f[R].
+\f[I]key\f[R] in your \f[I]key chords\f[R].
+.PP
+In short, please use the special forms listed above to ensure the
+corresponding keypress events trigger the desired \f[I]key chord\f[R].
 .SS MODIFIER
 A \f[I]modifier\f[R] is a prefix that can be added before any other
 \f[I]modifier\f[R], \f[I]key\f[R], or \f[I]special key\f[R] to specify
@@ -210,13 +217,15 @@ The modifiers represent the following:
 .PP
 \f[B]NOTE\f[R] that a \f[I]modifier\f[R] can be given more than once
 according to the grammar, but there is no practical benefit to this.
-Additionally, the \f[B]S-\f[R] (\f[I]Shift\f[R]) \f[I]modifier\f[R] can
-be given before \f[I]UTF-8\f[R] \f[I]keys\f[R], but it will be ignored.
-It is only considered when it precedes a \f[I]special key\f[R].
+Additionally, the \f[B]S-\f[R] (\f[I]Shift\f[R]) \f[I]modifier\f[R] will
+be ignored for all non \f[I]special keys\f[R].
+You can define a \f[I]key\f[R] like \f[B]S-x\f[R], but when you press
+\f[B]Shift+x\f[R], \f[B]wk\f[R] will only match the \f[I]key\f[R]
+defined as \f[B]X\f[R].
 .SS DESCRIPTION
 A \f[I]description\f[R] provides a human-readable explanation or label
 for a \f[I]key chord\f[R].
-It is enclosed in double quotes, \f[B]\[dq]\f[R].
+It is enclosed in double quotes \f[B]\[dq]\f[R].
 If a double quote needs to be included within the \f[I]description\f[R],
 it must be escaped with a backslash.
 .PP
@@ -233,11 +242,12 @@ The content within the delimiters can be any valid shell
 An \f[I]interpolation\f[R] may be used with a \f[I]command\f[R].
 See \f[B]INTERPOLATION\f[R] below for a full explanation.
 .PP
-\f[B]NOTE\f[R] any \f[I]command\f[R] given to the \f[I]before\f[R], or
-\f[I]sync-after\f[R] \f[I]hooks\f[R] will be run in a blocking manner.
+\f[B]NOTE\f[R] any \f[I]command\f[R] given to the \f[I]sync-before\f[R],
+or \f[I]sync-after\f[R] \f[I]hooks\f[R] will be run in a blocking
+manner.
 Additionally, if the \f[I]sync-command\f[R] \f[I]flag\f[R] is given, the
 the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R] becomes blocking.
-Depending on the \f[I]command\f[R], \f[B]wk\f[R] may never regain
+Depending on the \f[I]command\f[R] \f[B]wk\f[R] may never regain
 control.
 This is a serious concern as \f[B]wk\f[R] only releases the keyboard
 after it has completed or encountered an error.
@@ -245,161 +255,228 @@ This could leave the user with an unresponsive keyboard until they
 restart their system.
 Think carefully before using a \f[I]command\f[R] in a blocking fashion.
 .SS INTERPOLATION
-An \f[B]interpolation\f[R] works the same way in \f[B]wks\f[R] as it
+An \f[I]interpolation\f[R] works the same way in \f[B]wks\f[R] as it
 does in many programming languages.
-An \f[B]interpolation\f[R] may be given within a \f[B]description\f[R]
-or a \f[B]command\f[R], except where otherwise noted.
-An \f[B]interpolation\f[R] begins with the \f[B]%(\f[R] delimiter and
+An \f[I]interpolation\f[R] may be given within a \f[I]description\f[R]
+or a \f[I]command\f[R], except where otherwise noted.
+An \f[I]interpolation\f[R] begins with the \f[B]%(\f[R] delimiter and
 ends with a closing parentheses \f[B])\f[R].
 Within these delimiters, a single identifier must be given.
 .SS IDENTIFIER
-The following identifiers are valid within an \f[B]interpolation\f[R]:
+The following identifiers are valid within an \f[I]interpolation\f[R]:
 .RS
 .TP
-\f[I]key\f[R]
-The \f[I]key\f[R] \f[B]identifier\f[R] corresponds to the \f[B]key\f[R]
-of the current \f[B]chord\f[R].
-This makes the most sense to use within a \f[B]chord array\f[R] or for a
-\f[B]chord\f[R] that may change frequently or is not know ahead of time.
+\f[B]key\f[R]
+The \f[I]key\f[R] \f[I]identifier\f[R] corresponds to the \f[I]key\f[R]
+of the current \f[I]chord\f[R].
+This makes the most sense to use within a \f[I]chord array\f[R] or for a
+\f[I]chord\f[R] that may change frequently or is not know ahead of time.
 .TP
-\f[I]index\f[R]
-The \f[I]index\f[R] \f[B]identifier\f[R] corresponds to the 0 base index
-of the current \f[B]chord\f[R] or \f[B]prefix\f[R] within the current
+\f[B]index\f[R]
+The \f[I]index\f[R] \f[I]identifier\f[R] corresponds to the 0 base index
+of the current \f[I]chord\f[R] or \f[I]prefix\f[R] within the current
 scope.
-\f[B]NOTE\f[R] a \f[B]prefix\f[R] starts a new scope.
+\f[B]NOTE\f[R] a \f[I]prefix\f[R] starts a new scope.
 .TP
-\f[I]index+1\f[R]
-The \f[I]index+1\f[R] \f[B]identifier\f[R] corresponds to the 1 base
-index of the current \f[B]chord\f[R] or \f[B]prefix\f[R] within the
+\f[B]index+1\f[R]
+The \f[I]index+1\f[R] \f[I]identifier\f[R] corresponds to the 1 base
+index of the current \f[I]chord\f[R] or \f[I]prefix\f[R] within the
 current scope.
-\f[B]NOTE\f[R] a \f[B]prefix\f[R] starts a new scope.
+\f[B]NOTE\f[R] a \f[I]prefix\f[R] starts a new scope.
 .TP
-\f[I]desc\f[R] and \f[I]description\f[R]
-The \f[I]desc\f[R] and \f[I]description\f[R] \f[B]identifier\f[R]​s
-correspond to the \f[B]description\f[R] of the current \f[B]chord\f[R]
-or \f[B]prefix\f[R].
-Neither \f[B]identifier\f[R] may not be given within a
-\f[B]description\f[R].
+\f[B]desc\f[R] and \f[B]description\f[R]
+The \f[I]desc\f[R] and \f[I]description\f[R] \f[I]identifiers\f[R]
+correspond to the \f[I]description\f[R] of the current \f[I]chord\f[R]
+or \f[I]prefix\f[R].
+Neither \f[I]identifier\f[R] may not be given within a
+\f[I]description\f[R].
 An error will be thrown in the case where this is attempted.
 .RE
 .SS KEYWORD
-A \f[B]keyword\f[R] is an optional instruction to modify the behavior of
-a \f[B]chord\f[R] or \f[B]prefix\f[R].
-Is starts with a colon \f[B]:\f[R] followed by a \f[B]hook\f[R] or a
-\f[B]flag\f[R].
+A \f[I]keyword\f[R] is an optional instruction to modify the behavior of
+a \f[I]chord\f[R] or \f[I]prefix\f[R].
+The \f[I]keywords\f[R] include \f[B]HOOKS\f[R], \f[B]FLAGS\f[R], and
+\f[B]PREPORCESSOR COMMANDS\f[R].
+See below for details.
 .SS HOOK
-A \f[B]hook\f[R] is a convenient way to add a \f[B]command\f[R] to a
-\f[B]chord\f[R].
-The \f[B]hook\f[R] \f[B]command\f[R] is executed in accordance with the
-specification for the type of \f[B]hook\f[R].
+A \f[I]hook\f[R] is a convenient way to add a \f[I]command\f[R] to a
+\f[I]chord\f[R].
+A \f[I]hook\f[R] may be given after a \f[I]description\f[R] starting
+with a caret *^*^, followed by a \f[I]hook\f[R] and a \f[I]command\f[R].
+If multiple of the same \f[I]hooks\f[R] are given to a \f[I]key
+chord\f[R] the final instance will overshadow the others.
+The \f[I]hook\f[R] \f[I]command\f[R] is executed in accordance with the
+specification for the type of \f[I]hook\f[R].
 .PP
-The following are valid \f[B]hook\f[R]​s:
+The following are valid \f[I]hooks\f[R]:
 .RS
 .TP
-\f[I]before\f[R] \f[B]command\f[R]
-The \f[B]command\f[R] given to the \f[I]before\f[R] \f[B]hook\f[R] is
-executed before the current \f[B]chord\f[R]\[aq]s \f[B]command\f[R], as
+\f[B]before\f[R] \f[I]command\f[R]
+The \f[I]command\f[R] given to the \f[I]before\f[R] \f[I]hook\f[R] is
+executed before the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R], as
 the name implies.
-The \f[B]chord\f[R]\[aq]s \f[B]command\f[R] will not run until the
-\f[I]before\f[R] \f[B]command\f[R] completes execution.
-See the \f[B]COMMAND\f[R] section for best practices regarding blocking
-\f[B]command\f[R]​s.
+The \f[I]before\f[R] \f[I]command\f[R] is run asynchronously, meaning
+the \f[I]chord\f[R]\[aq]s \f[I]command\f[R] may complete before the
+\f[I]before\f[R] \f[I]command\f[R] has completed execution.
+If you need the \f[I]chord\f[R]\[aq]s \f[I]command\f[R] to be run in
+sync with the \f[I]before\f[R] \f[I]command\f[R], consider if there is
+some other way to achieve this before using the \f[I]sync-before\f[R]
+\f[I]hook\f[R].
 .TP
-\f[I]after\f[R] \f[B]command\f[R]
-The \f[B]command\f[R] given to the \f[I]after\f[R] \f[B]hook\f[R] is
-executed after the current \f[B]chord\f[R]\[aq]s \f[B]command\f[R], as
+\f[B]after\f[R] \f[I]command\f[R]
+The \f[I]command\f[R] given to the \f[I]after\f[R] \f[I]hook\f[R] is
+executed after the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R], as
 the name implies.
-The \f[I]after\f[R] \f[B]command\f[R] is executed as a separate
-non-blocking process like a \f[B]chord\f[R]\[aq]s command, meaning
-\f[B]wk\f[R] will not wait for the \f[I]after\f[R] \f[B]command\f[R] to
-complete before it continues its business.
+The \f[I]after\f[R] \f[I]command\f[R] is run asynchronously, meaning
+\f[B]wk\f[R] will not wait for the command to complete before resuming
+execution.
+I \f[B]wk\f[R] should wait until the \f[I]after\f[R] \f[I]command\f[R]
+completes you can use the \f[I]sync-after\f[R] \f[I]hook\f[R].
+Just be certain you understand the pitfalls this introduces before you
+use that \f[I]hook\f[R].
 .TP
-\f[I]async-before\f[R] \f[B]command\f[R]
-The \f[B]command\f[R] given to the \f[I]async-before\f[R] \f[B]hook\f[R]
-is executed before the current \f[B]chord\f[R]\[aq]s \f[B]command\f[R],
+\f[B]sync-before\f[R] \f[I]command\f[R]
+The \f[I]command\f[R] given to the \f[I]sync-before\f[R] \f[I]hook\f[R]
+is executed before the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R],
 as the name implies.
-Additionally, it is executed as a separate non-blocking process.
-The \f[B]chord\f[R]\[aq]s \f[B]command\f[R] will run right after the
-\f[I]async-before\f[R] \f[B]command\f[R] is dispatched, regardless of if
-or when the \f[I]async-before\f[R] \f[B]command\f[R] has completed.
-.TP
-\f[I]sync-after\f[R] \f[B]command\f[R]
-The \f[B]command\f[R] given to the \f[I]sync-after\f[R] \f[B]hook\f[R]
-is executed after the current \f[B]chord\f[R]\[aq]s \f[B]command\f[R],
-as the name implies.
-The \f[I]sync-after\f[R] \f[B]command\f[R] is executed as a blocking
-process, meaning \f[B]wk\f[R] may never close if the \f[B]command\f[R]
-does not complete execution.
+Additionally, it is run in a blocking fashion, meaning \f[B]wk\f[R] will
+not resume control until after the command completes or is terminated.
 See the \f[B]COMMAND\f[R] section for best practices regarding blocking
-\f[B]command\f[R]​s.
+\f[I]commands\f[R].
+.TP
+\f[B]sync-after\f[R] \f[I]command\f[R]
+The \f[I]command\f[R] given to the \f[I]sync-after\f[R] \f[I]hook\f[R]
+is executed after the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R],
+as the name implies.
+Additionally, it is run in a blocking fashion, meaning \f[B]wk\f[R] will
+not resume control until after the command completes or is terminated.
+See the \f[B]COMMAND\f[R] section for best practices regarding blocking
+\f[I]commands\f[R].
 .RE
-.SS FLAG
-A \f[B]flag\f[R] is a convenient way to modify the behavior of a
-\f[B]chord\f[R] or \f[B]prefix\f[R].
-When given to a \f[B]prefix\f[R] the \f[B]flag\f[R] is passed on to all
-\f[B]chord\f[R]​s and \f[B]chord array\f[R]​s in the \f[B]prefix\f[R], but
-not any children \f[B]prefix\f[R]​es.
 .PP
-The following are valid \f[B]flag\f[R]​s:
+See \f[B]INHERITENCE\f[R] for an explanation of how \f[I]hooks\f[R] work
+when given to a \f[I]prefix\f[R].
+.PP
+See \f[B]EXAMPLES\f[R] for a demonstration on \f[I]hooks\f[R].
+.SS FLAG
+A \f[I]flag\f[R] is a convenient way to modify the behavior of a
+\f[I]key chord\f[R].
+A \f[I]flag\f[R] may be passed after a \f[I]description\f[R] begining
+with the plus character \f[B]+\f[R].
+After the \f[B]+\f[R], a \f[I]flag\f[R] name is specified.
+.PP
+The following are \f[I]flag\f[R] names and how they affect the behavior
+of \f[B]wk\f[R]:
 .RS
 .TP
-\f[I]keep\f[R]
-Normally, after executing a \f[B]chord\f[R], \f[B]wk\f[R] will close.
-By supplying the \f[I]keep\f[R] flag, the \f[B]wk\f[R] window will
-persist for any \f[B]chord\f[R] that is given the \f[I]keep\f[R]
-\f[B]flag\f[R].
-This includes explicitly supplying the \f[B]flag\f[R] and when it is
-inherited from a surrounding \f[B]prefix\f[R].
+\f[B]keep\f[R]
+Normally, after executing a \f[I]chord\f[R], \f[B]wk\f[R] will close.
+By supplying the \f[I]keep\f[R] flag, \f[B]wk\f[R] will persist after
+the the \f[I]key chord\f[R] is trigger.
+This enables you to trigger additional \f[I]key chords\f[R] until a
+triggered \f[I]key chord\f[R] does not supply the \f[I]keep\f[R]
+\f[I]flag\f[R] or no \f[I]key chords\f[R] match the keypress event.
 .TP
-\f[I]close\f[R]
-The \f[I]close\f[R] \f[B]flag\f[R] is the default behavior for any
-\f[B]chord\f[R].
-However, a \f[B]chord\f[R] may inherit the \f[I]keep\f[R] \f[B]flag\f[R]
-from a surrounding \f[B]prefix\f[R].
-When this new behavior is undesired specifying the \f[I]close\f[R] flag
-will restore the default behavior and end the \f[B]wk\f[R] program after
-the \f[B]chord\f[R] is completed.
+\f[B]close\f[R]
+The \f[I]close\f[R] \f[I]flag\f[R] is the default behavior for any
+\f[I]chord\f[R].
+However, a \f[I]chord\f[R] may inherit the \f[I]keep\f[R] \f[I]flag\f[R]
+from a surrounding \f[I]prefix\f[R].
+When this new behavior is undesired specifying the \f[I]close\f[R]
+\f[I]flag\f[R] will restore the default behavior and end the
+\f[B]wk\f[R] program after the \f[I]chord\f[R] is triggerd.
 .TP
-\f[I]inherit\f[R]
-The \f[I]inherit\f[R] \f[B]flag\f[R] is only relevant to a child
-\f[B]prefix\f[R] that wants to \f[I]inherit\f[R] \f[B]flag\f[R]​s and
-\f[B]hook\f[R]​s from the parent \f[B]prefix\f[R].
-Inheritance is not the norm, hence this \f[B]flag\f[R] must be given
+\f[B]inherit\f[R]
+The \f[I]inherit\f[R] \f[I]flag\f[R] is only relevant to a child
+\f[I]prefix\f[R] that wants to \f[I]inherit\f[R] \f[I]flags\f[R] and
+\f[I]hooks\f[R] from its parent \f[I]prefix\f[R].
+Inheritance is not the norm, hence this \f[I]flag\f[R] must be given
 explicitly.
 .TP
-\f[I]unhook\f[R]
-The \f[I]unhook\f[R] \f[B]flag\f[R] causes a child \f[B]chord\f[R] to
-ignore all \f[B]flag\f[R]​s and \f[B]hook\f[R]​s present in the parent.
-This does not effect those given to the \f[B]chord\f[R] explicitly.
+\f[B]unhook\f[R]
+The \f[I]unhook\f[R] \f[I]flag\f[R] causes a child \f[I]key chord\f[R]
+to ignore all \f[I]flags\f[R] and \f[I]hooks\f[R] present in the parent
+\f[I]prefix\f[R].
+Additional \f[I]hooks\f[R] and \f[I]flags\f[R] may be given to the child
+\f[I]key chord\f[R] will work as expected.
 .TP
-\f[I]no-before\f[R]
-The \f[I]no-before\f[R] \f[B]flag\f[R] prevents a child \f[B]chord\f[R]
-from inheriting a \f[I]before\f[R] or \f[I]async-before\f[R]
-\f[B]hook\f[R] present in the parent \f[B]prefix\f[R].
+\f[B]no-before\f[R]
+The \f[I]no-before\f[R] \f[I]flag\f[R] prevents a child \f[I]key
+chord\f[R] from inheriting a \f[I]before\f[R] or \f[I]sync-before\f[R]
+\f[I]hook\f[R] present in the parent \f[I]prefix\f[R].
+Any \f[I]before\f[R] or \f[I]sync-before\f[R] \f[I]hooks\f[R] given to
+the child \f[I]key chord\f[R] will take precedence over those that may
+be inherited from a parent \f[I]prefix\f[R].
+In this case, the \f[I]no-before\f[R] \f[I]flag\f[R] is redundant as the
+parent \f[I]hooks\f[R] are overshadowed.
 .TP
-\f[I]no-after\f[R]
-The \f[I]no-after\f[R] \f[B]flag\f[R] prevents a child \f[B]chord\f[R]
-from inheriting an \f[I]after\f[R] or \f[I]sync-after\f[R]
-\f[B]hook\f[R] present in the parent \f[B]prefix\f[R].
+\f[B]no-after\f[R]
+The \f[I]no-after\f[R] \f[I]flag\f[R] prevents a child \f[I]key
+chord\f[R] from inheriting an \f[I]after\f[R] or \f[I]sync-after\f[R]
+\f[I]hook\f[R] present in the parent \f[I]prefix\f[R].
+Any \f[I]after\f[R] or \f[I]sync-after\f[R] \f[I]hooks\f[R] given to the
+child \f[I]key chord\f[R] will take precedence over those that may be
+inherited from a parent \f[I]prefix\f[R].
+In this case, the \f[I]no-after\f[R] \f[I]flag\f[R] is redundant as the
+parent \f[I]hooks\f[R] are overshadowed.
 .TP
-\f[I]write\f[R]
-By default, \f[B]wk\f[R] will execute a \f[B]chord\f[R]
-\f[B]command\f[R] as though it were a shell command.
-When the \f[I]write\f[R] \f[B]flag\f[R] is present, the
-\f[B]command\f[R] of the affected \f[B]chord\f[R] is simply written to
-the standard output.
+\f[B]write\f[R]
+By default, \f[B]wk\f[R] will execute a \f[I]chord\f[R]\[aq]s
+\f[I]command\f[R] as though it were a shell command.
+When the \f[I]write\f[R] \f[I]flag\f[R] is passed, the \f[I]command\f[R]
+of the affected \f[I]chord\f[R] is simply written to the standard
+output.
+See \f[B]EXAMPLES\f[R] bleow if the effect is unclear.
 .TP
-\f[I]sync-command\f[R]
-By default, \f[B]wk\f[R] will execute a \f[B]chord\f[R]
-\f[B]command\f[R] in a separate process to prevent any hangup for a
-\f[B]command\f[R] that may never exit.
-If it makes more sense for \f[B]wk\f[R] to wait for the command to
-complete before it continues, then provide the \f[I]sync-command\f[R]
-\f[B]flag\f[R].
-\f[B]NOTE\f[R] that this could prevent \f[B]wk\f[R] from closing which
-is concerning as it retains control of the user keyboard throughout
-execution.
-You may need to restart your system if used improperly.
+\f[B]sync-command\f[R]
+By default, \f[B]wk\f[R] will execute a \f[I]chord\f[R]\[aq]s
+\f[I]command\f[R] asynchronously.
+This means \f[B]wk\f[R] will continue execution despite the state of the
+\f[I]command\f[R].
+If, for some reason, a \f[I]chord\f[R]\[aq]s \f[I]command\f[R] should
+block \f[B]wk\f[R] from continuing until the \f[I]command\f[R] ends,
+then you can supply the \f[I]sync-command\f[R] \f[I]flag\f[R].
+See \f[B]COMMAND\f[R] above to understand the pitfalls of blocking
+\f[I]commands\f[R] in \f[B]wk\f[R].
+.RE
+.PP
+See \f[B]INHERITENCE\f[R] for an explanation of how \f[I]flags\f[R] work
+when given to a \f[I]prefix\f[R].
+.PP
+See \f[B]EXAMPLES\f[R] for a demonstration on \f[I]hooks\f[R].
+.SS PREPROCESSOR MACROS
+A \f[I]preprocessor macro\f[R] begins with a colon \f[B]:\f[R], followed
+by a supported macro.
+.PP
+The following are the supported \f[I]preprocessor macros\f[R] and their
+affects on \f[B]wks\f[R] files.
+.RS
+.TP
+\f[B]include\f[R] \[dq]\f[I]FILEPATH\f[R]\[dq]
+The \f[I]include\f[R] \f[I]preprocessor macro\f[R] acts in much the same
+way as the \f[B]C\f[R] macro by the same name.
+When the preprocessor spots an \f[I]include\f[R] macro it will replace
+it with the contents of the given \f[I]file\f[R].
+The \f[I]filepath\f[R] may be a relative or absolute \f[I]path\f[R] to
+some \f[B]wks\f[R] \f[I]file\f[R].
+If the \f[I]filepath\f[R] is relative it is assumed to be relative to
+the \f[I]filepath\f[R] of the current \f[B]wks\f[R] \f[I]file\f[R] being
+processed.
+Absolute \f[I]filepaths\f[R] are just that and not very interesting.
+One thing to note is that the \f[I]included\f[R] \f[I]file\f[R] will be
+immediately loaded and then scanned by the preprocessor before the rest
+of the original file is scanned.
+This macro enables \f[B]wks\f[R] files to be quite modular as it can be
+given \f[B]anywhere\f[R] inside a \f[B]wks\f[R] file.
+This enables users to \f[I]include\f[R] a \f[B]wks\f[R] file that is not
+valid when parsed on its own, but in the context of the
+\f[I]including\f[R] \f[B]wks\f[R] file, it becomes valid.
+The opposite is also true.
+A perfectly valid \f[B]wks\f[R] file that \f[I]includes\f[R] an invalid
+\f[B]wks\f[R] file in such a way that it does not become valid, will
+then itself become invalid.
+One bad apple and all that.
+See \f[B]EXAMPLES\f[R] for a demonstration.
 .RE
 .SH AUTHORS
 3L0C.

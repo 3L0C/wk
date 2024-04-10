@@ -14,57 +14,57 @@ expectation. If anything is not behaving as you expect,
 please see *CONTACT* below to reach out.
 
 #+begin_example
-key_chord        -> prefix
-                  | chord
-                  | chord_array ;
+key_chord          -> prefix
+                    | chord
+                    | chord_array ;
 
-prefix           -> key description keyword* '{' ( key_chord )* '}' ;
+prefix             -> key description keyword* '{' ( key_chord )* '}' ;
 
-chord            -> key description keyword* command ;
+chord              -> key description keyword* command ;
 
-chord_array      -> '[' ( key | chord_expression )+ ']' description keyword* command ;
+chord_array        -> '[' ( key | chord_expression )+ ']' description keyword* command ;
 
-chord_expression -> '(' chord ')' ;
+chord_expression   -> '(' chord ')' ;
 
-key              -> modifier* ( '\\'[\\\[\]{}#":()]
-                              | [^\s\[\]{}#":()]
-                              | special_key ) ;
+key                -> modifier* ( '\\'[\\\[\]{}#":^+()]
+                                | [^\s\[\]{}#":^+()]
+                                | special_key ) ;
 
-special_key      -> ( 'Left' | 'Right' | 'Up'     | 'Down'
-                    | 'TAB'  | 'SPC'   | 'RET'    | 'DEL'  | 'ESC'
-                    | 'Home' | 'PgUp'  | 'PgDown' | 'End'  | 'Begin' ) ;
+special_key        -> ( 'Left' | 'Right' | 'Up'     | 'Down'
+                      | 'TAB'  | 'SPC'   | 'RET'    | 'DEL'  | 'ESC'
+                      | 'Home' | 'PgUp'  | 'PgDown' | 'End'  | 'Begin' ) ;
 
-modifier         -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+modifier           -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
 
-description      -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+description        -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
 
-command          -> '%{{' ( . | interpolation )* '}}' ;
+command            -> '%{{' ( . | interpolation )* '}}' ;
 
-interpolation    -> '%(' identifier ')' ;
+interpolation      -> '%(' identifier ')' ;
 
-identifier       -> ( 'key'
-                    | 'index'
-                    | 'index+1'
-                    | 'desc'
-                    | 'description' ) ;
+identifier         -> ( 'key'
+                      | 'index'
+                      | 'index+1'
+                      | 'desc'
+                      | 'description' ) ;
 
-keyword          -> ( hook | flag | preprocessor_cmd ) ;
+keyword            -> ( hook | flag ) ;
 
-hook             -> '^' ( 'before'
-                        | 'after'
-                        | 'sync-before'
-                        | 'sync-after' ) command ;
+hook               -> '^' ( 'before'
+                          | 'after'
+                          | 'sync-before'
+                          | 'sync-after' ) command ;
 
-flag             -> '+' ( 'keep'
-                        | 'close'
-                        | 'inherit'
-                        | 'unhook'
-                        | 'no-before'
-                        | 'no-after'
-                        | 'write'
-                        | 'sync-command' ) ;
+flag               -> '+' ( 'keep'
+                          | 'close'
+                          | 'inherit'
+                          | 'unhook'
+                          | 'no-before'
+                          | 'no-after'
+                          | 'write'
+                          | 'sync-command' ) ;
 
-preprocessor_cmd ->  ':include' '"' [^"]+ '"' ;
+preprocessor_macro -> ':' ( 'include' '"' [^"]+ '"' ) ;
 #+end_example
 
 ** KEY CHORD
@@ -105,19 +105,19 @@ See *CHORD EXPRESSION* below for a description of the behavior of
 
 ** CHORD EXPRESSION
 A /chord expression/ is a construct that is only valid
-within a /chord array/. A /chord expression/ begins with
-an opening parentheses, *(*, followed by a /key/ and
-/description/. After the /description/, /hooks/, /flags/,
-and a /command/ may be given just as one would expect in a
-standard /chord/. However, the /chord expression/ does not
-require anything more than the /key/ and /description/. This
-means it is possible to give a /key/, /description/, and a
-/flag/ but no /hooks/ or /command/ and vice versa. That is
-because anything missing from the /chord expression/ will be
-filled in by the surrounding /chord array/. In any case, the
-/chord expression/ must be terminated by a closing
-parentheses, *)*, to be valid. See *EXAMPLES* below to see
-how a /chord expression/ might be handy.
+within a /chord array/. A /chord expression/ begins with an
+opening parentheses *(*, followed by a /key/ and
+/description/. After the /description/, zero or more
+/keywords/ and a /command/ may be given, just as one would
+expect in a standard /chord/. However, a /chord
+expression/ does not require anything more than the /key/
+and /description/. This means it is possible to give a
+/key/, /description/, and a /flag/ but no /hooks/ or
+/command/ and vice versa. That is because anything missing
+from the /chord expression/ will be filled in by the
+surrounding /chord array/. In any case, the /chord
+expression/ must be terminated by a closing parentheses *)*,
+to be valid.
 
 ** KEY
 A /key/ represents the trigger or activator for a /key
@@ -127,7 +127,7 @@ by either a single printable /UTF-8/ character, or a
 they cannot be used unless escaped.
 
 All of the following characters must be preceded by a
-backslash, *\*, to be interpreted as a /key/:
+backslash *\*, to be interpreted as a /key/:
 
 #+begin_quote
 - *[* :: Begins a /chord array/.
@@ -136,21 +136,23 @@ backslash, *\*, to be interpreted as a /key/:
 - *}* :: Ends a /prefix/ block.
 - *#* :: Begins a comment.
 - *"* :: Begins and ends a /description/.
-- *:* :: Begins a /keyword/.
+- *:* :: Begins a /preprocessor macro/.
+- *^* :: Begins a /hook/.
+- *+* :: Begins a /flag/.
 - *(* :: Begins a /chord expression/.
 - *)* :: Ends a /chord expression/.
 #+end_quote
 
 While the above are required to be escaped to be interpreted
 as a /key/, it is not an error to escape any /UTF-8/
-character meant to be a /key/. The /UTF-8/ character need
-only be a printable character that is not a /special key/ as
-defined below.
+character meant to be a /key/. The caveat is that the
+character meant to be a /key/ needs to be printable and not
+a predefined /special key/ as defined below.
 
 ** SPECIAL KEY
 The /special keys/ cover (mostly) non-printable keys that can be used as a /key/.
 
-The following are valid /special key​s/:
+The following are recognized /special key​/ forms:
 
 #+begin_quote
 /Left/,  /Right/,  /Up/,      /Down/,
@@ -160,12 +162,14 @@ The following are valid /special key​s/:
 
 *NOTE* that several of the /special keys/ are technically
 printable, and will be recognized as a regular /key/ if
-escaped with a backslash, */*. You escape a normal *space* for
-use in your /key chords/, but when you hit *space* it will
-be recognized as a /special key/ and will fail to match the
-*space* /key/ that you might expect. In short, use the
-special forms listed above to ensure the corresponding
-keypress events trigger the desired /key chord/.
+escaped with a backslash *\*. You may escape a normal
+*space* for use in your /key chords/, but when you hit
+*space* it will be recognized as a /special key/ and will
+fail to match the *space* /key/ in your /key chords/.
+
+In short, please use the special forms listed above to
+ensure the corresponding keypress events trigger the desired
+/key chord/.
 
 ** MODIFIER
 A /modifier/ is a prefix that can be added before any other
@@ -183,13 +187,14 @@ following:
 
 *NOTE* that a /modifier/ can be given more than once
 according to the grammar, but there is no practical benefit
-to this. Additionally, the *S-* (/Shift/) /modifier/ can be
-given before /UTF-8/ /keys/, but it will be ignored. It is
-only considered when it precedes a /special key/.
+to this. Additionally, the *S-* (/Shift/) /modifier/ will be
+ignored for all non /special keys/. You can define a /key/
+like *S-x*, but when you press *Shift+x*, *wk* will only
+match the /key/ defined as *X*.
 
 ** DESCRIPTION
 A /description/ provides a human-readable explanation or
-label for a /key chord/. It is enclosed in double quotes,
+label for a /key chord/. It is enclosed in double quotes
 *"*. If a double quote needs to be included within the
 /description/, it must be escaped with a backslash.
 
@@ -205,15 +210,15 @@ The content within the delimiters can be any valid shell
 An /interpolation/ may be used with a /command/. See
 *INTERPOLATION* below for a full explanation.
 
-*NOTE* any /command/ given to the /before/, or /sync-after/
-/hooks/ will be run in a blocking manner. Additionally, if
-the /sync-command/ /flag/ is given, the the current
-/chord/'s /command/ becomes blocking. Depending on the
-/command/, *wk* may never regain control. This is a serious
-concern as *wk* only releases the keyboard after it has
-completed or encountered an  error.  This could leave the
-user with an unresponsive keyboard until they restart their
-system. Think carefully before using a /command/ in a
+*NOTE* any /command/ given to the /sync-before/, or
+/sync-after/ /hooks/ will be run in a blocking manner.
+Additionally, if the /sync-command/ /flag/ is given, the the
+current /chord/'s /command/ becomes blocking. Depending on
+the /command/ *wk* may never regain control. This is a
+serious concern as *wk* only releases the keyboard after it
+has completed or encountered an  error.  This could leave
+the user with an unresponsive keyboard until they restart
+their system. Think carefully before using a /command/ in a
 blocking fashion.
 
 ** INTERPOLATION
@@ -221,30 +226,30 @@ An /interpolation/ works the same way in *wks* as it does in
 many programming languages. An /interpolation/ may be given
 within a /description/ or a /command/, except where
 otherwise noted. An /interpolation/ begins with the *%(*
-delimiter and ends with a closing parentheses, *)*. Within
+delimiter and ends with a closing parentheses *)*. Within
 these delimiters, a single identifier must be given.
 
 ** IDENTIFIER
 The following identifiers are valid within an /interpolation/:
 
 #+begin_quote
-- /key/ ::
+- *key* ::
   The /key/ /identifier/ corresponds to the /key/ of the
   current /chord/. This makes the most sense to use within a
   /chord array/ or for a /chord/ that may change frequently
   or is not know ahead of time.
 
-- /index/ ::
+- *index* ::
   The /index/ /identifier/ corresponds to the 0 base index of
   the current /chord/ or /prefix/ within the current scope.
   *NOTE* a /prefix/ starts a new scope.
 
-- /index+1/ ::
+- *index+1* ::
   The /index+1/ /identifier/ corresponds to the 1 base index
   of the current /chord/ or /prefix/ within the current
   scope. *NOTE* a /prefix/ starts a new scope.
 
-- /desc/ and /description/ ::
+- *desc* and *description* ::
   The /desc/ and /description/ /identifiers/ correspond to the
   /description/ of the current /chord/ or /prefix/. Neither
   /identifier/ may not be given within a /description/. An
@@ -253,98 +258,169 @@ The following identifiers are valid within an /interpolation/:
 
 ** KEYWORD
 A /keyword/ is an optional instruction to modify the
-behavior of a *chord* or *prefix*. Is starts with a colon
-*:* followed by a *hook* or a *flag*.
+behavior of a /chord/ or /prefix/. The /keywords/ include
+*HOOKS*, *FLAGS*, and *PREPORCESSOR COMMANDS*. See below for
+details.
 
 ** HOOK
-A *hook* is a convenient way to add a *command* to a
-*chord*. The *hook* *command* is executed in accordance with
-the specification for the type of *hook*.
+A /hook/ is a convenient way to add a /command/ to a
+/chord/. A /hook/ may be given after a /description/
+starting with a caret *^*, followed by a /hook/ and a
+/command/. If multiple of the same /hooks/ are given to a
+/key chord/ the final instance will overshadow the others.
+The /hook/ /command/ is executed in accordance with the
+specification for the type of /hook/.
 
-The following are valid *hook*​s:
+The following are valid /hooks/:
 
 #+begin_quote
-- _before_ *command* ::
-  The *command* given to the _before_ *hook* is executed
-  before the current *chord*'s *command*, as the name
-  implies. The *chord*'s *command* will not run until the
-  _before_ *command* completes execution. See the *COMMAND*
-  section for best practices regarding blocking *command*​s.
-- _after_ *command* ::
-  The *command* given to the _after_ *hook* is executed
-  after the current *chord*'s *command*, as the name
-  implies. The _after_ *command* is executed as a separate
-  non-blocking process like a *chord*'s command, meaning
-  *wk* will not wait for the _after_ *command* to complete
-  before it continues its business.
-- _sync-before_ *command* ::
-  The *command* given to the _sync-before_ *hook* is
-  executed before the current *chord*'s *command*, as the
-  name implies. Additionally, it is executed as a separate
-  non-blocking process. The *chord*'s *command* will run
-  right after the _sync-before_ *command* is dispatched,
-  regardless of if or when the _sync-before_ *command* has
-  completed.
-- _sync-after_ *command* ::
-  The *command* given to the _sync-after_ *hook* is executed
-  after the current *chord*'s *command*, as the name
-  implies. The _sync-after_ *command* is executed as a
-  blocking process, meaning *wk* may never close if the
-  *command* does not complete execution. See the *COMMAND*
-  section for best practices regarding blocking *command*​s.
+- *before* /command/ ::
+  The /command/ given to the /before/ /hook/ is executed
+  before the current /chord/'s /command/, as the name
+  implies. The /before/ /command/ is run asynchronously,
+  meaning the /chord/'s /command/ may complete before the
+  /before/ /command/ has completed execution. If you need
+  the /chord/'s /command/ to be run in sync with the
+  /before/ /command/, consider if there is some other way to
+  achieve this before using the /sync-before/ /hook/.
+
+- *after* /command/ ::
+  The /command/ given to the /after/ /hook/ is executed
+  after the current /chord/'s /command/, as the name
+  implies. The /after/ /command/ is run asynchronously,
+  meaning *wk* will not wait for the command to complete
+  before resuming execution. I *wk* should wait until the
+  /after/ /command/ completes you can use the /sync-after/
+  /hook/. Just be certain you understand the pitfalls this
+  introduces before you use that /hook/.
+
+- *sync-before* /command/ ::
+  The /command/ given to the /sync-before/ /hook/ is
+  executed before the current /chord/'s /command/, as the
+  name implies. Additionally, it is run in a blocking
+  fashion, meaning *wk* will not resume control until after
+  the command completes or is terminated. See the *COMMAND*
+  section for best practices regarding blocking /commands/.
+
+- *sync-after* /command/ ::
+  The /command/ given to the /sync-after/ /hook/ is
+  executed after the current /chord/'s /command/, as the
+  name implies. Additionally, it is run in a blocking
+  fashion, meaning *wk* will not resume control until after
+  the command completes or is terminated. See the *COMMAND*
+  section for best practices regarding blocking /commands/.
 #+end_quote
 
-** FLAG
-A *flag* is a convenient way to modify the behavior of a
-*chord* or *prefix*. When given to a *prefix* the *flag* is
-passed on to all *chord*​s and *chord array*​s in the
-*prefix*, but not any children *prefix*​es.
+See *INHERITENCE* for an explanation of how /hooks/ work
+when given to a /prefix/.
 
-The following are valid *flag*​s:
+See *EXAMPLES* for a demonstration on /hooks/.
+
+** FLAG
+A /flag/ is a convenient way to modify the behavior of a
+/key chord/. A /flag/ may be passed after a /description/
+begining with the plus character *+*. After the *+*, a
+/flag/ name is specified.
+
+The following are /flag/ names and how they affect the
+behavior of *wk*:
 
 #+begin_quote
-- _keep_ ::
-  Normally, after executing a *chord*, *wk* will close. By
-  supplying the _keep_ flag, the *wk* window will persist
-  for any *chord* that is given the _keep_ *flag*. This
-  includes explicitly supplying the *flag* and when it is
-  inherited from a surrounding *prefix*.
-- _close_ ::
-  The _close_ *flag* is the default behavior for any
-  *chord*. However, a *chord* may inherit the _keep_ *flag*
-  from a surrounding *prefix*. When this new behavior is
-  undesired specifying the _close_ flag will restore the
+- *keep* ::
+  Normally, after executing a /chord/, *wk* will close. By
+  supplying the /keep/ flag, *wk* will persist after the the
+  /key chord/ is trigger. This enables you to trigger
+  additional /key chords/ until a triggered /key chord/ does
+  not supply the /keep/ /flag/ or no /key chords/ match the
+  keypress event.
+
+- *close* ::
+  The /close/ /flag/ is the default behavior for any
+  /chord/. However, a /chord/ may inherit the /keep/ /flag/
+  from a surrounding /prefix/. When this new behavior is
+  undesired specifying the /close/ /flag/ will restore the
   default behavior and end the *wk* program after the
-  *chord* is completed.
-- _inherit_ ::
-  The _inherit_ *flag* is only relevant to a child *prefix*
-  that wants to _inherit_ *flag*​s and *hook*​s from the
-  parent *prefix*. Inheritance is not the norm, hence this
-  *flag* must be given explicitly.
-- _unhook_ ::
-  The _unhook_ *flag* causes a child *chord* to ignore all
-  *flag*​s and *hook*​s present in the parent. This does not
-  effect those given to the *chord* explicitly.
-- _no-before_ ::
-  The _no-before_ *flag* prevents a child *chord* from
-  inheriting a _before_ or _sync-before_ *hook* present in
-  the parent *prefix*.
-- _no-after_ ::
-  The _no-after_ *flag* prevents a child *chord* from
-  inheriting an _after_ or _sync-after_ *hook* present in
-  the parent *prefix*.
-- _write_ ::
-  By default, *wk* will execute a *chord* *command* as though
-  it were a shell command. When the _write_ *flag* is
-  present, the *command* of the affected *chord* is simply
-  written to the standard output.
-- _sync-command_ ::
-  By default, *wk* will execute a *chord* *command* in a
-  separate process to prevent any hangup for a *command* that
-  may never exit. If it makes more sense for *wk* to wait
-  for the command to complete before it continues, then
-  provide the _sync-command_ *flag*. *NOTE* that this could
-  prevent *wk* from closing which is concerning as it
-  retains control of the user keyboard throughout execution.
-  You may need to restart your system if used improperly.
+  /chord/ is triggerd.
+
+- *inherit* ::
+  The /inherit/ /flag/ is only relevant to a child /prefix/
+  that wants to /inherit/ /flags/ and /hooks/ from its
+  parent /prefix/. Inheritance is not the norm, hence this
+  /flag/ must be given explicitly.
+
+- *unhook* ::
+  The /unhook/ /flag/ causes a child /key chord/ to ignore
+  all /flags/ and /hooks/ present in the parent /prefix/.
+  Additional /hooks/ and /flags/ may be given to the child
+  /key chord/ will work as expected.
+
+- *no-before* ::
+  The /no-before/ /flag/ prevents a child /key chord/ from
+  inheriting a /before/ or /sync-before/ /hook/ present in
+  the parent /prefix/. Any /before/ or /sync-before/ /hooks/
+  given to the child /key chord/ will take precedence over
+  those that may be inherited from a parent /prefix/. In
+  this case, the /no-before/ /flag/ is redundant as the
+  parent /hooks/ are overshadowed.
+
+- *no-after* ::
+  The /no-after/ /flag/ prevents a child /key chord/ from
+  inheriting an /after/ or /sync-after/ /hook/ present in
+  the parent /prefix/. Any /after/ or /sync-after/ /hooks/
+  given to the child /key chord/ will take precedence over
+  those that may be inherited from a parent /prefix/. In
+  this case, the /no-after/ /flag/ is redundant as the
+  parent /hooks/ are overshadowed.
+
+- *write* ::
+  By default, *wk* will execute a /chord/'s /command/ as
+  though it were a shell command. When the /write/ /flag/ is
+  passed, the /command/ of the affected /chord/ is simply
+  written to the standard output. See *EXAMPLES* bleow if
+  the effect is unclear.
+
+- *sync-command* ::
+  By default, *wk* will execute a /chord/'s /command/
+  asynchronously. This means *wk* will continue execution
+  despite the state of the /command/. If, for some reason, a
+  /chord/'s /command/ should block *wk* from continuing
+  until the /command/ ends, then you can supply the
+  /sync-command/ /flag/. See *COMMAND* above to understand
+  the pitfalls of blocking /commands/ in *wk*.
+#+end_quote
+
+See *INHERITENCE* for an explanation of how /flags/ work
+when given to a /prefix/.
+
+See *EXAMPLES* for a demonstration on /hooks/.
+
+** PREPROCESSOR MACROS
+A /preprocessor macro/ begins with a colon *:*, followed by
+a supported macro.
+
+The following are the supported /preprocessor macros/ and
+their affects on *wks* files.
+
+#+begin_quote
+- *include* "/FILEPATH/" ::
+  The /include/ /preprocessor macro/ acts in much the same
+  way as the *C* macro by the same name. When the
+  preprocessor spots an /include/ macro it will replace it
+  with the contents of the given /file/. The /filepath/ may
+  be a relative or absolute /path/ to some *wks* /file/. If
+  the /filepath/ is relative it is assumed to be relative to
+  the /filepath/ of the current *wks* /file/ being
+  processed.  Absolute /filepaths/ are just that and not
+  very interesting. One thing to note is that the /included/
+  /file/ will be immediately loaded and then scanned by the
+  preprocessor before the rest of the original file is
+  scanned. This macro enables *wks* files to be quite
+  modular as it can be given *anywhere* inside a *wks* file.
+  This enables users to /include/ a *wks* file that is not
+  valid when parsed on its own, but in the context of the
+  /including/ *wks* file, it becomes valid. The opposite is
+  also true. A perfectly valid *wks* file that /includes/ an
+  invalid *wks* file in such a way that it does not become
+  valid, will then itself become invalid. One bad apple and
+  all that. See *EXAMPLES* for a demonstration.
 #+end_quote
