@@ -25,6 +25,6 @@ typedef struct
 } Compiler;
 
 bool compileKeyChords(Compiler* compiler, WkMenu* menu);
-void initCompiler(Compiler* compiler, const char* source);
+void initCompiler(Compiler* compiler, const char* source, const char* filePath);
 
 #endif /* WK_COMPILER_COMPILE_H_ */

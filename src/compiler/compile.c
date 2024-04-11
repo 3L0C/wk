@@ -375,9 +375,9 @@ compileKeyChords(Compiler* compiler, WkMenu* menu)
 }
 
 void
-initCompiler(Compiler* compiler, const char* source)
+initCompiler(Compiler* compiler, const char* source, const char* filePath)
 {
-    initScanner(&compiler->scanner, source);
+    initScanner(&compiler->scanner, source, filePath);
     compiler->hadError = false;
     compiler->panicMode = false;
     compiler->index = 0;

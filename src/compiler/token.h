@@ -87,6 +87,7 @@ typedef struct
     const char* start;
     size_t length;
     size_t line;
+    size_t column;
     const char* message;
     size_t messageLength;
 } Token;
@@ -98,7 +99,7 @@ typedef struct
     size_t count;
 } TokenArray;
 
-void cloneToken(Token* from, Token* to);
+void copyToken(Token* from, Token* to);
 void copyTokenArray(TokenArray* from, TokenArray* to);
 void initToken(Token* token);
 void initTokenArray(TokenArray* array);

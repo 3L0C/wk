@@ -6,7 +6,6 @@
 
 #include "debug.h"
 #include "line.h"
-#include "scanner.h"
 #include "token.h"
 
 static char
@@ -112,22 +111,6 @@ disassembleToken(Token* token)
     default: type = "UNKNOWN TYPE!"; break;
     }
     printSimpleToken(token, type);
-}
-
-void
-debugScanner(const char* source)
-{
-    assert(source);
-
-    Scanner scanner;
-    initScanner(&scanner, source);
-    while (true)
-    {
-        Token token = {0};
-        scanToken(&scanner, &token);
-        if (token.type == TOKEN_EOF) return;
-        disassembleToken(&token);
-    }
 }
 
 static void

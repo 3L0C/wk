@@ -33,7 +33,10 @@ errorAt(Compiler* compiler, Token* token, const char* message)
     if (compiler->panicMode) return;
     compiler->panicMode = true;
 
-    fprintf(stderr, "[ERROR] [line %04zu] Error", token->line);
+    fprintf(
+        stderr, "%s:%zu:%zu: error",
+        compiler->scanner.filePath, token->line, token->column
+    );
 
     if (token->type == TOKEN_EOF)
     {
@@ -62,7 +65,7 @@ errorAtCurrent(Compiler* compiler, const char* message)
 static void
 advanceCompiler(Compiler* compiler)
 {
-    cloneToken(&compiler->current, &compiler->previous);
+    copyToken(&compiler->current, &compiler->previous);
 
     while (true)
     {

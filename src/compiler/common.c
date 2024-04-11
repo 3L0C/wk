@@ -128,10 +128,10 @@ pressKeys(WkMenu* menu, const char* keys)
     assert(menu && keys);
 
     Scanner scanner;
-    initScanner(&scanner, keys);
+    initScanner(&scanner, keys, "KEYS");
     WkStatus status = pressKey(menu, &scanner);
 
-    while (*scanner.current != '\0' && statusIsRunning(status))
+    while (!isAtEnd(&scanner) && statusIsRunning(status))
     {
         status = pressKey(menu, &scanner);
     }

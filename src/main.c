@@ -60,7 +60,7 @@ transpile(void)
 
     /* Begin compilation. */
     Compiler compiler;
-    initCompiler(&compiler, processedSource);
+    initCompiler(&compiler, processedSource, mainMenu.client.transpile);
 
     /* File is mallformed, fail. */
     if (!transpileChords(&compiler, mainMenu.delimiter, mainMenu.debug))
@@ -105,7 +105,7 @@ runScript(void)
 
     /* Begin compilation */
     Compiler compiler;
-    initCompiler(&compiler, processedSource);
+    initCompiler(&compiler, processedSource, "script");
 
     /* User script is mallformed, fail. */
     if (!transpileChords(&compiler, mainMenu.delimiter, mainMenu.debug))
@@ -182,7 +182,7 @@ runChordsFile(void)
 
     /* Begin compilation */
     Compiler compiler;
-    initCompiler(&compiler, processedSource);
+    initCompiler(&compiler, processedSource, mainMenu.client.keyChordsFile);
 
     /* User file is mallformed, fail. */
     if (!transpileChords(&compiler, mainMenu.delimiter, mainMenu.debug))

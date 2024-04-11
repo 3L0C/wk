@@ -161,7 +161,7 @@ runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
     assert(menu && source);
 
     Scanner scanner = {0};
-    initScanner(&scanner, source);
+    initScanner(&scanner, source, sourcePath);
     String result = {0};
     initString(&result);
     const char* scannerStart = scanner.head;

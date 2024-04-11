@@ -9,23 +9,13 @@
 #include "token.h"
 
 void
-cloneToken(Token* from, Token* to)
-{
-    to->type = from->type;
-    to->start = from->start;
-    to->length = from->length;
-    to->line = from->line;
-    to->message = from->message;
-    to->messageLength = from->messageLength;
-}
-
-static void
 copyToken(Token* from, Token* to)
 {
     to->type = from->type;
     to->start = from->start;
     to->length = from->length;
     to->line = from->line;
+    to->column = from->column;
     to->message = from->message;
     to->messageLength = from->messageLength;
 }
@@ -56,6 +46,7 @@ initToken(Token* token)
     token->start = NULL;
     token->length = 0;
     token->line = 0;
+    token->column = 0;
     token->message = NULL;
     token->messageLength = 0;
 }

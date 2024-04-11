@@ -24,14 +24,16 @@ typedef enum
 } CharType;
 
 void
-initScanner(Scanner* scanner, const char* source)
+initScanner(Scanner* scanner, const char* source, const char* filePath)
 {
     assert(scanner && source);
 
     scanner->head = source;
     scanner->start = source;
     scanner->current = source;
+    scanner->filePath = filePath;
     scanner->line = 1;
+    scanner->column = 0;
     scanner->interpType = TOKEN_NO_INTERP;
     scanner->isInterpolation = false;
     scanner->hadError = false;
@@ -43,7 +45,9 @@ cloneScanner(Scanner* scanner, Scanner* clone)
     clone->head = scanner->head;
     clone->start = scanner->start;
     clone->current = scanner->current;
+    clone->filePath = scanner->filePath;
     clone->line = scanner->line;
+    clone->column = scanner->column;
     clone->interpType = scanner->interpType;
     clone->isInterpolation = scanner->isInterpolation;
 }
@@ -68,10 +72,20 @@ isAtEnd(const Scanner* scanner)
     return *scanner->current == '\0';
 }
 
+static void
+scannerUpdateLineAndColumn(Scanner* scanner, char c)
+{
+    switch (c)
+    {
+    case '\n': scanner->line++; scanner->column = 0; break;
+    default: scanner->column++; break;
+    }
+}
+
 static char
 advanceScanner(Scanner* scanner)
 {
-    scanner->current++;
+    scannerUpdateLineAndColumn(scanner, *scanner->current++);
     return scanner->current[-1];
 }
 
@@ -106,6 +120,7 @@ makeToken(const Scanner* scanner, Token* token, const TokenType type)
     token->start = scanner->start;
     token->length = (int)(scanner->current - scanner->start);
     token->line = scanner->line;
+    token->column = scanner->column;
     /* error */
     token->message = token->start;
     token->messageLength = token->length;
@@ -120,6 +135,7 @@ errorToken(const Scanner* scanner, Token* token, const char* message)
     token->start = scanner->start;
     token->length = (int)(scanner->current - scanner->start);
     token->line = scanner->line;
+    token->column = scanner->column;
     /* error */
     token->message = message;
     token->messageLength = (int)strlen(message);
@@ -133,7 +149,7 @@ skipWhitespace(Scanner* scanner)
         char c = peek(scanner);
         switch (c)
         {
-        case '\n': scanner->line++; /* FALLTHROUGH */
+        case '\n': /* FALLTHROUGH */
         case ' ' :
         case '\r':
         case '\t':
