@@ -123,7 +123,8 @@ debugScanner(const char* source)
     initScanner(&scanner, source);
     while (true)
     {
-        Token token = scanToken(&scanner);
+        Token token = {0};
+        scanToken(&scanner, &token);
         if (token.type == TOKEN_EOF) return;
         disassembleToken(&token);
     }

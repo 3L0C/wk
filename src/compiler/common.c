@@ -14,6 +14,7 @@
 /* local includes */
 #include "common.h"
 #include "scanner.h"
+#include "token.h"
 
 static bool
 addMod(WkKey* key, TokenType type)
@@ -66,11 +67,13 @@ pressKey(WkMenu* menu, Scanner* scanner)
     char buffer[bufmax];
     memset(buffer, 0, 32);
     WkKey key = {0};
-    Token token = scanToken(scanner);
+    Token token = {0};
+    initToken(&token);
+    scanToken(scanner, &token);
 
     while (addMod(&key, token.type))
     {
-        token = scanToken(scanner);
+        scanToken(scanner, &token);
     }
 
     if (token.type == TOKEN_KEY)
@@ -111,7 +114,7 @@ pressKey(WkMenu* menu, Scanner* scanner)
 
     if (status == WK_STATUS_EXIT_OK)
     {
-        token = scanToken(scanner);
+        scanToken(scanner, &token);
         if (token.type == TOKEN_EOF) return status;
         return WK_STATUS_EXIT_SOFTWARE;
     }

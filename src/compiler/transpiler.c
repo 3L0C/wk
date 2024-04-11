@@ -62,11 +62,11 @@ errorAtCurrent(Compiler* compiler, const char* message)
 static void
 advanceCompiler(Compiler* compiler)
 {
-    compiler->previous = compiler->current;
+    cloneToken(&compiler->current, &compiler->previous);
 
     while (true)
     {
-        compiler->current = scanToken(&compiler->scanner);
+        scanToken(&compiler->scanner, &compiler->current);
         if (debug) disassembleToken(&compiler->current);
         if (compiler->current.type != TOKEN_ERROR) break;
 

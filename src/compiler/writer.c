@@ -8,7 +8,6 @@
 
 /* local includes */
 #include "line.h"
-#include "scanner.h"
 #include "token.h"
 #include "writer.h"
 

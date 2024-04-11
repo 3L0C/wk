@@ -11,6 +11,7 @@
 /* local includes */
 #include "preprocessor.h"
 #include "scanner.h"
+#include "token.h"
 
 static char*
 getLitteralIncludePath(const char* start, size_t len)
@@ -87,7 +88,9 @@ handleIncludeMacro(
     const char* includeStart = scanner->start - 1;
 
     /* Ensure filename is given. */
-    Token includeFile = scanToken(scanner);
+    Token includeFile = {0};
+    initToken(&includeFile);
+    scanToken(scanner, &includeFile);
     if (includeFile.type != TOKEN_DESCRIPTION)
     {
         errorMsg("Expect \"FILEPATH\" after ':include'.");
@@ -167,7 +170,8 @@ runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
     {
         if (scanner.hadError) goto fail;
 
-        Token token = scanToken(&scanner);
+        Token token = {0};
+        scanToken(&scanner, &token);
         switch (token.type)
         {
         case TOKEN_INCLUDE:

@@ -7,17 +7,27 @@
 
 /* local includes */
 #include "token.h"
-#include "scanner.h"
+
+void
+cloneToken(Token* from, Token* to)
+{
+    to->type = from->type;
+    to->start = from->start;
+    to->length = from->length;
+    to->line = from->line;
+    to->message = from->message;
+    to->messageLength = from->messageLength;
+}
 
 static void
 copyToken(Token* from, Token* to)
 {
-    to->type            = from->type;
-    to->start           = from->start;
-    to->length          = from->length;
-    to->line            = from->line;
-    to->message         = from->message;
-    to->messageLength   = from->messageLength;
+    to->type = from->type;
+    to->start = from->start;
+    to->length = from->length;
+    to->line = from->line;
+    to->message = from->message;
+    to->messageLength = from->messageLength;
 }
 
 void
@@ -37,6 +47,17 @@ copyTokenArray(TokenArray* from, TokenArray* to)
     {
         copyToken(&from->tokens[i], &to->tokens[i]);
     }
+}
+
+void
+initToken(Token* token)
+{
+    token->type = TOKEN_EMPTY;
+    token->start = NULL;
+    token->length = 0;
+    token->line = 0;
+    token->message = NULL;
+    token->messageLength = 0;
 }
 
 void

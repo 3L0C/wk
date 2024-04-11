@@ -84,13 +84,13 @@ wayland: $(WAY_FILES)
 wayland: options
 wayland: $(BUILD_DIR)/$(NAME)
 
-debug: CFLAGS += -ggdb
+debug: CFLAGS += -ggdb -pg
 debug: all
 
-debug-x11: CFLAGS += -ggdb
+debug-x11: CFLAGS += -ggdb -pg
 debug-x11: x11
 
-debug-wayland: CFLAGS += -ggdb
+debug-wayland: CFLAGS += -ggdb -pg
 debug-wayland: wayland
 
 $(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $$(TARGET_OBJS)
