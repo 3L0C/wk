@@ -195,11 +195,13 @@ static void
 writeChordFlags(WkFlags* flags)
 {
     printf(
-        "MAKE_FLAGS(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s), ",
+        "MAKE_FLAGS(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s), ",
         (flags->keep ? "true" : "false"),
         (flags->close ? "true" : "false"),
         (flags->inherit ? "true" : "false"),
+        (flags->ignore ? "true" : "false"),
         (flags->unhook ? "true" : "false"),
+        (flags->deflag ? "true" : "false"),
         (flags->nobefore ? "true" : "false"),
         (flags->noafter ? "true" : "false"),
         (flags->write ? "true" : "false"),

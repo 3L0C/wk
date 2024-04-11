@@ -35,55 +35,64 @@
 
 /* flag macros */
 #define MAKE_FLAGS(                     \
-    _keep, _close, _inherit, _unhook,   \
+    _keep, _close, _inherit, _ignore,   \
+    _unhook, _deflag,                   \
     _nobefore, _noafter, _write,        \
-    _syncCommand, _beforeSync,         \
+    _syncCommand, _beforeSync,          \
     _afterSync                          \
 )                                       \
     (WkFlags){                          \
         .keep = (_keep),                \
         .close = (_close),              \
         .inherit = (_inherit),          \
+        .ignore = (_ignore),            \
         .unhook = (_unhook),            \
+        .deflag = (_deflag),            \
         .nobefore = (_nobefore),        \
         .noafter = (_noafter),          \
         .write = (_write),              \
         .syncCommand = (_syncCommand),  \
-        .beforeSync = (_beforeSync),  \
+        .beforeSync = (_beforeSync),    \
         .afterSync = (_afterSync),      \
     }
 #define RESET_FLAGS(flags)              \
     ((flags).keep = false,              \
      (flags).close = false,             \
      (flags).inherit = false,           \
+     (flags).ignore = false,            \
      (flags).unhook = false,            \
+     (flags).deflag = false,            \
      (flags).nobefore = false,          \
      (flags).noafter = false,           \
      (flags).write = false,             \
      (flags).syncCommand = false,       \
-     (flags).beforeSync = false,       \
+     (flags).beforeSync = false,        \
      (flags).afterSync = false)
 #define HAS_FLAG(flags)                 \
     ((flags).keep        ||             \
      (flags).close       ||             \
      (flags).inherit     ||             \
+     (flags).ignore      ||             \
      (flags).unhook      ||             \
+     (flags).deflag      ||             \
      (flags).nobefore    ||             \
      (flags).noafter     ||             \
      (flags).write       ||             \
      (flags).syncCommand ||             \
-     (flags).beforeSync ||             \
+     (flags).beforeSync  ||             \
      (flags).afterSync)
 #define COUNT_FLAGS(flags)              \
     (((flags).keep)        +            \
      ((flags).close)       +            \
      ((flags).inherit)     +            \
+     ((flags).ignore)      +            \
      ((flags).unhook)      +            \
+     ((flags).deflag)      +            \
      ((flags).nobefore)    +            \
      ((flags).noafter)     +            \
      ((flags).write)       +            \
      ((flags).syncCommand) +            \
-     ((flags).beforeSync) +            \
+     ((flags).beforeSync) +             \
      ((flags).afterSync))
 #define COPY_FLAGS(from, to)                    \
     do                                          \
@@ -91,12 +100,14 @@
         (to).keep = (from).keep;                \
         (to).close = (from).close;              \
         (to).inherit = (from).inherit;          \
+        (to).ignore = (from).ignore;            \
         (to).unhook = (from).unhook;            \
+        (to).deflag = (from).deflag;            \
         (to).nobefore = (from).nobefore;        \
         (to).noafter = (from).noafter;          \
         (to).write = (from).write;              \
         (to).syncCommand = (from).syncCommand;  \
-        (to).beforeSync = (from).beforeSync;  \
+        (to).beforeSync = (from).beforeSync;    \
         (to).afterSync = (from).afterSync;      \
     } while (false)
 
@@ -159,7 +170,9 @@ typedef struct
     bool keep:1;
     bool close:1;
     bool inherit:1;
+    bool ignore:1;
     bool unhook:1;
+    bool deflag:1;
     bool nobefore:1;
     bool noafter:1;
     bool write:1;

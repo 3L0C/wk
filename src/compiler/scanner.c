@@ -224,14 +224,20 @@ getFlag(Scanner* scanner)
     {
     case 'k': if (isKeyword(scanner, 1, 3, "eep")) result = TOKEN_KEEP; break;
     case 'c': if (isKeyword(scanner, 1, 4, "lose")) result = TOKEN_CLOSE; break;
-    case 'i': if (isKeyword(scanner, 1, 6, "nherit")) result = TOKEN_INHERIT; break;
-    case 'u': if (isKeyword(scanner, 1, 5, "nhook")) result = TOKEN_UNHOOK; break;
+    case 'd': if (isKeyword(scanner, 1, 5, "eflag")) result = TOKEN_DEFLAG; break;
+    case 'i':
+    {
+        if (isKeyword(scanner, 1, 6, "nherit")) result = TOKEN_INHERIT;
+        else if (isKeyword(scanner, 1, 5, "gnore")) result = TOKEN_IGNORE;
+        break;
+    }
     case 'n':
     {
         if (isKeyword(scanner, 1, 8, "o-before")) result = TOKEN_NO_BEFORE;
         else if (isKeyword(scanner, 1, 7, "o-after")) result = TOKEN_NO_AFTER;
         break;
     }
+    case 'u': if (isKeyword(scanner, 1, 5, "nhook")) result = TOKEN_UNHOOK; break;
     case 'w': if (isKeyword(scanner, 1, 4, "rite")) result = TOKEN_WRITE; break;
     case 's': if (isKeyword(scanner, 1, 11, "ync-command")) result = TOKEN_SYNC_CMD; break;
     default: break;

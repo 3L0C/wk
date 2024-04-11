@@ -284,13 +284,15 @@ keywords(Compiler* compiler, Line* lineDest)
             command(compiler, &lineDest->after);
             compiler->line.flags.afterSync = true;
             break;
-        case TOKEN_KEEP:        lineDest->flags.keep = true; break;
-        case TOKEN_INHERIT:     lineDest->flags.inherit = true; break;
-        case TOKEN_UNHOOK:      lineDest->flags.unhook = true; break;
-        case TOKEN_NO_BEFORE:   lineDest->flags.nobefore = true; break;
-        case TOKEN_NO_AFTER:    lineDest->flags.noafter = true; break;
-        case TOKEN_WRITE:       lineDest->flags.write = true; break;
-        case TOKEN_SYNC_CMD:    lineDest->flags.syncCommand = true; break;
+        case TOKEN_KEEP:            lineDest->flags.keep = true; break;
+        case TOKEN_INHERIT:         lineDest->flags.inherit = true; break;
+        case TOKEN_IGNORE:          lineDest->flags.ignore = true; break;
+        case TOKEN_IGNORE_HOOKS:    lineDest->flags.ignoreHooks = true; break;
+        case TOKEN_IGNORE_FLAGS:    lineDest->flags.ignoreFlags = true; break;
+        case TOKEN_NO_BEFORE:       lineDest->flags.nobefore = true; break;
+        case TOKEN_NO_AFTER:        lineDest->flags.noafter = true; break;
+        case TOKEN_WRITE:           lineDest->flags.write = true; break;
+        case TOKEN_SYNC_CMD:        lineDest->flags.syncCommand = true; break;
         default: return; /* not a keyword but not an error */
         }
         /* consume keyword */
@@ -397,10 +399,20 @@ end:
     freeLineArray(&lines);
 }
 
+static Line*
+getLastLine(LineArray* lines)
+{
+    if (lines->count == 0) return NULL;
+    return &lines->lines[lines->count - 1];
+}
+
 static void
 setFlags(WkFlags* parent, WkFlags* child)
 {
     assert(parent && child);
+
+    /* Do not inherit when ignored. */
+    if (child->deflag) return;
 
     if (parent->keep && !child->close) child->keep = parent->keep;
     if (parent->write) child->write = parent->write;
@@ -414,6 +426,9 @@ setBeforeHook(Line* parent, Line* child)
 {
     assert(parent && child);
 
+    /* Do not inherit when ignored. */
+    if (child->flags.nobefore) return;
+
     if (parent->before.count == 0) return;
     if (child->before.count) return;
     freeTokenArray(&child->before);
@@ -425,17 +440,25 @@ setAfterHook(Line* parent, Line* child)
 {
     assert(parent && child);
 
+    /* Do not inherit when ignored. */
+    if (child->flags.noafter) return;
+
     if (parent->after.count == 0) return;
     if (child->after.count) return;
     freeTokenArray(&child->after);
     copyTokenArray(&parent->after, &child->after);
 }
 
-static Line*
-getLastLine(LineArray* lines)
+static void
+setHooks(Line* parent, Line* child)
 {
-    if (lines->count == 0) return NULL;
-    return &lines->lines[lines->count - 1];
+    assert(parent && child);
+
+    /* Do not inherit when ignored. */
+    if (child->flags.unhook) return;
+
+    setBeforeHook(parent, child);
+    setAfterHook(parent, child);
 }
 
 static void
@@ -448,19 +471,17 @@ setHooksAndFlags(Line* parent, LineArray* children)
         Line* child = &children->lines[i];
 
         /* NOTE Don't copy anything from parent if unhooked */
-        if (child->flags.unhook) continue;
+        if (child->flags.ignore) continue;
 
         setFlags(&parent->flags, &child->flags);
         if (child->array.count && child->flags.inherit)
         {
-            setBeforeHook(parent, child);
-            setAfterHook(parent, child);
+            setHooks(parent, child);
             setHooksAndFlags(child, &child->array);
         }
         else if (child->array.count == 0)
         {
-            setBeforeHook(parent, child);
-            setAfterHook(parent, child);
+            setHooks(parent, child);
         }
     }
 }

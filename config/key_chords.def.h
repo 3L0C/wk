@@ -19,7 +19,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
         NULL, 
         NULL, 
         NULL, 
-        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), 
+        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false),
         PREFIX(
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -27,7 +27,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "brave", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -35,7 +35,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "firefox", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -43,7 +43,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "librewolf", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -51,7 +51,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 NULL, 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), 
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false),
                 PREFIX(
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -59,7 +59,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "mullvad-exclude brave", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -67,7 +67,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "mullvad-exclude firefox", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -75,7 +75,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "mullvad-exclude librewolf", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
                     }
                 )
             }
@@ -87,7 +87,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
         NULL, 
         NULL, 
         NULL, 
-        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), 
+        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false),
         PREFIX(
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -95,7 +95,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "dwmc shifttag +1 ; dwmc shiftview +1", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -103,7 +103,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "dwmc tagnmon 1", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -111,7 +111,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "dwmc shifttag -1 ; dwmc shiftview -1", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -119,7 +119,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "dwmc tagnmon 0", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -127,7 +127,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 NULL, 
                 "dwmc tagex 13", 
                 NULL, 
-                MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), 
+                MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false),
                 PREFIX(
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -135,7 +135,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 0", 
                         "dwmc tagex 0", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -143,7 +143,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 1", 
                         "dwmc tagex 1", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -151,7 +151,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 2", 
                         "dwmc tagex 2", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -159,7 +159,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 3", 
                         "dwmc tagex 3", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -167,7 +167,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 4", 
                         "dwmc tagex 4", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -175,7 +175,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 5", 
                         "dwmc tagex 5", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -183,7 +183,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 6", 
                         "dwmc tagex 6", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -191,7 +191,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 7", 
                         "dwmc tagex 7", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -199,7 +199,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc viewex 8", 
                         "dwmc tagex 8", 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     }
                 )
             },
@@ -209,7 +209,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "sleep 0.1 ; dwmc killclient", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -217,7 +217,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "dwmc togglesticky", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -225,7 +225,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 NULL, 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), 
+                MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false),
                 PREFIX(
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -233,7 +233,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 0", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -241,7 +241,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 1", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -249,7 +249,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 2", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -257,7 +257,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 3", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -265,7 +265,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 4", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -273,7 +273,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 5", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -281,7 +281,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 6", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -289,7 +289,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 7", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     },
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -297,7 +297,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         "dwmc tagex 8", 
                         NULL, 
                         NULL, 
-                        MAKE_FLAGS(true, false, false, false, false, false, false, false, false, false), NULL
+                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false, false, false), NULL
                     }
                 )
             }
@@ -309,7 +309,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
         NULL, 
         "dwmc viewex 1", 
         NULL, 
-        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), 
+        MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false),
         PREFIX(
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -317,7 +317,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "emacsclient -c -a ''", 
                 "dwmc viewex 1", 
                 NULL, 
-                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
             },
             {
                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -325,7 +325,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 NULL, 
                 "dwmc viewex 1", 
                 NULL, 
-                MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false), 
+                MAKE_FLAGS(false, false, false, false, true, false, false, false, false, false, false, false),
                 PREFIX(
                     {
                         MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -333,7 +333,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                         NULL, 
                         "dwmc viewex 1", 
                         NULL, 
-                        MAKE_FLAGS(false, false, true, false, false, false, false, false, false, false), 
+                        MAKE_FLAGS(false, false, false, false, true, false, false, false, false, false, false, false),
                         PREFIX(
                             {
                                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -341,7 +341,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                                 "emacs \"~/programs/C\"", 
                                 "dwmc viewex 1", 
                                 NULL, 
-                                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
                             },
                             {
                                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -349,7 +349,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                                 "emacs \"~/.local/src/dwm\"", 
                                 "dwmc viewex 1", 
                                 NULL, 
-                                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
                             },
                             {
                                 MAKE_MODS(false, false, false, false), WK_SPECIAL_NONE, 
@@ -357,7 +357,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                                 "emacs \"~/.local/src/dmenu\"", 
                                 "dwmc viewex 1", 
                                 NULL, 
-                                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false), NULL
+                                MAKE_FLAGS(false, false, false, false, false, false, false, false, false, false, false, false), NULL
                             }
                         )
                     }
@@ -369,7 +369,7 @@ WkKeyChord keyChords[] = KEY_CHORDS(
                 "emacsclient -c -a '' \"$HOME/ewiki/20230620214854-startpage.org\"", 
                 NULL, 
                 NULL, 
-                MAKE_FLAGS(false, false, false, true, false, false, false, false, false, false), NULL
+                MAKE_FLAGS(false, false, false, false, false, true, false, false, false, false, false, false), NULL
             }
         )
     }

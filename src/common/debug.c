@@ -165,7 +165,9 @@ debugFlags(const WkFlags* flags, unsigned int indent)
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
     if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
+    if (flags->ignore) printf("IGNORE%c", getDelim(&count, '|', '\n'));
     if (flags->unhook) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
+    if (flags->deflag) printf("DEFLAG%c", getDelim(&count, '|', '\n'));
     if (flags->nobefore) printf("NO_BEFORE%c", getDelim(&count, '|', '\n'));
     if (flags->noafter) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
     if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));

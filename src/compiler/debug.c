@@ -53,7 +53,9 @@ disassembleToken(Token* token)
     case TOKEN_AFTER:               type = "TOKEN_BEGIN";               break;
     case TOKEN_KEEP:                type = "TOKEN_KEEP";                break;
     case TOKEN_INHERIT:             type = "TOKEN_INHERIT";             break;
-    case TOKEN_UNHOOK:              type = "TOKEN_UNHOOK";              break;
+    case TOKEN_IGNORE:              type = "TOKEN_IGNORE";              break;
+    case TOKEN_IGNORE_HOOKS:        type = "TOKEN_IGNORE_HOOKS";        break;
+    case TOKEN_IGNORE_FLAGS:        type = "TOKEN_IGNORE_FLAGS";        break;
     case TOKEN_NO_BEFORE:           type = "TOKEN_NO_BEFORE";           break;
     case TOKEN_NO_AFTER:            type = "TOKEN_NO_AFTER";            break;
     case TOKEN_WRITE:               type = "TOKEN_WRITE";               break;
@@ -178,7 +180,7 @@ printFlags(WkFlags* flags)
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
     if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
-    if (flags->unhook) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
+    if (flags->ignore) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
     if (flags->nobefore) printf("NOBEFORE%c", getDelim(&count, '|', '\n'));
     if (flags->noafter) printf("NOAFTER%c", getDelim(&count, '|', '\n'));
     if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
