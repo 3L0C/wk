@@ -260,7 +260,7 @@ compileBeforeCommand(Line* line, String* result, WkKeyChord* keyChord)
 {
     assert(line && result && keyChord);
 
-    compileStringFromTokens(&line->command, line, result);
+    compileStringFromTokens(&line->before, line, result);
     keyChord->before = result->string;
     disownString(result);
 }
@@ -270,7 +270,7 @@ compileAfterCommand(Line* line, String* result, WkKeyChord* keyChord)
 {
     assert(line && result && keyChord);
 
-    compileStringFromTokens(&line->command, line, result);
+    compileStringFromTokens(&line->after, line, result);
     keyChord->after = result->string;
     disownString(result);
 }
