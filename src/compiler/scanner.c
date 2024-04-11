@@ -469,14 +469,18 @@ checkInterpolation(Scanner* scanner)
     }
     case 'd':
     {
-        if (isKeyword(scanner, 1, 3, "esc") || isKeyword(scanner, 1, 10, "escription"))
+        if      (isKeyword(scanner, 1, 3, "esc"))   result = TOKEN_THIS_DESC;
+        else if (isKeyword(scanner, 1, 4, "esc^"))  result = TOKEN_THIS_DESC_UPCASE_FIRST;
+        else if (isKeyword(scanner, 1, 5, "esc^^")) result = TOKEN_THIS_DESC_UPCASE_ALL;
+        else if (isKeyword(scanner, 1, 4, "esc,"))  result = TOKEN_THIS_DESC_DOWNCASE_FIRST;
+        else if (isKeyword(scanner, 1, 5, "esc,,")) result = TOKEN_THIS_DESC_DOWNCASE_ALL;
+
+        /* If one of the description identifiers make sure not inside a description. */
+        if (result != TOKEN_ERROR && scanner->interpType == TOKEN_DESC_INTERP)
         {
-            if (scanner->interpType == TOKEN_DESC_INTERP)
-            {
-                return errorToken(scanner, "Cannot interpolate description within a description.");
-            }
-            result = TOKEN_THIS_DESC;
+            return errorToken(scanner, "Cannot interpolate description within a description.");
         }
+
         break;
     }
     default: errorMsg("Unexpected inrepolation start: '%c'.", *scanner->start); break;
