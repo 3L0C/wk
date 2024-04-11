@@ -75,12 +75,13 @@ compileSpecial(WkSpecial* a, Token* token)
 }
 
 static void
-compileKey(Token* token, String* key)
+compileKey(Token* token, String* result, WkKeyChord* keyChord)
 {
-    assert(token && key);
+    assert(token && result && keyChord);
 
-    disownString(key);
-    appendToString(key, token->start, token->length);
+    appendToString(result, token->start, token->length);
+    keyChord->key = result->string;
+    disownString(result);
 }
 
 static size_t
@@ -202,6 +203,18 @@ compileStringFromTokens(TokenArray* tokens, Line* line, String* result)
 }
 
 static void
+compileDescription(Line* line, String* result, WkKeyChord* keyChord)
+{
+    assert(line && result && keyChord);
+
+    compileStringFromTokens(&line->description, line, result);
+    keyChord->description = result->string;
+    disownString(result);
+}
+
+
+
+static void
 compileModsHint(WkMods* mods, String* result)
 {
     assert(mods && result);
@@ -222,6 +235,47 @@ compileHintString(WkMods* mods, const char* key, const char* description, String
 }
 
 static void
+compileHint(String* result, WkKeyChord* keyChord)
+{
+    assert(result && keyChord);
+
+    compileHintString(&keyChord->mods, keyChord->key, keyChord->description, result);
+    keyChord->hint = result->string;
+    disownString(result);
+
+}
+
+static void
+compileCommand(Line* line, String* result, WkKeyChord* keyChord)
+{
+    assert(line && result && keyChord);
+
+    compileStringFromTokens(&line->command, line, result);
+    keyChord->command = result->string;
+    disownString(result);
+}
+
+static void
+compileBeforeCommand(Line* line, String* result, WkKeyChord* keyChord)
+{
+    assert(line && result && keyChord);
+
+    compileStringFromTokens(&line->command, line, result);
+    keyChord->before = result->string;
+    disownString(result);
+}
+
+static void
+compileAfterCommand(Line* line, String* result, WkKeyChord* keyChord)
+{
+    assert(line && result && keyChord);
+
+    compileStringFromTokens(&line->command, line, result);
+    keyChord->after = result->string;
+    disownString(result);
+}
+
+static void
 compileFlags(WkFlags* from, WkFlags* to)
 {
     COPY_FLAGS(*from, *to);
@@ -232,37 +286,18 @@ compileLine(WkKeyChord* keyChord, Line* line)
 {
     assert(keyChord && line);
 
+    compileMods(&keyChord->mods, &line->mods);
+    compileSpecial(&keyChord->special, &line->key);
+
     String result = {0};
     initString(&result);
 
-    compileMods(&keyChord->mods, &line->mods);
-
-    compileSpecial(&keyChord->special, &line->key);
-
-    compileKey(&line->key, &result);
-    keyChord->key = result.string;
-    disownString(&result);
-
-    compileStringFromTokens(&line->description, line, &result);
-    keyChord->description = result.string;
-    disownString(&result);
-
-    compileHintString(&keyChord->mods, keyChord->key, keyChord->description, &result);
-    keyChord->hint = result.string;
-    disownString(&result);
-
-    compileStringFromTokens(&line->command, line, &result);
-    keyChord->command = result.string;
-    disownString(&result);
-
-    compileStringFromTokens(&line->before, line, &result);
-    keyChord->before = result.string;
-    disownString(&result);
-
-    compileStringFromTokens(&line->after, line, &result);
-    keyChord->after = result.string;
-    disownString(&result);
-
+    compileKey(&line->key, &result, keyChord);
+    compileDescription(line, &result, keyChord);
+    compileHint(&result, keyChord);
+    compileCommand(line, &result, keyChord);
+    compileBeforeCommand(line, &result, keyChord);
+    compileAfterCommand(line, &result, keyChord);
     compileFlags(&line->flags, &keyChord->flags);
 
     /* prefix */

@@ -1,4 +1,4 @@
-u "upper first" +write %{{%(desc^)}}
-U "upper all" +write %{{%(desc^^)}}
 l "LOWER FIRST" +write %{{%(desc,)}}
 L "LOWER ALL" +write %{{%(desc,,)}}
+u "upper first" +write %{{%(desc^)}}
+U "upper all" +write %{{%(desc^^)}}
