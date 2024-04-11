@@ -529,8 +529,12 @@ synchronize(Compiler* compiler)
     {
         switch (currentType(compiler))
         {
-        case TOKEN_LEFT_BRACKET: /* FALLTHROUGH */
-        case TOKEN_KEY: return;
+        case TOKEN_LEFT_BRACKET: return; /* No need to skip past. */
+        case TOKEN_COMMAND:
+        {
+            advanceCompiler(compiler);
+            return;
+        }
         case TOKEN_LEFT_BRACE:
         {
             while (!checkCompiler(compiler, TOKEN_EOF) &&
@@ -538,11 +542,11 @@ synchronize(Compiler* compiler)
             {
                 advanceCompiler(compiler);
             }
-            break;
+            advanceCompiler(compiler);
+            return;
         }
-        default: break;
+        default: advanceCompiler(compiler); break;
         }
-        advanceCompiler(compiler);
     }
 }
 
