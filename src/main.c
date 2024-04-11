@@ -24,6 +24,8 @@ static WkMenu mainMenu;
 static void
 freeKeyChords(WkKeyChord* keyChords)
 {
+    if (!keyChords) return;
+
     for (size_t i = 0; keyChords[i].key; i++)
     {
         free(keyChords[i].key);
@@ -86,6 +88,7 @@ static int
 runScript(void)
 {
     int result = EX_SOFTWARE;
+    mainMenu.keyChords = NULL; /* Prevent invalid free on failure. */
 
     /* Exit on failure to read stdin. */
     if (!tryStdin(&mainMenu)) return EX_IOERR;
@@ -102,7 +105,7 @@ runScript(void)
 
     /* Begin compilation */
     Compiler compiler;
-    initCompiler(&compiler, mainMenu.client.script.string);
+    initCompiler(&compiler, processedSource);
 
     /* User script is mallformed, fail. */
     if (!transpileChords(&compiler, mainMenu.delimiter, mainMenu.debug))
@@ -161,6 +164,7 @@ static int
 runChordsFile(void)
 {
     int result = EX_SOFTWARE;
+    mainMenu.keyChords = NULL; /* Prevent invalid free on failure. */
 
     /* Exit on failure to read source file. */
     char* source = readFile(mainMenu.client.keyChordsFile);
@@ -178,7 +182,7 @@ runChordsFile(void)
 
     /* Begin compilation */
     Compiler compiler;
-    initCompiler(&compiler, source);
+    initCompiler(&compiler, processedSource);
 
     /* User file is mallformed, fail. */
     if (!transpileChords(&compiler, mainMenu.delimiter, mainMenu.debug))
