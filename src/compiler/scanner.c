@@ -470,10 +470,10 @@ checkInterpolation(Scanner* scanner)
     case 'd':
     {
         if      (isKeyword(scanner, 1, 3, "esc"))   result = TOKEN_THIS_DESC;
-        else if (isKeyword(scanner, 1, 4, "esc^"))  result = TOKEN_THIS_DESC_UPCASE_FIRST;
-        else if (isKeyword(scanner, 1, 5, "esc^^")) result = TOKEN_THIS_DESC_UPCASE_ALL;
-        else if (isKeyword(scanner, 1, 4, "esc,"))  result = TOKEN_THIS_DESC_DOWNCASE_FIRST;
-        else if (isKeyword(scanner, 1, 5, "esc,,")) result = TOKEN_THIS_DESC_DOWNCASE_ALL;
+        else if (isKeyword(scanner, 1, 4, "esc^"))  result = TOKEN_THIS_DESC_UPPER_FIRST;
+        else if (isKeyword(scanner, 1, 4, "esc,"))  result = TOKEN_THIS_DESC_LOWER_FIRST;
+        else if (isKeyword(scanner, 1, 5, "esc^^")) result = TOKEN_THIS_DESC_UPPER_ALL;
+        else if (isKeyword(scanner, 1, 5, "esc,,")) result = TOKEN_THIS_DESC_LOWER_ALL;
 
         /* If one of the description identifiers make sure not inside a description. */
         if (result != TOKEN_ERROR && scanner->interpType == TOKEN_DESC_INTERP)
