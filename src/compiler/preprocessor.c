@@ -204,6 +204,15 @@ runPreprocessor(const char* source, const char* sourcePath, bool localDebug)
         includeSource = readFile(includeFilePath);
         if (!includeSource) goto fail;
 
+        /* check that the file and the source are not the one and the same */
+        if (strcmp(includeSource, source) == 0)
+        {
+            errorMsg(
+                "Included file appears to be the same as the source file. Cannot `:include` self."
+            );
+            goto fail;
+        }
+
         /* Run preprocessor on the included file */
         includeResult = runPreprocessor(includeSource, includeFilePath, localDebug);
         if (!includeResult)
