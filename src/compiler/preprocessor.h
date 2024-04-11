@@ -1,5 +1,5 @@
-#ifndef WK_PREPROCESSOR_H_
-#define WK_PREPROCESSOR_H_
+#ifndef WK_COMPILER_PREPROCESSOR_H_
+#define WK_COMPILER_PREPROCESSOR_H_
 
 #include <stdbool.h>
 
@@ -8,4 +8,4 @@
 
 char* runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath);
 
-#endif /* WK_PREPROCESSOR_H_ */
+#endif /* WK_COMPILER_PREPROCESSOR_H_ */

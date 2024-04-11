@@ -57,8 +57,8 @@ initTokenArray(TokenArray* array)
     assert(array);
 
     array->tokens = NULL;
-    array->capacity = 0;
     array->count = 0;
+    array->capacity = 0;
 }
 
 void

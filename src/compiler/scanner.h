@@ -1,5 +1,5 @@
-#ifndef WK_SCANNER_H_
-#define WK_SCANNER_H_
+#ifndef WK_COMPILER_SCANNER_H_
+#define WK_COMPILER_SCANNER_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -24,4 +24,4 @@ void initScanner(Scanner* scanner, const char* source, const char* filePath);
 bool isAtEnd(const Scanner* scanner);
 void scanToken(Scanner* scanner, Token* result);
 
-#endif /* WK_SCANNER_H_ */
+#endif /* WK_COMPILER_SCANNER_H_ */

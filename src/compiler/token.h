@@ -1,5 +1,5 @@
-#ifndef WK_TOKEN_H_
-#define WK_TOKEN_H_
+#ifndef WK_COMPILER_TOKEN_H_
+#define WK_COMPILER_TOKEN_H_
 
 #include <stddef.h>
 
@@ -95,8 +95,8 @@ typedef struct
 typedef struct
 {
     Token* tokens;
-    size_t capacity;
     size_t count;
+    size_t capacity;
 } TokenArray;
 
 void copyToken(Token* from, Token* to);
@@ -106,4 +106,4 @@ void initTokenArray(TokenArray* array);
 void freeTokenArray(TokenArray* array);
 void writeTokenArray(TokenArray* array, Token* token);
 
-#endif /* WK_TOKEN_H_ */
+#endif /* WK_COMPILER_TOKEN_H_ */

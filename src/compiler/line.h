@@ -1,5 +1,5 @@
-#ifndef WK_LINE_H_
-#define WK_LINE_H_
+#ifndef WK_COMPILER_LINE_H_
+#define WK_COMPILER_LINE_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -8,7 +8,6 @@
 #include "common/types.h"
 
 /* local includes */
-#include "scanner.h"
 #include "token.h"
 
 typedef struct LineArray LineArray;
@@ -42,4 +41,4 @@ void initLine(Line* line);
 void initLineArray(LineArray* array);
 void writeLineArray(LineArray* array, Line* line);
 
-#endif /* WK_LINE_H_ */
+#endif /* WK_COMPILER_LINE_H_ */
