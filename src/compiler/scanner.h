@@ -90,6 +90,7 @@ typedef struct
     size_t line;
     TokenType interpType;
     bool isInterpolation;
+    bool hadError;
 } Scanner;
 
 typedef struct
@@ -103,7 +104,7 @@ typedef struct
 } Token;
 
 char advanceScanner(Scanner* scanner);
-Token getPreprocessorCommand(Scanner* scanner);
+Token getPreprocessorMacro(Scanner* scanner);
 void initScanner(Scanner* scanner, const char* source);
 bool isAtEnd(const Scanner* scanner);
 void makeScannerCurrent(Scanner* scanner);

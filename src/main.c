@@ -49,7 +49,7 @@ transpile(void)
     if (!source) return EX_IOERR;
 
     /* Run preprocessor on `source` and fail if file is mallformed or other error. */
-    char* processedSource = runPreprocessor(source, mainMenu.client.transpile, mainMenu.debug);
+    char* processedSource = runPreprocessor(&mainMenu, source, mainMenu.client.transpile);
     if (!processedSource)
     {
         errorMsg("Failed while running preprocessor on given file.");
@@ -94,7 +94,7 @@ runScript(void)
     if (!tryStdin(&mainMenu)) return EX_IOERR;
 
     /* Run preprocessor on `script` and fail if mallformed or other error. */
-    char* processedSource = runPreprocessor(mainMenu.client.script.string, NULL, mainMenu.debug);
+    char* processedSource = runPreprocessor(&mainMenu, mainMenu.client.script.string, NULL);
     if (!processedSource)
     {
         errorMsg("Failed while running preprocessor on given file.");
@@ -171,7 +171,7 @@ runChordsFile(void)
     if (!source) return EX_IOERR;
 
     /* Run preprocessor on `chordsFile` and fail if mallformed or other error. */
-    char* processedSource = runPreprocessor(source, mainMenu.client.keyChordsFile, mainMenu.debug);
+    char* processedSource = runPreprocessor(&mainMenu, source, mainMenu.client.keyChordsFile);
     if (!processedSource)
     {
         errorMsg("Failed while running preprocessor on given file.");

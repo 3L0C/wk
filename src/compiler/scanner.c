@@ -34,6 +34,7 @@ initScanner(Scanner* scanner, const char* source)
     scanner->line = 1;
     scanner->interpType = TOKEN_NO_INTERP;
     scanner->isInterpolation = false;
+    scanner->hadError = false;
 }
 
 static void
@@ -248,7 +249,7 @@ getFlag(Scanner* scanner)
 }
 
 Token
-getPreprocessorCommand(Scanner* scanner)
+getPreprocessorMacro(Scanner* scanner)
 {
     assert(scanner);
 
@@ -546,7 +547,7 @@ scanToken(Scanner* scanner)
     /* Hooks, flags, and preprocessor commands */
     case '^': makeScannerCurrent(scanner); return getHook(scanner);
     case '+': makeScannerCurrent(scanner); return getFlag(scanner);
-    case ':': makeScannerCurrent(scanner); return getPreprocessorCommand(scanner);
+    case ':': makeScannerCurrent(scanner); return getPreprocessorMacro(scanner);
 
     /* literals */
     case '\"':
