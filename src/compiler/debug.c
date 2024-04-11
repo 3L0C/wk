@@ -38,61 +38,71 @@ disassembleToken(Token* token)
     switch (token->type)
     {
     /* single characters */
-    case TOKEN_LEFT_BRACKET:        type = "TOKEN_LEFT_BRACKET";        break;
-    case TOKEN_RIGHT_BRACKET:       type = "TOKEN_RIGHT_BRACKET";       break;
-    case TOKEN_LEFT_BRACE:          type = "TOKEN_LEFT_BRACE";          break;
-    case TOKEN_RIGHT_BRACE:         type = "TOKEN_RIGHT_BRACE";         break;
-    case TOKEN_LEFT_PAREN:          type = "TOKEN_LEFT_PAREN";          break;
-    case TOKEN_RIGHT_PAREN:         type = "TOKEN_RIGHT_PAREN";         break;
+    case TOKEN_LEFT_BRACKET:            type = "TOKEN_LEFT_BRACKET";            break;
+    case TOKEN_RIGHT_BRACKET:           type = "TOKEN_RIGHT_BRACKET";           break;
+    case TOKEN_LEFT_BRACE:              type = "TOKEN_LEFT_BRACE";              break;
+    case TOKEN_RIGHT_BRACE:             type = "TOKEN_RIGHT_BRACE";             break;
+    case TOKEN_LEFT_PAREN:              type = "TOKEN_LEFT_PAREN";              break;
+    case TOKEN_RIGHT_PAREN:             type = "TOKEN_RIGHT_PAREN";             break;
+
+    /* preprocessor macros */
+    case TOKEN_INCLUDE:                 type = "TOKEN_INCLUDE";                 break;
+
+    /* identifiers */
+    case TOKEN_THIS_KEY:                type = "TOKEN_THIS_KEY";                break;
+    case TOKEN_INDEX:                   type = "TOKEN_INDEX";                   break;
+    case TOKEN_INDEX_ONE:               type = "TOKEN_INDEX_ONE";               break;
+    case TOKEN_THIS_DESC:               type = "TOKEN_THIS_DESC";               break;
+    case TOKEN_THIS_DESC_UPPER_FIRST:   type = "TOKEN_THIS_DESC_UPPER_FIRST";   break;
+    case TOKEN_THIS_DESC_LOWER_FIRST:   type = "TOKEN_THIS_DESC_LOWER_FIRST";   break;
+    case TOKEN_THIS_DESC_UPPER_ALL:     type = "TOKEN_THIS_DESC_UPPER_ALL";     break;
+    case TOKEN_THIS_DESC_LOWER_ALL:     type = "TOKEN_THIS_DESC_LOWER_ALL";     break;
 
     /* keywords */
-    case TOKEN_INDEX:               type = "TOKEN_INDEX";               break;
-    case TOKEN_INDEX_ONE:           type = "TOKEN_INDEX_ONE";           break;
-    case TOKEN_THIS_KEY:            type = "TOKEN_THIS_KEY";            break;
-    case TOKEN_BEFORE:              type = "TOKEN_BEGIN";               break;
-    case TOKEN_AFTER:               type = "TOKEN_BEGIN";               break;
-    case TOKEN_KEEP:                type = "TOKEN_KEEP";                break;
-    case TOKEN_INHERIT:             type = "TOKEN_INHERIT";             break;
-    case TOKEN_IGNORE:              type = "TOKEN_IGNORE";              break;
-    case TOKEN_IGNORE_HOOKS:        type = "TOKEN_IGNORE_HOOKS";        break;
-    case TOKEN_IGNORE_FLAGS:        type = "TOKEN_IGNORE_FLAGS";        break;
-    case TOKEN_NO_BEFORE:           type = "TOKEN_NO_BEFORE";           break;
-    case TOKEN_NO_AFTER:            type = "TOKEN_NO_AFTER";            break;
-    case TOKEN_WRITE:               type = "TOKEN_WRITE";               break;
-    case TOKEN_SYNC_CMD:            type = "TOKEN_SYNC_CMD";            break;
-    case TOKEN_SYNC_BEFORE:         type = "TOKEN_SYNC_BEFORE";         break;
-    case TOKEN_SYNC_AFTER:          type = "TOKEN_SYNC_AFTER";          break;
+    case TOKEN_BEFORE:                  type = "TOKEN_BEGIN";                   break;
+    case TOKEN_AFTER:                   type = "TOKEN_BEGIN";                   break;
+    case TOKEN_KEEP:                    type = "TOKEN_KEEP";                    break;
+    case TOKEN_INHERIT:                 type = "TOKEN_INHERIT";                 break;
+    case TOKEN_IGNORE:                  type = "TOKEN_IGNORE";                  break;
+    case TOKEN_UNHOOK:                  type = "TOKEN_UNHOOK";                  break;
+    case TOKEN_DEFLAG:                  type = "TOKEN_DEFLAG";                  break;
+    case TOKEN_NO_BEFORE:               type = "TOKEN_NO_BEFORE";               break;
+    case TOKEN_NO_AFTER:                type = "TOKEN_NO_AFTER";                break;
+    case TOKEN_WRITE:                   type = "TOKEN_WRITE";                   break;
+    case TOKEN_SYNC_CMD:                type = "TOKEN_SYNC_CMD";                break;
+    case TOKEN_SYNC_BEFORE:             type = "TOKEN_SYNC_BEFORE";             break;
+    case TOKEN_SYNC_AFTER:              type = "TOKEN_SYNC_AFTER";              break;
 
     /* literals */
-    case TOKEN_COMMAND:             type = "TOKEN_COMMAND";             break;
-    case TOKEN_COMM_INTERP:         type = "TOKEN_COMM_INTERP";         break;
-    case TOKEN_DESCRIPTION:         type = "TOKEN_DESCRIPTION";         break;
-    case TOKEN_DESC_INTERP:         type = "TOKEN_DESC_INTERP";         break;
+    case TOKEN_COMMAND:                 type = "TOKEN_COMMAND";                 break;
+    case TOKEN_COMM_INTERP:             type = "TOKEN_COMM_INTERP";             break;
+    case TOKEN_DESCRIPTION:             type = "TOKEN_DESCRIPTION";             break;
+    case TOKEN_DESC_INTERP:             type = "TOKEN_DESC_INTERP";             break;
 
     /* keys */
-    case TOKEN_KEY:                 type = "TOKEN_KEY";                 break;
+    case TOKEN_KEY:                     type = "TOKEN_KEY";                     break;
 
     /* mods */
-    case TOKEN_MOD_CTRL:            type = "TOKEN_MOD_CTRL";            break;
-    case TOKEN_MOD_ALT:             type = "TOKEN_MOD_ALT";             break;
-    case TOKEN_MOD_HYPER:           type = "TOKEN_MOD_HYPER";           break;
-    case TOKEN_MOD_SHIFT:           type = "TOKEN_MOD_SHIFT";           break;
+    case TOKEN_MOD_CTRL:                type = "TOKEN_MOD_CTRL";                break;
+    case TOKEN_MOD_ALT:                 type = "TOKEN_MOD_ALT";                 break;
+    case TOKEN_MOD_HYPER:               type = "TOKEN_MOD_HYPER";               break;
+    case TOKEN_MOD_SHIFT:               type = "TOKEN_MOD_SHIFT";               break;
 
     /* specials */
-    case TOKEN_SPECIAL_LEFT:        type = "TOKEN_SPECIAL_LEFT";        break;
-    case TOKEN_SPECIAL_RIGHT:       type = "TOKEN_SPECIAL_RIGHT";       break;
-    case TOKEN_SPECIAL_UP:          type = "TOKEN_SPECIAL_UP";          break;
-    case TOKEN_SPECIAL_DOWN:        type = "TOKEN_SPECIAL_DOWN";        break;
-    case TOKEN_SPECIAL_TAB:         type = "TOKEN_SPECIAL_TAB";         break;
-    case TOKEN_SPECIAL_SPACE:       type = "TOKEN_SPECIAL_SPACE";       break;
-    case TOKEN_SPECIAL_RETURN:      type = "TOKEN_SPECIAL_RETURN";      break;
-    case TOKEN_SPECIAL_DELETE:      type = "TOKEN_SPECIAL_DELETE";      break;
-    case TOKEN_SPECIAL_ESCAPE:      type = "TOKEN_SPECIAL_ESCAPE";      break;
-    case TOKEN_SPECIAL_HOME:        type = "TOKEN_SPECIAL_HOME";        break;
-    case TOKEN_SPECIAL_PAGE_UP:     type = "TOKEN_SPECIAL_PAGE_UP";     break;
-    case TOKEN_SPECIAL_PAGE_DOWN:   type = "TOKEN_SPECIAL_PAGE_DOWN";   break;
-    case TOKEN_SPECIAL_END:         type = "TOKEN_SPECIAL_END";         break;
-    case TOKEN_SPECIAL_BEGIN:       type = "TOKEN_SPECIAL_BEGIN";       break;
+    case TOKEN_SPECIAL_LEFT:            type = "TOKEN_SPECIAL_LEFT";            break;
+    case TOKEN_SPECIAL_RIGHT:           type = "TOKEN_SPECIAL_RIGHT";           break;
+    case TOKEN_SPECIAL_UP:              type = "TOKEN_SPECIAL_UP";              break;
+    case TOKEN_SPECIAL_DOWN:            type = "TOKEN_SPECIAL_DOWN";            break;
+    case TOKEN_SPECIAL_TAB:             type = "TOKEN_SPECIAL_TAB";             break;
+    case TOKEN_SPECIAL_SPACE:           type = "TOKEN_SPECIAL_SPACE";           break;
+    case TOKEN_SPECIAL_RETURN:          type = "TOKEN_SPECIAL_RETURN";          break;
+    case TOKEN_SPECIAL_DELETE:          type = "TOKEN_SPECIAL_DELETE";          break;
+    case TOKEN_SPECIAL_ESCAPE:          type = "TOKEN_SPECIAL_ESCAPE";          break;
+    case TOKEN_SPECIAL_HOME:            type = "TOKEN_SPECIAL_HOME";            break;
+    case TOKEN_SPECIAL_PAGE_UP:         type = "TOKEN_SPECIAL_PAGE_UP";         break;
+    case TOKEN_SPECIAL_PAGE_DOWN:       type = "TOKEN_SPECIAL_PAGE_DOWN";       break;
+    case TOKEN_SPECIAL_END:             type = "TOKEN_SPECIAL_END";             break;
+    case TOKEN_SPECIAL_BEGIN:           type = "TOKEN_SPECIAL_BEGIN";           break;
 
     /* control */
     case TOKEN_EOF:                                     return;

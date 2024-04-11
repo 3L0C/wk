@@ -14,7 +14,7 @@ typedef enum
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
 
-    /* preprocessor directives */
+    /* preprocessor macros */
     TOKEN_INCLUDE,
 
     /* identifiers */
