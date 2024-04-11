@@ -10,6 +10,7 @@
 #include "common/debug.h"
 #include "common/memory.h"
 #include "common/menu.h"
+#include "common/string.h"
 #include "common/types.h"
 
 /* local includes */
@@ -19,13 +20,25 @@
 #include "scanner.h"
 #include "token.h"
 
-static void compileLines(WkKeyChord* keyChords, LineArray* lines);
-static size_t countStringLengthFromTokens(TokenArray* tokens, Line* line);
-static char* compileStringFromTokens(TokenArray* tokens, Line* line);
+typedef enum
+{
+    COMP_STATE_NORMAL,
+    COMP_STATE_IGNORING,
+    COMP_STATE_UPPER_FIRST,
+    COMP_STATE_LOWER_FIRST,
+    COMP_STATE_UPPER_ALL,
+    COMP_STATE_LOWER_ALL,
+} CompilerState;
 
-static const char* delimiter;
-static size_t delimLen;
-static bool debug;
+typedef int (*ConversionFp)(int);
+
+static void compileLines(WkKeyChord* keyChords, LineArray* lines);
+static void compileStringFromTokens(TokenArray* tokens, Line* line, String* result);
+
+static const char* delimiter = " -> ";
+static size_t delimLen = 4;
+static bool debug = false;
+static CompilerState compilerState = COMP_STATE_NORMAL;
 
 static void
 compileMods(WkMods* a, WkMods* b)
@@ -61,20 +74,13 @@ compileSpecial(WkSpecial* a, Token* token)
     }
 }
 
-static char*
-compileKey(Token* token)
+static void
+compileKey(Token* token, String* key)
 {
-    char* key = ALLOCATE(char, token->length + 1); /* +1 for null byte '\0' */
-    memcpy(key, token->start, token->length);
-    key[token->length] = '\0';
+    assert(token && key);
 
-    return key;
-}
-
-static size_t
-countCharactersInNumber(int num)
-{
-    return snprintf(NULL, 0, "%d", num);
+    disownString(key);
+    appendToString(key, token->start, token->length);
 }
 
 static size_t
@@ -86,153 +92,133 @@ rstripToken(Token* token)
     return index + 1;
 }
 
-static size_t
-countStringLengthFromToken(Token* token, Line* line)
+static void
+compileStringFromNumber(String* string, uint32_t num)
 {
-    switch (token->type)
-    {
-    case TOKEN_INDEX: return countCharactersInNumber(line->index);
-    case TOKEN_INDEX_ONE: return countCharactersInNumber(line->index + 1);
-    case TOKEN_THIS_DESC: return countStringLengthFromTokens(&line->description, line);
-    case TOKEN_THIS_KEY:    /* FALLTHROUGH */
-    case TOKEN_COMM_INTERP:
-    case TOKEN_DESC_INTERP: return token->length;
-    default: return rstripToken(token);
-    }
-}
-
-size_t
-countStringLengthFromTokens(TokenArray* tokens, Line* line)
-{
-    size_t result = 0;
-    for (size_t i = 0; i < tokens->count; i++)
-    {
-        result += countStringLengthFromToken(&tokens->tokens[i], line);
-    }
-    return result;
-}
-
-static size_t
-compileStringFromNumber(char* string, int num)
-{
-    size_t len = snprintf(NULL, 0, "%d", num);
-    char buffer[len + 1]; /* +1 for null byte '\0' */
-    snprintf(buffer, len + 1, "%d", num);
-    memcpy(string, buffer, len);
-    /* NOTE not copying null byte '\0'
-     * returning the next byte to write to.
-     */
-    return len;
-}
-
-static size_t
-compileStringFromToken(char* string, Token* token, Line* line)
-{
-    const char* source = NULL;
-    size_t length = 0;
-    switch (token->type)
-    {
-    case TOKEN_INDEX: return compileStringFromNumber(string, line->index);
-    case TOKEN_INDEX_ONE: return compileStringFromNumber(string, line->index + 1);
-    case TOKEN_THIS_DESC:
-    {
-        source = compileStringFromTokens(&line->description, line);
-        length = countStringLengthFromTokens(&line->description, line);
-        break;
-    }
-    case TOKEN_THIS_KEY:
-    {
-        source = line->key.start;
-        length = line->key.length;
-        break;
-    }
-    case TOKEN_COMM_INTERP: /* FALLTHROUGH */
-    case TOKEN_DESC_INTERP:
-    {
-        source = token->start;
-        length = token->length;
-        break;
-    }
-    default: /* End of string. */
-    {
-        source = token->start;
-        length = rstripToken(token);
-        if (length == 0) return length; /* NOTE return, nothing to copy. */
-        break;
-    }
-    }
-    memcpy(string, source, length);
-    return length;
-}
-
-char*
-compileStringFromTokens(TokenArray* tokens, Line* line)
-{
-    if (tokens->count == 0)
-    {
-        return NULL;
-    }
-
-    size_t count = tokens->count;
-    size_t size = countStringLengthFromTokens(tokens, line);
-    size_t index = 0;
-    char* result = NULL;
-
-    result = ALLOCATE(char, size + 1); /* +1 for null byte '\0' */
-
-    for (size_t i = 0; i < count; i++)
-    {
-        index += compileStringFromToken(&result[index], &tokens->tokens[i], line);
-    }
-    result[size] = '\0';
-
-    return result;
+    appendInt32ToString(string, num);
 }
 
 static void
-compileModsHint(char* hint, WkMods* mods)
+compileDescriptionWithState(TokenArray* tokens, Line* line, String* result, CompilerState state)
 {
-    size_t index = 0;
-    if (mods->ctrl)
+    CompilerState oldState = compilerState;
+    compilerState = state;
+    compileStringFromTokens(tokens, line, result);
+    compilerState = oldState;
+}
+
+static void
+compileCharsToStringWithFp(String* ressult, const char* source, size_t len, ConversionFp fp)
+{
+    for (size_t i = 0; i < len; i++)
     {
-        hint[index++] = 'C';
-        hint[index++] = '-';
-    }
-    if (mods->alt)
-    {
-        hint[index++] = 'M';
-        hint[index++] = '-';
-    }
-    if (mods->hyper)
-    {
-        hint[index++] = 'H';
-        hint[index++] = '-';
-    }
-    if (mods->shift)
-    {
-        hint[index++] = 'S';
-        hint[index++] = '-';
+        appendCharToString(ressult, fp(source[i]));
     }
 }
 
-static char*
-compileHintString(WkMods* mods, const char* key, const char* description)
+static void
+compileToStringWithState(String* result, const char* source, size_t len)
 {
-    size_t modslen = COUNT_MODS(*mods) * 2;
-    size_t keylen = strlen(key);
-    size_t desclen = strlen(description);
-    /* +1 for null byte '\0'. */
-    char* hint = ALLOCATE(char, modslen + keylen + delimLen + desclen + 1);
-    compileModsHint(hint, mods);
-    /* Copy key. */
-    memcpy(&hint[modslen], key, keylen);
-    /* Copy delimiter. */
-    memcpy(&hint[modslen + keylen], delimiter, delimLen);
-    /* Copy description. */
-    memcpy(&hint[modslen + keylen + delimLen], description, desclen);
-    /* End hint. */
-    hint[modslen + keylen + delimLen + desclen] = '\0';
-    return hint;
+    assert(result && source);
+
+    if (len < 1) return;
+
+    switch (compilerState)
+    {
+    case COMP_STATE_UPPER_FIRST:
+    {
+        compilerState = COMP_STATE_IGNORING;
+        appendCharToString(result, toupper(*source));
+        appendToString(result, source + 1, len - 1);
+        break;
+    }
+    case COMP_STATE_LOWER_FIRST:
+    {
+        compilerState = COMP_STATE_IGNORING;
+        appendCharToString(result, tolower(*source));
+        appendToString(result, source + 1, len - 1);
+        break;
+    }
+    case COMP_STATE_UPPER_ALL: compileCharsToStringWithFp(result, source, len, toupper); break;
+    case COMP_STATE_LOWER_ALL: compileCharsToStringWithFp(result, source, len, tolower); break;
+    default: appendToString(result, source, len); break;
+    }
+}
+
+static void
+compileStringFromToken(Token* token, Line* line, String* result)
+{
+    switch (token->type)
+    {
+    case TOKEN_INDEX: compileStringFromNumber(result, line->index); break;
+    case TOKEN_INDEX_ONE: compileStringFromNumber(result, line->index + 1); break;
+    case TOKEN_THIS_DESC: compileStringFromTokens(&line->description, line, result); break;
+    case TOKEN_THIS_DESC_UPPER_FIRST:
+    {
+        compileDescriptionWithState(&line->description, line, result, COMP_STATE_UPPER_FIRST);
+        break;
+    }
+    case TOKEN_THIS_DESC_LOWER_FIRST:
+    {
+        compileDescriptionWithState(&line->description, line, result, COMP_STATE_LOWER_FIRST);
+        break;
+    }
+    case TOKEN_THIS_DESC_UPPER_ALL:
+    {
+        compileDescriptionWithState(&line->description, line, result, COMP_STATE_UPPER_ALL);
+        break;
+    }
+    case TOKEN_THIS_DESC_LOWER_ALL:
+    {
+        compileDescriptionWithState(&line->description, line, result, COMP_STATE_LOWER_ALL);
+        break;
+    }
+    case TOKEN_THIS_KEY: appendToString(result, line->key.start, line->key.length); break;
+    case TOKEN_COMM_INTERP: /* FALLTHROUGH */
+    case TOKEN_DESC_INTERP: compileToStringWithState(result, token->start, token->length); break;
+    default: /* End of string, i.e. TOKEN_COMMAND and TOKEN_DESCRIPTION */
+    {
+        size_t length = rstripToken(token);
+        if (length == 0) return; /* NOTE return, nothing to copy. */
+        compileToStringWithState(result, token->start, length);
+        break;
+    }
+    }
+}
+
+void
+compileStringFromTokens(TokenArray* tokens, Line* line, String* result)
+{
+    assert(tokens && line && result);
+
+    /* Nothing to compile */
+    if (tokens->count == 0) return;
+
+    size_t tokenCount = tokens->count;
+    for (size_t i = 0; i < tokenCount; i++)
+    {
+        compileStringFromToken(tokens->tokens + i, line, result);
+    }
+}
+
+static void
+compileModsHint(WkMods* mods, String* result)
+{
+    assert(mods && result);
+
+    if (mods->ctrl)  appendToString(result, "C-", 2);
+    if (mods->alt)   appendToString(result, "M-", 2);
+    if (mods->hyper) appendToString(result, "H-", 2);
+    if (mods->shift) appendToString(result, "S-", 2);
+}
+
+static void
+compileHintString(WkMods* mods, const char* key, const char* description, String* result)
+{
+    compileModsHint(mods, result);
+    appendToString(result, key, strlen(key));
+    appendToString(result, delimiter, delimLen);
+    appendToString(result, description, strlen(description));
 }
 
 static void
@@ -244,14 +230,39 @@ compileFlags(WkFlags* from, WkFlags* to)
 static void
 compileLine(WkKeyChord* keyChord, Line* line)
 {
+    assert(keyChord && line);
+
+    String result = {0};
+    initString(&result);
+
     compileMods(&keyChord->mods, &line->mods);
+
     compileSpecial(&keyChord->special, &line->key);
-    keyChord->key = compileKey(&line->key);
-    keyChord->description = compileStringFromTokens(&line->description, line);
-    keyChord->hint = compileHintString(&keyChord->mods, keyChord->key, keyChord->description);
-    keyChord->command = compileStringFromTokens(&line->command, line);
-    keyChord->before = compileStringFromTokens(&line->before, line);
-    keyChord->after = compileStringFromTokens(&line->after, line);
+
+    compileKey(&line->key, &result);
+    keyChord->key = result.string;
+    disownString(&result);
+
+    compileStringFromTokens(&line->description, line, &result);
+    keyChord->description = result.string;
+    disownString(&result);
+
+    compileHintString(&keyChord->mods, keyChord->key, keyChord->description, &result);
+    keyChord->hint = result.string;
+    disownString(&result);
+
+    compileStringFromTokens(&line->command, line, &result);
+    keyChord->command = result.string;
+    disownString(&result);
+
+    compileStringFromTokens(&line->before, line, &result);
+    keyChord->before = result.string;
+    disownString(&result);
+
+    compileStringFromTokens(&line->after, line, &result);
+    keyChord->after = result.string;
+    disownString(&result);
+
     compileFlags(&line->flags, &keyChord->flags);
 
     /* prefix */
@@ -302,6 +313,8 @@ compileKeyChords(Compiler* compiler, WkMenu* menu)
 {
     assert(compiler && menu);
 
+    compilerState = COMP_STATE_NORMAL;
+
     if (compiler->lines.count == 0)
     {
         warnMsg("Nothing to compile.");
@@ -330,11 +343,11 @@ void
 initCompiler(Compiler* compiler, const char* source)
 {
     initScanner(&compiler->scanner, source);
-    compiler->hadError      = false;
-    compiler->panicMode     = false;
-    compiler->index         = 0;
+    compiler->hadError = false;
+    compiler->panicMode = false;
+    compiler->index = 0;
     initLine(&compiler->line);
-    compiler->lineDest      = &compiler->lines;
-    compiler->linePrefix    = NULL;
+    compiler->lineDest = &compiler->lines;
+    compiler->linePrefix = NULL;
     initLineArray(&compiler->lines);
 }

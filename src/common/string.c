@@ -1,12 +1,46 @@
+#include <assert.h>
 #include <ctype.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "string.h"
 #include "memory.h"
 
 void
+appendInt32ToString(String* string, int32_t i)
+{
+    size_t len = snprintf(NULL, 0, "%d", i);
+    char buffer[len + 1]; /* +1 for null byte. */
+    snprintf(buffer, len + 1, "%d", i);
+    appendToString(string, buffer, len);
+}
+
+void
+appendUInt32ToString(String* string, uint32_t i)
+{
+    size_t len = snprintf(NULL, 0, "%u", i);
+    char buffer[len + 1]; /* +1 for null byte. */
+    snprintf(buffer, len + 1, "%u", i);
+    appendToString(string, buffer, len);
+}
+
+void
+appendCharToString(String* string, char c)
+{
+    assert(string);
+
+    char buffer[] = { c, '\0' };
+    appendToString(string, buffer, 1);
+}
+
+void
 appendToString(String *string, const char* source, size_t len)
 {
+    assert(string && source);
+
+    if (len < 1) return;
+
     while (string->count + len + 1 > string->capacity)
     {
         size_t oldCapacity = string->capacity;
@@ -19,6 +53,14 @@ appendToString(String *string, const char* source, size_t len)
     memcpy(string->string + string->count, source, len);
     string->count += len;
     string->string[string->count] = '\0';
+}
+
+void
+disownString(String* string)
+{
+    string->string = NULL;
+    string->count = 0;
+    string->capacity = 0;
 }
 
 void

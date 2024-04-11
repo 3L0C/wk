@@ -2,6 +2,7 @@
 #define WK_LINE_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* common includes */
 #include "common/types.h"
@@ -22,7 +23,7 @@ struct LineArray
 
 struct Line
 {
-    int         index;
+    uint32_t    index;
     WkMods      mods;
     Token       key;
     TokenArray  description;

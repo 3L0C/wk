@@ -23,7 +23,7 @@ typedef enum
 } WriterState;
 
 static const char* delim;
-static WriterState globalWriterState;
+static WriterState writerState;
 
 static void writeChordLines(LineArray* lines, int indent);
 static void writeChordRawString(TokenArray* array, Line* line);
@@ -117,19 +117,23 @@ writeChordKey(Token* token)
 }
 
 static size_t
-rstrip(Token* token, bool flag)
+rstrip(Token* token)
 {
+    assert(token);
+
     size_t index = token->length - 1;
-    if (!flag) return index + 1;
     const char* lexeme = token->start;
     while (index && isspace(lexeme[index])) index--;
     return index + 1;
 }
 
 static void
-writeChordEscString(Token* token, bool flag)
+writeChordEscString(Token* token, bool rstripFlag)
 {
-    size_t length = rstrip(token, flag);
+    assert(token);
+
+    size_t length = rstripFlag ? rstrip(token) : token->length;
+
     for (size_t i = 0; i < length; i++)
     {
         char c = token->start[i];
@@ -140,16 +144,16 @@ writeChordEscString(Token* token, bool flag)
         case '\n': printf("\\\n"); break;
         default:
         {
-            switch (globalWriterState)
+            switch (writerState)
             {
             case WRITER_STATE_UPPER_FIRST:
             {
-                globalWriterState = WRITER_STATE_IGNORING;
+                writerState = WRITER_STATE_IGNORING;
                 c = toupper(c); break;
             }
             case WRITER_STATE_LOWER_FIRST:
             {
-                globalWriterState = WRITER_STATE_IGNORING;
+                writerState = WRITER_STATE_IGNORING;
                 c = tolower(c); break;
             }
             case WRITER_STATE_UPPER_ALL: c = toupper(c); break;
@@ -164,6 +168,15 @@ writeChordEscString(Token* token, bool flag)
 }
 
 static void
+writeChordInterpWithState(Token* token, Line* line, WriterState state)
+{
+    WriterState oldState = writerState;
+    writerState = state;
+    writeChordRawString(&line->description, line);
+    writerState = oldState;
+}
+
+static void
 writeChordInterp(Token* token, Line* line)
 {
     switch (token->type)
@@ -175,34 +188,22 @@ writeChordInterp(Token* token, Line* line)
     /* Cases where description is modified. */
     case TOKEN_THIS_DESC_UPPER_FIRST:
     {
-        WriterState oldState = globalWriterState;
-        globalWriterState = WRITER_STATE_UPPER_FIRST;
-        writeChordRawString(&line->description, line);
-        globalWriterState = oldState;
+        writeChordInterpWithState(token, line, WRITER_STATE_UPPER_FIRST);
         break;
     }
     case TOKEN_THIS_DESC_LOWER_FIRST:
     {
-        WriterState oldState = globalWriterState;
-        globalWriterState = WRITER_STATE_LOWER_FIRST;
-        writeChordRawString(&line->description, line);
-        globalWriterState = oldState;
+        writeChordInterpWithState(token, line, WRITER_STATE_LOWER_FIRST);
         break;
     }
     case TOKEN_THIS_DESC_UPPER_ALL:
     {
-        WriterState oldState = globalWriterState;
-        globalWriterState = WRITER_STATE_UPPER_ALL;
-        writeChordRawString(&line->description, line);
-        globalWriterState = oldState;
+        writeChordInterpWithState(token, line, WRITER_STATE_UPPER_ALL);
         break;
     }
     case TOKEN_THIS_DESC_LOWER_ALL:
     {
-        WriterState oldState = globalWriterState;
-        globalWriterState = WRITER_STATE_LOWER_ALL;
-        writeChordRawString(&line->description, line);
-        globalWriterState = oldState;
+        writeChordInterpWithState(token, line, WRITER_STATE_LOWER_ALL);
         break;
     }
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
@@ -339,7 +340,7 @@ writeChords(LineArray* lines, const char* delimiter)
     assert(lines);
 
     delim = delimiter;
-    globalWriterState = WRITER_STATE_NORMAL;
+    writerState = WRITER_STATE_NORMAL;
 
     writeChordsHeader();
     writeChordLines(lines, 1);
