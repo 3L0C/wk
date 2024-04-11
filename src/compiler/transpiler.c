@@ -242,6 +242,10 @@ command(Compiler* compiler, TokenArray* dest)
         case TOKEN_COMMAND:
         case TOKEN_THIS_KEY:
         case TOKEN_THIS_DESC:
+        case TOKEN_THIS_DESC_UPPER_FIRST:
+        case TOKEN_THIS_DESC_LOWER_FIRST:
+        case TOKEN_THIS_DESC_UPPER_ALL:
+        case TOKEN_THIS_DESC_LOWER_ALL:
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         {
