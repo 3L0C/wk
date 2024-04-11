@@ -2,10 +2,245 @@
 #+author: 3L0C
 
 * NAME
-wks - source file for *wk*​(1)
+wks - A which-key source file used by the *wk*​(1) program.
 
 * DESCRIPTION
-*wk* can generate key-chords using *wks* syntax.
+*wk* can generate /key chords/ using *wks* syntax instead of
+relying on precompiled /key chords/.
+
+* EXAMPLES
+** EXAMPLE - BASIC
+A basic *wks* file with some explanation regarding
+*COMMENTS*, *CHORDS*, *PREFIXES*, *DESCRIPTIONS*, *KEYS*,
+and *COMMANDS*:
+
+#+begin_example
+# This is a comment
+    # This is also a comment
+
+# This is a chord.
+# The trigger key is 'a'.
+# The description is "A chord".
+# The command is 'echo "Hello, World"'.
+a "A chord" %{{echo "Hello, world!"}}
+
+# This is a prefix.
+# The trigger key is 'Control + a'
+C-a "A prefix"
+{
+    # This is a chord that can only be accessed after triggering the parent prefix.
+    b "A chord" %{{echo "Hello from inside prefix 'C-a'"}}
+
+    # Prefixes can nest additional prefixes arbitrarily deep
+    c "Another prefix"
+    {
+        d "Done" %{{echo "You've reached the end!"}}
+    }
+}
+#+end_example
+
+** EXAMPLE - CHORD ARRAYS AND INTERPOLATION
+The *CHORD ARRAY* and *INTERPOLATION* are more interesting
+*wks* features:
+
+#+begin_example
+[abcdC-e] "Chord number: %(index+1)" %{{echo "Pressed key: '%(key)'"}}
+#+end_example
+
+The above is equivelent to the following:
+
+#+begin_example
+a   "Chord number: 1" %{{echo "Pressed key: 'a'"}}
+b   "Chord number: 2" %{{echo "Pressed key: 'b'"}}
+c   "Chord number: 3" %{{echo "Pressed key: 'c'"}}
+d   "Chord number: 4" %{{echo "Pressed key: 'd'"}}
+C-e "Chord number: 5" %{{echo "Pressed key: 'C-e'"}}
+#+end_example
+
+** EXAMPLE - CHORD ARRAYS AND CHORD EXPRESSIONS
+The *CHORD ARRAY* also supports *CHORD EXPRESSIONS*:
+
+#+begin_example
+[
+   abc
+   (d "A different description" %{{echo "A different command"}})
+   (C-e "An exciting description")
+] "A default description" %{{echo "A default command"}}
+#+end_example
+
+The above is equivelent to the following:
+
+#+begin_example
+a   "A default description"   %{{echo "A default command"}}
+b   "A default description"   %{{echo "A default command"}}
+c   "A default description"   %{{echo "A default command"}}
+d   "A different description" %{{echo "A different command"}}
+C-e "An exciting description" %{{echo "A default command"}}
+#+end_example
+
+** EXAMPLE - HOOKS AND FLAGS IN CHORDS
+*HOOKS* and *FLAGS* are very flexible:
+
+#+begin_example
+a "A hook"
+  ^before %{{echo "I run first!"}}
+  ^after %{{echo "I run last!"}}
+    %{{echo "I run in the middle!"}}
+
+b "A hook and flag"
+  ^before %{{echo "I run first!"}}  +keep
+    %{{echo "I stay open thanks to '+keep'"}}
+
+c "I'm equivelent to 'b'"
+  +keep ^before %{{echo "I run first!"}}
+    %{{echo "I stay open thanks to '+keep'"}}
+#+end_example
+
+This should make two things clear:
+- *1*. :: That /hooks/ and /flags/ are of equal precedence.
+- *2*. :: That /hooks/ and /flags/ go inbetween the
+  /description/ and the /command/.
+
+** EXAMPLE - HOOKS AND FLAGS IN PREFIXES
+A /hooks/ and /flags/ work differently when given to a
+/prefix/ compared to a /chord/, /chord array/, or /chord
+expression/:
+
+#+begin_example
+a "A prefix with a hook and flag" ^before %{{echo "I am /almost/ always run first!"}} +keep
+{
+    b "An obedient chord"
+        %{{echo "I inherit /hooks/ and /flags/ from my parent prefix!"}}
+    c "A selective chord" +no-before
+        %{{echo "I ignore /before/ and /sync-before/ /hooks/!"}}
+    d "A defiant chord" +ignore
+        %{{echo "I ignore everything my parent prefix tries to force on me!!"}}
+    e "A wanting child prefix" +inherit
+    {
+        f "Hooray!"
+            %{{echo "My parent prefix is passing on my grandparent's /hooks/ and /flags/!"}}
+    }
+    g "An indifferent child prefix"
+    {
+        h "Hmm..."
+           %{{echo "I don't seem to have inherited any /hooks/ or /flags/ from my grandparent."}}
+    }
+}
+#+end_example
+
+For a more formal understanding, see *INHERITENCE* below.
+
+** EXAMPLE - THE INCLUDE PREPROCESSOR MACRO
+Here is a simple example of the /:include/ *PREPROCESSOR
+MACRO*:
+
+#+begin_example
+# File main.wks
+---------------
+:include "top_level_chords.wks"
+:include "top_level_prefixes.wks"
+
+# File top_level_chords.wks
+---------------------------
+a "A chord" %{{echo "Hello!"}}
+
+# File top_level_prefixes.wks
+-----------------------------
+b "A prefix"
+{
+    c "A chord" %{{echo "Where am I??"}}
+}
+#+end_example
+
+When processed, the /main.wks/ file will produce a *wks*
+file equivelent to this:
+
+#+begin_example
+a "A chord" %{{echo "Hello!"}}
+b "A prefix"
+{
+    c "A chord" %{{echo "Where am I??"}}
+}
+#+end_example
+
+The /:include/ macro is more flexible than the *C*
+equivelent though, allowing for silly things like this:
+
+#+begin_example
+# File first_half.wks
+---------------------
+a "The first half :include "second_half.wks"
+
+# File second_half.wks
+----------------------
+and the second half" %{{echo "A match made in heaven."}}
+#+end_example
+
+Both /first_half.wks/ and /second_half.wks/ are invalid
+*wks* files on their own. But, if /first_half.wks/ is passed
+to *wk* it will produce a valid *wks* file equivelent to the
+one below:
+
+#+begin_example
+a "The first half and the second half" %{{echo "A match made in heaven."}}
+#+end_example
+
+While the above example is a bit silly, this flexibility
+allows *wks* to become extremely modular. Take this snippet
+of my personal configuration for example:
+
+#+begin_example
+# File main.wks
+---------------
+# Browser prefix
+b "+Browser" { :include "browser_key_chords.wks" }
+# Emacs prefix
+e "+Emacs" ^before %{{dwmc viewex 1}} { :include "emacs_key_chords.wks" }
+# mpc prefix
+m "+mpc" +keep { :include "mpc_key_chords.wks" }
+
+# File browser_key_chords.wks
+-----------------------------
+[
+    (b "Brave")
+    (c "Chrome")
+    (f "Firefox")
+] "null" %{{%(desc,)}} # downcase the description and use as the command
+
+# Mullvad-exclude prefix
+m "+Mullvad Exclude"
+{
+    [
+        (b "Brave")
+        (c "Chrome")
+        (f "Firefox")
+    ] "null" %{{mullvad-exclude %(desc_)}}
+}
+
+# File emacs_key_chords.wks
+---------------------------
+b "Open blank" %{{emacsclient -c -a ""}}
+p "+Projects"
+{
+    w "wk" %{{emacs "~/Projects/wk"}}
+}
+
+# File mpc_key_chords.wks
+-------------------------
+c "Clear mpc" %{{mpc clear}}
+d "Display song" %{{songinfo}}
+h "Seek -5s" %{{mpc seek "-5"}}
+l "Seek +5s" %{{mpc seek "+5"}}
+n "Next song" %{{mpc next}}
+p "Prev song" %{{mpc prev}}
+o "Open mpc" +ignore %{{term -e ncmpcpp}}
+#+end_example
+
+Each of the above files is perfectly valid on their own,
+meaning they can exist in as part of /main.wks/, or I can
+use only the relevant file when calling *wk* from a script.
+Additionally, I can /:include/ files multiple times in cases
+where I would be repeating myself.
 
 * GRAMMAR RULES
 The following are /ideally/ the formal grammar rules for
@@ -46,7 +281,10 @@ identifier         -> ( 'key'
                       | 'index'
                       | 'index+1'
                       | 'desc'
-                      | 'description' ) ;
+                      | 'desc^'
+                      | 'desc^^'
+                      | 'desc,'
+                      | 'desc,,' );
 
 keyword            -> ( hook | flag ) ;
 
@@ -259,7 +497,7 @@ The following identifiers are valid within an /interpolation/:
 ** KEYWORD
 A /keyword/ is an optional instruction to modify the
 behavior of a /chord/ or /prefix/. The /keywords/ include
-*HOOKS*, *FLAGS*, and *PREPORCESSOR COMMANDS*. See below for
+*HOOKS*, *FLAGS*, and *PREPROCESSOR COMMANDS*. See below for
 details.
 
 ** HOOK
@@ -424,3 +662,4 @@ their affects on *wks* files.
   valid, will then itself become invalid. One bad apple and
   all that. See *EXAMPLES* for a demonstration.
 #+end_quote
+

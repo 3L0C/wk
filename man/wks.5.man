@@ -2,9 +2,242 @@
 .\"
 .TH "WKS" "5" "" "" ""
 .SH NAME
-wks - source file for \f[B]wk\f[R]​(1)
+wks - A which-key source file used by the \f[B]wk\f[R]​(1) program.
 .SH DESCRIPTION
-\f[B]wk\f[R] can generate key-chords using \f[B]wks\f[R] syntax.
+\f[B]wk\f[R] can generate \f[I]key chords\f[R] using \f[B]wks\f[R]
+syntax instead of relying on precompiled \f[I]key chords\f[R].
+.SH EXAMPLES
+.SS EXAMPLE - BASIC
+A basic \f[B]wks\f[R] file with some explanation regarding
+\f[B]COMMENTS\f[R], \f[B]CHORDS\f[R], \f[B]PREFIXES\f[R],
+\f[B]DESCRIPTIONS\f[R], \f[B]KEYS\f[R], and \f[B]COMMANDS\f[R]:
+.IP
+.EX
+# This is a comment
+    # This is also a comment
+
+# This is a chord.
+# The trigger key is \[aq]a\[aq].
+# The description is \[dq]A chord\[dq].
+# The command is \[aq]echo \[dq]Hello, World\[dq]\[aq].
+a \[dq]A chord\[dq] %{{echo \[dq]Hello, world!\[dq]}}
+
+# This is a prefix.
+# The trigger key is \[aq]Control + a\[aq]
+C-a \[dq]A prefix\[dq]
+{
+    # This is a chord that can only be accessed after triggering the parent prefix.
+    b \[dq]A chord\[dq] %{{echo \[dq]Hello from inside prefix \[aq]C-a\[aq]\[dq]}}
+
+    # Prefixes can nest additional prefixes arbitrarily deep
+    c \[dq]Another prefix\[dq]
+    {
+        d \[dq]Done\[dq] %{{echo \[dq]You\[aq]ve reached the end!\[dq]}}
+    }
+}
+.EE
+.SS EXAMPLE - CHORD ARRAYS AND INTERPOLATION
+The \f[B]CHORD ARRAY\f[R] and \f[B]INTERPOLATION\f[R] are more
+interesting \f[B]wks\f[R] features:
+.IP
+.EX
+[abcdC-e] \[dq]Chord number: %(index+1)\[dq] %{{echo \[dq]Pressed key: \[aq]%(key)\[aq]\[dq]}}
+.EE
+.PP
+The above is equivelent to the following:
+.IP
+.EX
+a   \[dq]Chord number: 1\[dq] %{{echo \[dq]Pressed key: \[aq]a\[aq]\[dq]}}
+b   \[dq]Chord number: 2\[dq] %{{echo \[dq]Pressed key: \[aq]b\[aq]\[dq]}}
+c   \[dq]Chord number: 3\[dq] %{{echo \[dq]Pressed key: \[aq]c\[aq]\[dq]}}
+d   \[dq]Chord number: 4\[dq] %{{echo \[dq]Pressed key: \[aq]d\[aq]\[dq]}}
+C-e \[dq]Chord number: 5\[dq] %{{echo \[dq]Pressed key: \[aq]C-e\[aq]\[dq]}}
+.EE
+.SS EXAMPLE - CHORD ARRAYS AND CHORD EXPRESSIONS
+The \f[B]CHORD ARRAY\f[R] also supports \f[B]CHORD EXPRESSIONS\f[R]:
+.IP
+.EX
+[
+   abc
+   (d \[dq]A different description\[dq] %{{echo \[dq]A different command\[dq]}})
+   (C-e \[dq]An exciting description\[dq])
+] \[dq]A default description\[dq] %{{echo \[dq]A default command\[dq]}}
+.EE
+.PP
+The above is equivelent to the following:
+.IP
+.EX
+a   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
+b   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
+c   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
+d   \[dq]A different description\[dq] %{{echo \[dq]A different command\[dq]}}
+C-e \[dq]An exciting description\[dq] %{{echo \[dq]A default command\[dq]}}
+.EE
+.SS EXAMPLE - HOOKS AND FLAGS IN CHORDS
+\f[B]HOOKS\f[R] and \f[B]FLAGS\f[R] are very flexible:
+.IP
+.EX
+a \[dq]A hook\[dq]
+  \[ha]before %{{echo \[dq]I run first!\[dq]}}
+  \[ha]after %{{echo \[dq]I run last!\[dq]}}
+    %{{echo \[dq]I run in the middle!\[dq]}}
+
+b \[dq]A hook and flag\[dq]
+  \[ha]before %{{echo \[dq]I run first!\[dq]}}  +keep
+    %{{echo \[dq]I stay open thanks to \[aq]+keep\[aq]\[dq]}}
+
+c \[dq]I\[aq]m equivelent to \[aq]b\[aq]\[dq]
+  +keep \[ha]before %{{echo \[dq]I run first!\[dq]}}
+    %{{echo \[dq]I stay open thanks to \[aq]+keep\[aq]\[dq]}}
+.EE
+.PP
+This should make two things clear:
+.TP
+\f[B]1\f[R].
+That \f[I]hooks\f[R] and \f[I]flags\f[R] are of equal precedence.
+.TP
+\f[B]2\f[R].
+That \f[I]hooks\f[R] and \f[I]flags\f[R] go inbetween the
+\f[I]description\f[R] and the \f[I]command\f[R].
+.SS EXAMPLE - HOOKS AND FLAGS IN PREFIXES
+A \f[I]hooks\f[R] and \f[I]flags\f[R] work differently when given to a
+\f[I]prefix\f[R] compared to a \f[I]chord\f[R], \f[I]chord array\f[R],
+or \f[I]chord expression\f[R]:
+.IP
+.EX
+a \[dq]A prefix with a hook and flag\[dq] \[ha]before %{{echo \[dq]I am /almost/ always run first!\[dq]}} +keep
+{
+    b \[dq]An obedient chord\[dq]
+        %{{echo \[dq]I inherit /hooks/ and /flags/ from my parent prefix!\[dq]}}
+    c \[dq]A selective chord\[dq] +no-before
+        %{{echo \[dq]I ignore /before/ and /sync-before/ /hooks/!\[dq]}}
+    d \[dq]A defiant chord\[dq] +ignore
+        %{{echo \[dq]I ignore everything my parent prefix tries to force on me!!\[dq]}}
+    e \[dq]A wanting child prefix\[dq] +inherit
+    {
+        f \[dq]Hooray!\[dq]
+            %{{echo \[dq]My parent prefix is passing on my grandparent\[aq]s /hooks/ and /flags/!\[dq]}}
+    }
+    g \[dq]An indifferent child prefix\[dq]
+    {
+        h \[dq]Hmm...\[dq]
+           %{{echo \[dq]I don\[aq]t seem to have inherited any /hooks/ or /flags/ from my grandparent.\[dq]}}
+    }
+}
+.EE
+.PP
+For a more formal understanding, see \f[B]INHERITENCE\f[R] below.
+.SS EXAMPLE - THE INCLUDE PREPROCESSOR MACRO
+Here is a simple example of the \f[I]:include\f[R] \f[B]PREPROCESSOR
+MACRO\f[R]:
+.IP
+.EX
+# File main.wks
+---------------
+:include \[dq]top_level_chords.wks\[dq]
+:include \[dq]top_level_prefixes.wks\[dq]
+
+# File top_level_chords.wks
+---------------------------
+a \[dq]A chord\[dq] %{{echo \[dq]Hello!\[dq]}}
+
+# File top_level_prefixes.wks
+-----------------------------
+b \[dq]A prefix\[dq]
+{
+    c \[dq]A chord\[dq] %{{echo \[dq]Where am I??\[dq]}}
+}
+.EE
+.PP
+When processed, the \f[I]main.wks\f[R] file will produce a \f[B]wks\f[R]
+file equivelent to this:
+.IP
+.EX
+a \[dq]A chord\[dq] %{{echo \[dq]Hello!\[dq]}}
+b \[dq]A prefix\[dq]
+{
+    c \[dq]A chord\[dq] %{{echo \[dq]Where am I??\[dq]}}
+}
+.EE
+.PP
+The \f[I]:include\f[R] macro is more flexible than the \f[B]C\f[R]
+equivelent though, allowing for silly things like this:
+.IP
+.EX
+# File first_half.wks
+---------------------
+a \[dq]The first half :include \[dq]second_half.wks\[dq]
+
+# File second_half.wks
+----------------------
+and the second half\[dq] %{{echo \[dq]A match made in heaven.\[dq]}}
+.EE
+.PP
+Both \f[I]first~half~.wks\f[R] and \f[I]second~half~.wks\f[R] are
+invalid \f[B]wks\f[R] files on their own.
+But, if \f[I]first~half~.wks\f[R] is passed to \f[B]wk\f[R] it will
+produce a valid \f[B]wks\f[R] file equivelent to the one below:
+.IP
+.EX
+a \[dq]The first half and the second half\[dq] %{{echo \[dq]A match made in heaven.\[dq]}}
+.EE
+.PP
+While the above example is a bit silly, this flexibility allows
+\f[B]wks\f[R] to become extremely modular.
+Take this snippet of my personal configuration for example:
+.IP
+.EX
+# File main.wks
+---------------
+# Browser prefix
+b \[dq]+Browser\[dq] { :include \[dq]browser_key_chords.wks\[dq] }
+# Emacs prefix
+e \[dq]+Emacs\[dq] \[ha]before %{{dwmc viewex 1}} { :include \[dq]emacs_key_chords.wks\[dq] }
+# mpc prefix
+m \[dq]+mpc\[dq] +keep { :include \[dq]mpc_key_chords.wks\[dq] }
+
+# File browser_key_chords.wks
+-----------------------------
+[
+    (b \[dq]Brave\[dq])
+    (c \[dq]Chrome\[dq])
+    (f \[dq]Firefox\[dq])
+] \[dq]null\[dq] %{{%(desc,)}} # downcase the description and use as the command
+
+# Mullvad-exclude prefix
+m \[dq]+Mullvad Exclude\[dq]
+{
+    [
+        (b \[dq]Brave\[dq])
+        (c \[dq]Chrome\[dq])
+        (f \[dq]Firefox\[dq])
+    ] \[dq]null\[dq] %{{mullvad-exclude %(desc_)}}
+}
+
+# File emacs_key_chords.wks
+---------------------------
+b \[dq]Open blank\[dq] %{{emacsclient -c -a \[dq]\[dq]}}
+p \[dq]+Projects\[dq]
+{
+    w \[dq]wk\[dq] %{{emacs \[dq]\[ti]/Projects/wk\[dq]}}
+}
+
+# File mpc_key_chords.wks
+-------------------------
+c \[dq]Clear mpc\[dq] %{{mpc clear}}
+d \[dq]Display song\[dq] %{{songinfo}}
+h \[dq]Seek -5s\[dq] %{{mpc seek \[dq]-5\[dq]}}
+l \[dq]Seek +5s\[dq] %{{mpc seek \[dq]+5\[dq]}}
+n \[dq]Next song\[dq] %{{mpc next}}
+p \[dq]Prev song\[dq] %{{mpc prev}}
+o \[dq]Open mpc\[dq] +ignore %{{term -e ncmpcpp}}
+.EE
+.PP
+Each of the above files is perfectly valid on their own, meaning they
+can exist in as part of \f[I]main.wks\f[R], or I can use only the
+relevant file when calling \f[B]wk\f[R] from a script.
+Additionally, I can \f[I]:include\f[R] files multiple times in cases
+where I would be repeating myself.
 .SH GRAMMAR RULES
 The following are \f[I]ideally\f[R] the formal grammar rules for
 \f[B]wks\f[R].
@@ -45,7 +278,10 @@ identifier         -> ( \[aq]key\[aq]
                       | \[aq]index\[aq]
                       | \[aq]index+1\[aq]
                       | \[aq]desc\[aq]
-                      | \[aq]description\[aq] ) ;
+                      | \[aq]desc\[ha]\[aq]
+                      | \[aq]desc\[ha]\[ha]\[aq]
+                      | \[aq]desc,\[aq]
+                      | \[aq]desc,,\[aq] );
 
 keyword            -> ( hook | flag ) ;
 
@@ -296,7 +532,7 @@ An error will be thrown in the case where this is attempted.
 A \f[I]keyword\f[R] is an optional instruction to modify the behavior of
 a \f[I]chord\f[R] or \f[I]prefix\f[R].
 The \f[I]keywords\f[R] include \f[B]HOOKS\f[R], \f[B]FLAGS\f[R], and
-\f[B]PREPORCESSOR COMMANDS\f[R].
+\f[B]PREPROCESSOR COMMANDS\f[R].
 See below for details.
 .SS HOOK
 A \f[I]hook\f[R] is a convenient way to add a \f[I]command\f[R] to a
