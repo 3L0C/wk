@@ -287,8 +287,8 @@ keywords(Compiler* compiler, Line* lineDest)
         case TOKEN_KEEP:            lineDest->flags.keep = true; break;
         case TOKEN_INHERIT:         lineDest->flags.inherit = true; break;
         case TOKEN_IGNORE:          lineDest->flags.ignore = true; break;
-        case TOKEN_IGNORE_HOOKS:    lineDest->flags.ignoreHooks = true; break;
-        case TOKEN_IGNORE_FLAGS:    lineDest->flags.ignoreFlags = true; break;
+        case TOKEN_UNHOOK:          lineDest->flags.unhook = true; break;
+        case TOKEN_DEFLAG:          lineDest->flags.deflag = true; break;
         case TOKEN_NO_BEFORE:       lineDest->flags.nobefore = true; break;
         case TOKEN_NO_AFTER:        lineDest->flags.noafter = true; break;
         case TOKEN_WRITE:           lineDest->flags.write = true; break;
