@@ -69,11 +69,11 @@ pressKey(WkMenu* menu, Scanner* scanner)
     WkKey key = {0};
     Token token = {0};
     initToken(&token);
-    scanToken(scanner, &token);
+    scanTokenForCompiler(scanner, &token);
 
     while (addMod(&key, token.type))
     {
-        scanToken(scanner, &token);
+        scanTokenForCompiler(scanner, &token);
     }
 
     if (token.type == TOKEN_KEY)
@@ -114,7 +114,7 @@ pressKey(WkMenu* menu, Scanner* scanner)
 
     if (status == WK_STATUS_EXIT_OK)
     {
-        scanToken(scanner, &token);
+        scanTokenForCompiler(scanner, &token);
         if (token.type == TOKEN_EOF) return status;
         return WK_STATUS_EXIT_SOFTWARE;
     }

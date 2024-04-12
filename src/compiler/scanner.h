@@ -22,6 +22,7 @@ typedef struct
 
 void initScanner(Scanner* scanner, const char* source, const char* filePath);
 bool isAtEnd(const Scanner* scanner);
-void scanToken(Scanner* scanner, Token* result);
+void scanTokenForCompiler(Scanner* scanner, Token* result);
+void scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription);
 
 #endif /* WK_COMPILER_SCANNER_H_ */

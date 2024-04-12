@@ -69,7 +69,7 @@ advanceCompiler(Compiler* compiler)
 
     while (true)
     {
-        scanToken(&compiler->scanner, &compiler->current);
+        scanTokenForCompiler(&compiler->scanner, &compiler->current);
         if (debug) disassembleToken(&compiler->current);
         if (compiler->current.type != TOKEN_ERROR) break;
 

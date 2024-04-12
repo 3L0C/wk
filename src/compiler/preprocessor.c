@@ -87,7 +87,7 @@ handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, Pie
     /* Ensure filename is given. */
     Token includeFile = {0};
     initToken(&includeFile);
-    scanToken(scanner, &includeFile);
+    scanTokenForPreprocessor(scanner, &includeFile, true);
     if (includeFile.type != TOKEN_DESCRIPTION)
     {
         errorMsg("Expect \"FILEPATH\" after ':include'.");
@@ -113,19 +113,26 @@ handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, Pie
     if (!includeFilePath)
     {
         errorMsg("Failed to get the included file path.");
+        scanner->hadError = true;
         goto fail;
     }
 
     /* Try to read the included file */
     includeSource = readFile(includeFilePath);
-    if (!includeSource) goto fail; /* readFile prints an error for us. */
+    if (!includeSource)
+    {
+        /* readFile prints an error for us. */
+        scanner->hadError = true;
+        goto fail;
+    }
 
-    /* check that the file and the source are not the one and the same */
+    /* check that the file and the source are not one and the same */
     if (strcmp(includeSource, scanner->head) == 0)
     {
         errorMsg(
             "Included file appears to be the same as the source file. Cannot `:include` self."
         );
+        scanner->hadError = true;
         goto fail;
     }
 
@@ -134,22 +141,18 @@ handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, Pie
     if (!includeResult)
     {
         errorMsg("Failed to get preprocessor result.");
+        scanner->hadError = true;
         goto fail;
     }
 
     /* Append the result. */
     appendToPieceTable(result, PIECE_SOURCE_ADD, includeResult, strlen(includeResult));
 
-    free(includeFilePath);
-    free(includeSource);
-    free(includeResult);
-    return;
-
 fail:
     free(includeFilePath);
     free(includeSource);
     free(includeResult);
-    scanner->hadError = true;
+    return;
 }
 
 char*
@@ -168,7 +171,7 @@ runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
         if (scanner.hadError) goto fail;
 
         Token token = {0};
-        scanToken(&scanner, &token);
+        scanTokenForPreprocessor(&scanner, &token, false);
         switch (token.type)
         {
         case TOKEN_INCLUDE:

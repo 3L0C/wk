@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -539,7 +540,7 @@ getInterpolation(Scanner* scanner, Token* token)
 }
 
 void
-scanToken(Scanner* scanner, Token* result)
+scanTokenForCompiler(Scanner* scanner, Token* result)
 {
     assert(scanner && result);
 
@@ -568,9 +569,7 @@ scanToken(Scanner* scanner, Token* result)
     case ':': makeScannerCurrent(scanner); return getPreprocessorMacro(scanner, result);
 
     /* literals */
-    case '\"':
-        makeScannerCurrent(scanner);
-        return getDescription(scanner, result);
+    case '\"': makeScannerCurrent(scanner); return getDescription(scanner, result);
     case '%':
         if (peek(scanner) != '{')
         {
@@ -599,4 +598,32 @@ scanToken(Scanner* scanner, Token* result)
     }
 
     return errorToken(scanner, result, "Unexpected character");
+}
+
+void
+scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription)
+{
+    assert(scanner && result);
+
+    initToken(result);
+
+    while (!isAtEnd(scanner))
+    {
+        char c = advanceScanner(scanner);
+        printf("Scanned character: '%c = %d'\n", c, c);
+        switch (c)
+        {
+        case ':': makeScannerCurrent(scanner); return getPreprocessorMacro(scanner, result);
+        case '\"':
+        {
+            /* Ignore if not scanning for descriptions, a.k.a. strings. */
+            if (!wantsDescription) break;
+            makeScannerCurrent(scanner);
+            return getDescription(scanner, result);
+        }
+        default: break;
+        }
+    }
+
+    return makeToken(scanner, result, TOKEN_EOF);
 }
