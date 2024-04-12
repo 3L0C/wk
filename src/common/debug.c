@@ -175,6 +175,7 @@ debugKeyChord(const WkKeyChord* keyChord, int indent)
     disassembleKeyChord(keyChord, indent);
     debugMsgWithIndent(indent, "|");
     debugPrintHeaderWithIndent(indent, "");
+    printf("\n");
 }
 
 void
@@ -224,6 +225,7 @@ debugGrid(
 )
 {
     debugPrintHeader("Grid");
+    debugMsgWithIndent(0, "|");
     debugMsgWithIndent(0, "| Start X:           %04u", startx, 0);
     debugMsgWithIndent(0, "| Start Y:           %04u", starty);
     debugMsgWithIndent(0, "| Rows:              %04u", rows);
@@ -233,6 +235,7 @@ debugGrid(
     debugMsgWithIndent(0, "| Cell width:        %04u", cellw);
     debugMsgWithIndent(0, "| Cell height:       %04u", cellh);
     debugMsgWithIndent(0, "| Count:             %04u", count);
+    debugMsgWithIndent(0, "|");
     debugPrintHeader("");
     printf("\n");
 }
