@@ -67,6 +67,8 @@ freeTokenArray(TokenArray* array)
     assert(array);
 
     FREE_ARRAY(Token, array->tokens, array->capacity);
+    array->count = 0;
+    array->capacity = 0;
 }
 
 void

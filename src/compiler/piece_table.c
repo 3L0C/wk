@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 
 /* common includes */
@@ -11,9 +12,10 @@
 static bool
 isWithinOriginalBounds(PieceTable* pieceTable, const char* text)
 {
-    const char* original = pieceTable->original;
-    size_t originalLen = pieceTable->originalLen;
-    return (!(text < original) && !(text > &original[originalLen]));
+    return (
+        !(text < pieceTable->original) &&
+        !(text > pieceTable->original + pieceTable->originalLen)
+    );
 }
 
 static void
@@ -22,12 +24,12 @@ copyPiece(Piece* from, Piece* to)
     assert(from && to);
 
     to->source = from->source;
-    to->start = from->start;
+    to->index = from->index;
     to->len = from->len;
 }
 
 static void
-writePieceToPieceArray(PieceArray* array, PieceSource source, const char* text, size_t len)
+writePieceToPieceArray(PieceArray* array, PieceSource source, size_t index, size_t len)
 {
     if (array->count == array->capacity)
     {
@@ -36,7 +38,7 @@ writePieceToPieceArray(PieceArray* array, PieceSource source, const char* text, 
         array->pieces = GROW_ARRAY(Piece, array->pieces, oldCapacity, array->capacity);
     }
 
-    Piece piece = { source, text, len };
+    Piece piece = { source, index, len };
     copyPiece(&piece, &array->pieces[array->count]);
     array->count++;
 }
@@ -49,13 +51,59 @@ appendToPieceTable(PieceTable* pieceTable, PieceSource source, const char* text,
     if (source == PIECE_SOURCE_ORIGINAL)
     {
         assert(isWithinOriginalBounds(pieceTable, text));
-        writePieceToPieceArray(&pieceTable->pieces, source, text, len);
+        size_t index = text - pieceTable->original;
+        writePieceToPieceArray(&pieceTable->pieces, source, index, len);
         return;
     }
 
     String* add = &pieceTable->add;
+    size_t start = add->count;
     appendToString(add, text, len);
-    writePieceToPieceArray(&pieceTable->pieces, source, &add->string[add->count - len], len);
+    writePieceToPieceArray(&pieceTable->pieces, source, start, len);
+}
+
+char*
+compilePieceTableToString(PieceTable* pieceTable)
+{
+    String result;
+    initString(&result);
+    PieceArray* pieces = &pieceTable->pieces;
+    for (size_t i = 0; i < pieces->count; i++)
+    {
+        Piece* piece = &pieces->pieces[i];
+        appendToString(&result, getTextAtPiece(pieceTable, piece), piece->len);
+    }
+
+    return result.string;
+}
+
+static void
+freePieceArray(PieceArray* array)
+{
+    assert(array);
+
+    FREE_ARRAY(PieceArray, array->pieces, array->capacity);
+    array->count = 0;
+    array->capacity = 0;
+}
+
+void
+freePieceTable(PieceTable* pieceTable)
+{
+    assert(pieceTable);
+
+    freeString(&pieceTable->add);
+    freePieceArray(&pieceTable->pieces);
+}
+
+const char*
+getTextAtPiece(PieceTable* pieceTable, Piece* piece)
+{
+    return (
+        piece->source == PIECE_SOURCE_ADD
+        ? pieceTable->add.string + piece->index
+        : pieceTable->original + piece->index
+    );
 }
 
 static void

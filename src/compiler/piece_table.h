@@ -13,7 +13,7 @@ typedef enum
 typedef struct
 {
     PieceSource source;
-    const char* start;
+    size_t index;
     size_t len;
 } Piece;
 
@@ -32,7 +32,16 @@ typedef struct
     PieceArray pieces;
 } PieceTable;
 
+typedef union
+{
+    size_t index;
+    const char* text;
+} PieceArg;
+
 void appendToPieceTable(PieceTable* pieceTable, PieceSource source, const char* text, size_t len);
+char* compilePieceTableToString(PieceTable* pieceTable);
+void freePieceTable(PieceTable* pieceTable);
+const char* getTextAtPiece(PieceTable* pieceTable, Piece* piece);
 void initPieceTable(PieceTable* pieceTable, const char* original);
 
 #endif /* WK_COMPILER_PIECE_TABLE_H_ */

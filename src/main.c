@@ -56,7 +56,11 @@ transpile(void)
         result = EX_DATAERR;
         goto end;
     }
-    debugMsg(mainMenu.debug, "Contents of preprocessed source: '%s'.", processedSource);
+    if (mainMenu.debug)
+    {
+        debugMsg(mainMenu.debug, "Contents of preprocessed source: ");
+        debugStringWithIndent(processedSource);
+    }
 
     /* Begin compilation. */
     Compiler compiler;
@@ -101,7 +105,11 @@ runScript(void)
         result = EX_DATAERR;
         goto end;
     }
-    debugMsg(mainMenu.debug, "Contents of script:\n%s", processedSource);
+    if (mainMenu.debug)
+    {
+        debugMsg(mainMenu.debug, "Contents of preprocessed source: ");
+        debugStringWithIndent(processedSource);
+    }
 
     /* Begin compilation */
     Compiler compiler;
@@ -178,7 +186,11 @@ runChordsFile(void)
         result = EX_DATAERR;
         goto end;
     }
-    debugMsg(mainMenu.debug, "Contents of preprocessed source: '%s'.", processedSource);
+    if (mainMenu.debug)
+    {
+        debugMsg(mainMenu.debug, "Contents of preprocessed source: ");
+        debugStringWithIndent(processedSource);
+    }
 
     /* Begin compilation */
     Compiler compiler;

@@ -10,6 +10,8 @@
 
 /* local includes */
 #include "preprocessor.h"
+#include "debug.h"
+#include "piece_table.h"
 #include "scanner.h"
 #include "token.h"
 
@@ -74,18 +76,13 @@ getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
 }
 
 static void
-handleIncludeMacro(
-    WkMenu* menu,
-    Scanner* scanner,
-    const char* sourcePath,
-    const char* scannerStart,
-    String* result
-)
+handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, PieceTable* result)
 {
-    assert(menu && scanner);
+    assert(menu && scanner && scannerStart && result);
 
     /* currently pointing at the 'i' in ':include', so take off one. */
     const char* includeStart = scanner->start - 1;
+    const char* sourcePath = scanner->filePath;
 
     /* Ensure filename is given. */
     Token includeFile = {0};
@@ -105,7 +102,7 @@ handleIncludeMacro(
     }
 
     /* Append previous contents to result. */
-    appendToString(result, scannerStart, includeStart - scannerStart);
+    appendToPieceTable(result, PIECE_SOURCE_ORIGINAL, scannerStart, includeStart - scannerStart);
 
     char* includeFilePath = NULL;
     char* includeSource = NULL; // readFile(includeFilePath);
@@ -141,7 +138,7 @@ handleIncludeMacro(
     }
 
     /* Append the result. */
-    appendToString(result, includeResult, strlen(includeResult));
+    appendToPieceTable(result, PIECE_SOURCE_ADD, includeResult, strlen(includeResult));
 
     free(includeFilePath);
     free(includeSource);
@@ -162,8 +159,8 @@ runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
 
     Scanner scanner = {0};
     initScanner(&scanner, source, sourcePath);
-    String result = {0};
-    initString(&result);
+    PieceTable pieceTable;
+    initPieceTable(&pieceTable, source);
     const char* scannerStart = scanner.head;
 
     while (!isAtEnd(&scanner))
@@ -176,7 +173,7 @@ runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
         {
         case TOKEN_INCLUDE:
         {
-            handleIncludeMacro(menu, &scanner, sourcePath, scannerStart, &result);
+            handleIncludeMacro(menu, &scanner, scannerStart, &pieceTable);
             /* Update scanner for the next go around. */
             scannerStart = scanner.current;
             break;
@@ -193,11 +190,16 @@ runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
     }
 
     /* Append the last bit of the source to result. */
-    appendToString(&result, scannerStart, scanner.current - scannerStart);
+    appendToPieceTable(
+        &pieceTable, PIECE_SOURCE_ORIGINAL, scannerStart, scanner.current - scannerStart
+    );
 
-    return result.string;
+    if (menu->debug) disassemblePieceTable(&pieceTable);
+    char* result = compilePieceTableToString(&pieceTable);
+    freePieceTable(&pieceTable);
+    return result;
 
 fail:
-    freeString(&result);
+    freePieceTable(&pieceTable);
     return NULL;
 }

@@ -586,7 +586,7 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
     if (debug)
     {
         debugMsg(debug, "Completed transpile. Debuging line array.");
-        debugLineArray(&compiler->lines);
+        disassembleLineArray(&compiler->lines);
     }
 
     return !compiler->hadError;
