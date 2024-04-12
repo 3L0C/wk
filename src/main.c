@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
@@ -58,8 +59,13 @@ transpile(void)
     }
     if (mainMenu.debug)
     {
-        debugMsg(mainMenu.debug, "Contents of preprocessed source: ");
+        /* debugMsg(mainMenu.debug, "Contents of preprocessed source: "); */
+        debugPrintHeader("Contents of Preprocessed Source");
+        debugMsg(true, "| ");
         debugStringWithIndent(processedSource);
+        debugMsg(true, "| ");
+        debugPrintHeader("");
+        printf("\n");
     }
 
     /* Begin compilation. */
@@ -107,8 +113,12 @@ runScript(void)
     }
     if (mainMenu.debug)
     {
-        debugMsg(mainMenu.debug, "Contents of preprocessed source: ");
+        debugPrintHeader("Contents of Preprocessed Source");
+        debugMsg(true, "| ");
         debugStringWithIndent(processedSource);
+        debugMsg(true, "| ");
+        debugPrintHeader("");
+        printf("\n");
     }
 
     /* Begin compilation */
@@ -188,8 +198,12 @@ runChordsFile(void)
     }
     if (mainMenu.debug)
     {
-        debugMsg(mainMenu.debug, "Contents of preprocessed source: ");
+        debugPrintHeader("Contents of Preprocessed Source");
+        debugMsg(true, "| ");
         debugStringWithIndent(processedSource);
+        debugMsg(true, "| ");
+        debugPrintHeader("");
+        printf("\n");
     }
 
     /* Begin compilation */

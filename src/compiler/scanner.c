@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -610,7 +609,6 @@ scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription)
     while (!isAtEnd(scanner))
     {
         char c = advanceScanner(scanner);
-        printf("Scanned character: '%c = %d'\n", c, c);
         switch (c)
         {
         case ':': makeScannerCurrent(scanner); return getPreprocessorMacro(scanner, result);

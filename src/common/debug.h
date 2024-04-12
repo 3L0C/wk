@@ -12,6 +12,7 @@ void debugHexColors(const WkHexColor* colors);
 void debugKey(const WkKey* key);
 void debugMenu(const WkMenu* menu);
 void debugMsg(bool debug, const char* fmt, ...);
+void debugPrintHeader(const char* header);
 void debugStatus(WkStatus status);
 void debugStringWithIndent(const char* text);
 void debugStringLenWithIndent(const char* text, size_t len);

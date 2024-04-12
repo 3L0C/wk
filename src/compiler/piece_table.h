@@ -32,12 +32,6 @@ typedef struct
     PieceArray pieces;
 } PieceTable;
 
-typedef union
-{
-    size_t index;
-    const char* text;
-} PieceArg;
-
 void appendToPieceTable(PieceTable* pieceTable, PieceSource source, const char* text, size_t len);
 char* compilePieceTableToString(PieceTable* pieceTable);
 void freePieceTable(PieceTable* pieceTable);

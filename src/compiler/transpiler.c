@@ -577,6 +577,12 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
     assert(compiler);
 
     debug = debugFlag;
+    if (debug)
+    {
+        debugMsg(true, "|---------------------------------------------------");
+        debugMsg(true, "| Line:Col  |          TokenType          | Lexeme");
+    }
+
     advanceCompiler(compiler);
     while (!matchCompiler(compiler, TOKEN_EOF))
     {
@@ -585,8 +591,12 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
 
     if (debug)
     {
-        debugMsg(debug, "Completed transpile. Debuging line array.");
-        disassembleLineArray(&compiler->lines);
+        debugMsg(true, "|---------------------------------------------------\n");
+    }
+
+    if (debug)
+    {
+        disassembleLineArray(&compiler->lines, 0);
     }
 
     return !compiler->hadError;

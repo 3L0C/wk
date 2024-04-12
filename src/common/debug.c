@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,10 @@
 #include "debug.h"
 #include "menu.h"
 #include "types.h"
+
+static const int MAX_HEADER_WIDTH = 52;
+static const int DEBUG_SPACE = 9; /* '[DEBUG] |' == 9 */
+static const char* DASHES = "-------------------------------------------";
 
 static char
 getDelim(int* count, char a, char b)
@@ -268,11 +273,13 @@ debugHexColor(const WkHexColor* color)
 {
     assert(color);
 
-    printf("[DEBUG] |     Hex string:     '%s'\n", color->hex);
-    printf("[DEBUG] |     Red value:      %#02X\n", color->r * 255);
-    printf("[DEBUG] |     Green value:    %#02X\n", color->g * 255);
-    printf("[DEBUG] |     Blue value:     %#02X\n", color->b * 255);
-    printf("[DEBUG] |     Alpha value:    %#02X\n", color->a * 255);
+    debugMsg(true, "| ");
+    debugMsg(true, "| Hex string:         '%s'", color->hex);
+    debugMsg(true, "| Red value:          %#02X", color->r * 255);
+    debugMsg(true, "| Green value:        %#02X", color->g * 255);
+    debugMsg(true, "| Blue value:         %#02X", color->b * 255);
+    debugMsg(true, "| Alpha value:        %#02X", color->a * 255);
+    debugMsg(true, "| ");
 }
 
 void
@@ -285,14 +292,16 @@ debugHexColors(const WkHexColor* colors)
         printDebug(0);
         switch (i)
         {
-        case WK_COLOR_FOREGROUND: printf("| Foreground color:\n"); break;
-        case WK_COLOR_BACKGROUND: printf("| Background color:\n"); break;
-        case WK_COLOR_BORDER: printf("| Border color:\n"); break;
+        case WK_COLOR_FOREGROUND: printf("|------- Foreground color -------\n"); break;
+        case WK_COLOR_BACKGROUND: printf("|------- Background color -------\n"); break;
+        case WK_COLOR_BORDER:     printf("|--------- Border color ---------\n"); break;
         default: errorMsg("| Got unexpected color index: '%d'.", i); return;
         }
 
         debugHexColor(&colors[i]);
     }
+    printDebug(0);
+    printf("|--------------------------------\n");
 }
 
 void
@@ -305,9 +314,7 @@ debugKey(const WkKey* key)
     debugMod(&key->mods, 0);
     if (debugSpecial(key->special, 0))
     {
-        /* printDebug(0); */
         debugSpecialRepr(key->special, 0);
-        /* printf("| Key                 SPECIAL\n"); */
     }
     else
     {
@@ -325,6 +332,7 @@ debugMenu(const WkMenu* menu)
 
     printDebug(0);
     printf("------------------- Menu -------------------\n");
+    debugMsg(true, "|");
     debugString("Delimiter:", menu->delimiter, 0);
     debugSize_t("Max cols:", menu->maxCols, 0);
     debugInt("Window width:", menu->windowWidth, 0);
@@ -342,7 +350,9 @@ debugMenu(const WkMenu* menu)
         0
     );
     debugSize_t("Border width:", menu->borderWidth, 0);
+    debugMsg(true, "|");
     debugHexColors(menu->colors);
+    debugMsg(true, "|");
     debugString("Shell:", menu->shell, 0);
     debugString("Font:", menu->font, 0);
     debugString("Chords:", "Set", 0);
@@ -356,7 +366,7 @@ debugMenu(const WkMenu* menu)
     debugSize_t("Script capacity:", menu->client.script.capacity, 0);
     debugSize_t("Script count:", menu->client.script.count, 0);
     printDebug(0);
-    printf("--------------------------------------------\n");
+    printf("--------------------------------------------\n\n");
 }
 
 void
@@ -366,18 +376,37 @@ debugMsg(bool debug, const char* fmt, ...)
 
     assert(fmt);
 
-    static const int debugLen = strlen("[DEBUG] ");
-
-    int len = strlen(fmt) + 1; /* 1 = '\0' */
-    char format[len + debugLen];
-    memcpy(format, "[DEBUG] ", debugLen);
-    memcpy(format + debugLen, fmt, len);
+    printf("[DEBUG] ");
+    int len = strlen(fmt); /* 1 = '\0' */
     va_list ap;
     va_start(ap, fmt);
-    vprintf(format, ap);
+    vprintf(fmt, ap);
     va_end(ap);
 
-    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stdout);
+    fputc((fmt[len] == ':' ? ' ' : '\n'), stdout);
+}
+
+void
+debugPrintHeader(const char* header)
+{
+    assert(header);
+
+    int headerLen = 1 + strlen(header) + 1; /* add a space to each side */
+    if (headerLen > (MAX_HEADER_WIDTH - DEBUG_SPACE))
+    {
+        debugMsg(true, "| %s", header);
+        return;
+    }
+    else if (headerLen - 2 == 0)
+    {
+        debugMsg(true, "|%s", DASHES);
+        return;
+    }
+
+    int dashCount = (MAX_HEADER_WIDTH - DEBUG_SPACE - headerLen);
+    int leftDashes = dashCount / 2;
+    int rightDashes = dashCount - leftDashes;
+    debugMsg(true, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
 }
 
 void
@@ -397,20 +426,19 @@ debugStatus(WkStatus status)
 void
 debugStringWithIndent(const char* text)
 {
-    if (!text)
-    {
-        printf("      | ");
-    }
+    if (!text) return;
+
     const char* current = text;
+    size_t i = 1;
 
     while (*current != '\0')
     {
-        printf("      | ");
+        printf("[DEBUG] | %4zu | ", i++);
         while (*current != '\n' && *current != '\0')
         {
             printf("%c", *current++);
         }
-        printf("%c", *current++);
+        if (*current == '\n') printf("%c", *current++);
     }
 }
 
@@ -420,14 +448,16 @@ debugStringLenWithIndent(const char* text, size_t len)
     if (!text) return;
 
     const char* current = text;
+    size_t i = 1;
 
     while (current < text + len)
     {
-        printf("      | ");
+        printf("[DEBUG] | %4zu | ", i++);
         while (*current != '\n' && current < text + len)
         {
             printf("%c", *current++);
         }
-        if (*current == '\n') printf("%c", *current++);
+        if (*current == '\n' && current < text + len) printf("%c", *current++);
     }
+    if (*(current - 1) != '\n') printf("\n");
 }

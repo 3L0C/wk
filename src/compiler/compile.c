@@ -15,7 +15,6 @@
 
 /* local includes */
 #include "compile.h"
-#include "debug.h"
 #include "line.h"
 #include "scanner.h"
 #include "token.h"
@@ -309,12 +308,6 @@ compileLine(WkKeyChord* keyChord, Line* line)
     else
     {
         keyChord->keyChords = NULL;
-    }
-
-    if (debug)
-    {
-        disassembleLineShallow(line, line->index);
-        debugKeyChord(keyChord, 0);
     }
 }
 

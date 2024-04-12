@@ -5,8 +5,8 @@
 #include "piece_table.h"
 #include "token.h"
 
-void disassembleLine(Line* line, size_t index);
-void disassembleLineArray(LineArray* array);
+void disassembleLine(Line* line, size_t index, int indent);
+void disassembleLineArray(LineArray* array, int indent);
 void disassembleLineShallow(Line* line, size_t index);
 void disassemblePiece(PieceTable* pieceTable, size_t index);
 void disassemblePieceTable(PieceTable* pieceTable);
