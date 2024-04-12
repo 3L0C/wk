@@ -10,7 +10,6 @@
 #include "common/debug.h"
 #include "common/string.h"
 #include "common/types.h"
-#include "common/util.h"
 
 /* compiler includes */
 #include "compiler/common.h"
@@ -142,7 +141,7 @@ runScript(void)
     }
 
     /* Last bit of prep before running script. */
-    countChords(&mainMenu);
+    countMenuKeyChords(&mainMenu);
     WkStatus status = WK_STATUS_RUNNING;
 
     /* Pre-press keys */
@@ -225,7 +224,7 @@ runChordsFile(void)
     }
 
     /* Last bit of prep before running script. */
-    countChords(&mainMenu);
+    countMenuKeyChords(&mainMenu);
     WkStatus status = WK_STATUS_RUNNING;
 
     /* Pre-press keys */
@@ -269,7 +268,7 @@ runBuiltinKeyChords()
     if (mainMenu.debug) debugKeyChords(mainMenu.keyChords, 0);
 
     /* Initial setup */
-    countChords(&mainMenu);
+    countMenuKeyChords(&mainMenu);
     WkStatus status = WK_STATUS_RUNNING;
 
     /* Pre-press keys */

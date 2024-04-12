@@ -1,9 +1,7 @@
 #include <assert.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <string.h>
 
 /* common includes */
 #include "common/types.h"
@@ -14,28 +12,6 @@
 #include "line.h"
 #include "piece_table.h"
 #include "token.h"
-
-static void
-debugWithIndent(int indent, const char* fmt, ...)
-{
-    assert(fmt);
-
-    printf("[DEBUG] ");
-    for (int i = 0; i < indent; i++)
-    {
-        printf("|      ");
-    }
-
-    size_t len = strlen(fmt);
-    va_list ap;
-    va_start(ap, fmt);
-    vprintf(fmt, ap);
-    va_end(ap);
-    if (fmt[len - 1] != ' ')
-    {
-        fputc('\n', stdout);
-    }
-}
 
 static char
 getDelim(int* count, char a, char b)
@@ -48,12 +24,12 @@ disassembleMods(WkMods* mods, int indent)
 {
     if (!IS_MOD(*mods))
     {
-        debugWithIndent(indent, "| Mods:        NONE");
+        debugMsgWithIndent(indent, "| Mods:        NONE");
         return;
     }
 
     int count = COUNT_MODS(*mods);
-    debugWithIndent(indent, "| Mods:        ");
+    debugMsgWithIndent(indent, "| Mods:        ");
     if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
     if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
     if (mods->hyper) printf("HYPER%c", getDelim(&count, '|', '\n'));
@@ -63,7 +39,7 @@ disassembleMods(WkMods* mods, int indent)
 static void
 disassembleLineToken(Token* token, const char* message, int indent)
 {
-    debugWithIndent(indent, "| %s:         '%.*s'", message, (int)token->length, token->start);
+    debugMsgWithIndent(indent, "| %s:         '%.*s'", message, (int)token->length, token->start);
 }
 
 static void
@@ -73,11 +49,11 @@ disassembleTokenArray(Line* line, TokenArray* array, const char* message, int in
 
     if (array->count == 0)
     {
-        debugWithIndent(indent, "| %s %s", message, "NONE");
+        debugMsgWithIndent(indent, "| %s %s", message, "NONE");
         return;
     }
 
-    debugWithIndent(indent, "| %s ", message);
+    debugMsgWithIndent(indent, "| %s ", message);
     printf("\"");
     for (size_t i = 0; i < array->count; i++)
     {
@@ -98,12 +74,12 @@ disassembleFlags(WkFlags* flags, int indent)
 {
     if (!HAS_FLAG(*flags))
     {
-        debugWithIndent(indent, "| Flags:       WK_FLAG_DEFAULTS");
+        debugMsgWithIndent(indent, "| Flags:       WK_FLAG_DEFAULTS");
         return;
     }
 
     int count = COUNT_FLAGS(*flags);
-    debugWithIndent(indent, "| Flags:       ");
+    debugMsgWithIndent(indent, "| Flags:       ");
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
     if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
@@ -164,8 +140,8 @@ disassembleLine(Line* line, size_t index, int indent)
 {
     assert(line);
 
-    debugWithIndent(indent, "|");
-    debugWithIndent(indent, "| Line number: %04zu", line->index);
+    debugMsgWithIndent(indent, "|");
+    debugMsgWithIndent(indent, "| Line number: %04zu", line->index);
     disassembleMods(&line->mods, indent);
     disassembleLineToken(&line->key, "Key", indent);
     disassembleFlags(&line->flags, indent);
@@ -175,16 +151,16 @@ disassembleLine(Line* line, size_t index, int indent)
     disassembleTokenArray(line, &line->after,       "After:      ", indent);
     if (line->array.count)
     {
-        debugWithIndent(indent, "|");
-        debugWithIndent(indent, "|------- Nested Lines: %04zu -------", line->array.count);
+        debugMsgWithIndent(indent, "|");
+        debugMsgWithIndent(indent, "|------- Nested Lines: %04zu -------", line->array.count);
         disassembleLineArray(&line->array, indent + 1);
     }
     else
     {
-        debugWithIndent(indent, "| Lines:       (null)");
-        debugWithIndent(indent, "|");
+        debugMsgWithIndent(indent, "| Lines:       (null)");
+        debugMsgWithIndent(indent, "|");
     }
-    debugWithIndent(indent, "----------------------------");
+    debugMsgWithIndent(indent, "----------------------------");
 }
 
 void
@@ -205,7 +181,7 @@ disassembleLineShallow(Line* line, size_t index)
 {
     assert(line);
 
-    debugWithIndent(0, "Line number: %04zu", line->index);
+    debugMsgWithIndent(0, "Line number: %04zu", line->index);
     disassembleMods(&line->mods, 0);
     disassembleLineToken(&line->key, "Key", 0);
     disassembleFlags(&line->flags, 0);
@@ -254,7 +230,7 @@ disassemblePieceTable(PieceTable* pieceTable)
 {
     assert(pieceTable);
 
-    debugMsg(true, "---------------- PieceTable ----------------");
+    debugPrintHeader("PieceTable");
     debugMsg(true, "| ");
     debugMsg(true, "| Total pieces:         %zu", pieceTable->pieces.count);
     debugMsg(true, "| Original Text length: %zu", pieceTable->originalLen);
@@ -269,10 +245,11 @@ disassemblePieceTable(PieceTable* pieceTable)
         debugMsg(true, "|---------------- Add Text -----------------");
         debugMsg(true, "| ");
         debugStringWithIndent(pieceTable->add.string);
+        debugMsg(true, "| ");
     }
-    debugMsg(true, "| ");
     disassemblePieceArray(pieceTable);
-    debugMsg(true, "--------------------------------------------\n");
+    debugPrintHeader("");
+    printf("\n");
 }
 
 static void

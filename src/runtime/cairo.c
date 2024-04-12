@@ -62,7 +62,7 @@ cairoGetHeight(WkMenu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     assert(menu && surface);
 
     uint32_t height = 0;
-    countChords(menu);
+    countMenuKeyChords(menu);
 
     cairo_t* cr = cairo_create(surface);
     PangoLayout* layout = pango_cairo_create_layout(cr);

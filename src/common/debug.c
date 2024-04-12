@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "menu.h"
 #include "types.h"
+#include "util.h"
 
 static const int MAX_HEADER_WIDTH = 52;
 static const int DEBUG_SPACE = 9; /* '[DEBUG] |' == 9 */
@@ -23,54 +24,21 @@ getDelim(int* count, char a, char b)
 }
 
 static void
-printDebug(unsigned int indent)
+printDebug(int indent)
 {
     printf("[DEBUG] %*s", indent * 8, (indent ? " " : ""));
 }
 
 static void
-debugInt(const char* text, int value, unsigned int indent)
-{
-    assert(text);
-
-    static const int max = 20;
-    int len = strlen(text);
-    printDebug(indent);
-    printf("| %s%*s%04d\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
-}
-
-static void
-debugSize_t(const char* text, size_t value, unsigned int indent)
-{
-    assert(text);
-
-    static const int max = 20;
-    int len = strlen(text);
-    printDebug(indent);
-    printf("| %s%*s%04zu\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
-}
-
-static void
-debugUint32_t(const char* text, uint32_t value, unsigned int indent)
-{
-    assert(text);
-
-    static const int max = 20;
-    int len = strlen(text);
-    printDebug(indent);
-    printf("| %s%*s%04u\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
-}
-
-static void
-debugMod(const WkMods* mods, unsigned int indent)
+debugMod(const WkMods* mods, int indent)
 {
     assert(mods);
 
-    printDebug(indent);
+    debugMsgWithIndent(indent, "| Mods:              ");
 
     if (!IS_MOD(*mods))
     {
-        printf("| Mods                NONE\n");
+        printf("NONE\n");
         return;
     }
 
@@ -82,22 +50,10 @@ debugMod(const WkMods* mods, unsigned int indent)
     if (mods->shift) printf("SHIFT%c", getDelim(&count, '|', '\n'));
 }
 
-static void
-debugPointer(const char* text, const void* value, unsigned int indent)
-{
-    assert(text);
-
-    static const int max = 20;
-    int len = strlen(text);
-    printDebug(indent);
-    printf("| %s%*s%s\n", text, (max - len) > 0 ? max - len : 1, " ", value ? "(not null)" : "(null)");
-}
-
 static bool
-debugSpecial(WkSpecial special, unsigned int indent)
+debugSpecial(WkSpecial special, int indent)
 {
-    printDebug(indent);
-    printf("| Special             ");
+    debugMsgWithIndent(indent, "| Special:           ");
     const char* text = NULL;
     bool flag = true;
 
@@ -126,10 +82,9 @@ debugSpecial(WkSpecial special, unsigned int indent)
 }
 
 static bool
-debugSpecialRepr(WkSpecial special, unsigned int indent)
+debugSpecialRepr(WkSpecial special, int indent)
 {
-    printDebug(indent);
-    printf("| Key                 ");
+    debugMsgWithIndent(indent, "| Key:               ");
     const char* text = NULL;
     bool flag = true;
 
@@ -158,30 +113,27 @@ debugSpecialRepr(WkSpecial special, unsigned int indent)
 }
 
 static void
-debugString(const char* text, const char* value, unsigned int indent)
+debugString(const char* text, const char* value, int indent)
 {
     assert(text);
 
-    static const int max = 20;
-    int len = strlen(text);
     printDebug(indent);
-    printf("| %s%*s'%s'\n", text, ((max - len) > 0) ? max - len : 1, " ", value);
+    printf("| %-19s '%s'\n", text, value);
 }
 
 static void
-debugFlags(const WkFlags* flags, unsigned int indent)
+debugFlags(const WkFlags* flags, int indent)
 {
     assert(flags);
 
-    printDebug(indent);
+    debugMsgWithIndent(indent, "| Flags:             ");
 
     if (!HAS_FLAG(*flags))
     {
-        printf("| Flags:              WK_FLAG_DEFAULTS\n");
+        printf("WK_FLAG_DEFAULTS\n");
         return;
     }
 
-    printf("| Flags:              ");
     int count = COUNT_FLAGS(*flags);
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
@@ -198,42 +150,60 @@ debugFlags(const WkFlags* flags, unsigned int indent)
 }
 
 void
-debugKeyChord(const WkKeyChord* keyChord, unsigned int indent)
+disassembleKeyChord(const WkKeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
-    printDebug(indent);
-
-    printf("------------------ Chord -------------------\n");
-
     debugMod(&keyChord->mods, indent);
     debugSpecial(keyChord->special, indent);
-    debugString("Key", keyChord->key, indent);
-    debugString("Description", keyChord->description, indent);
-    debugString("Hint", keyChord->hint, indent);
-    debugString("Command", keyChord->command, indent);
-    debugString("Before", keyChord->before, indent);
-    debugString("After", keyChord->after, indent);
+    debugMsgWithIndent(indent, "| Key:               '%s'", keyChord->key);
+    debugMsgWithIndent(indent, "| Description:       \"%s\"", keyChord->description);
+    debugMsgWithIndent(indent, "| Hint:              '%s'", keyChord->hint);
+    debugMsgWithIndent(indent, "| Command:           %{{%s}}", keyChord->command);
+    debugMsgWithIndent(indent, "| Before:            %{{%s}}", keyChord->before);
+    debugMsgWithIndent(indent, "| After:             %{{%s}}", keyChord->after);
     debugFlags(&keyChord->flags, indent);
-    debugPointer("Chords", keyChord->keyChords, indent);
-
-    printDebug(indent);
-    printf("--------------------------------------------\n");
 }
 
 void
-debugKeyChords(const WkKeyChord* keyChords, unsigned int indent)
+debugKeyChord(const WkKeyChord* keyChord, int indent)
+{
+    assert(keyChord);
+
+    debugPrintHeaderWithIndent(indent, "KeyChord");
+    debugMsgWithIndent(indent, "|");
+    disassembleKeyChord(keyChord, indent);
+    debugMsgWithIndent(indent, "|");
+    debugPrintHeaderWithIndent(indent, "");
+}
+
+void
+debugKeyChords(const WkKeyChord* keyChords, int indent)
 {
     assert(keyChords);
 
+    if (indent == 0)
+    {
+        debugPrintHeaderWithIndent(indent, "KeyChords");
+    }
     for (uint32_t i = 0; keyChords[i].key; i++)
     {
-        debugKeyChord(&keyChords[i], indent);
+        debugMsgWithIndent(indent, "|");
+        debugMsgWithIndent(indent, "| Chord Index:       %04u", i);
+        disassembleKeyChord(&keyChords[i], indent);
+        debugMsgWithIndent(indent, "|");
         if (keyChords[i].keyChords)
         {
+            debugMsgWithIndent(
+                indent,
+                "|------------ Nested KeyChords: %04u -------------",
+                countKeyChords(keyChords[i].keyChords)
+            );
             debugKeyChords(keyChords[i].keyChords, indent + 1);
         }
+        debugPrintHeaderWithIndent(indent, "");
     }
+    if (indent == 0) printf("\n");
 }
 
 void
@@ -253,19 +223,18 @@ debugGrid(
     uint32_t hpadding, uint32_t cellw, uint32_t cellh, uint32_t count
 )
 {
-    printDebug(0);
-    printf("------------------- Grid -------------------\n");
-    debugUint32_t("Start X:", startx, 0);
-    debugUint32_t("Start Y:", starty, 0);
-    debugUint32_t("Rows:", rows, 0);
-    debugUint32_t("Columns:", cols, 0);
-    debugUint32_t("Width padding:", wpadding, 0);
-    debugUint32_t("Height padding:", hpadding, 0);
-    debugUint32_t("Cell width:", cellw, 0);
-    debugUint32_t("Cell height:", cellh, 0);
-    debugUint32_t("Count:", count, 0);
-    printDebug(0);
-    printf("--------------------------------------------\n");
+    debugPrintHeader("Grid");
+    debugMsgWithIndent(0, "| Start X:           %04u", startx, 0);
+    debugMsgWithIndent(0, "| Start Y:           %04u", starty);
+    debugMsgWithIndent(0, "| Rows:              %04u", rows);
+    debugMsgWithIndent(0, "| Columns:           %04u", cols);
+    debugMsgWithIndent(0, "| Width padding:     %04u", wpadding);
+    debugMsgWithIndent(0, "| Height padding:    %04u", hpadding);
+    debugMsgWithIndent(0, "| Cell width:        %04u", cellw);
+    debugMsgWithIndent(0, "| Cell height:       %04u", cellh);
+    debugMsgWithIndent(0, "| Count:             %04u", count);
+    debugPrintHeader("");
+    printf("\n");
 }
 
 static void
@@ -274,11 +243,11 @@ debugHexColor(const WkHexColor* color)
     assert(color);
 
     debugMsg(true, "| ");
-    debugMsg(true, "| Hex string:         '%s'", color->hex);
-    debugMsg(true, "| Red value:          %#02X", color->r * 255);
-    debugMsg(true, "| Green value:        %#02X", color->g * 255);
-    debugMsg(true, "| Blue value:         %#02X", color->b * 255);
-    debugMsg(true, "| Alpha value:        %#02X", color->a * 255);
+    debugMsgWithIndent(0, "| Hex string:        '%s'",  color->hex);
+    debugMsgWithIndent(0, "| Red value:         %#02X", color->r * 255);
+    debugMsgWithIndent(0, "| Green value:       %#02X", color->g * 255);
+    debugMsgWithIndent(0, "| Blue value:        %#02X", color->b * 255);
+    debugMsgWithIndent(0, "| Alpha value:       %#02X", color->a * 255);
     debugMsg(true, "| ");
 }
 
@@ -309,8 +278,8 @@ debugKey(const WkKey* key)
 {
     assert(key);
 
-    printDebug(0);
-    printf("------------------- Key --------------------\n");
+    debugPrintHeader("Key");
+    debugMsgWithIndent(0, "|");
     debugMod(&key->mods, 0);
     if (debugSpecial(key->special, 0))
     {
@@ -320,9 +289,10 @@ debugKey(const WkKey* key)
     {
         debugString("Key", key->key, 0);
     }
-    debugInt("len", key->len, 0);
-    printDebug(0);
-    printf("--------------------------------------------\n");
+    debugMsgWithIndent(0, "| Length:            %04d", key->len);
+    debugMsgWithIndent(0, "|");
+    debugPrintHeader("");
+    printf("\n");
 }
 
 void
@@ -330,43 +300,41 @@ debugMenu(const WkMenu* menu)
 {
     assert(menu);
 
-    printDebug(0);
-    printf("------------------- Menu -------------------\n");
+    debugPrintHeader("Menu");
     debugMsg(true, "|");
-    debugString("Delimiter:", menu->delimiter, 0);
-    debugSize_t("Max cols:", menu->maxCols, 0);
-    debugInt("Window width:", menu->windowWidth, 0);
-    debugInt("Window gap:", menu->windowGap, 0);
-    debugUint32_t("Width padding:", menu->wpadding, 0);
-    debugUint32_t("Height padding:", menu->hpadding, 0);
-    debugUint32_t("Cell height:", menu->cellHeight, 0);
-    debugUint32_t("Rows:", menu->rows, 0);
-    debugUint32_t("Cols:", menu->cols, 0);
-    debugUint32_t("Width:", menu->width, 0);
-    debugUint32_t("Height:", menu->height, 0);
-    debugString(
-        "Window position:",
-        (menu->position == WK_WIN_POS_BOTTOM ? "Bottom" : "Top"),
-        0
+    debugMsgWithIndent(0, "| Delimiter:         '%s'",  menu->delimiter);
+    debugMsgWithIndent(0, "| Max columns:       %04u",  menu->maxCols);
+    debugMsgWithIndent(0, "| Window width:      %04i",  menu->windowWidth);
+    debugMsgWithIndent(0, "| Window gap:        %04i",  menu->windowGap);
+    debugMsgWithIndent(0, "| Width padding:     %04u",  menu->wpadding);
+    debugMsgWithIndent(0, "| Height padding:    %04u",  menu->hpadding);
+    debugMsgWithIndent(0, "| Cell height:       %04u",  menu->cellHeight);
+    debugMsgWithIndent(0, "| Rows:              %04u",  menu->rows);
+    debugMsgWithIndent(0, "| Cols:              %04u",  menu->cols);
+    debugMsgWithIndent(0, "| Width:             %04u",  menu->width);
+    debugMsgWithIndent(0, "| Height:            %04u",  menu->height);
+    debugMsgWithIndent(0, "| Window position:   %s",
+        (menu->position == WK_WIN_POS_BOTTOM ? "BOTTOM" : "TOP")
     );
-    debugSize_t("Border width:", menu->borderWidth, 0);
-    debugMsg(true, "|");
+    debugMsgWithIndent(0, "| Border width:      %04u",  menu->borderWidth);
+    debugMsgWithIndent(0, "|");
     debugHexColors(menu->colors);
-    debugMsg(true, "|");
-    debugString("Shell:", menu->shell, 0);
-    debugString("Font:", menu->font, 0);
-    debugString("Chords:", "Set", 0);
-    debugUint32_t("Chord count:", menu->keyChordCount, 0);
-    debugString("Debug:", "True", 0);
-    debugString("Keys:", menu->client.keys, 0);
-    debugString("Transpile:", menu->client.transpile, 0);
-    debugString("Chords file:", menu->client.keyChordsFile, 0);
-    debugString("Try script:", (menu->client.tryScript ? "True" : "False"), 0);
-    debugString("Script:", menu->client.script.string, 0);
-    debugSize_t("Script capacity:", menu->client.script.capacity, 0);
-    debugSize_t("Script count:", menu->client.script.count, 0);
-    printDebug(0);
-    printf("--------------------------------------------\n\n");
+    debugMsgWithIndent(0, "|");
+    debugMsgWithIndent(0, "| Shell:             '%s'",  menu->shell);
+    debugMsgWithIndent(0, "| Font:              '%s'",  menu->font);
+    debugMsgWithIndent(0, "| Chords:            %p",    menu->keyChords);
+    debugMsgWithIndent(0, "| Chord count:       %04u",  menu->keyChordCount);
+    debugMsgWithIndent(0, "| Debug:             %s",    "true");
+    debugMsgWithIndent(0, "| Keys:              %s",    menu->client.keys);
+    debugMsgWithIndent(0, "| Transpile:         %s",    menu->client.transpile);
+    debugMsgWithIndent(0, "| Chords file:       '%s'",  menu->client.keyChordsFile);
+    debugMsgWithIndent(0, "| Try script:        %s",    (menu->client.tryScript ? "true" : "false"));
+    debugMsgWithIndent(0, "| Script:            %s",    menu->client.script.string);
+    debugMsgWithIndent(0, "| Script capacity:   %04zu", menu->client.script.capacity);
+    debugMsgWithIndent(0, "| Script count:      %04zu", menu->client.script.count);
+    debugMsgWithIndent(0, "|");
+    debugPrintHeader("");
+    printf("\n");
 }
 
 void
@@ -387,17 +355,40 @@ debugMsg(bool debug, const char* fmt, ...)
 }
 
 void
+debugMsgWithIndent(int indent, const char* fmt, ...)
+{
+    assert(fmt);
+
+    printf("[DEBUG] ");
+    for (int i = 0; i < indent; i++)
+    {
+        printf("|    ");
+    }
+
+    size_t len = strlen(fmt);
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    va_end(ap);
+    if (fmt[len - 1] != ' ')
+    {
+        fputc('\n', stdout);
+    }
+}
+
+void
 debugPrintHeader(const char* header)
 {
     assert(header);
 
-    int headerLen = 1 + strlen(header) + 1; /* add a space to each side */
+    static const int HEADER_SPACE = 2;
+    int headerLen = strlen(header) + HEADER_SPACE; /* add a space to each side */
     if (headerLen > (MAX_HEADER_WIDTH - DEBUG_SPACE))
     {
         debugMsg(true, "| %s", header);
         return;
     }
-    else if (headerLen - 2 == 0)
+    else if (headerLen - HEADER_SPACE == 0)
     {
         debugMsg(true, "|%s", DASHES);
         return;
@@ -407,6 +398,30 @@ debugPrintHeader(const char* header)
     int leftDashes = dashCount / 2;
     int rightDashes = dashCount - leftDashes;
     debugMsg(true, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
+}
+
+void
+debugPrintHeaderWithIndent(int indent, const char* header)
+{
+    assert(header);
+
+    static const int HEADER_SPACE = 2;
+    int headerLen = strlen(header) + HEADER_SPACE; /* add a space to each side */
+    if (headerLen > (MAX_HEADER_WIDTH - DEBUG_SPACE))
+    {
+        debugMsgWithIndent(indent, "| %s", header);
+        return;
+    }
+    else if (headerLen - HEADER_SPACE == 0)
+    {
+        debugMsgWithIndent(indent, "|%s", DASHES);
+        return;
+    }
+
+    int dashCount = (MAX_HEADER_WIDTH - DEBUG_SPACE - headerLen);
+    int leftDashes = dashCount / 2;
+    int rightDashes = dashCount - leftDashes;
+    debugMsgWithIndent(indent, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
 }
 
 void

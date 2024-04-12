@@ -34,17 +34,17 @@ calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint
     }
 }
 
-void
-countChords(WkMenu* menu)
+uint32_t
+countKeyChords(const WkKeyChord* keyChords)
 {
-    assert(menu);
+    assert(keyChords);
 
-    const WkKeyChord* keyChords = menu->keyChords;
-    uint32_t* count = &menu->keyChordCount;
-    menu->keyChordCount = 0; /* reset count */
+    uint32_t count = 0;
+    while (keyChords[count].key) count++;
 
-    while (keyChords[*count].key) (*count)++;
+    return count;
 }
+
 
 static bool
 modsEqual(const WkMods* a, const WkMods* b, bool checkShift)
@@ -87,12 +87,12 @@ isKey(const WkKeyChord* keyChord, WkKey* key)
 }
 
 static WkStatus
-handlePrefix(WkMenu* props, const WkKeyChord* keyChord)
+handlePrefix(WkMenu* menu, const WkKeyChord* keyChord)
 {
-    debugMsg(props->debug, "Found prefix.");
+    debugMsg(menu->debug, "Found prefix.");
 
-    props->keyChords = keyChord->keyChords;
-    countChords(props);
+    menu->keyChords = keyChord->keyChords;
+    countMenuKeyChords(menu);
     return WK_STATUS_DAMAGED;
 }
 
@@ -141,7 +141,7 @@ handleKeypress(WkMenu* menu, WkKey* key)
             if (menu->debug)
             {
                 debugMsg(menu->debug, "Found match: '%s'.", keyChords[i].key);
-                debugKeyChord(&keyChords[i], 0);
+                disassembleKeyChord(&keyChords[i], 0);
                 debugKey(key);
             }
             return pressKey(menu, &keyChords[i]);

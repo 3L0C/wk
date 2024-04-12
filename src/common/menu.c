@@ -1,5 +1,6 @@
 #include "src/common/common.h"
 #include "src/common/types.h"
+#include "util.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,14 @@
 /* local includes */
 #include "debug.h"
 #include "menu.h"
+
+void
+countMenuKeyChords(WkMenu* menu)
+{
+    assert(menu);
+
+    menu->keyChordCount = countKeyChords(menu->keyChords);
+}
 
 int
 displayMenu(WkMenu* props)

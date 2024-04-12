@@ -76,6 +76,7 @@ typedef struct
     void* xp;
 } WkMenu;
 
+void countMenuKeyChords(WkMenu* menu);
 int displayMenu(WkMenu* menu);
 void initMenu(WkMenu* menu, WkKeyChord* keyChords);
 void setMenuColor(WkMenu* menu, const char* color, WkColor colorType);
