@@ -13,5 +13,7 @@ void debugKey(const WkKey* key);
 void debugMenu(const WkMenu* menu);
 void debugMsg(bool debug, const char* fmt, ...);
 void debugStatus(WkStatus status);
+void debugStringWithIndent(const char* text);
+void debugStringLenWithIndent(const char* text, size_t len);
 
 #endif /* WK_COMMON_DEBUG_H_ */

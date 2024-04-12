@@ -12,6 +12,8 @@
 static char
 getDelim(int* count, char a, char b)
 {
+    assert(count);
+
     return ((*count)-- > 1 ? a : b);
 }
 
@@ -24,6 +26,8 @@ printDebug(unsigned int indent)
 static void
 debugInt(const char* text, int value, unsigned int indent)
 {
+    assert(text);
+
     static const int max = 20;
     int len = strlen(text);
     printDebug(indent);
@@ -33,6 +37,8 @@ debugInt(const char* text, int value, unsigned int indent)
 static void
 debugSize_t(const char* text, size_t value, unsigned int indent)
 {
+    assert(text);
+
     static const int max = 20;
     int len = strlen(text);
     printDebug(indent);
@@ -42,6 +48,8 @@ debugSize_t(const char* text, size_t value, unsigned int indent)
 static void
 debugUint32_t(const char* text, uint32_t value, unsigned int indent)
 {
+    assert(text);
+
     static const int max = 20;
     int len = strlen(text);
     printDebug(indent);
@@ -51,6 +59,8 @@ debugUint32_t(const char* text, uint32_t value, unsigned int indent)
 static void
 debugMod(const WkMods* mods, unsigned int indent)
 {
+    assert(mods);
+
     printDebug(indent);
 
     if (!IS_MOD(*mods))
@@ -70,6 +80,8 @@ debugMod(const WkMods* mods, unsigned int indent)
 static void
 debugPointer(const char* text, const void* value, unsigned int indent)
 {
+    assert(text);
+
     static const int max = 20;
     int len = strlen(text);
     printDebug(indent);
@@ -143,6 +155,8 @@ debugSpecialRepr(WkSpecial special, unsigned int indent)
 static void
 debugString(const char* text, const char* value, unsigned int indent)
 {
+    assert(text);
+
     static const int max = 20;
     int len = strlen(text);
     printDebug(indent);
@@ -152,6 +166,8 @@ debugString(const char* text, const char* value, unsigned int indent)
 static void
 debugFlags(const WkFlags* flags, unsigned int indent)
 {
+    assert(flags);
+
     printDebug(indent);
 
     if (!HAS_FLAG(*flags))
@@ -179,6 +195,8 @@ debugFlags(const WkFlags* flags, unsigned int indent)
 void
 debugKeyChord(const WkKeyChord* keyChord, unsigned int indent)
 {
+    assert(keyChord);
+
     printDebug(indent);
 
     printf("------------------ Chord -------------------\n");
@@ -201,6 +219,8 @@ debugKeyChord(const WkKeyChord* keyChord, unsigned int indent)
 void
 debugKeyChords(const WkKeyChord* keyChords, unsigned int indent)
 {
+    assert(keyChords);
+
     for (uint32_t i = 0; keyChords[i].key; i++)
     {
         debugKeyChord(&keyChords[i], indent);
@@ -214,6 +234,8 @@ debugKeyChords(const WkKeyChord* keyChords, unsigned int indent)
 void
 debugKeyChordsShallow(const WkKeyChord* keyChords, uint32_t len)
 {
+    assert(keyChords);
+
     for (uint32_t i = 0; i < len; i++)
     {
         debugKeyChord(&keyChords[i], 0);
@@ -244,6 +266,8 @@ debugGrid(
 static void
 debugHexColor(const WkHexColor* color)
 {
+    assert(color);
+
     printf("[DEBUG] |     Hex string:     '%s'\n", color->hex);
     printf("[DEBUG] |     Red value:      %#02X\n", color->r * 255);
     printf("[DEBUG] |     Green value:    %#02X\n", color->g * 255);
@@ -254,6 +278,8 @@ debugHexColor(const WkHexColor* color)
 void
 debugHexColors(const WkHexColor* colors)
 {
+    assert(colors);
+
     for (int i = 0; i < WK_COLOR_LAST; i++)
     {
         printDebug(0);
@@ -272,6 +298,8 @@ debugHexColors(const WkHexColor* colors)
 void
 debugKey(const WkKey* key)
 {
+    assert(key);
+
     printDebug(0);
     printf("------------------- Key --------------------\n");
     debugMod(&key->mods, 0);
@@ -293,6 +321,8 @@ debugKey(const WkKey* key)
 void
 debugMenu(const WkMenu* menu)
 {
+    assert(menu);
+
     printDebug(0);
     printf("------------------- Menu -------------------\n");
     debugString("Delimiter:", menu->delimiter, 0);
@@ -361,5 +391,43 @@ debugStatus(WkStatus status)
     case WK_STATUS_EXIT_OK: printf("WK_STATUS_EXIT_OK\n"); break;
     case WK_STATUS_EXIT_SOFTWARE: printf("WK_STATUS_EXIT_SOFTWARE\n"); break;
     default: printf("WK_STATUS_UNKNOWN\n"); break;
+    }
+}
+
+void
+debugStringWithIndent(const char* text)
+{
+    if (!text)
+    {
+        printf("      | ");
+    }
+    const char* current = text;
+
+    while (*current != '\0')
+    {
+        printf("      | ");
+        while (*current != '\n' && *current != '\0')
+        {
+            printf("%c", *current++);
+        }
+        printf("%c", *current++);
+    }
+}
+
+void
+debugStringLenWithIndent(const char* text, size_t len)
+{
+    if (!text) return;
+
+    const char* current = text;
+
+    while (current < text + len)
+    {
+        printf("      | ");
+        while (*current != '\n' && current < text + len)
+        {
+            printf("%c", *current++);
+        }
+        if (*current == '\n') printf("%c", *current++);
     }
 }
