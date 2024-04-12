@@ -7,7 +7,7 @@ wks - A which-key source file used by the \f[B]wk\f[R]​(1) program.
 \f[B]wk\f[R] can generate \f[I]key chords\f[R] using \f[B]wks\f[R]
 syntax instead of relying on precompiled \f[I]key chords\f[R].
 .SH EXAMPLES
-.SS EXAMPLE - BASIC
+.SS BASIC WKS FILE
 A basic \f[B]wks\f[R] file with some explanation regarding
 \f[B]COMMENTS\f[R], \f[B]CHORDS\f[R], \f[B]PREFIXES\f[R],
 \f[B]DESCRIPTIONS\f[R], \f[B]KEYS\f[R], and \f[B]COMMANDS\f[R]:
@@ -36,7 +36,7 @@ C-a \[dq]A prefix\[dq]
     }
 }
 .EE
-.SS EXAMPLE - CHORD ARRAYS AND INTERPOLATION
+.SS CHORD ARRAYS AND INTERPOLATION
 The \f[B]CHORD ARRAY\f[R] and \f[B]INTERPOLATION\f[R] are more
 interesting \f[B]wks\f[R] features:
 .IP
@@ -53,7 +53,7 @@ c   \[dq]Chord number: 3\[dq] %{{echo \[dq]Pressed key: \[aq]c\[aq]\[dq]}}
 d   \[dq]Chord number: 4\[dq] %{{echo \[dq]Pressed key: \[aq]d\[aq]\[dq]}}
 C-e \[dq]Chord number: 5\[dq] %{{echo \[dq]Pressed key: \[aq]C-e\[aq]\[dq]}}
 .EE
-.SS EXAMPLE - CHORD ARRAYS AND CHORD EXPRESSIONS
+.SS CHORD ARRAYS AND CHORD EXPRESSIONS
 The \f[B]CHORD ARRAY\f[R] also supports \f[B]CHORD EXPRESSIONS\f[R]:
 .IP
 .EX
@@ -73,7 +73,7 @@ c   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
 d   \[dq]A different description\[dq] %{{echo \[dq]A different command\[dq]}}
 C-e \[dq]An exciting description\[dq] %{{echo \[dq]A default command\[dq]}}
 .EE
-.SS EXAMPLE - HOOKS AND FLAGS IN CHORDS
+.SS HOOKS AND FLAGS IN CHORDS
 \f[B]HOOKS\f[R] and \f[B]FLAGS\f[R] are very flexible:
 .IP
 .EX
@@ -99,7 +99,7 @@ That \f[I]hooks\f[R] and \f[I]flags\f[R] are of equal precedence.
 \f[B]2\f[R].
 That \f[I]hooks\f[R] and \f[I]flags\f[R] go inbetween the
 \f[I]description\f[R] and the \f[I]command\f[R].
-.SS EXAMPLE - HOOKS AND FLAGS IN PREFIXES
+.SS HOOKS AND FLAGS IN PREFIXES
 A \f[I]hooks\f[R] and \f[I]flags\f[R] work differently when given to a
 \f[I]prefix\f[R] compared to a \f[I]chord\f[R], \f[I]chord array\f[R],
 or \f[I]chord expression\f[R]:
@@ -127,7 +127,7 @@ a \[dq]A prefix with a hook and flag\[dq] \[ha]before %{{echo \[dq]I am /almost/
 .EE
 .PP
 For a more formal understanding, see \f[B]INHERITENCE\f[R] below.
-.SS EXAMPLE - THE INCLUDE PREPROCESSOR MACRO
+.SS THE INCLUDE PREPROCESSOR MACRO
 Here is a simple example of the \f[I]:include\f[R] \f[B]PREPROCESSOR
 MACRO\f[R]:
 .IP

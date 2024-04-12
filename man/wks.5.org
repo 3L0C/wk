@@ -9,7 +9,7 @@ wks - A which-key source file used by the *wk*​(1) program.
 relying on precompiled /key chords/.
 
 * EXAMPLES
-** EXAMPLE - BASIC
+** BASIC WKS FILE
 A basic *wks* file with some explanation regarding
 *COMMENTS*, *CHORDS*, *PREFIXES*, *DESCRIPTIONS*, *KEYS*,
 and *COMMANDS*:
@@ -39,7 +39,7 @@ C-a "A prefix"
 }
 #+end_example
 
-** EXAMPLE - CHORD ARRAYS AND INTERPOLATION
+** CHORD ARRAYS AND INTERPOLATION
 The *CHORD ARRAY* and *INTERPOLATION* are more interesting
 *wks* features:
 
@@ -57,7 +57,7 @@ d   "Chord number: 4" %{{echo "Pressed key: 'd'"}}
 C-e "Chord number: 5" %{{echo "Pressed key: 'C-e'"}}
 #+end_example
 
-** EXAMPLE - CHORD ARRAYS AND CHORD EXPRESSIONS
+** CHORD ARRAYS AND CHORD EXPRESSIONS
 The *CHORD ARRAY* also supports *CHORD EXPRESSIONS*:
 
 #+begin_example
@@ -78,7 +78,7 @@ d   "A different description" %{{echo "A different command"}}
 C-e "An exciting description" %{{echo "A default command"}}
 #+end_example
 
-** EXAMPLE - HOOKS AND FLAGS IN CHORDS
+** HOOKS AND FLAGS IN CHORDS
 *HOOKS* and *FLAGS* are very flexible:
 
 #+begin_example
@@ -101,7 +101,7 @@ This should make two things clear:
 - *2*. :: That /hooks/ and /flags/ go inbetween the
   /description/ and the /command/.
 
-** EXAMPLE - HOOKS AND FLAGS IN PREFIXES
+** HOOKS AND FLAGS IN PREFIXES
 A /hooks/ and /flags/ work differently when given to a
 /prefix/ compared to a /chord/, /chord array/, or /chord
 expression/:
@@ -130,7 +130,7 @@ a "A prefix with a hook and flag" ^before %{{echo "I am /almost/ always run firs
 
 For a more formal understanding, see *INHERITENCE* below.
 
-** EXAMPLE - THE INCLUDE PREPROCESSOR MACRO
+** THE INCLUDE PREPROCESSOR MACRO
 Here is a simple example of the /:include/ *PREPROCESSOR
 MACRO*:
 
