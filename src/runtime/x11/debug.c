@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+/* common includes */
+#include "common/debug.h"
+
 /* runtime includes */
 #include "runtime/debug.h"
 
@@ -10,23 +13,26 @@
 static void
 debugRootDispaly(struct display* root)
 {
-    printf("[DEBUG] | Root x:             %u\n", root->x);
-    printf("[DEBUG] | Root y:             %u\n", root->y);
-    printf("[DEBUG] | Root width:         %u\n", root->w);
-    printf("[DEBUG] | Root height:        %u\n", root->h);
+    debugMsgWithIndent(0, "| Root x:            %04u", root->x);
+    debugMsgWithIndent(0, "| Root y:            %04u", root->y);
+    debugMsgWithIndent(0, "| Root width:        %04u", root->w);
+    debugMsgWithIndent(0, "| Root height:       %04u", root->h);
 }
 
 void
 debugWindow(WkX11Window* window)
 {
-    printf("[DEBUG] --------------- WkX11Window ----------------\n");
-    printf("[DEBUG] | Window x:           %u\n", window->x);
-    printf("[DEBUG] | Window y:           %u\n", window->y);
-    printf("[DEBUG] | Window width:       %u\n", window->width);
-    printf("[DEBUG] | Window height:      %u\n", window->height);
-    printf("[DEBUG] | Window border:      %u\n", window->border);
-    printf("[DEBUG] | Window max height:  %u\n", window->maxHeight);
+    debugPrintHeader(" WkX11Window ");
+    debugMsgWithIndent(0, "|");
+    debugMsgWithIndent(0, "| Window x:          %04u", window->x);
+    debugMsgWithIndent(0, "| Window y:          %04u", window->y);
+    debugMsgWithIndent(0, "| Window width:      %04u", window->width);
+    debugMsgWithIndent(0, "| Window height:     %04u", window->height);
+    debugMsgWithIndent(0, "| Window border:     %04u", window->border);
+    debugMsgWithIndent(0, "| Window max height: %04u", window->maxHeight);
     debugRootDispaly(&window->root);
+    debugMsgWithIndent(0, "|");
     debugCairoPaint(&window->paint);
-    printf("[DEBUG] --------------------------------------------\n");
+    debugMsgWithIndent(0, "|");
+    debugPrintHeader("");
 }

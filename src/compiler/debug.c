@@ -13,6 +13,24 @@
 #include "piece_table.h"
 #include "token.h"
 
+void
+debugPrintScannedTokenFooter(void)
+{
+    debugMsg(true, "|           |                             |                            |");
+    debugPrintHeader("");
+}
+
+void
+debugPrintScannedTokenHeader(void)
+{
+    debugPrintHeader("-");
+    debugMsg(true, "|                            Scanned Tokens                            |");
+    debugPrintHeader("-");
+    debugMsg(true, "| Line:Col  |          TokenType          |           Lexeme           |");
+    debugPrintHeader("-");
+    debugMsg(true, "|           |                             |                            |");
+}
+
 static char
 getDelim(int* count, char a, char b)
 {
@@ -160,7 +178,7 @@ disassembleLine(Line* line, size_t index, int indent)
         debugMsgWithIndent(indent, "| Lines:       (null)");
         debugMsgWithIndent(indent, "|");
     }
-    debugMsgWithIndent(indent, "----------------------------");
+    if (indent > 0) debugMsgWithIndent(indent, "|-----------------------------");
 }
 
 void
@@ -173,7 +191,7 @@ disassembleLineArray(LineArray* array, int indent)
     {
         disassembleLine(&array->lines[i], i, indent);
     }
-    if (indent == 0) printf("\n");
+    if (indent == 0) debugPrintHeader("");
 }
 
 void
@@ -208,7 +226,7 @@ disassemblePiece(PieceTable* pieceTable, size_t index)
     debugMsg(true, "| Length:   %04zu", piece->len);
     debugMsg(true, "| Text: ");
     debugMsg(true, "| ");
-    debugStringLenWithIndent(getTextAtPiece(pieceTable, piece), piece->len);
+    debugTextLenWithLineNumber(getTextAtPiece(pieceTable, piece), piece->len);
 }
 
 static void
@@ -230,7 +248,7 @@ disassemblePieceTable(PieceTable* pieceTable)
 {
     assert(pieceTable);
 
-    debugPrintHeader("PieceTable");
+    debugPrintHeader(" PieceTable ");
     debugMsg(true, "| ");
     debugMsg(true, "| Total pieces:         %zu", pieceTable->pieces.count);
     debugMsg(true, "| Original Text length: %zu", pieceTable->originalLen);
@@ -238,25 +256,28 @@ disassemblePieceTable(PieceTable* pieceTable)
     debugMsg(true, "| ");
     debugMsg(true, "|-------------- Original Text --------------");
     debugMsg(true, "| ");
-    debugStringWithIndent(pieceTable->original);
+    debugTextWithLineNumber(pieceTable->original);
     debugMsg(true, "| ");
     if (pieceTable->add.string)
     {
         debugMsg(true, "|---------------- Add Text -----------------");
         debugMsg(true, "| ");
-        debugStringWithIndent(pieceTable->add.string);
+        debugTextWithLineNumber(pieceTable->add.string);
         debugMsg(true, "| ");
     }
     disassemblePieceArray(pieceTable);
     debugPrintHeader("");
-    printf("\n");
 }
 
 static void
 printErrorToken(Token* token)
 {
-    printf("[%04zu:%04zu] Error:      \"%s\".\n", token->line, token->column, token->message);
-    printf("    |  Lexeme:     '%.*s'\n", (int)token->length, token->start);
+    debugMsg(
+        true,
+        "| %04zu:%04zu | %-27s | %-26.*s |",
+        token->line, token->column, "TOKEN_ERROR",
+        (int)token->length, token->start
+    );
 }
 
 static void
@@ -264,7 +285,7 @@ printSimpleToken(Token* token, const char* type)
 {
     debugMsg(
         true,
-        "| %04zu:%04zu | %-27s | '%.*s'",
+        "| %04zu:%04zu | %-27s | %-26.*s |",
         token->line, token->column, type,
         (int)token->length, token->start
     );

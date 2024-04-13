@@ -577,11 +577,7 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
     assert(compiler);
 
     debug = debugFlag;
-    if (debug)
-    {
-        debugMsg(true, "|---------------------------------------------------");
-        debugMsg(true, "| Line:Col  |          TokenType          | Lexeme");
-    }
+    if (debug) debugPrintScannedTokenHeader();
 
     advanceCompiler(compiler);
     while (!matchCompiler(compiler, TOKEN_EOF))
@@ -589,10 +585,7 @@ transpileChords(Compiler* compiler, const char* delimiter, bool debugFlag)
         keyChord(compiler);
     }
 
-    if (debug)
-    {
-        debugMsg(true, "|---------------------------------------------------\n");
-    }
+    if (debug) debugPrintScannedTokenFooter();
 
     if (debug)
     {

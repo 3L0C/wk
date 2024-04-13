@@ -17,7 +17,7 @@ void debugMsgWithIndent(int indent, const char* fmt, ...);
 void debugPrintHeader(const char* header);
 void debugPrintHeaderWithIndent(int indent, const char* header);
 void debugStatus(WkStatus status);
-void debugStringWithIndent(const char* text);
-void debugStringLenWithIndent(const char* text, size_t len);
+void debugTextWithLineNumber(const char* text);
+void debugTextLenWithLineNumber(const char* text, size_t len);
 
 #endif /* WK_COMMON_DEBUG_H_ */
