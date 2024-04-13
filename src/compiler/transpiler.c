@@ -384,6 +384,7 @@ chordArray(Compiler* compiler)
             key(compiler, &line);
             writeLineArray(&lines, &line);
         }
+        freeLine(&line);
     }
 
     consume(compiler, TOKEN_RIGHT_BRACKET, "Expect ']' after key list.");

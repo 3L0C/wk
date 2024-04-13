@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* common includes */
@@ -285,6 +286,7 @@ compileLine(WkKeyChord* keyChord, Line* line)
 {
     assert(keyChord && line);
 
+    keyChord->state = WK_KEY_CHORD_STATE_NOT_NULL;
     compileMods(&keyChord->mods, &line->mods);
     compileSpecial(&keyChord->special, &line->key);
 
@@ -314,6 +316,7 @@ compileLine(WkKeyChord* keyChord, Line* line)
 static void
 compileNullKeyChord(WkKeyChord* keyChord)
 {
+    keyChord->state = WK_KEY_CHORD_STATE_IS_NULL;
     RESET_MODS(keyChord->mods);
     keyChord->special = WK_SPECIAL_NONE;
     keyChord->key = NULL;
@@ -336,7 +339,7 @@ compileLines(WkKeyChord* keyChords, LineArray* lines)
     compileNullKeyChord(&keyChords[count]);
 }
 
-bool
+WkKeyChord*
 compileKeyChords(Compiler* compiler, WkMenu* menu)
 {
     assert(compiler && menu);
@@ -346,25 +349,21 @@ compileKeyChords(Compiler* compiler, WkMenu* menu)
     if (compiler->lines.count == 0)
     {
         warnMsg("Nothing to compile.");
-        return false;
+        return NULL;
     }
 
     LineArray* lines = &compiler->lines;
-    WkKeyChord* keyChords = ALLOCATE(WkKeyChord, lines->count + 1); /* +1 for NULL_CHORD */
+    menu->keyChords = ALLOCATE(WkKeyChord, lines->count + 1); /* +1 for NULL_CHORD */
 
     delimiter = menu->delimiter;
     delimLen = strlen(delimiter);
     debug = menu->debug;
 
-    compileLines(keyChords, lines);
+    compileLines(menu->keyChords, lines);
 
-    if (menu->debug)
-    {
-        debugKeyChords(keyChords, 0);
-    }
+    if (menu->debug) debugKeyChords(menu->keyChords, 0);
 
-    menu->keyChords = keyChords;
-    return true;
+    return menu->keyChords;
 }
 
 void

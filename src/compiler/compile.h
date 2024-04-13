@@ -5,6 +5,7 @@
 
 /* common includes */
 #include "common/menu.h"
+#include "common/types.h"
 
 /* local includes */
 #include "line.h"
@@ -25,7 +26,7 @@ typedef struct
     char*       source;
 } Compiler;
 
-bool compileKeyChords(Compiler* compiler, WkMenu* menu);
+WkKeyChord* compileKeyChords(Compiler* compiler, WkMenu* menu);
 void initCompiler(Compiler* compiler, char* source, const char* filepath);
 
 #endif /* WK_COMPILER_COMPILE_H_ */

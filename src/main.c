@@ -42,7 +42,7 @@ freeKeyChords(WkKeyChord* keyChords)
 }
 
 static char*
-preprocessSources(const char* source, const char* filepath)
+preprocessSource(const char* source, const char* filepath)
 {
     assert(source);
 
@@ -66,49 +66,31 @@ preprocessSources(const char* source, const char* filepath)
 static int
 transpileSource(Compiler* compiler, char* source, const char* filepath)
 {
-    assert(compiler);
+    assert(compiler && source);
 
     int result = EX_OK;
 
-    /* Run preprocessor on `source` and fail if file is mallformed or other error. */
-    char* processedSource = runPreprocessor(&mainMenu, source, filepath);
-    if (!processedSource)
-    {
-        errorMsg("Failed while running preprocessor on given file.");
-        result = EX_DATAERR;
-        goto fail;
-    }
-    if (mainMenu.debug)
-    {
-        debugPrintHeader(" Contents of Preprocessed Source ");
-        debugMsg(true, "|");
-        debugTextWithLineNumber(processedSource);
-        debugMsg(true, "|");
-        debugPrintHeader("");
-    }
-
     /* Begin compilation */
-    initCompiler(compiler, processedSource, filepath);
+    initCompiler(compiler, source, filepath);
 
     /* File is mallformed, fail. */
     if (!transpileChords(compiler, mainMenu.delimiter, mainMenu.debug))
     {
         errorMsg("Mallformed `wks` file. Use `man 5 wks` to learn about the syntax.");
         result = EX_DATAERR;
-        goto fail;
     }
 
-fail:
     return result;
 }
 
 static int
-compileKeyChordsToMenu(Compiler* compiler)
+compileSource(Compiler* compiler)
 {
     assert(compiler);
 
     /* Compile lines, fail if there is nothing to compile. */
-    if (!compileKeyChords(compiler, &mainMenu)) return EX_DATAERR;
+    mainMenu.keyChordsHead = compileKeyChords(compiler, &mainMenu);
+    if (!mainMenu.keyChordsHead) return EX_DATAERR;
     return EX_OK;
 }
 
@@ -146,7 +128,7 @@ runSource(const char* source, const char* filepath)
     int result = EX_SOFTWARE;
 
     /* Run preprocessor on `script` and fail if mallformed or other error. */
-    char* processedSource = preprocessSources(source, filepath);
+    char* processedSource = preprocessSource(source, filepath);
     if (!processedSource)
     {
         result = EX_DATAERR;
@@ -158,7 +140,7 @@ runSource(const char* source, const char* filepath)
     result = transpileSource(&compiler, processedSource, filepath);
     if (result != EX_OK) goto fail;
 
-    result = compileKeyChordsToMenu(&compiler);
+    result = compileSource(&compiler);
     if (result != EX_OK)
     {
         errorMsg("Could not compile script.");
@@ -168,7 +150,7 @@ runSource(const char* source, const char* filepath)
     result = runMenu();
 
 fail:
-    freeKeyChords(mainMenu.keyChords);
+    freeKeyChords(mainMenu.keyChordsHead);
     freeLineArray(&compiler.lines);
     free(processedSource);
 end:
@@ -185,7 +167,7 @@ transpile(void)
     if (!source) return EX_IOERR;
 
     /* Run the preprocessor on source */
-    char* processedSource = preprocessSources(source, mainMenu.client.transpile);
+    char* processedSource = preprocessSource(source, mainMenu.client.transpile);
     if (!processedSource)
     {
         result = EX_DATAERR;
@@ -193,7 +175,7 @@ transpile(void)
     }
 
     Compiler compiler;
-    result = transpileSource(&compiler, source, mainMenu.client.transpile);
+    result = transpileSource(&compiler, processedSource, mainMenu.client.transpile);
     if (result != EX_OK) goto fail;
 
     /* Well formed file, write to stdout. */
@@ -202,6 +184,7 @@ transpile(void)
 fail:
     freeLineArray(&compiler.lines);
     free(compiler.source);
+    free(processedSource);
 end:
     free(source);
     return result;

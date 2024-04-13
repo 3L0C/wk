@@ -120,6 +120,7 @@ initMenu(WkMenu* menu, WkKeyChord* keyChords)
     menu->shell = shell;
     menu->font = font;
     menu->keyChords = keyChords;
+    menu->keyChordsHead = keyChords;
     menu->keyChordCount = 0;
     menu->debug = false;
     menu->dirty = true;
