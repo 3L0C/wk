@@ -40,15 +40,14 @@ WAY_OBJS     := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
 MAN_FILES    := $(wildcard $(MAN_DIR)/*.man)
 
 # Flags
-CFLAGS       := -Wall -Wextra -Werror -Wno-unused-parameter -DVERSION=\"$(VERSION)\" -MMD -MP -iquote.
+CFLAGS       := -Wall -Wextra -Werror -Wno-unused-parameter -DVERSION=\"$(VERSION)\" -MMD -MP \
+					-iquote. -iquote$(SOURCE_DIR)
 CFLAGS       += $(shell $(PKG_CONFIG) --cflags cairo pango pangocairo)
 LDFLAGS      += $(shell $(PKG_CONFIG) --libs cairo pango pangocairo)
 X11_CFLAGS   += -DWK_X11_BACKEND $(shell $(PKG_CONFIG) --cflags x11 xinerama)
 X11_LDFLAGS  += $(shell $(PKG_CONFIG) --libs x11 xinerama)
 WAY_CFLAGS   += -DWK_WAYLAND_BACKEND $(shell $(PKG_CONFIG) --cflags wayland-client xkbcommon)
 WAY_LDFLAGS  += $(shell $(PKG_CONFIG) --libs wayland-client xkbcommon)
-INC_FLAGS    := $(addprefix -iquote,$(SOURCE_DIR) $(COMMON_DIR) $(COMPILER_DIR) \
-					$(RUNTIME_DIR) $(X11_DIR) $(WAY_DIR))
 
 # Enable secondary expansion
 .SECONDEXPANSION:
@@ -101,32 +100,32 @@ $(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $$(TARGET
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS)
 	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
 	@ mkdir -p $(@D)
-	@ $(CC) -c $(CFLAGS) $(INC_FLAGS) -o $@ $<
+	@ $(CC) -c $(CFLAGS) -o $@ $<
 
 $(BUILD_DIR)/common/%.o: $(COMMON_DIR)/%.c
-	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS) -iquote$(COMMON_DIR)"
 	@ mkdir -p $(@D)
-	@ $(CC) -c $(CFLAGS) $(INC_FLAGS) -o $@ $<
+	@ $(CC) -c $(CFLAGS) -iquote$(COMMON_DIR) -o $@ $<
 
 $(BUILD_DIR)/compiler/%.o: $(COMPILER_DIR)/%.c
-	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS) -iquote$(COMPILER_DIR)"
 	@ mkdir -p $(@D)
-	@ $(CC) -c $(CFLAGS) $(INC_FLAGS) -o $@ $<
+	@ $(CC) -c $(CFLAGS) -iquote$(COMPILER_DIR) -o $@ $<
 
 $(BUILD_DIR)/runtime/%.o: $(RUNTIME_DIR)/%.c
-	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS) -iquote$(RUNTIME_DIR)"
 	@ mkdir -p $(@D)
-	@ $(CC) -c $(CFLAGS) $(INC_FLAGS) -o $@ $<
+	@ $(CC) -c $(CFLAGS) -iquote$(RUNTIME_DIR) -o $@ $<
 
 $(BUILD_DIR)/runtime/x11/%.o: $(X11_DIR)/%.c
-	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS) $(X11_CFLAGS) -iquote$(X11_DIR)"
 	@ mkdir -p $(@D)
-	@ $(CC) -c $(CFLAGS) $(X11_CFLAGS) $(INC_FLAGS) -o $@ $<
+	@ $(CC) -c $(CFLAGS) $(X11_CFLAGS) -iquote$(X11_DIR) -o $@ $<
 
 $(BUILD_DIR)/runtime/wayland/%.o: $(WAY_DIR)/%.c
-	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS)"
+	@ printf "%s %s %s\n" $(CC) $< "$(CFLAGS) $(WAY_CFLAGS) -iquote$(WAY_DIR)"
 	@ mkdir -p $(@D)
-	@ $(CC) -c $(CFLAGS) $(WAY_CFLAGS) $(INC_FLAGS) -o $@ $<
+	@ $(CC) -c $(CFLAGS) $(WAY_CFLAGS) -iquote$(WAY_DIR) -o $@ $<
 
 $(CONF_DIR)/config.h:
 	cp $(CONF_DIR)/config.def.h $@
