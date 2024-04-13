@@ -24,14 +24,14 @@ typedef enum
 } CharType;
 
 void
-initScanner(Scanner* scanner, const char* source, const char* filePath)
+initScanner(Scanner* scanner, const char* source, const char* filepath)
 {
     assert(scanner && source);
 
     scanner->head = source;
     scanner->start = source;
     scanner->current = source;
-    scanner->filePath = filePath;
+    scanner->filepath = filepath;
     scanner->line = 1;
     scanner->column = 0;
     scanner->interpType = TOKEN_NO_INTERP;
@@ -45,7 +45,7 @@ cloneScanner(Scanner* scanner, Scanner* clone)
     clone->head = scanner->head;
     clone->start = scanner->start;
     clone->current = scanner->current;
-    clone->filePath = scanner->filePath;
+    clone->filepath = scanner->filepath;
     clone->line = scanner->line;
     clone->column = scanner->column;
     clone->interpType = scanner->interpType;

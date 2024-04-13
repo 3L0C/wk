@@ -7,7 +7,7 @@
 
 void errorMsg(const char* fmt, ...);
 void parseArgs(WkMenu* menu, int* argc, char*** argv);
-char* readFile(const char* path);
+char* readFile(const char* filepath);
 bool tryStdin(WkMenu* menu);
 void warnMsg(const char* fmt, ...);
 

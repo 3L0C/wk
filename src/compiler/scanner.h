@@ -12,7 +12,7 @@ typedef struct
     const char* head;
     const char* start;
     const char* current;
-    const char* filePath;
+    const char* filepath;
     size_t line;
     size_t column;
     TokenType interpType;
@@ -20,7 +20,7 @@ typedef struct
     bool hadError;
 } Scanner;
 
-void initScanner(Scanner* scanner, const char* source, const char* filePath);
+void initScanner(Scanner* scanner, const char* source, const char* filepath);
 bool isAtEnd(const Scanner* scanner);
 void scanTokenForCompiler(Scanner* scanner, Token* result);
 void scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription);

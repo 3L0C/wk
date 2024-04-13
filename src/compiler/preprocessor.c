@@ -82,7 +82,7 @@ handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, Pie
 
     /* currently pointing at the 'i' in ':include', so take off one. */
     const char* includeStart = scanner->start - 1;
-    const char* sourcePath = scanner->filePath;
+    const char* sourcePath = scanner->filepath;
 
     /* Ensure filename is given. */
     Token includeFile = {0};
@@ -156,12 +156,12 @@ fail:
 }
 
 char*
-runPreprocessor(WkMenu* menu, const char* source, const char* sourcePath)
+runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
 {
     assert(menu && source);
 
     Scanner scanner = {0};
-    initScanner(&scanner, source, sourcePath);
+    initScanner(&scanner, source, filepath);
     PieceTable pieceTable;
     initPieceTable(&pieceTable, source);
     const char* scannerStart = scanner.head;

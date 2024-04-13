@@ -271,7 +271,7 @@ debugHexColors(const WkHexColor* colors)
 
         debugHexColor(&colors[i]);
     }
-    debugPrintHeader("-");
+    debugMsgWithIndent(0, "|--------------------------------");
 }
 
 void
@@ -329,7 +329,17 @@ debugMenu(const WkMenu* menu)
     debugMsgWithIndent(0, "| Transpile:         %s",    menu->client.transpile);
     debugMsgWithIndent(0, "| Chords file:       '%s'",  menu->client.keyChordsFile);
     debugMsgWithIndent(0, "| Try script:        %s",    (menu->client.tryScript ? "true" : "false"));
-    debugMsgWithIndent(0, "| Script:            %s",    menu->client.script.string);
+    if (menu->client.script.string)
+    {
+        debugMsgWithIndent(0, "| Script:");
+        debugMsgWithIndent(0, "|");
+        debugTextWithLineNumber(menu->client.script.string);
+        debugMsgWithIndent(0, "|");
+    }
+    else
+    {
+        debugMsgWithIndent(0, "| Script:            (null)");
+    }
     debugMsgWithIndent(0, "| Script capacity:   %04zu", menu->client.script.capacity);
     debugMsgWithIndent(0, "| Script count:      %04zu", menu->client.script.count);
     debugMsgWithIndent(0, "|");

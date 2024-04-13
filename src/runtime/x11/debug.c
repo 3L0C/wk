@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 /* common includes */
 #include "common/debug.h"
 

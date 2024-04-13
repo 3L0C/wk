@@ -368,9 +368,9 @@ compileKeyChords(Compiler* compiler, WkMenu* menu)
 }
 
 void
-initCompiler(Compiler* compiler, const char* source, const char* filePath)
+initCompiler(Compiler* compiler, char* source, const char* filepath)
 {
-    initScanner(&compiler->scanner, source, filePath);
+    initScanner(&compiler->scanner, source, filepath);
     compiler->hadError = false;
     compiler->panicMode = false;
     compiler->index = 0;
@@ -378,4 +378,5 @@ initCompiler(Compiler* compiler, const char* source, const char* filePath)
     compiler->lineDest = &compiler->lines;
     compiler->linePrefix = NULL;
     initLineArray(&compiler->lines);
+    compiler->source = source;
 }

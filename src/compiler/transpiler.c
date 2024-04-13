@@ -6,7 +6,6 @@
 #include <string.h>
 
 /* common includes */
-#include "common/debug.h"
 #include "common/types.h"
 
 /* local includes */
@@ -35,7 +34,7 @@ errorAt(Compiler* compiler, Token* token, const char* message)
 
     fprintf(
         stderr, "%s:%zu:%zu: error",
-        compiler->scanner.filePath, token->line, token->column
+        compiler->scanner.filepath, token->line, token->column
     );
 
     if (token->type == TOKEN_EOF)

@@ -263,14 +263,14 @@ parseArgs(WkMenu* menu, int* argc, char*** argv)
 }
 
 char*
-readFile(const char* path)
+readFile(const char* filepath)
 {
-    assert(path);
+    assert(filepath);
 
-    FILE* file = fopen(path, "rb");
+    FILE* file = fopen(filepath, "rb");
     if (!file)
     {
-        errorMsg("Could not open file '%s'.", path);
+        errorMsg("Could not open file '%s'.", filepath);
         goto fail;
     }
 
@@ -281,14 +281,14 @@ readFile(const char* path)
     char* buffer = ALLOCATE(char, fileSize + 1);
     if (!buffer)
     {
-        errorMsg("Not enough memory to read '%s'.", path);
+        errorMsg("Not enough memory to read '%s'.", filepath);
         goto alloc_error;
     }
 
     size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
     if (bytesRead < fileSize)
     {
-        errorMsg("Could not read file '%s'.", path);
+        errorMsg("Could not read file '%s'.", filepath);
         goto read_error;
     }
 
