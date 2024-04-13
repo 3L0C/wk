@@ -42,7 +42,7 @@ freeKeyChords(WkKeyChord* keyChords)
 }
 
 static char*
-preprocessSources(char* source, const char* filepath)
+preprocessSources(const char* source, const char* filepath)
 {
     assert(source);
 
@@ -113,10 +113,8 @@ compileKeyChordsToMenu(Compiler* compiler)
 }
 
 static int
-runMenu(Compiler* compiler)
+runMenu(void)
 {
-    assert(compiler);
-
     int result = EX_SOFTWARE;
     WkStatus status = WK_STATUS_RUNNING;
     countMenuKeyChords(&mainMenu);
@@ -139,6 +137,41 @@ runMenu(Compiler* compiler)
     {
         result = displayMenu(&mainMenu);
     }
+    return result;
+}
+
+static int
+runSource(const char* source, const char* filepath)
+{
+    int result = EX_SOFTWARE;
+
+    /* Run preprocessor on `script` and fail if mallformed or other error. */
+    char* processedSource = preprocessSources(source, filepath);
+    if (!processedSource)
+    {
+        result = EX_DATAERR;
+        goto end;
+    }
+
+    /* Begin compilation */
+    Compiler compiler;
+    result = transpileSource(&compiler, processedSource, filepath);
+    if (result != EX_OK) goto fail;
+
+    result = compileKeyChordsToMenu(&compiler);
+    if (result != EX_OK)
+    {
+        errorMsg("Could not compile script.");
+        goto fail;
+    }
+
+    result = runMenu();
+
+fail:
+    freeKeyChords(mainMenu.keyChords);
+    freeLineArray(&compiler.lines);
+    free(processedSource);
+end:
     return result;
 }
 
@@ -189,33 +222,8 @@ runScript(void)
     if (!tryStdin(&mainMenu)) return EX_IOERR;
     String* source = &mainMenu.client.script;
 
-    /* Run preprocessor on `script` and fail if mallformed or other error. */
-    char* processedSource = preprocessSources(source->string, NULL);
-    if (!processedSource)
-    {
-        result = EX_DATAERR;
-        goto end;
-    }
+    result = runSource(source->string, NULL);
 
-    /* Begin compilation */
-    Compiler compiler;
-    result = transpileSource(&compiler, source->string, mainMenu.client.transpile);
-    if (result != EX_OK) goto fail;
-
-    result = compileKeyChordsToMenu(&compiler);
-    if (result != EX_OK)
-    {
-        errorMsg("Could not compile script.");
-        goto fail;
-    }
-
-    result = runMenu(&compiler);
-
-fail:
-    freeKeyChords(mainMenu.keyChords);
-    freeLineArray(&compiler.lines);
-    free(processedSource);
-end:
     freeString(source);
     return result;
 }
@@ -233,33 +241,8 @@ runChordsFile(void)
     char* source = readFile(mainMenu.client.keyChordsFile);
     if (!source) return EX_IOERR;
 
-    /* Run preprocessor on `chordsFile` and fail if mallformed or other error. */
-    char* processedSource = preprocessSources(source, mainMenu.client.keyChordsFile);
-    if (!processedSource)
-    {
-        result = EX_DATAERR;
-        goto end;
-    }
+    result = runSource(source, mainMenu.client.keyChordsFile);
 
-    /* Begin compilation */
-    Compiler compiler;
-    result = transpileSource(&compiler, source, mainMenu.client.keyChordsFile);
-    if (result != EX_OK) goto fail;
-
-    result = compileKeyChordsToMenu(&compiler);
-    if (result != EX_OK)
-    {
-        errorMsg("Could not compile script.");
-        goto fail;
-    }
-
-    result = runMenu(&compiler);
-
-fail:
-    freeKeyChords(mainMenu.keyChords);
-    freeLineArray(&compiler.lines);
-    free(processedSource);
-end:
     free(source);
     return result;
 }
@@ -268,37 +251,8 @@ end:
 static int
 runBuiltinKeyChords()
 {
-    int result = EX_SOFTWARE;
-
     if (mainMenu.debug) debugKeyChords(mainMenu.keyChords, 0);
-
-    /* Initial setup */
-    countMenuKeyChords(&mainMenu);
-    WkStatus status = WK_STATUS_RUNNING;
-
-    /* Pre-press keys */
-    if (mainMenu.client.keys)
-    {
-        status = pressKeys(&mainMenu, mainMenu.client.keys);
-    }
-
-    /* If keys were pre-pressed there may be nothing to do, or an error to report. */
-    if (status == WK_STATUS_EXIT_SOFTWARE)
-    {
-        errorMsg("Key(s) not found in key chords: '%s'.", mainMenu.client.keys);
-        result = EX_DATAERR;
-    }
-    else if (status == WK_STATUS_EXIT_OK)
-    {
-        debugMsg(mainMenu.debug, "Successfully pressed keys: '%s'.", mainMenu.client.keys);
-        result = EX_OK;
-    }
-    else
-    {
-        result = displayMenu(&mainMenu);
-    }
-
-    return result;
+    return runMenu();
 }
 
 int
