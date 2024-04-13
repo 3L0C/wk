@@ -38,7 +38,7 @@ writeChordsHeader(void)
         "\n"
         "#include \"src/common/types.h\"\n"
         "\n"
-        "/* mods, specials,\n"
+        "/* state, mods, specials,\n"
         " * key, description, hint,\n"
         " * command\n"
         " * before\n"
@@ -279,6 +279,7 @@ static void
 writeChordLine(Line* line, int indent)
 {
     printf("%*s", indent * 4, " ");
+    printf("WK_KEY_CHORD_STATE_NOT_NULL, ");
     writeChordMods(&line->mods);
     writeChordSpecial(&line->key);
     printf("\n%*s", indent * 4, " ");

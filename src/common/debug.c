@@ -186,7 +186,7 @@ debugKeyChords(const WkKeyChord* keyChords, int indent)
     {
         debugPrintHeaderWithIndent(indent, " KeyChords ");
     }
-    for (uint32_t i = 0; keyChords[i].key; i++)
+    for (uint32_t i = 0; keyChords[i].state == WK_KEY_CHORD_STATE_NOT_NULL; i++)
     {
         debugMsgWithIndent(indent, "|");
         debugMsgWithIndent(indent, "| Chord Index:       %04u", i);

@@ -8,6 +8,7 @@
                               ((mods) & MOD_ALT)  || \
                               ((mods) & MOD_LOGO) || \
                               ((mods) & MOD_SHIFT))
+
 #define MAKE_MODS(                      \
     _ctrl, _alt, _hyper, _shift         \
 )                                       \
@@ -17,16 +18,19 @@
         .hyper = (_hyper),              \
         .shift = (_shift),              \
     }
+
 #define RESET_MODS(mods)                \
     ((mods).ctrl = false,               \
      (mods).alt = false,                \
      (mods).hyper = false,              \
      (mods).shift = false)
+
 #define IS_MOD(mods)                    \
     ((mods).ctrl    ||                  \
      (mods).alt     ||                  \
      (mods).hyper   ||                  \
      (mods).shift)
+
 #define COUNT_MODS(mods)                \
     ((mods).ctrl    +                   \
      (mods).alt     +                   \
@@ -55,6 +59,7 @@
         .beforeSync = (_beforeSync),    \
         .afterSync = (_afterSync),      \
     }
+
 #define RESET_FLAGS(flags)              \
     ((flags).keep = false,              \
      (flags).close = false,             \
@@ -68,6 +73,7 @@
      (flags).syncCommand = false,       \
      (flags).beforeSync = false,        \
      (flags).afterSync = false)
+
 #define HAS_FLAG(flags)                 \
     ((flags).keep        ||             \
      (flags).close       ||             \
@@ -81,6 +87,7 @@
      (flags).syncCommand ||             \
      (flags).beforeSync  ||             \
      (flags).afterSync)
+
 #define COUNT_FLAGS(flags)              \
     (((flags).keep)        +            \
      ((flags).close)       +            \
@@ -92,8 +99,9 @@
      ((flags).noafter)     +            \
      ((flags).write)       +            \
      ((flags).syncCommand) +            \
-     ((flags).beforeSync) +             \
+     ((flags).beforeSync)  +            \
      ((flags).afterSync))
+
 #define COPY_FLAGS(from, to)                    \
     do                                          \
     {                                           \
@@ -112,23 +120,25 @@
     } while (false)
 
 /* chord macros */
-#define NULL_KEY_CHORD  \
+#define NULL_KEY_CHORD                  \
     {                                   \
-    /*  mods,        special, */        \
+        WK_KEY_CHORD_STATE_IS_NULL,     \
         (WkMods){0}, WK_SPECIAL_NONE,   \
-    /*  key,  desc, hint, */            \
         NULL, NULL, NULL,               \
-    /*  command, */                     \
         NULL,                           \
-    /*  before, */                      \
         NULL,                           \
-    /*  after, */                       \
         NULL,                           \
-    /*  flags,        chords */         \
         (WkFlags){0}, NULL              \
     }
+
 #define PREFIX(...) (WkKeyChord[]){ __VA_ARGS__, NULL_KEY_CHORD }
 #define KEY_CHORDS(...) { __VA_ARGS__, NULL_KEY_CHORD }
+
+typedef enum
+{
+    WK_KEY_CHORD_STATE_NOT_NULL,
+    WK_KEY_CHORD_STATE_IS_NULL,
+} WkKeyChordState;
 
 typedef enum
 {
@@ -183,6 +193,7 @@ typedef struct
 
 typedef struct KeyChord
 {
+    WkKeyChordState state;
     WkMods mods;
     WkSpecial special;
     char* key;

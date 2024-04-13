@@ -28,7 +28,7 @@ freeKeyChords(WkKeyChord* keyChords)
 {
     if (!keyChords) return;
 
-    for (size_t i = 0; keyChords[i].key; i++)
+    for (size_t i = 0; keyChords[i].state == WK_KEY_CHORD_STATE_NOT_NULL; i++)
     {
         free(keyChords[i].key);
         free(keyChords[i].description);

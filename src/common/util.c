@@ -15,6 +15,7 @@
 #include "common.h"
 #include "debug.h"
 #include "menu.h"
+#include "types.h"
 #include "util.h"
 
 void
@@ -40,7 +41,7 @@ countKeyChords(const WkKeyChord* keyChords)
     assert(keyChords);
 
     uint32_t count = 0;
-    while (keyChords[count].key) count++;
+    while (keyChords[count].state == WK_KEY_CHORD_STATE_NOT_NULL) count++;
 
     return count;
 }
