@@ -1,0 +1,6 @@
+# Browser prefix
+b "+Browser" { :include "browser_key_chords.wks" }
+# Emacs prefix
+e "+Emacs" ^before %{{dwmc viewex 1}} { :include "emacs_key_chords.wks" }
+# mpc prefix
+m "+mpc" +keep { :include "mpc_key_chords.wks" }

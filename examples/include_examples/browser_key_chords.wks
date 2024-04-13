@@ -1,0 +1,15 @@
+[
+    (b "Brave")
+    (c "Chrome")
+    (f "Firefox")
+] "null" +write %{{%(desc,)}} # downcase the description and use as the command
+
+# Mullvad-exclude prefix
+m "+Mullvad Exclude"
+{
+    [
+        (b "Brave")
+        (c "Chrome")
+        (f "Firefox")
+    ] "null" %{{mullvad-exclude %(desc,)}}
+}

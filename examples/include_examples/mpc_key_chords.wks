@@ -1,0 +1,7 @@
+c "Clear mpc" %{{mpc clear}}
+d "Display song" %{{songinfo}}
+h "Seek -5s" %{{mpc seek "-5"}}
+l "Seek +5s" %{{mpc seek "+5"}}
+n "Next song" %{{mpc next}}
+p "Prev song" %{{mpc prev}}
+o "Open mpc" +ignore %{{term -e ncmpcpp}}

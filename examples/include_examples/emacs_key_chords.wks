@@ -1,0 +1,5 @@
+b "Open blank" %{{emacsclient -c -a ""}}
+p "+Projects"
+{
+    w "wk" %{{emacs "~/Projects/wk"}}
+}

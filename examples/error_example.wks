@@ -1,0 +1,6 @@
+a "An invalid Chord" -write %{{Look at all these errors!}}
+b "A valid Chord" +write %{{That looks better}}
+a "Bad prefix" -unhook
+{
+    [bcd] "Good %(key)" +write %{{nice a quiet.}}
+}
