@@ -59,7 +59,7 @@ preprocessSource(const char* source, const char* filepath)
     char* processedSource = runPreprocessor(&mainMenu, source, filepath);
     if (!processedSource)
     {
-        errorMsg("Failed while running preprocessor on given file.");
+        errorMsg("Failed while running preprocessor on `wks` file: '%s'.", filepath);
     }
     else if (mainMenu.debug)
     {
@@ -211,7 +211,7 @@ runScript(void)
     if (!tryStdin(&mainMenu)) return EX_IOERR;
     String* source = &mainMenu.client.script;
 
-    result = runSource(source->string, NULL);
+    result = runSource(source->string, "[SCRIPT]");
 
     freeString(source);
     return result;

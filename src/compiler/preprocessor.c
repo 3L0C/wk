@@ -161,6 +161,7 @@ handleMacroWithStringArg(WkMenu* menu, Scanner* scanner, Token* token, PieceTabl
             result.length, result.start
         );
         scanner->hadError = true;
+        return;
     }
 
     String arg = {0};
