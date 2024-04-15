@@ -79,23 +79,12 @@ getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
 }
 
 static void
-handleIncludeMacro(WkMenu* menu, Scanner* scanner, PieceTable* result)
+handleIncludeMacro(WkMenu* menu, Scanner* scanner, PieceTable* result, Token* includeFile)
 {
-    assert(menu && scanner && result);
+    assert(menu && scanner && result && includeFile);
 
     /* currently pointing at the 'i' in ':include', so take off one. */
-    /* const char* includeStart = scanner->start - 1; */
     const char* sourcePath = scanner->filepath;
-
-    /* Ensure filename is given. */
-    Token includeFile = {0};
-    scanTokenForPreprocessor(scanner, &includeFile, SCANNER_WANTS_DESCRIPTION);
-    if (includeFile.type != TOKEN_DESCRIPTION)
-    {
-        errorMsg("Expect \"FILEPATH\" after ':include'.");
-        scanner->hadError = true;
-        return;
-    }
 
     if (!sourcePath) sourcePath = getenv("PWD");
     if (!sourcePath)
@@ -103,15 +92,12 @@ handleIncludeMacro(WkMenu* menu, Scanner* scanner, PieceTable* result)
         warnMsg("Could not get environment variable '$PWD' for script.");
     }
 
-    /* /\* Append previous contents to result. *\/ */
-    /* appendToPieceTable(result, PIECE_SOURCE_ORIGINAL, scannerStart, includeStart - scannerStart); */
-
     char* includeFilePath = NULL;
-    char* includeSource = NULL; // readFile(includeFilePath);
+    char* includeSource = NULL;
     char* includeResult = NULL;
 
     /* Get the path to the included file */
-    includeFilePath = getIncludeFilePath(includeFile.start, includeFile.length, sourcePath);
+    includeFilePath = getIncludeFilePath(includeFile->start, includeFile->length, sourcePath);
     if (!includeFilePath)
     {
         errorMsg("Failed to get the included file path.");
@@ -158,9 +144,9 @@ fail:
 }
 
 static void
-handleMacroWithStringArg(Scanner* scanner, WkMenu* menu, Token* token)
+handleMacroWithStringArg(WkMenu* menu, Scanner* scanner, Token* token, PieceTable* pieceTable)
 {
-    assert(scanner && menu && token);
+    assert(scanner && menu && token && pieceTable);
 
     makeScannerCurrent(scanner);
 
@@ -203,7 +189,12 @@ handleMacroWithStringArg(Scanner* scanner, WkMenu* menu, Token* token)
     }
     case TOKEN_SHELL: menu->shell = menu->garbage.shell = arg.string; break;
     case TOKEN_FONT: menu->font = menu->garbage.font = arg.string; break;
-    case TOKEN_INCLUDE: break;
+    case TOKEN_INCLUDE:
+    {
+        freeString(&arg);
+        handleIncludeMacro(menu, scanner, pieceTable, &result);
+        break;
+    }
     default:
     {
         errorMsg(
@@ -388,8 +379,8 @@ runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
         case TOKEN_BACKGROUND_COLOR:
         case TOKEN_BORDER_COLOR:
         case TOKEN_SHELL:
-        case TOKEN_FONT: handleMacroWithStringArg(&scanner, menu, &token); break;
-        case TOKEN_INCLUDE: handleIncludeMacro(menu, &scanner, &pieceTable); break;
+        case TOKEN_FONT:
+        case TOKEN_INCLUDE: handleMacroWithStringArg(menu, &scanner, &token, &pieceTable); break;
 
         /* Handle error */
         case TOKEN_ERROR:
