@@ -1,11 +1,14 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 /* common includes */
 #include "common/common.h"
+#include "common/debug.h"
+#include "common/menu.h"
 #include "common/string.h"
 
 /* local includes */
@@ -76,18 +79,17 @@ getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
 }
 
 static void
-handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, PieceTable* result)
+handleIncludeMacro(WkMenu* menu, Scanner* scanner, PieceTable* result)
 {
-    assert(menu && scanner && scannerStart && result);
+    assert(menu && scanner && result);
 
     /* currently pointing at the 'i' in ':include', so take off one. */
-    const char* includeStart = scanner->start - 1;
+    /* const char* includeStart = scanner->start - 1; */
     const char* sourcePath = scanner->filepath;
 
     /* Ensure filename is given. */
     Token includeFile = {0};
-    initToken(&includeFile);
-    scanTokenForPreprocessor(scanner, &includeFile, true);
+    scanTokenForPreprocessor(scanner, &includeFile, SCANNER_WANTS_DESCRIPTION);
     if (includeFile.type != TOKEN_DESCRIPTION)
     {
         errorMsg("Expect \"FILEPATH\" after ':include'.");
@@ -101,8 +103,8 @@ handleIncludeMacro(WkMenu* menu, Scanner* scanner, const char* scannerStart, Pie
         warnMsg("Could not get environment variable '$PWD' for script.");
     }
 
-    /* Append previous contents to result. */
-    appendToPieceTable(result, PIECE_SOURCE_ORIGINAL, scannerStart, includeStart - scannerStart);
+    /* /\* Append previous contents to result. *\/ */
+    /* appendToPieceTable(result, PIECE_SOURCE_ORIGINAL, scannerStart, includeStart - scannerStart); */
 
     char* includeFilePath = NULL;
     char* includeSource = NULL; // readFile(includeFilePath);
@@ -155,6 +157,186 @@ fail:
     return;
 }
 
+static void
+handleMacroWithStringArg(Scanner* scanner, WkMenu* menu, Token* token)
+{
+    assert(scanner && menu && token);
+
+    makeScannerCurrent(scanner);
+
+    Token result = {0};
+    scanTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DESCRIPTION);
+    if (result.type != TOKEN_DESCRIPTION)
+    {
+        errorAtToken(
+            &result, scanner->filepath,
+            "Expect string argument to '%.*s' macro. Got '%.*s'.",
+            token->length, token->start,
+            result.length, result.start
+        );
+        scanner->hadError = true;
+    }
+
+    String arg = {0};
+    initString(&arg);
+    appendToString(&arg, result.start, result.length);
+
+    switch (token->type)
+    {
+    case TOKEN_FOREGROUND_COLOR:
+    {
+        setMenuColor(menu, arg.string, WK_COLOR_FOREGROUND);
+        menu->garbage.foregroundColor = arg.string;
+        break;
+    }
+    case TOKEN_BACKGROUND_COLOR:
+    {
+        setMenuColor(menu, arg.string, WK_COLOR_BACKGROUND);
+        menu->garbage.backgroundColor = arg.string;
+        break;
+    }
+    case TOKEN_BORDER_COLOR:
+    {
+        setMenuColor(menu, arg.string, WK_COLOR_BORDER);
+        menu->garbage.borderColor = arg.string;
+        break;
+    }
+    case TOKEN_SHELL: menu->shell = menu->garbage.shell = arg.string; break;
+    case TOKEN_FONT: menu->font = menu->garbage.font = arg.string; break;
+    case TOKEN_INCLUDE: break;
+    default:
+    {
+        errorMsg(
+            "Got an unexpected token to function `handleMacroWithStringArg`."
+        );
+        scanner->hadError = true;
+        break;
+    }
+    }
+
+    disownString(&arg);
+}
+
+static void
+handleMacroWithDoubleArg(Scanner* scanner, WkMenu* menu, Token* token)
+{
+    assert(scanner && menu && token);
+
+    makeScannerCurrent(scanner);
+
+    Token result = {0};
+    scanTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DOUBLE);
+    if (result.type != TOKEN_DOUBLE) goto fail;
+
+    double value = 0;
+    if (!getDoubleFromToken(&result, &value, menu->debug)) goto fail;
+
+    switch (token->type)
+    {
+    case TOKEN_BORDER_RADIUS: menu->borderRadius = value; return;
+    default:
+    {
+        errorMsg(
+            "Got an unexpected token to function `handleSwitchWithNumberArg`."
+        );
+        scanner->hadError = true;
+        return;
+    }
+    }
+
+fail:
+    errorAtToken(
+        &result, scanner->filepath,
+        "Expect double after '%.*s' switch. Got '%.*s'.",
+        token->length, token->start,
+        result.length, result.start
+    );
+    scanner->hadError = true;
+    return;
+}
+
+static void
+handleMacroWithInt32Arg(Scanner* scanner, WkMenu* menu, Token* token)
+{
+    assert(scanner && menu && token);
+
+    makeScannerCurrent(scanner);
+
+    Token result = {0};
+    scanTokenForPreprocessor(scanner, &result, SCANNER_WANTS_INTEGER);
+    if (result.type != TOKEN_INTEGER) goto fail;
+
+    int32_t value = 0;
+    if (!getInt32FromToken(&result, &value, menu->debug)) goto fail;
+
+    switch (token->type)
+    {
+    case TOKEN_WINDOW_WIDTH: menu->windowWidth = value; return;
+    case TOKEN_WINDOW_GAP: menu->windowGap = value; return;
+    default:
+    {
+        errorMsg(
+            "Got an unexpected token to function `handleSwitchWithInt32Arg`."
+        );
+        scanner->hadError = true;
+        return;
+    }
+    }
+
+fail:
+    errorAtToken(
+        &result, scanner->filepath,
+        "Expect integer after '%.*s' switch. Got '%.*s'.",
+        token->length, token->start,
+        result.length, result.start
+    );
+    scanner->hadError = true;
+    return;
+}
+
+static void
+handleMacroWithUint32Arg(Scanner* scanner, WkMenu* menu, Token* token)
+{
+    assert(scanner && menu && token);
+
+    makeScannerCurrent(scanner);
+
+    Token result = {0};
+    scanTokenForPreprocessor(scanner, &result, SCANNER_WANTS_UNSIGNED_INTEGER);
+    if (result.type != TOKEN_UNSIGNED_INTEGER) goto fail;
+
+    uint32_t value = 0;
+    if (!getUint32FromToken(&result, &value, menu->debug)) goto fail;
+
+    switch (token->type)
+    {
+    case TOKEN_MAX_COLUMNS: menu->maxCols = value; return;
+    case TOKEN_BORDER_WIDTH: menu->borderWidth = value; return;
+    case TOKEN_WIDTH_PADDING: menu->wpadding = value; return;
+    case TOKEN_HEIGHT_PADDING: menu->hpadding = value; return;
+    case TOKEN_BORDER_RADIUS: menu->borderRadius = value; return;
+    default:
+    {
+        /* TODO error logic */
+        errorMsg(
+            "Got an unexpected token to function `handleSwitchWithUint32Arg`."
+        );
+        scanner->hadError = true;
+        return;
+    }
+    }
+
+fail:
+    errorAtToken(
+        &result, scanner->filepath,
+        "Expect unsigned integer after '%.*s' switch. Got '%.*s'.",
+        token->length, token->start,
+        result.length, result.start
+    );
+    scanner->hadError = true;
+    return;
+}
+
 char*
 runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
 {
@@ -171,14 +353,52 @@ runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
         if (scanner.hadError) goto fail;
 
         Token token = {0};
-        scanTokenForPreprocessor(&scanner, &token, false);
+        scanTokenForPreprocessor(&scanner, &token, SCANNER_WANTS_MACRO);
+        if (token.type == TOKEN_EOF) break;
+        if (menu->debug) disassembleSingleToken(&token);
+
+        /* Found either valid preprocessor token, or error. Either way it is safe to append. */
+        appendToPieceTable(
+            &pieceTable, PIECE_SOURCE_ORIGINAL, scannerStart, scanner.start - 1 - scannerStart
+        );
+
+        /* Handle macros */
         switch (token.type)
         {
-        case TOKEN_INCLUDE:
+        /* Switches with no args. */
+        case TOKEN_DEBUG: menu->debug = true; break;
+        case TOKEN_TOP: menu->position = WK_WIN_POS_TOP; break;
+        case TOKEN_BOTTOM: menu->position = WK_WIN_POS_BOTTOM; break;
+
+        /* Switches with signed integer args. */
+        case TOKEN_WINDOW_WIDTH:    /* FALLTHROUGH */
+        case TOKEN_WINDOW_GAP: handleMacroWithInt32Arg(&scanner, menu, &token); break;
+
+        /* Switches with unsigned integer args. */
+        case TOKEN_MAX_COLUMNS:   /* FALLTHROUGH */
+        case TOKEN_BORDER_WIDTH:
+        case TOKEN_WIDTH_PADDING:
+        case TOKEN_HEIGHT_PADDING: handleMacroWithUint32Arg(&scanner, menu, &token); break;
+
+        /* Switches with double args. */
+        case TOKEN_BORDER_RADIUS: handleMacroWithDoubleArg(&scanner, menu, &token); break;
+
+        /* Switches with string args. */
+        case TOKEN_FOREGROUND_COLOR: /* FALLTHROUGH */
+        case TOKEN_BACKGROUND_COLOR:
+        case TOKEN_BORDER_COLOR:
+        case TOKEN_SHELL:
+        case TOKEN_FONT: handleMacroWithStringArg(&scanner, menu, &token); break;
+        case TOKEN_INCLUDE: handleIncludeMacro(menu, &scanner, &pieceTable); break;
+
+        /* Handle error */
+        case TOKEN_ERROR:
         {
-            handleIncludeMacro(menu, &scanner, scannerStart, &pieceTable);
-            /* Update scanner for the next go around. */
-            scannerStart = scanner.current;
+            errorAtToken(
+                &token, scanner.filepath,
+                "%s", token.message
+            );
+            scanner.hadError = true;
             break;
         }
         default:
@@ -187,9 +407,17 @@ runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
             {
                 /* DEBUG HERE */
             }
+            errorAtToken(
+                &token, scanner.filepath,
+                "Got unexpected token during preprocessor parsing."
+            );
+            scanner.hadError = true;
             break;
         }
         }
+
+        /* Update scanner for the next go around. */
+        scannerStart = scanner.current;
     }
 
     /* Append the last bit of the source to result. */
@@ -197,7 +425,11 @@ runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
         &pieceTable, PIECE_SOURCE_ORIGINAL, scannerStart, scanner.current - scannerStart
     );
 
-    if (menu->debug) disassemblePieceTable(&pieceTable);
+    if (menu->debug)
+    {
+        disassemblePieceTable(&pieceTable);
+        disassembleMenu(menu);
+    }
     char* result = compilePieceTableToString(&pieceTable);
     freePieceTable(&pieceTable);
     return result;

@@ -101,7 +101,7 @@ pressKey(WkMenu* menu, Scanner* scanner)
     if (menu->debug)
     {
         debugMsg(menu->debug, "Trying to press key: '%.*s'.", (int)token.length, token.start);
-        debugKey(&key);
+        disassembleKey(&key);
     }
 
     WkStatus status = handleKeypress(menu, &key);

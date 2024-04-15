@@ -141,9 +141,9 @@ handleKeypress(WkMenu* menu, WkKey* key)
         {
             if (menu->debug)
             {
-                debugMsg(menu->debug, "Found match: '%s'.", keyChords[i].key);
-                disassembleKeyChord(&keyChords[i], 0);
-                debugKey(key);
+                debugMsg(menu->debug, "Found match: '%s'.\n", keyChords[i].key);
+                disassembleKeyChordWithHeader(&keyChords[i], 0);
+                disassembleKey(key);
             }
             return pressKey(menu, &keyChords[i]);
         }
@@ -151,8 +151,8 @@ handleKeypress(WkMenu* menu, WkKey* key)
 
     if (menu->debug)
     {
-        debugMsg(menu->debug, "Did not find a match for keypress.");
-        debugKey(key);
+        debugMsg(menu->debug, "Did not find a match for keypress.\n");
+        disassembleKey(key);
     }
 
     return WK_STATUS_EXIT_SOFTWARE;

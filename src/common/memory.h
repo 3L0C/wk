@@ -1,7 +1,7 @@
-#ifndef WK_LIB_MEMORY_H_
-#define WK_LIB_MEMORY_H_
+#ifndef WK_COMMON_MEMORY_H_
+#define WK_COMMON_MEMORY_H_
 
-#include "common.h"
+#include <stddef.h>
 
 #define ALLOCATE(type, count) \
     (type*)reallocate(NULL, 0, sizeof(type) * (count))
@@ -17,4 +17,4 @@
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 
-#endif /* WK_LIB_MEMORY_H_ */
+#endif /* WK_COMMON_MEMORY_H_ */

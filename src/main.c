@@ -41,6 +41,16 @@ freeKeyChords(WkKeyChord* keyChords)
     free(keyChords);
 }
 
+static void
+freeMenuGarbage(void)
+{
+    if (mainMenu.garbage.shell) free(mainMenu.garbage.shell);
+    if (mainMenu.garbage.font) free(mainMenu.garbage.font);
+    if (mainMenu.garbage.foregroundColor) free(mainMenu.garbage.foregroundColor);
+    if (mainMenu.garbage.backgroundColor) free(mainMenu.garbage.backgroundColor);
+    if (mainMenu.garbage.borderColor) free(mainMenu.garbage.borderColor);
+}
+
 static char*
 preprocessSource(const char* source, const char* filepath)
 {
@@ -129,31 +139,27 @@ runSource(const char* source, const char* filepath)
 
     /* Run preprocessor on `script` and fail if mallformed or other error. */
     char* processedSource = preprocessSource(source, filepath);
-    if (!processedSource)
-    {
-        result = EX_DATAERR;
-        goto end;
-    }
+    if (!processedSource) return EX_DATAERR;
 
     /* Begin compilation */
     Compiler compiler;
     result = transpileSource(&compiler, processedSource, filepath);
-    if (result != EX_OK) goto fail;
+    if (result != EX_OK) goto transpile_fail;
 
     result = compileSource(&compiler);
     if (result != EX_OK)
     {
         errorMsg("Could not compile script.");
-        goto fail;
+        goto compile_fail;
     }
 
     result = runMenu();
 
-fail:
+compile_fail:
     freeKeyChords(mainMenu.keyChordsHead);
+transpile_fail:
     freeLineArray(&compiler.lines);
     free(processedSource);
-end:
     return result;
 }
 
@@ -213,7 +219,7 @@ runScript(void)
 
 /* Read the given '.wks' file, compile it into a Chord array, and execute like normal. */
 static int
-runChordsFile(void)
+runWksFile(void)
 {
     int result = EX_SOFTWARE;
 
@@ -221,10 +227,10 @@ runChordsFile(void)
     mainMenu.keyChords = NULL;
 
     /* Exit on failure to read source file. */
-    char* source = readFile(mainMenu.client.keyChordsFile);
+    char* source = readFile(mainMenu.client.wksFile);
     if (!source) return EX_IOERR;
 
-    result = runSource(source, mainMenu.client.keyChordsFile);
+    result = runSource(source, mainMenu.client.wksFile);
 
     free(source);
     return result;
@@ -234,7 +240,7 @@ runChordsFile(void)
 static int
 runBuiltinKeyChords()
 {
-    if (mainMenu.debug) debugKeyChords(mainMenu.keyChords, 0);
+    if (mainMenu.debug) disassembleKeyChords(mainMenu.keyChords, 0);
     return runMenu();
 }
 
@@ -246,7 +252,7 @@ main(int argc, char** argv)
     initMenu(&mainMenu, keyChords);
     parseArgs(&mainMenu, &argc, &argv);
 
-    if (mainMenu.debug) debugMenu(&mainMenu);
+    if (mainMenu.debug) disassembleMenu(&mainMenu);
 
     if (mainMenu.client.transpile)
     {
@@ -256,14 +262,16 @@ main(int argc, char** argv)
     {
         result = runScript();
     }
-    else if (mainMenu.client.keyChordsFile)
+    else if (mainMenu.client.wksFile)
     {
-        result = runChordsFile();
+        result = runWksFile();
     }
     else
     {
         result = runBuiltinKeyChords();
     }
+
+    freeMenuGarbage();
 
     return result;
 }

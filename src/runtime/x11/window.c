@@ -394,7 +394,7 @@ render(void)
 
     mainMenu->width = buffer->width;
     mainMenu->height = buffer->height;
-    window->render(&buffer->cairo, mainMenu);
+    if (!window->render(&buffer->cairo, mainMenu)) return false;
     cairo_surface_flush(buffer->cairo.surface);
     XFlush(window->display);
 
@@ -518,7 +518,7 @@ keypress(XKeyEvent* keyEvent)
     case WK_KEY_IS_NORMAL: return handleKeypress(mainMenu, &key);
     case WK_KEY_IS_UNKNOWN:
         debugMsg(debug, "Encountered an unknown key. Most likely a modifier key press event.");
-        if (debug) debugKey(&key);
+        if (debug) disassembleKey(&key);
         return WK_STATUS_RUNNING;
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
@@ -542,7 +542,7 @@ eventHandler(void)
             cleanup(&x11);
             return EX_SOFTWARE;
         case Expose:
-            if (ev.xexpose.count == 0) render();
+            if (ev.xexpose.count == 0) if (!render()) return EX_SOFTWARE;
             break;
         case FocusIn:
             /* regrab focus from parent window */
@@ -555,7 +555,7 @@ eventHandler(void)
             switch (keypress(&ev.xkey))
             {
             case WK_STATUS_RUNNING: break;
-            case WK_STATUS_DAMAGED: render(); break;
+            case WK_STATUS_DAMAGED: if (!render()) return EX_SOFTWARE; break;
             case WK_STATUS_EXIT_OK: return EX_OK;
             case WK_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
             }
@@ -587,8 +587,10 @@ runX11(WkMenu* menu)
     debug = mainMenu->debug;
     if (!initX11()) return result;
     grabkeyboard();
-    render();
-    result = eventHandler();
+    if (render())
+    {
+        result = eventHandler();
+    }
     cleanup(&x11);
     return result;
 }

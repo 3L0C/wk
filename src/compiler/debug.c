@@ -186,7 +186,7 @@ disassembleLineArray(LineArray* array, int indent)
 {
     assert(array);
 
-    if (indent == 0) debugPrintHeader("LineArray");
+    if (indent == 0) debugPrintHeader(" LineArray ");
     for (size_t i = 0; i < array->count; i++)
     {
         disassembleLine(&array->lines[i], i, indent);
@@ -224,9 +224,12 @@ disassemblePiece(PieceTable* pieceTable, size_t index)
     );
     debugMsg(true, "| Index:    %04zu", piece->index);
     debugMsg(true, "| Length:   %04zu", piece->len);
-    debugMsg(true, "| Text: ");
-    debugMsg(true, "| ");
-    debugTextLenWithLineNumber(getTextAtPiece(pieceTable, piece), piece->len);
+    if (piece->len > 0)
+    {
+        debugMsg(true, "| Text: ");
+        debugMsg(true, "| ");
+        debugTextLenWithLineNumber(getTextAtPiece(pieceTable, piece), piece->len);
+    }
 }
 
 static void
@@ -309,6 +312,21 @@ disassembleToken(Token* token)
 
     /* preprocessor macros */
     case TOKEN_INCLUDE:                 type = "TOKEN_INCLUDE";                 break;
+    case TOKEN_DEBUG:                   type = "TOKEN_DEBUG";                   break;
+    case TOKEN_TOP:                     type = "TOKEN_TOP";                     break;
+    case TOKEN_BOTTOM:                  type = "TOKEN_BOTTOM";                  break;
+    case TOKEN_MAX_COLUMNS:             type = "TOKEN_MAX_COLUMNS";             break;
+    case TOKEN_WINDOW_WIDTH:            type = "TOKEN_WINDOW_WIDTH";            break;
+    case TOKEN_WINDOW_GAP:              type = "TOKEN_WINDOW_GAP";              break;
+    case TOKEN_BORDER_WIDTH:            type = "TOKEN_BORDER_WIDTH";            break;
+    case TOKEN_BORDER_RADIUS:           type = "TOKEN_BORDER_RADIUS";           break;
+    case TOKEN_WIDTH_PADDING:           type = "TOKEN_WIDTH_PADDING";           break;
+    case TOKEN_HEIGHT_PADDING:          type = "TOKEN_HEIGHT_PADDING";          break;
+    case TOKEN_FOREGROUND_COLOR:        type = "TOKEN_FOREGROUND_COLOR";        break;
+    case TOKEN_BACKGROUND_COLOR:        type = "TOKEN_BACKGROUND_COLOR";        break;
+    case TOKEN_BORDER_COLOR:            type = "TOKEN_BORDER_COLOR";            break;
+    case TOKEN_SHELL:                   type = "TOKEN_SHELL";                   break;
+    case TOKEN_FONT:                    type = "TOKEN_FONT";                    break;
 
     /* identifiers */
     case TOKEN_THIS_KEY:                type = "TOKEN_THIS_KEY";                break;
@@ -371,8 +389,19 @@ disassembleToken(Token* token)
     case TOKEN_ERROR:       printErrorToken(token);     return;
     case TOKEN_NO_INTERP:   type = "TOKEN_NO_INTERP";   break;
 
-    default: type = "UNKNOWN TYPE!"; break;
+    default: type = "TOKEN_UNKNOWN!"; break;
     }
     printSimpleToken(token, type);
 }
 
+
+void
+disassembleSingleToken(Token* token)
+{
+    assert(token);
+
+    debugPrintHeader("-");
+    /* debugMsg(true, "| Line:Col  | TokenType                   | Lexeme                     |"); */
+    disassembleToken(token);
+    debugPrintHeader("");
+}

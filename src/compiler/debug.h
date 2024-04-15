@@ -13,5 +13,6 @@ void disassembleLineShallow(Line* line, size_t index);
 void disassemblePiece(PieceTable* pieceTable, size_t index);
 void disassemblePieceTable(PieceTable* pieceTable);
 void disassembleToken(Token* token);
+void disassembleSingleToken(Token* token);
 
 #endif /* WK_COMPILER_DEBUG_H_ */

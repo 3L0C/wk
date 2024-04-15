@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,38 +28,16 @@ nextLineArray(Compiler* compiler)
 }
 
 static void
-errorAt(Compiler* compiler, Token* token, const char* message)
+errorAtCurrent(Compiler* compiler, const char* fmt, ...)
 {
     if (compiler->panicMode) return;
     compiler->panicMode = true;
-
-    fprintf(
-        stderr, "%s:%zu:%zu: error",
-        compiler->scanner.filepath, token->line, token->column
-    );
-
-    if (token->type == TOKEN_EOF)
-    {
-        fprintf(stderr, " at end: ");
-    }
-    else if (token->type == TOKEN_ERROR)
-    {
-        fprintf(stderr, " at line %04zu: ", token->line);
-        fprintf(stderr, "'%.*s'\n\t", (int)token->length, token->start);
-    }
-    else
-    {
-        fprintf(stderr, " at '%.*s': ", (int)token->length, token->start);
-    }
-
-    fprintf(stderr, "%s\n", message);
     compiler->hadError = true;
-}
 
-static void
-errorAtCurrent(Compiler* compiler, const char* message)
-{
-    errorAt(compiler, &compiler->current, message);
+    va_list ap;
+    va_start(ap, fmt);
+    errorAtToken(&compiler->current, compiler->scanner.filepath, fmt, ap);
+    va_end(ap);
 }
 
 static void

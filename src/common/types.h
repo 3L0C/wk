@@ -1,5 +1,5 @@
-#ifndef WK_LIB_TYPES_H_
-#define WK_LIB_TYPES_H_
+#ifndef WK_COMMON_TYPES_H_
+#define WK_COMMON_TYPES_H_
 
 #include <stdbool.h>
 
@@ -218,4 +218,4 @@ bool keyIsNormal(WkKey* key);
 bool keyIsSpecial(WkKey* key);
 bool keyIsStrictlyMod(WkKey* key);
 
-#endif /* WK_LIB_TYPES_H_ */
+#endif /* WK_COMMON_TYPES_H_ */

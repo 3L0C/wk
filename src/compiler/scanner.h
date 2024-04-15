@@ -7,6 +7,15 @@
 /* local includes */
 #include "token.h"
 
+typedef enum
+{
+    SCANNER_WANTS_MACRO,
+    SCANNER_WANTS_DESCRIPTION,
+    SCANNER_WANTS_DOUBLE,
+    SCANNER_WANTS_INTEGER,
+    SCANNER_WANTS_UNSIGNED_INTEGER,
+} ScannerFlag;
+
 typedef struct
 {
     const char* head;
@@ -22,7 +31,8 @@ typedef struct
 
 void initScanner(Scanner* scanner, const char* source, const char* filepath);
 bool isAtEnd(const Scanner* scanner);
+void makeScannerCurrent(Scanner* scanner);
 void scanTokenForCompiler(Scanner* scanner, Token* result);
-void scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription);
+void scanTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag);
 
 #endif /* WK_COMPILER_SCANNER_H_ */

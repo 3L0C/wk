@@ -361,7 +361,7 @@ compileKeyChords(Compiler* compiler, WkMenu* menu)
 
     compileLines(menu->keyChords, lines);
 
-    if (menu->debug) debugKeyChords(menu->keyChords, 0);
+    if (menu->debug) disassembleKeyChords(menu->keyChords, 0);
 
     return menu->keyChords;
 }

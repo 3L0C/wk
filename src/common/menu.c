@@ -83,7 +83,7 @@ initColors(WkHexColor* hexColors)
         if (!initColor(&hexColors[i], colors[i]))
         {
             char* colorType;
-            fprintf(stderr, "[WARNING] Invalid color string '%s' ", colors[i]);
+            warnMsg("Invalid color string '%s'.", colors[i]);
             switch (i)
             {
             case WK_COLOR_FOREGROUND: colorType = "foreground"; break;
@@ -126,9 +126,14 @@ initMenu(WkMenu* menu, WkKeyChord* keyChords)
     menu->dirty = true;
     menu->client.keys = NULL;
     menu->client.transpile = NULL;
-    menu->client.keyChordsFile = NULL;
+    menu->client.wksFile = NULL;
     menu->client.tryScript = false;
     initString(&menu->client.script);
+    menu->garbage.shell = NULL;
+    menu->garbage.font = NULL;
+    menu->garbage.foregroundColor = NULL;
+    menu->garbage.backgroundColor = NULL;
+    menu->garbage.borderColor = NULL;
     menu->cleanupfp = NULL;
     menu->xp = NULL;
 }

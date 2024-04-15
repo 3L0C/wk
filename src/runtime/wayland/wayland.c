@@ -237,7 +237,7 @@ pollKey(WkMenu* props, Wayland* wayland)
     case WK_KEY_IS_NORMAL: return handleKeypress(props, &key);
     case WK_KEY_IS_UNKNOWN:
         errorMsg("Encountered an unknown key.");
-        if (debug) debugKey(&key);
+        if (debug) disassembleKey(&key);
         return WK_STATUS_EXIT_SOFTWARE;
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
@@ -515,7 +515,7 @@ runWayland(WkMenu* props)
         /* Exit on pointer events */
         if (pollPointer(&wayland)) break;
 
-        debugStatus(status);
+        disassembleStatus(status);
     }
     while (statusIsRunning(status));
 

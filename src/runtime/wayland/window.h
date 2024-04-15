@@ -50,7 +50,7 @@ typedef struct
     /* int32_t yOffset; */
     uint32_t alignAnchor;
     bool renderPending;
-    void (*render)(Cairo* cairo, WkMenu* menu);
+    bool (*render)(Cairo* cairo, WkMenu* menu);
 } WaylandWindow;
 
 void windowScheduleRender(WaylandWindow* window);

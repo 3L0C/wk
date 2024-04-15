@@ -249,7 +249,7 @@ drawGrid()
 
     if (mainMenu->borderWidth * 2 >= width)
     {
-        errorMsg("Border is larger than windo width.");
+        errorMsg("Border is larger than window width.");
         goto end;
     }
 
@@ -273,9 +273,9 @@ drawGrid()
 
     if (mainMenu->debug)
     {
-        debugMenu(mainMenu);
-        debugGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
-        debugKeyChordsShallow(mainMenu->keyChords, mainMenu->keyChordCount);
+        disassembleMenu(mainMenu);
+        disassembleGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
+        disassembleKeyChordsShallow(mainMenu->keyChords, mainMenu->keyChordCount);
     }
 
     if (ellipsisWidth == -1 || ellipsisHeight == -1)
@@ -318,7 +318,7 @@ end:
     return false;
 }
 
-void
+bool
 cairoPaint(Cairo* cr, WkMenu* menu)
 {
     assert(cr && menu);
@@ -348,6 +348,8 @@ cairoPaint(Cairo* cr, WkMenu* menu)
         goto fail;
     }
 
+    return true;
+
 fail:
-    return;
+    return false;
 }

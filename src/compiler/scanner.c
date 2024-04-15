@@ -7,6 +7,7 @@
 /* common includes */
 #include "common/common.h"
 #include "common/util.h"
+#include "token.h"
 
 /* local includes */
 #include "scanner.h"
@@ -52,7 +53,7 @@ cloneScanner(Scanner* scanner, Scanner* clone)
     clone->isInterpolation = scanner->isInterpolation;
 }
 
-static void
+void
 makeScannerCurrent(Scanner* scanner)
 {
     scanner->start = scanner->current;
@@ -64,6 +65,12 @@ isAlpha(const char c)
     return ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') ||
             c == '+' || c == '-' || c == '_';
+}
+
+static bool
+isDigit(char c)
+{
+    return c >= '0' && c <= '9';
 }
 
 bool
@@ -280,7 +287,34 @@ getPreprocessorMacro(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (*scanner->start)
     {
+    case 'd': if (isKeyword(scanner, 1, 4, "ebug")) result = TOKEN_DEBUG; break;
     case 'i': if (isKeyword(scanner, 1, 6, "nclude")) result = TOKEN_INCLUDE; break;
+    case 't': if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP; break;
+    case 'b':
+    {
+        if (isKeyword(scanner, 1, 5, "ottom")) result = TOKEN_BOTTOM;
+        else if (isKeyword(scanner, 1, 11, "order-width")) result = TOKEN_BORDER_WIDTH;
+        else if (isKeyword(scanner, 1, 12, "order-radius")) result = TOKEN_BORDER_RADIUS;
+        else if (isKeyword(scanner, 1, 7, "g-color")) result = TOKEN_BACKGROUND_COLOR;
+        else if (isKeyword(scanner, 1, 7, "d-color")) result = TOKEN_BORDER_COLOR;
+        break;
+    }
+    case 'm': if (isKeyword(scanner, 1, 10, "ax-columns")) result = TOKEN_MAX_COLUMNS; break;
+    case 'w':
+    {
+        if (isKeyword(scanner, 1, 11, "indow-width")) result = TOKEN_WINDOW_WIDTH;
+        else if (isKeyword(scanner, 1, 9, "indow-gap")) result = TOKEN_WINDOW_GAP;
+        else if (isKeyword(scanner, 1, 12, "idth-padding")) result = TOKEN_WIDTH_PADDING;
+        break;
+    }
+    case 'h': if (isKeyword(scanner, 1, 13, "eight-padding")) result = TOKEN_HEIGHT_PADDING; break;
+    case 'f':
+    {
+        if (isKeyword(scanner, 1, 7, "g-color")) result = TOKEN_FOREGROUND_COLOR;
+        else if (isKeyword(scanner, 1, 3, "ont")) result = TOKEN_FONT;
+        break;
+    }
+    case 's': if (isKeyword(scanner, 1, 4, "hell")) result = TOKEN_SHELL; break;
     default: break;
     }
 
@@ -295,7 +329,6 @@ getDescription(Scanner* scanner, Token* token)
     {
         switch (peek(scanner))
         {
-        /* case '\'': /\* NOTE possible return *\/ */
         case '\"': /* NOTE possible return */
         {
             makeToken(scanner, token, TOKEN_DESCRIPTION);
@@ -538,6 +571,41 @@ getInterpolation(Scanner* scanner, Token* token)
     }
 }
 
+static void
+getDouble(Scanner* scanner, Token* result)
+{
+    assert(scanner && result);
+
+    while (isDigit(peek(scanner))) advanceScanner(scanner);
+    if (peek(scanner) == '.')
+    {
+        advanceScanner(scanner);
+        while (isDigit(peek(scanner))) advanceScanner(scanner);
+    }
+
+    return makeToken(scanner, result, TOKEN_DOUBLE);
+}
+
+static void
+getInteger(Scanner* scanner, Token* result)
+{
+    assert(scanner && result);
+
+    while (isDigit(peek(scanner))) advanceScanner(scanner);
+
+    return makeToken(scanner, result, TOKEN_INTEGER);
+}
+
+static void
+getUnsignedInteger(Scanner* scanner, Token* result)
+{
+    assert(scanner && result);
+
+    while (isDigit(peek(scanner))) advanceScanner(scanner);
+
+    return makeToken(scanner, result, TOKEN_UNSIGNED_INTEGER);
+}
+
 void
 scanTokenForCompiler(Scanner* scanner, Token* result)
 {
@@ -600,7 +668,7 @@ scanTokenForCompiler(Scanner* scanner, Token* result)
 }
 
 void
-scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription)
+scanTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag)
 {
     assert(scanner && result);
 
@@ -615,11 +683,34 @@ scanTokenForPreprocessor(Scanner* scanner, Token* result, bool wantsDescription)
         case '\"':
         {
             /* Ignore if not scanning for descriptions, a.k.a. strings. */
-            if (!wantsDescription) break;
+            if (flag != SCANNER_WANTS_DESCRIPTION) break;
             makeScannerCurrent(scanner);
             return getDescription(scanner, result);
         }
-        default: break;
+        default:
+        {
+            /* Do nothing if scanner not searching for number. */
+            if (flag != SCANNER_WANTS_DOUBLE &&
+                flag != SCANNER_WANTS_INTEGER &&
+                flag != SCANNER_WANTS_UNSIGNED_INTEGER)
+            {
+                break;
+            }
+
+            if (flag == SCANNER_WANTS_INTEGER && (isDigit(c) || c == '-'))
+            {
+                return getInteger(scanner, result);
+            }
+            else if (flag == SCANNER_WANTS_UNSIGNED_INTEGER && isDigit(c))
+            {
+                return getUnsignedInteger(scanner, result);
+            }
+            else if (flag == SCANNER_WANTS_DOUBLE && isDigit(c))
+            {
+                return getDouble(scanner, result);
+            }
+            break;
+        }
         }
     }
 

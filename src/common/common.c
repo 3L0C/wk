@@ -18,18 +18,15 @@ void
 errorMsg(const char* fmt, ...)
 {
     assert(fmt);
-    static const int errorLen = strlen("[ERROR] ");
 
-    int len = strlen(fmt) + 1; /* 1 = '\0' */
-    char format[len + errorLen];
-    memcpy(format, "[ERROR] ", errorLen);
-    memcpy(format + errorLen, fmt, len);
+    fprintf(stderr, "[ERROR] ");
+    int len = strlen(fmt); /* 1 = '\0' */
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stderr, format, ap);
+    vfprintf(stderr, fmt, ap);
     va_end(ap);
 
-    fputc((fmt[len - 2] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len] == ':' ? ' ' : '\n'), stderr);
 }
 
 static void
@@ -157,7 +154,7 @@ parseArgs(WkMenu* menu, int* argc, char*** argv)
         }
         case 'p': menu->client.keys = optarg; break;
         case 'T': menu->client.transpile = optarg; break;
-        case 'k': menu->client.keyChordsFile = optarg; break;
+        case 'k': menu->client.wksFile = optarg; break;
         case 'w':
         {
             int n = 0;
@@ -329,16 +326,12 @@ warnMsg(const char* fmt, ...)
 {
     assert(fmt);
 
-    static const int warnLen = strlen("[WARNING] ");
-
+    fprintf(stderr, "[WARNING] ");
     int len = strlen(fmt) + 1; /* 1 = '\0' */
-    char format[len + warnLen];
-    memcpy(format, "[WARNING] ", warnLen);
-    memcpy(format + warnLen, fmt, len);
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stderr, format, ap);
+    vfprintf(stderr, fmt, ap);
     va_end(ap);
 
-    fputc((fmt[len - 2] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len] == ':' ? ' ' : '\n'), stderr);
 }

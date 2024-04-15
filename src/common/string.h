@@ -1,5 +1,5 @@
-#ifndef WK_LIB_STRING_H_
-#define WK_LIB_STRING_H_
+#ifndef WK_COMMON_STRING_H_
+#define WK_COMMON_STRING_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -21,4 +21,4 @@ void initFromCharString(String* string, char* source);
 void initString(String* string);
 void rtrimString(String* string);
 
-#endif /* WK_LIB_STRING_H_ */
+#endif /* WK_COMMON_STRING_H_ */

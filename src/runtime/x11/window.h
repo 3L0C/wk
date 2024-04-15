@@ -39,7 +39,7 @@ typedef struct
         uint32_t x, y, w, h;
     } root;
     CairoPaint paint;
-    void (*render)(Cairo* cairo, WkMenu* menu);
+    bool (*render)(Cairo* cairo, WkMenu* menu);
 } WkX11Window;
 
 typedef struct

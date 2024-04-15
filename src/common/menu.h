@@ -1,5 +1,5 @@
-#ifndef WK_LIB_MENU_H_
-#define WK_LIB_MENU_H_
+#ifndef WK_COMMON_MENU_H_
+#define WK_COMMON_MENU_H_
 
 #include <stdint.h>
 
@@ -69,10 +69,18 @@ typedef struct
     {
         const char* keys;
         const char* transpile;
-        const char* keyChordsFile;
+        const char* wksFile;
         bool tryScript;
         String script;
     } client;
+    struct Garbage
+    {
+        char* shell;
+        char* font;
+        char* foregroundColor;
+        char* backgroundColor;
+        char* borderColor;
+    } garbage;
     CleanupFP cleanupfp;
     void* xp;
 } WkMenu;
@@ -82,4 +90,4 @@ int displayMenu(WkMenu* menu);
 void initMenu(WkMenu* menu, WkKeyChord* keyChords);
 void setMenuColor(WkMenu* menu, const char* color, WkColor colorType);
 
-#endif /* WK_LIB_MENU_H_ */
+#endif /* WK_COMMON_MENU_H_ */
