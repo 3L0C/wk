@@ -8,6 +8,7 @@
 
 /* common includes */
 #include "common/common.h"
+#include "common/debug.h"
 #include "common/key_chord.h"
 #include "common/menu.h"
 #include "common/string.h"
@@ -742,6 +743,9 @@ compileChordArray(Compiler* compiler)
         );
     }
 
+    freeTokenArray(&descriptionTokens);
+    freeTokenArray(&commandTokens);
+
     return;
 
 fail:
@@ -770,6 +774,9 @@ setBeforeHook(KeyChord* parent, KeyChord* child)
     appendToString(&result, parent->before, strlen(parent->before));
     child->before = result.string;
     disownString(&result);
+
+    /* set syncBefore flag */
+    if (parent->flags.syncBefore) child->flags.syncBefore = parent->flags.syncBefore;
 }
 
 static void
@@ -785,6 +792,9 @@ setAfterHook(KeyChord* parent, KeyChord* child)
     appendToString(&result, parent->after, strlen(parent->after));
     child->before = result.string;
     disownString(&result);
+
+    /* set syncAfter flag */
+    if (parent->flags.syncAfter) child->flags.syncAfter = parent->flags.syncAfter;
 }
 
 static void
@@ -807,11 +817,9 @@ setFlags(KeyChordFlags* parent, KeyChordFlags* child)
     /* Children that opt out do not inherit */
     if (child->deflag) return;
 
-    if (parent->keep && !child->close) child->keep = parent->keep;
-    if (parent->write && !child->execute) child->write = parent->execute;
+    if (!child->close && parent->keep) child->keep = parent->keep;
+    if (!child->execute && parent->write) child->write = parent->write;
     if (parent->syncCommand) child->syncCommand = parent->syncCommand;
-    if (parent->syncBefore) child->syncBefore = parent->syncBefore;
-    if (parent->syncAfter) child->syncAfter = parent->syncAfter;
 }
 
 static void
@@ -844,21 +852,20 @@ compilePrefix(Compiler* compiler)
 {
     assert(compiler);
 
-    KeyChord* keyChord = &compiler->keyChord;
-
     /* Backup information */
     KeyChordArray* parent = compiler->keyChordPrefix;
     KeyChordArray* dest = compiler->keyChordDest;
-    KeyChord* source = keyChord->keyChords;
+    KeyChordArray  child = {0};
     uint32_t outerIndex = compiler->index;
     compiler->index = 0;
 
     /* advance */
     compiler->keyChordPrefix = compiler->keyChordDest;
-    writeKeyChordArray(compiler->keyChordDest, keyChord);
+    KeyChord* keyChord = writeKeyChordArray(compiler->keyChordDest, &compiler->keyChord);
+    compiler->keyChordDest = &child;
 
     /* start new scope */
-    initKeyChordArray(compiler->keyChordDest, &source);
+    initKeyChordArray(compiler->keyChordDest, &keyChord->keyChords);
 
     /* Compile children */
     while (!compilerIsAtEnd(compiler) && !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
@@ -904,13 +911,13 @@ compileKeyChords(Compiler* compiler, Menu* menu)
 
     /* Initialize globals */
     initKeyChord(&nullKeyChord);
-    nullKeyChord.state =KEY_CHORD_STATE_IS_NULL;
+    nullKeyChord.state = KEY_CHORD_STATE_IS_NULL;
     debug = menu->debug;
     delimiter = menu->delimiter;
     delimiterLen = strlen(delimiter);
 
-    KeyChord* keyChords = &menu->keyChordsHead;
-    initKeyChordArray(compiler->keyChordDest, &keyChords);
+    initKeyChordArray(&compiler->keyChords, &menu->keyChordsHead);
+    compiler->keyChordDest = &compiler->keyChords;
     if (debug) debugPrintScannedTokenHeader();
 
     advanceCompiler(compiler);
@@ -921,9 +928,13 @@ compileKeyChords(Compiler* compiler, Menu* menu)
 
     compileNullKeyChord(compiler);
 
-    if (debug) debugPrintScannedTokenFooter();
+    if (debug)
+    {
+        debugPrintScannedTokenFooter();
+        disassembleKeyChords(*compiler->keyChordDest->keyChords, 0);
+    }
 
-    return compiler->hadError ? NULL : *compiler->keyChords.keyChords;
+    return compiler->hadError ? NULL : *compiler->keyChordDest->keyChords;
 }
 
 void
@@ -936,7 +947,7 @@ initCompiler(Compiler* compiler, char *source, const char *filepath)
     compiler->panicMode = false;
     compiler->index = 0;
     initKeyChord(&compiler->keyChord);
-    compiler->keyChordDest = &compiler->keyChords;
+    compiler->keyChordDest = NULL;
     compiler->keyChordPrefix = NULL;
     compiler->source = source;
 }

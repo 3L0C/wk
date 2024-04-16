@@ -423,10 +423,8 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
         disassembleMenu(menu);
     }
     char* result = compilePieceTableToString(&pieceTable);
-    freePieceTable(&pieceTable);
-    return result;
 
 fail:
     freePieceTable(&pieceTable);
-    return NULL;
+    return scanner.hadError ? NULL : result;
 }

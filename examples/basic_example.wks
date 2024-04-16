@@ -1,0 +1,4 @@
+a "A description of %(key)" +write
+{
+     a "hello" %{{%(desc^^)}}
+}

@@ -160,9 +160,8 @@ initKeyChord(KeyChord* keyChord)
 void
 initKeyChordArray(KeyChordArray* dest, KeyChord** source)
 {
-    assert(dest && source);
+    assert(dest && source && !*source);
 
-    initKeyChord(*source);
     dest->keyChords = source;
     dest->count = 0;
     dest->capacity = 0;
@@ -264,12 +263,12 @@ resetKeyChordMods(KeyChordMods* mods)
     mods->shift = false;
 }
 
-void
+KeyChord*
 writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord)
 {
     assert(array && keyChord);
 
-    if (array->count + 1 == array->capacity)
+    if (array->count == array->capacity)
     {
         size_t oldCapacity = array->capacity;
         array->capacity = GROW_CAPACITY(oldCapacity);
@@ -277,5 +276,5 @@ writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord)
     }
 
     copyKeyChord(keyChord, &(*array->keyChords)[array->count]);
-    array->count++;
+    return &(*array->keyChords)[array->count++];
 }

@@ -314,7 +314,7 @@ disassembleKey(const Key* key)
 }
 
 
-static void
+void
 disassembleFlags(const KeyChordFlags* flags, int indent)
 {
     assert(flags);
@@ -337,6 +337,7 @@ disassembleFlags(const KeyChordFlags* flags, int indent)
     if (flags->nobefore) printf("NO_BEFORE%c", getDelim(&count, '|', '\n'));
     if (flags->noafter) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
     if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
+    if (flags->execute) printf("EXECUTE%c", getDelim(&count, '|', '\n'));
     if (flags->syncCommand) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
     if (flags->syncBefore) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
     if (flags->syncAfter) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));

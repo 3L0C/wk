@@ -10,6 +10,7 @@ void debugPrintHeader(const char* header);
 void debugPrintHeaderWithIndent(int indent, const char* header);
 void debugTextWithLineNumber(const char* text);
 void debugTextLenWithLineNumber(const char* text, size_t len);
+void disassembleFlags(const KeyChordFlags* flags, int indent);
 void disassembleGrid(uint32_t x, uint32_t y, uint32_t r, uint32_t c, uint32_t wp, uint32_t hp, uint32_t cw, uint32_t ch, uint32_t count);
 void disassembleHexColors(const MenuHexColor* colors);
 void disassembleKey(const Key* key);

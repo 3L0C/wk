@@ -76,14 +76,12 @@ compileSource(Compiler* compiler, char* source, const char* filepath)
 {
     assert(compiler && source && filepath);
 
-    /* Prevent invalid free on failure. */
-    mainMenu.keyChords = &mainMenu.keyChordsHead;
-
     initCompiler(compiler, source, filepath);
 
-    /* Compile lines, fail if there is nothing to compile. */
-    KeyChord* result = compileKeyChords(compiler, &mainMenu);
-    if (!result) return EX_DATAERR;
+    /* Compile lines, retruns null on error. */
+    mainMenu.keyChordsHead = mainMenu.keyChords = compileKeyChords(compiler, &mainMenu);
+    if (!mainMenu.keyChords) return EX_DATAERR;
+
     return EX_OK;
 }
 
@@ -95,7 +93,11 @@ runMenu(void)
     countMenuKeyChords(&mainMenu);
 
     /* Pre-press keys */
-    if (mainMenu.client.keys) status = pressKeys(&mainMenu, mainMenu.client.keys);
+    if (mainMenu.client.keys)
+    {
+        if (mainMenu.debug) debugMsg(true, "Trying to press key(s): '%s'.", mainMenu.client.keys);
+        status = pressKeys(&mainMenu, mainMenu.client.keys);
+    }
 
     /* If keys were pre-pressed there may be nothing to do, or an error to report. */
     if (status == MENU_STATUS_EXIT_SOFTWARE)
@@ -125,18 +127,18 @@ runSource(const char* source, const char* filepath)
     if (!processedSource) return EX_DATAERR;
 
     /* Begin compilation */
-    Compiler compiler;
+    Compiler compiler = {0};
     result = compileSource(&compiler, processedSource, filepath);
     if (result != EX_OK)
     {
-        errorMsg("Could not compile script.");
-        goto compile_fail;
+        errorMsg("Could not compile `wks` file: '%s'.", filepath);
+        goto fail;
     }
 
     result = runMenu();
 
-compile_fail:
-    freeKeyChords(&mainMenu.keyChordsHead);
+fail:
+    freeKeyChords(mainMenu.keyChordsHead);
     free(processedSource);
     return result;
 }
@@ -164,10 +166,9 @@ transpile(void)
     if (result != EX_OK) goto fail;
 
     /* Well formed file, write to stdout. */
-    writeBuiltinKeyChordsHeaderFile(&mainMenu.keyChordsHead);
+    writeBuiltinKeyChordsHeaderFile(mainMenu.keyChordsHead);
 
 fail:
-    free(compiler.source);
     free(processedSource);
 end:
     free(source);

@@ -61,7 +61,7 @@ typedef struct
     const char* shell;
     const char* font;
     KeyChord* keyChords;
-    KeyChord keyChordsHead;
+    KeyChord* keyChordsHead;
     uint32_t keyChordCount;
     bool debug;
     bool dirty;

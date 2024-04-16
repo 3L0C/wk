@@ -161,6 +161,6 @@ bool keyIsStrictlyMod(const Key* key);
 void makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords);
 void resetKeyChordFlags(KeyChordFlags* flags);
 void resetKeyChordMods(KeyChordMods* mods);
-void writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord);
+KeyChord* writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord);
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

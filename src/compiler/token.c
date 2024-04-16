@@ -365,7 +365,7 @@ writeTokenArray(TokenArray* tokens, Token* token)
 {
     assert(tokens && token);
 
-    if (tokens->capacity < tokens->count + 1)
+    if (tokens->count == tokens->capacity)
     {
         size_t oldCapacity = tokens->capacity;
         tokens->capacity = GROW_CAPACITY(oldCapacity);

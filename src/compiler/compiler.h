@@ -5,9 +5,9 @@
 
 /* common includes */
 #include "common/key_chord.h"
+#include "common/menu.h"
 
 /* local includes */
-#include "common/menu.h"
 #include "token.h"
 #include "scanner.h"
 

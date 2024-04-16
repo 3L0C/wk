@@ -1,2 +1,0 @@
-:include "include_mpv_example.wks"
-b "Browsers" %{{echo nope}} :include "include_browsers_example.wks"

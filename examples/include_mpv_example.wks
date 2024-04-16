@@ -1,4 +1,0 @@
-m "mpv"
-{
-    o "Open" %{{mpv --keep-open}}
-}

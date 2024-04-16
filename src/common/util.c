@@ -50,6 +50,8 @@ countKeyChords(const KeyChord* keyChords)
 static bool
 modsEqual(const KeyChordMods* a, const KeyChordMods* b, bool checkShift)
 {
+    assert(a && b);
+
     if (checkShift)
     {
         return (
@@ -67,8 +69,10 @@ modsEqual(const KeyChordMods* a, const KeyChordMods* b, bool checkShift)
 }
 
 static bool
-isSpecialKey(const KeyChord* keyChord, Key* key)
+isSpecialKey(const KeyChord* keyChord, const Key* key)
 {
+    assert(keyChord && key);
+
     return (
         key->special != SPECIAL_KEY_NONE &&
         keyChord->special == key->special &&
@@ -77,8 +81,10 @@ isSpecialKey(const KeyChord* keyChord, Key* key)
 }
 
 static bool
-isKey(const KeyChord* keyChord, Key* key)
+isKey(const KeyChord* keyChord, const Key* key)
 {
+    assert(keyChord && key);
+
     if (isSpecialKey(keyChord, key)) return true;
     return (
         modsEqual(&keyChord->mods, &key->mods, false) &&
@@ -90,6 +96,8 @@ isKey(const KeyChord* keyChord, Key* key)
 static MenuStatus
 handlePrefix(Menu* menu, const KeyChord* keyChord)
 {
+    assert(menu && keyChord);
+
     debugMsg(menu->debug, "Found prefix.");
 
     menu->keyChords = keyChord->keyChords;
@@ -98,25 +106,29 @@ handlePrefix(Menu* menu, const KeyChord* keyChord)
 }
 
 static void
-handleCommand(Menu* props, const KeyChord* keyChord)
+handleCommand(Menu* menu, const KeyChord* keyChord)
 {
+    assert(menu && keyChord);
+
     if (keyChord->flags.write)
     {
         printf("%s\n", keyChord->command);
         return;
     }
-    spawn(props, keyChord->command, keyChord->flags.syncCommand);
+    spawn(menu, keyChord->command, keyChord->flags.syncCommand);
 }
 
 static MenuStatus
-handleCommands(Menu* props, const KeyChord* keyChord)
+handleCommands(Menu* menu, const KeyChord* keyChord)
 {
+    assert(menu && keyChord);
+
     /* no command */
     if (!keyChord->command) return MENU_STATUS_EXIT_OK;
 
-    if (keyChord->before) spawn(props, keyChord->before, keyChord->flags.syncBefore);
-    handleCommand(props, keyChord);
-    if (keyChord->after) spawn(props, keyChord->after, keyChord->flags.syncAfter);
+    if (keyChord->before) spawn(menu, keyChord->before, keyChord->flags.syncBefore);
+    handleCommand(menu, keyChord);
+    if (keyChord->after) spawn(menu, keyChord->after, keyChord->flags.syncAfter);
     return keyChord->flags.keep ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
 }
 
@@ -130,8 +142,10 @@ pressKey(Menu* menu, const KeyChord* keyChord)
 }
 
 MenuStatus
-handleKeypress(Menu* menu, Key* key)
+handleKeypress(Menu* menu, const Key* key)
 {
+    assert(menu && key);
+
     uint32_t len = menu->keyChordCount;
     const KeyChord* keyChords = menu->keyChords;
 
@@ -214,7 +228,7 @@ spawnAsync(const char* shell, const char* cmd)
 }
 
 MenuStatus
-spawn(Menu* menu, const char* cmd, bool sync)
+spawn(const Menu* menu, const char* cmd, bool sync)
 {
     assert(menu && cmd);
 

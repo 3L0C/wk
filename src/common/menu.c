@@ -27,7 +27,6 @@ countMenuKeyChords(Menu* menu)
 {
     assert(menu);
 
-    debugMsg(menu->debug, "Here?");
     menu->keyChordCount = countKeyChords(menu->keyChords);
 }
 
@@ -122,7 +121,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->shell = shell;
     menu->font = font;
     menu->keyChords = keyChords;
-    initKeyChord(&menu->keyChordsHead);
+    menu->keyChords = NULL;
     menu->keyChordCount = 0;
     menu->debug = false;
     menu->dirty = true;

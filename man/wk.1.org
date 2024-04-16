@@ -3,7 +3,7 @@
 
 * NAME
 
-wk - which-key via X11 and Wayland, inspired by *dmenu* and
+wk - Which-Key via X11 and Wayland, inspired by *dmenu* and
 *bemenu* respectively.
 
 * SYNOPSIS
