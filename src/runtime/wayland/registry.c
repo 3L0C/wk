@@ -360,6 +360,48 @@ touchHandleCancel(void* data, struct wl_touch* touch)
     (void)data, (void)touch;
 }
 
+static TouchPoint *
+getTouchPoint(Input *input, int32_t id)
+{
+    TouchEvent *touch = &input->touchEvent;
+    int invalid = -1;
+    for (size_t i = 0; i < 2; ++i)
+    {
+        if (touch->points[i].id == id) invalid = i;
+        if (invalid == -1 && !touch->points[i].valid) invalid = i;
+    }
+    if (invalid == -1) return NULL;
+    touch->points[invalid].id = id;
+    return &touch->points[invalid];
+}
+
+static void
+resetAllStartPosition(Input* input)
+{
+    TouchEvent* event = &input->touchEvent;
+    for (size_t i = 0; i < 2; ++i)
+    {
+        TouchPoint* point = &event->points[i];
+
+        if (!point->valid) continue;
+
+        point->surfaceStartX = point->surfaceX;
+        point->surfaceStartY = point->surfaceY;
+    }
+}
+
+static void
+revalidateAllReleased(Input* input)
+{
+    TouchEvent* event = &input->touchEvent;
+    for (size_t i = 0; i < 2; ++i)
+    {
+        TouchPoint* point = &event->points[i];
+
+        if (!point->valid && point->eventMask & TOUCH_EVENT_DOWN) point->valid = true;
+    }
+}
+
 static void
 touchHandleDown(
     void* data,
@@ -371,8 +413,21 @@ touchHandleDown(
     wl_fixed_t x,
     wl_fixed_t y)
 {
-    /* TODO exit on touch event */
-    (void)data, (void)touch, (void)serial, (void)time, (void)surface, (void)id, (void)x, (void)y;
+    (void) touch, (void) surface;
+    Input* input = data;
+    TouchPoint* point = getTouchPoint(input, id);
+    if (point == NULL) return;
+
+    point->valid = true;
+    point->eventMask = TOUCH_EVENT_DOWN;
+    point->surfaceX = x,
+    point->surfaceY = y;
+    input->touchEvent.time = time;
+    input->touchEvent.serial = serial;
+    input->touchEvent.active += 1;
+
+    revalidateAllReleased(input);
+    resetAllStartPosition(input);
 }
 
 static void
@@ -408,8 +463,15 @@ touchHandleShape(void* data, struct wl_touch* touch, int32_t id, wl_fixed_t majo
 static void
 touchHandleUp(void* data, struct wl_touch* touch, uint32_t serial, uint32_t time, int32_t id)
 {
-    /* TODO exit on touch event */
-    (void)data, (void)touch, (void)serial, (void)time, (void)id;
+    (void) time, (void) touch, (void) serial;
+    Input* input = data;
+    TouchPoint* point = getTouchPoint(input, id);
+    if (point == NULL) return;
+
+    point->eventMask |= TOUCH_EVENT_UP;
+    input->touchEvent.active -= 1;
+
+    resetAllStartPosition(input);
 }
 
 static const struct wl_pointer_listener pointerListener = {

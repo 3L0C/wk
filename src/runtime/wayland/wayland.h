@@ -13,14 +13,24 @@
 
 typedef enum
 {
-    POINTER_EVENT_ENTER         = 1 << 0,
-    POINTER_EVENT_LEAVE         = 1 << 1,
-    POINTER_EVENT_MOTION        = 1 << 2,
-    POINTER_EVENT_BUTTON        = 1 << 3,
-    POINTER_EVENT_AXIS          = 1 << 4,
-    POINTER_EVENT_AXIS_SOURCE   = 1 << 5,
-    POINTER_EVENT_AXIS_STOP     = 1 << 6,
-    POINTER_EVENT_AXIS_DISCRETE = 1 << 7,
+    TOUCH_EVENT_DOWN = (1 << 0),
+    TOUCH_EVENT_UP = (1 << 1),
+    TOUCH_EVENT_MOTION = (1 << 2),
+    TOUCH_EVENT_CANCEL = (1 << 3),
+    TOUCH_EVENT_SHAPE = (1 << 4),
+    TOUCH_EVENT_ORIENTATION = (1 << 5),
+} TouchEventMask;
+
+typedef enum
+{
+    POINTER_EVENT_ENTER = (1 << 0),
+    POINTER_EVENT_LEAVE = (1 << 1),
+    POINTER_EVENT_MOTION = (1 << 2),
+    POINTER_EVENT_BUTTON = (1 << 3),
+    POINTER_EVENT_AXIS = (1 << 4),
+    POINTER_EVENT_AXIS_SOURCE = (1 << 5),
+    POINTER_EVENT_AXIS_STOP = (1 << 6),
+    POINTER_EVENT_AXIS_DISCRETE = (1 << 7),
 } PointerEventMask;
 
 typedef struct
@@ -52,6 +62,28 @@ typedef struct
 
 typedef struct
 {
+    bool valid;
+    int32_t id;
+    uint32_t eventMask;
+    wl_fixed_t surfaceX;
+    wl_fixed_t surfaceY;
+    wl_fixed_t surfaceStartX;
+    wl_fixed_t surfaceStartY;
+    wl_fixed_t major;
+    wl_fixed_t minor;
+    wl_fixed_t orientation;
+} TouchPoint;
+
+typedef struct
+{
+    uint32_t time;
+    uint32_t serial;
+    uint16_t active;
+    TouchPoint points[2];
+} TouchEvent;
+
+typedef struct
+{
     int* repeatFd;
 
     struct wl_seat* seat;
@@ -59,6 +91,7 @@ typedef struct
     struct wl_pointer* pointer;
     struct wl_touch* touch;
     PointerEvent pointerEvent;
+    TouchEvent touchEvent;
     Xkb xkb;
 
     xkb_keysym_t keysym;

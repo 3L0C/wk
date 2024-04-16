@@ -253,6 +253,27 @@ pollPointer(Wayland* wayland)
     return result;
 }
 
+static bool
+pollTouch(Wayland* wayland)
+{
+    assert(wayland);
+
+    bool result = false;
+    TouchEvent* event = &wayland->input.touchEvent;
+    for (size_t i = 0; i < 2; i++)
+    {
+        TouchPoint* point = &event->points[i];
+        if (point->eventMask & TOUCH_EVENT_DOWN)
+        {
+            result = true;
+            break;
+        }
+    }
+
+    memset(event, 0, sizeof(*event));
+    return result;
+}
+
 static void
 destroyWindows(Wayland* wayland)
 {
@@ -478,9 +499,14 @@ runWayland(Menu* menu)
         errorMsg("Failed to create Wayland structure.");
         return EX_SOFTWARE;
     }
+
     MenuStatus status = MENU_STATUS_EXIT_SOFTWARE;
     do
     {
+        /* Exit on pointer and touch events */
+        if (pollPointer(&wayland)) break;
+        if (pollTouch(&wayland)) break;
+
         render(menu, &wayland);
         switch (status = pollKey(menu, &wayland))
         {
@@ -489,9 +515,6 @@ runWayland(Menu* menu)
         case MENU_STATUS_EXIT_OK: result = EX_OK; break;
         case MENU_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
-
-        /* Exit on pointer events */
-        if (pollPointer(&wayland)) break;
 
         if (debug) disassembleStatus(status);
     }
