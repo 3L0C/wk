@@ -145,7 +145,7 @@ fail:
 
 /* Read the given '.wks' file, and transpile it into chords.h syntax. */
 static int
-transpile(void)
+transpileWksFile(void)
 {
     int result = EX_SOFTWARE;
 
@@ -168,6 +168,7 @@ transpile(void)
     /* Well formed file, write to stdout. */
     writeBuiltinKeyChordsHeaderFile(mainMenu.keyChordsHead);
 
+    freeKeyChords(mainMenu.keyChordsHead);
 fail:
     free(processedSource);
 end:
@@ -229,7 +230,7 @@ main(int argc, char** argv)
 
     if (mainMenu.client.transpile)
     {
-        result = transpile();
+        result = transpileWksFile();
     }
     else if (mainMenu.client.tryScript)
     {

@@ -121,7 +121,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->shell = shell;
     menu->font = font;
     menu->keyChords = keyChords;
-    menu->keyChords = NULL;
+    menu->keyChordsHead = NULL;
     menu->keyChordCount = 0;
     menu->debug = false;
     menu->dirty = true;

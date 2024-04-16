@@ -679,6 +679,18 @@ scanTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag)
         char c = advanceScanner(scanner);
         switch (c)
         {
+        case '%':
+        {
+            if (matchScanner(scanner, '{') && matchScanner(scanner, '{'))
+            {
+                while (!isAtEnd(scanner))
+                {
+                    char e = advanceScanner(scanner);
+                    if (e == '}' && matchScanner(scanner, '}')) break;
+                }
+            }
+            break;
+        }
         case ':': makeScannerCurrent(scanner); return getPreprocessorMacro(scanner, result);
         case '\"':
         {

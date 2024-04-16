@@ -660,8 +660,8 @@ compileMissingKeyChordInfo(
     if (!to->description) compileStringFromTokens(descriptionTokens, to, &to->description, index);
     if (!to->hint) compileHint(compiler, to);
     if (!to->command) compileStringFromTokens(commandTokens, to, &to->command, index);
-    if (!to->before) compileString(from->before, &to->before);
-    if (!to->after) compileString(from->after, &to->after);
+    if (!to->before && from->before) compileString(from->before, &to->before);
+    if (!to->after && from->after) compileString(from->after, &to->after);
     if (keyChordHasDefaultFlags(&to->flags)) copyKeyChordFlags(&from->flags, &to->flags);
 }
 
