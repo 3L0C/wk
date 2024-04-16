@@ -17,7 +17,7 @@
 #include "token.h"
 
 static bool
-addMod(Key* key, TokenType type)
+addMod(KeyChordKey* key, TokenType type)
 {
     switch (type)
     {
@@ -32,9 +32,9 @@ addMod(Key* key, TokenType type)
 }
 
 static bool
-addSpecial(Key* key, TokenType type)
+addSpecial(KeyChordKey* key, TokenType type)
 {
-    key->key = NULL;
+    key->repr = NULL;
 
     switch (type)
     {
@@ -66,7 +66,7 @@ pressKey(Menu* menu, Scanner* scanner)
     static const size_t bufmax = 32;
     char buffer[bufmax];
     memset(buffer, 0, 32);
-    Key key = {0};
+    KeyChordKey key = {0};
     Token token = {0};
     initToken(&token);
     scanTokenForCompiler(scanner, &token);
@@ -86,7 +86,7 @@ pressKey(Menu* menu, Scanner* scanner)
         }
         memcpy(buffer, token.start, token.length);
         buffer[token.length] = '\0';
-        key.key = buffer;
+        key.repr = buffer;
         key.len = token.length;
     }
     else if (!addSpecial(&key, token.type))

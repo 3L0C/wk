@@ -482,9 +482,9 @@ getSpecialKey(KeySym keysym)
 }
 
 static KeyType
-processKey(Key* key, unsigned int state, KeySym keysym, const char* buffer, int len)
+processKey(KeyChordKey* key, unsigned int state, KeySym keysym, char* buffer, int len)
 {
-    key->key = buffer;
+    key->repr = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, state);
     key->special = getSpecialKey(keysym);
@@ -502,7 +502,7 @@ keypress(XKeyEvent* keyEvent)
     Status status;
     char buffer[32] = {0};
     int len;
-    Key key = {0};
+    KeyChordKey key = {0};
     unsigned int state = keyEvent->state;
 
     keyEvent->state &= ~(ControlMask);

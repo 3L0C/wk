@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
-#include "config/key_chords.h"
+#include "config/test.h"
 
 /* common includes */
 #include "common/common.h"
@@ -28,7 +28,7 @@ freeKeyChords(KeyChord* keyChords)
 
     for (size_t i = 0; keyChords[i].state == KEY_CHORD_STATE_NOT_NULL; i++)
     {
-        free(keyChords[i].key);
+        free(keyChords[i].key.repr);
         free(keyChords[i].description);
         free(keyChords[i].hint);
         free(keyChords[i].command);

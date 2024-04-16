@@ -69,27 +69,27 @@ modsEqual(const KeyChordMods* a, const KeyChordMods* b, bool checkShift)
 }
 
 static bool
-isSpecialKey(const KeyChord* keyChord, const Key* key)
+isSpecialKey(const KeyChord* keyChord, const KeyChordKey* key)
 {
     assert(keyChord && key);
 
     return (
         key->special != SPECIAL_KEY_NONE &&
-        keyChord->special == key->special &&
-        modsEqual(&keyChord->mods, &key->mods, true)
+        keyChord->key.special == key->special &&
+        modsEqual(&keyChord->key.mods, &key->mods, true)
     );
 }
 
 static bool
-isKey(const KeyChord* keyChord, const Key* key)
+isKey(const KeyChord* keyChord, const KeyChordKey* key)
 {
     assert(keyChord && key);
 
     if (isSpecialKey(keyChord, key)) return true;
     return (
-        modsEqual(&keyChord->mods, &key->mods, false) &&
-        keyChord->special == key->special &&
-        strcmp(keyChord->key, key->key) == 0
+        modsEqual(&keyChord->key.mods, &key->mods, false) &&
+        keyChord->key.special == key->special &&
+        strcmp(keyChord->key.repr, key->repr) == 0
     );
 }
 
@@ -142,7 +142,7 @@ pressKey(Menu* menu, const KeyChord* keyChord)
 }
 
 MenuStatus
-handleKeypress(Menu* menu, const Key* key)
+handleKeypress(Menu* menu, const KeyChordKey* key)
 {
     assert(menu && key);
 

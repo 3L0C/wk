@@ -176,9 +176,9 @@ getSpecialKey(xkb_keysym_t keysym)
 }
 
 static KeyType
-processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, size_t len)
+processKey(KeyChordKey* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t len)
 {
-    key->key = buffer;
+    key->repr = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, mods);
     key->special = getSpecialKey(keysym);
@@ -204,7 +204,7 @@ pollKey(Menu* props, Wayland* wayland)
     struct xkb_state* cleanState = xkbCleanState(wayland->input.xkb.state, wayland->input.xkb.group);
     char buffer[32] = {0};
     size_t size = 32;
-    Key key = {0};
+    KeyChordKey key = {0};
     size_t len = xkb_state_key_get_utf8(
         cleanState, wayland->input.code, buffer, size
     );

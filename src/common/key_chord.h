@@ -41,12 +41,28 @@
         .syncAfter = (_syncAfter),      \
     }
 
+/* key macros */
+#define MAKE_KEY(                       \
+    _ctrl, _alt, _hyper, _shift,        \
+    _special,                           \
+    _key, _len                          \
+)                                       \
+    (KeyChordKey){                      \
+        MAKE_MODS((_ctrl), (_alt),      \
+                  (_hyper), (_shift)),  \
+        (_special), (_key), (_len)      \
+    }
+
+#define MAKE_NULL_KEY \
+    MAKE_KEY(false, false, false, false, \
+             SPECIAL_KEY_NONE, NULL, -1)
+
 /* chord macros */
 #define NULL_KEY_CHORD                          \
     {                                           \
         KEY_CHORD_STATE_IS_NULL,                \
-        (KeyChordMods){0}, SPECIAL_KEY_NONE,    \
-        NULL, NULL, NULL,                       \
+        MAKE_NULL_KEY,                          \
+        NULL, NULL,                             \
         NULL,                                   \
         NULL,                                   \
         NULL,                                   \
@@ -118,16 +134,14 @@ typedef struct
 {
     KeyChordMods mods;
     SpecialKey special;
-    const char* key;
+    char* repr;
     int len;
-} Key;
+} KeyChordKey;
 
 typedef struct KeyChord
 {
     KeyChordState state;
-    KeyChordMods mods;
-    SpecialKey special;
-    char* key;
+    KeyChordKey key;
     char* description;
     char* hint;
     char* command;
@@ -153,9 +167,9 @@ void initKeyChord(KeyChord* keyChord);
 void initKeyChordArray(KeyChordArray* dest, KeyChord** source);
 bool isKeyChordMod(const KeyChordMods* mods);
 bool keyChordHasDefaultFlags(const KeyChordFlags* flags);
-bool keyIsNormal(const Key* key);
-bool keyIsSpecial(const Key* key);
-bool keyIsStrictlyMod(const Key* key);
+bool keyIsNormal(const KeyChordKey* key);
+bool keyIsSpecial(const KeyChordKey* key);
+bool keyIsStrictlyMod(const KeyChordKey* key);
 void makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords);
 KeyChord* writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord);
 

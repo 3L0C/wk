@@ -147,9 +147,9 @@ initKeyChord(KeyChord* keyChord)
     assert(keyChord);
 
     keyChord->state = KEY_CHORD_STATE_NOT_NULL;
-    resetKeyChordMods(&keyChord->mods);
-    keyChord->special = SPECIAL_KEY_NONE;
-    keyChord->key = NULL;
+    resetKeyChordMods(&keyChord->key.mods);
+    keyChord->key.special = SPECIAL_KEY_NONE;
+    keyChord->key.repr = NULL;
     keyChord->description = NULL;
     keyChord->hint = NULL;
     keyChord->command = NULL;
@@ -198,19 +198,19 @@ keyChordHasDefaultFlags(const KeyChordFlags* flags)
 }
 
 bool
-keyIsNormal(const Key* key)
+keyIsNormal(const KeyChordKey* key)
 {
-    return (!keyIsSpecial(key) && *key->key != '\0');
+    return (!keyIsSpecial(key) && *key->repr != '\0');
 }
 
 bool
-keyIsSpecial(const Key* key)
+keyIsSpecial(const KeyChordKey* key)
 {
     return (key->special != SPECIAL_KEY_NONE);
 }
 
 bool
-keyIsStrictlyMod(const Key* key)
+keyIsStrictlyMod(const KeyChordKey* key)
 {
     return (isKeyChordMod(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
 }
@@ -250,9 +250,9 @@ copyKeyChord(KeyChord* from, KeyChord* to)
     assert(from && to);
 
     to->state = from->state;
-    copyKeyChordMods(&from->mods, &to->mods);
-    to->special = from->special;
-    to->key = from->key;
+    copyKeyChordMods(&from->key.mods, &to->key.mods);
+    to->key.special = from->key.special;
+    to->key.repr = from->key.repr;
     to->description = from->description;
     to->hint = from->hint;
     to->command = from->command;

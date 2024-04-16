@@ -293,7 +293,7 @@ debugString(const char* text, const char* value, int indent)
 }
 
 void
-disassembleKey(const Key* key)
+disassembleKey(const KeyChordKey* key)
 {
     assert(key);
 
@@ -306,7 +306,7 @@ disassembleKey(const Key* key)
     }
     else
     {
-        debugString("Key", key->key, 0);
+        debugString("Key", key->repr, 0);
     }
     debugMsgWithIndent(0, "| Length:            %04d", key->len);
     debugMsgWithIndent(0, "|");
@@ -348,8 +348,8 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
-    disassembleMod(&keyChord->mods, indent);
-    disassembleSpecial(keyChord->special, indent);
+    disassembleMod(&keyChord->key.mods, indent);
+    disassembleSpecial(keyChord->key.special, indent);
     debugMsgWithIndent(indent, "| Key:               '%s'", keyChord->key);
     debugMsgWithIndent(indent, "| Description:       \"%s\"", keyChord->description);
     debugMsgWithIndent(indent, "| Hint:              '%s'", keyChord->hint);

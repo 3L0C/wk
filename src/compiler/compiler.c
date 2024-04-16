@@ -156,7 +156,7 @@ compileMods(Compiler* compiler, KeyChord* keyChord)
     TokenType type = currentType(compiler);
     while (isTokenModType(type))
     {
-        addMod(type, &keyChord->mods);
+        addMod(type, &keyChord->key.mods);
         type = advanceCompiler(compiler);
     }
 }
@@ -200,7 +200,7 @@ compileKeyFromToken(Compiler* compiler, KeyChord* keyChord)
     String result = {0};
     initString(&result);
     appendToString(&result, token->start, token->length);
-    keyChord->key = result.string;
+    keyChord->key.repr = result.string;
     disownString(&result);
 }
 
@@ -235,7 +235,7 @@ compileDescription(Compiler* compiler, KeyChord* keyChord)
         Token* token = currentToken(compiler);
         switch (token->type)
         {
-        case TOKEN_THIS_KEY: appendToString(&result, keyChord->key, strlen(keyChord->key)); break;
+        case TOKEN_THIS_KEY: appendToString(&result, keyChord->key.repr, strlen(keyChord->key.repr)); break;
         case TOKEN_INDEX: appendUInt32ToString(&result, compiler->index); break;
         case TOKEN_INDEX_ONE: appendUInt32ToString(&result, compiler->index + 1); break;
         case TOKEN_DESC_INTERP: /* FALLTHROUGH */
@@ -281,7 +281,7 @@ compileCommand(Compiler* compiler, KeyChord* keyChord, char** dest)
         {
         case TOKEN_THIS_KEY:
         {
-            appendToString(&result, keyChord->key, strlen(keyChord->key));
+            appendToString(&result, keyChord->key.repr, strlen(keyChord->key.repr));
             break;
         }
         case TOKEN_THIS_DESC:
@@ -357,7 +357,12 @@ compileHint(Compiler* compiler, KeyChord* keyChord)
 
     String result = {0};
     initString(&result);
-    appendToString(&result, keyChord->key, strlen(keyChord->key));
+    KeyChordMods* mods = &keyChord->key.mods;
+    if (mods->ctrl) appendToString(&result, "C-", strlen("C-"));
+    if (mods->alt) appendToString(&result, "A-", strlen("A-"));
+    if (mods->hyper) appendToString(&result, "H-", strlen("H-"));
+    if (mods->shift) appendToString(&result, "S-", strlen("S-"));
+    appendToString(&result, keyChord->key.repr, strlen(keyChord->key.repr));
     appendToString(&result, delimiter, delimiterLen);
     appendToString(&result, keyChord->description, strlen(keyChord->description));
     keyChord->hint = result.string;
@@ -578,7 +583,7 @@ compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t in
         Token* token = &tokens->tokens[i];
         switch (token->type)
         {
-        case TOKEN_THIS_KEY: appendToString(&result, to->key, strlen(to->key)); break;
+        case TOKEN_THIS_KEY: appendToString(&result, to->key.repr, strlen(to->key.repr)); break;
         case TOKEN_THIS_DESC:
         {
             appendToString(&result, to->description, strlen(to->description));
