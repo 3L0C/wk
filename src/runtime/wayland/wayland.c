@@ -20,7 +20,7 @@
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/menu.h"
-#include "common/types.h"
+#include "common/key_chord.h"
 #include "common/util.h"
 
 /* runtime includes */
@@ -34,39 +34,39 @@
 
 typedef struct
 {
-    WkSpecial special;
+    SpecialKey special;
     xkb_keysym_t keysym;
-} SpecialKey;
+} WaylandSpecialKey;
 
-static const SpecialKey specialkeys[] = {
-    { WK_SPECIAL_NONE,      XKB_KEY_NoSymbol },
-    { WK_SPECIAL_LEFT,      XKB_KEY_Left },
-    { WK_SPECIAL_LEFT,      XKB_KEY_KP_Left },
-    { WK_SPECIAL_RIGHT,     XKB_KEY_Right },
-    { WK_SPECIAL_RIGHT,     XKB_KEY_KP_Right },
-    { WK_SPECIAL_UP,        XKB_KEY_Up },
-    { WK_SPECIAL_UP,        XKB_KEY_KP_Up },
-    { WK_SPECIAL_DOWN,      XKB_KEY_Down },
-    { WK_SPECIAL_DOWN,      XKB_KEY_KP_Down },
-    { WK_SPECIAL_TAB,       XKB_KEY_Tab },
-    { WK_SPECIAL_TAB,       XKB_KEY_KP_Tab },
-    { WK_SPECIAL_SPACE,     XKB_KEY_space },
-    { WK_SPECIAL_SPACE,     XKB_KEY_KP_Space },
-    { WK_SPECIAL_RETURN,    XKB_KEY_Return },
-    { WK_SPECIAL_RETURN,    XKB_KEY_KP_Enter },
-    { WK_SPECIAL_DELETE,    XKB_KEY_Delete },
-    { WK_SPECIAL_DELETE,    XKB_KEY_KP_Delete },
-    { WK_SPECIAL_ESCAPE,    XKB_KEY_Escape },
-    { WK_SPECIAL_HOME,      XKB_KEY_Home },
-    { WK_SPECIAL_HOME,      XKB_KEY_KP_Home },
-    { WK_SPECIAL_PAGE_UP,   XKB_KEY_Page_Up },
-    { WK_SPECIAL_PAGE_UP,   XKB_KEY_KP_Page_Up },
-    { WK_SPECIAL_PAGE_DOWN, XKB_KEY_Page_Down },
-    { WK_SPECIAL_PAGE_DOWN, XKB_KEY_KP_Page_Down },
-    { WK_SPECIAL_END,       XKB_KEY_End },
-    { WK_SPECIAL_END,       XKB_KEY_KP_End },
-    { WK_SPECIAL_BEGIN,     XKB_KEY_Begin },
-    { WK_SPECIAL_BEGIN,     XKB_KEY_KP_Begin }
+static const WaylandSpecialKey specialkeys[] = {
+    { SPECIAL_KEY_NONE,      XKB_KEY_NoSymbol },
+    { SPECIAL_KEY_LEFT,      XKB_KEY_Left },
+    { SPECIAL_KEY_LEFT,      XKB_KEY_KP_Left },
+    { SPECIAL_KEY_RIGHT,     XKB_KEY_Right },
+    { SPECIAL_KEY_RIGHT,     XKB_KEY_KP_Right },
+    { SPECIAL_KEY_UP,        XKB_KEY_Up },
+    { SPECIAL_KEY_UP,        XKB_KEY_KP_Up },
+    { SPECIAL_KEY_DOWN,      XKB_KEY_Down },
+    { SPECIAL_KEY_DOWN,      XKB_KEY_KP_Down },
+    { SPECIAL_KEY_TAB,       XKB_KEY_Tab },
+    { SPECIAL_KEY_TAB,       XKB_KEY_KP_Tab },
+    { SPECIAL_KEY_SPACE,     XKB_KEY_space },
+    { SPECIAL_KEY_SPACE,     XKB_KEY_KP_Space },
+    { SPECIAL_KEY_RETURN,    XKB_KEY_Return },
+    { SPECIAL_KEY_RETURN,    XKB_KEY_KP_Enter },
+    { SPECIAL_KEY_DELETE,    XKB_KEY_Delete },
+    { SPECIAL_KEY_DELETE,    XKB_KEY_KP_Delete },
+    { SPECIAL_KEY_ESCAPE,    XKB_KEY_Escape },
+    { SPECIAL_KEY_HOME,      XKB_KEY_Home },
+    { SPECIAL_KEY_HOME,      XKB_KEY_KP_Home },
+    { SPECIAL_KEY_PAGE_UP,   XKB_KEY_Page_Up },
+    { SPECIAL_KEY_PAGE_UP,   XKB_KEY_KP_Page_Up },
+    { SPECIAL_KEY_PAGE_DOWN, XKB_KEY_Page_Down },
+    { SPECIAL_KEY_PAGE_DOWN, XKB_KEY_KP_Page_Down },
+    { SPECIAL_KEY_END,       XKB_KEY_End },
+    { SPECIAL_KEY_END,       XKB_KEY_KP_End },
+    { SPECIAL_KEY_BEGIN,     XKB_KEY_Begin },
+    { SPECIAL_KEY_BEGIN,     XKB_KEY_KP_Begin }
 };
 
 static const size_t specialkeysLen = sizeof(specialkeys) / sizeof(specialkeys[0]);
@@ -75,7 +75,7 @@ static int efd;
 static bool debug = false;
 
 static void
-renderWindowsIfPending(WkMenu* props, Wayland* wayland)
+renderWindowsIfPending(Menu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:renderWindowsIfPending:77");
     WaylandWindow* window;
@@ -116,7 +116,7 @@ waitForEvents(Wayland* wayland)
 }
 
 static void
-scheduleWindowsRenderIfDirty(WkMenu* props, Wayland* wayland)
+scheduleWindowsRenderIfDirty(Menu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:scheduleWindowsRenderIfDirty:118");
     WaylandWindow* window;
@@ -133,7 +133,7 @@ scheduleWindowsRenderIfDirty(WkMenu* props, Wayland* wayland)
 }
 
 static bool
-render(WkMenu* props, Wayland* wayland)
+render(Menu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:render:135");
     scheduleWindowsRenderIfDirty(props, wayland);
@@ -162,7 +162,7 @@ xkbCleanState(struct xkb_state* oldState, uint32_t group)
 }
 
 static void
-setKeyEventMods(WkMods* wkMods, uint32_t mods)
+setKeyEventMods(KeyChordMods* wkMods, uint32_t mods)
 {
     debugMsg(debug, "lib/wayland/wayland.c:setKeyEventMods:164");
     if (mods & MOD_CTRL) wkMods->ctrl = true;
@@ -171,7 +171,7 @@ setKeyEventMods(WkMods* wkMods, uint32_t mods)
     if (mods & MOD_SHIFT) wkMods->shift = true;
 }
 
-static WkSpecial
+static SpecialKey
 getSpecialKey(xkb_keysym_t keysym)
 {
     debugMsg(debug, "lib/wayland/wayland.c:getSpecialKey:174");
@@ -179,25 +179,25 @@ getSpecialKey(xkb_keysym_t keysym)
     {
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
     }
-    return WK_SPECIAL_NONE;
+    return SPECIAL_KEY_NONE;
 }
 
-static WkKeyType
-processKey(WkKey* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, size_t len)
+static KeyType
+processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, const char* buffer, size_t len)
 {
     debugMsg(debug, "lib/wayland/wayland.c:processKey:185");
     key->key = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, mods);
     key->special = getSpecialKey(keysym);
-    if (keyIsStrictlyMod(key)) return WK_KEY_IS_STRICTLY_MOD;
-    if (keyIsNormal(key)) return WK_KEY_IS_NORMAL;
-    if (keyIsSpecial(key)) return WK_KEY_IS_SPECIAL;
-    return WK_KEY_IS_UNKNOWN;
+    if (keyIsStrictlyMod(key)) return KEY_TYPE_IS_STRICTLY_MOD;
+    if (keyIsNormal(key)) return KEY_TYPE_IS_NORMAL;
+    if (keyIsSpecial(key)) return KEY_TYPE_IS_SPECIAL;
+    return KEY_TYPE_IS_UNKNOWN;
 }
 
-static WkStatus
-pollKey(WkMenu* props, Wayland* wayland)
+static MenuStatus
+pollKey(Menu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:pollKey:196");
     assert(props && wayland);
@@ -205,7 +205,7 @@ pollKey(WkMenu* props, Wayland* wayland)
     if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
     {
         wayland->input.keyPending = false;
-        return WK_STATUS_RUNNING;
+        return MENU_STATUS_RUNNING;
     }
 
     xkb_keysym_t keysym = wayland->input.keysym;
@@ -213,7 +213,7 @@ pollKey(WkMenu* props, Wayland* wayland)
     struct xkb_state* cleanState = xkbCleanState(wayland->input.xkb.state, wayland->input.xkb.group);
     char buffer[32] = {0};
     size_t size = 32;
-    WkKey key = {0};
+    Key key = {0};
     size_t len = xkb_state_key_get_utf8(
         cleanState, wayland->input.code, buffer, size
     );
@@ -227,22 +227,22 @@ pollKey(WkMenu* props, Wayland* wayland)
         errorMsg(
             "Buffer too small when polling key. Buffer size '%zu', key length '%zu'.", size, len
         );
-        return WK_STATUS_EXIT_SOFTWARE;
+        return MENU_STATUS_EXIT_SOFTWARE;
     }
 
     switch (processKey(&key, keysym, mods, buffer, len))
     {
-    case WK_KEY_IS_STRICTLY_MOD: return WK_STATUS_RUNNING;
-    case WK_KEY_IS_SPECIAL: /* FALLTHROUGH */
-    case WK_KEY_IS_NORMAL: return handleKeypress(props, &key);
-    case WK_KEY_IS_UNKNOWN:
+    case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
+    case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
+    case KEY_TYPE_IS_NORMAL: return handleKeypress(props, &key);
+    case KEY_TYPE_IS_UNKNOWN:
         errorMsg("Encountered an unknown key.");
         if (debug) disassembleKey(&key);
-        return WK_STATUS_EXIT_SOFTWARE;
+        return MENU_STATUS_EXIT_SOFTWARE;
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
 
-    return WK_STATUS_EXIT_SOFTWARE;
+    return MENU_STATUS_EXIT_SOFTWARE;
 }
 
 static bool
@@ -378,7 +378,7 @@ grabKeyboard(Wayland* wayland, bool grab)
 }
 
 static bool
-recreateWindows(WkMenu* props, Wayland* wayland)
+recreateWindows(Menu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:recreateWindows:369");
     assert(wayland);
@@ -447,7 +447,7 @@ freeWayland(Wayland* wayland)
 }
 
 bool
-initWayland(WkMenu* props, Wayland* wayland)
+initWayland(Menu* props, Wayland* wayland)
 {
     debugMsg(debug, "lib/wayland/wayland.c:initWayland:466");
     assert(props && wayland);
@@ -485,7 +485,7 @@ fail:
 }
 
 int
-runWayland(WkMenu* props)
+runWayland(Menu* props)
 {
     assert(props);
 
@@ -500,16 +500,16 @@ runWayland(WkMenu* props)
         return EX_SOFTWARE;
     }
     debugMsg(props->debug, "Successfully created Wayland structure.");
-    WkStatus status = WK_STATUS_EXIT_SOFTWARE;
+    MenuStatus status = MENU_STATUS_EXIT_SOFTWARE;
     do
     {
         render(props, &wayland);
         switch (status = pollKey(props, &wayland))
         {
-        case WK_STATUS_RUNNING: break;
-        case WK_STATUS_DAMAGED: recreateWindows(props, &wayland); break;
-        case WK_STATUS_EXIT_OK: result = EX_OK; break;
-        case WK_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
+        case MENU_STATUS_RUNNING: break;
+        case MENU_STATUS_DAMAGED: recreateWindows(props, &wayland); break;
+        case MENU_STATUS_EXIT_OK: result = EX_OK; break;
+        case MENU_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
 
         /* Exit on pointer events */

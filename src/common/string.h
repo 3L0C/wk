@@ -11,10 +11,19 @@ typedef struct
     size_t capacity;
 } String;
 
-void appendInt32ToString(String* string, int32_t i);
-void appendUInt32ToString(String* string, uint32_t i);
-void appendCharToString(String* string, char c);
-void appendToString(String* string, const char* source, size_t len);
+typedef enum
+{
+    STRING_APPEND_UPPER_FIRST,
+    STRING_APPEND_LOWER_FIRST,
+    STRING_APPEND_UPPER_ALL,
+    STRING_APPEND_LOWER_ALL,
+} StringAppendState;
+
+void appendInt32ToString(String* dest, int32_t i);
+void appendUInt32ToString(String* dest, uint32_t i);
+void appendCharToString(String* dest, char c);
+void appendToString(String* dest, const char* source, size_t len);
+void appendToStringWithState(String* dest, const char* source, size_t len, StringAppendState state);
 void disownString(String* string);
 void freeString(String* string);
 void initFromCharString(String* string, char* source);

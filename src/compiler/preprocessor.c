@@ -79,7 +79,7 @@ getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
 }
 
 static void
-handleIncludeMacro(WkMenu* menu, Scanner* scanner, PieceTable* result, Token* includeFile)
+handleIncludeMacro(Menu* menu, Scanner* scanner, PieceTable* result, Token* includeFile)
 {
     assert(menu && scanner && result && includeFile);
 
@@ -144,7 +144,7 @@ fail:
 }
 
 static void
-handleMacroWithStringArg(WkMenu* menu, Scanner* scanner, Token* token, PieceTable* pieceTable)
+handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable* pieceTable)
 {
     assert(scanner && menu && token && pieceTable);
 
@@ -172,19 +172,19 @@ handleMacroWithStringArg(WkMenu* menu, Scanner* scanner, Token* token, PieceTabl
     {
     case TOKEN_FOREGROUND_COLOR:
     {
-        setMenuColor(menu, arg.string, WK_COLOR_FOREGROUND);
+        setMenuColor(menu, arg.string, MENU_COLOR_FOREGROUND);
         menu->garbage.foregroundColor = arg.string;
         break;
     }
     case TOKEN_BACKGROUND_COLOR:
     {
-        setMenuColor(menu, arg.string, WK_COLOR_BACKGROUND);
+        setMenuColor(menu, arg.string, MENU_COLOR_BACKGROUND);
         menu->garbage.backgroundColor = arg.string;
         break;
     }
     case TOKEN_BORDER_COLOR:
     {
-        setMenuColor(menu, arg.string, WK_COLOR_BORDER);
+        setMenuColor(menu, arg.string, MENU_COLOR_BORDER);
         menu->garbage.borderColor = arg.string;
         break;
     }
@@ -210,7 +210,7 @@ handleMacroWithStringArg(WkMenu* menu, Scanner* scanner, Token* token, PieceTabl
 }
 
 static void
-handleMacroWithDoubleArg(Scanner* scanner, WkMenu* menu, Token* token)
+handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
 {
     assert(scanner && menu && token);
 
@@ -248,7 +248,7 @@ fail:
 }
 
 static void
-handleMacroWithInt32Arg(Scanner* scanner, WkMenu* menu, Token* token)
+handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
 {
     assert(scanner && menu && token);
 
@@ -287,7 +287,7 @@ fail:
 }
 
 static void
-handleMacroWithUint32Arg(Scanner* scanner, WkMenu* menu, Token* token)
+handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
 {
     assert(scanner && menu && token);
 
@@ -330,7 +330,7 @@ fail:
 }
 
 char*
-runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
+runPreprocessor(Menu* menu, const char* source, const char* filepath)
 {
     assert(menu && source);
 
@@ -359,8 +359,8 @@ runPreprocessor(WkMenu* menu, const char* source, const char* filepath)
         {
         /* Switches with no args. */
         case TOKEN_DEBUG: menu->debug = true; break;
-        case TOKEN_TOP: menu->position = WK_WIN_POS_TOP; break;
-        case TOKEN_BOTTOM: menu->position = WK_WIN_POS_BOTTOM; break;
+        case TOKEN_TOP: menu->position = MENU_WIN_POS_TOP; break;
+        case TOKEN_BOTTOM: menu->position = MENU_WIN_POS_BOTTOM; break;
 
         /* Switches with signed integer args. */
         case TOKEN_WINDOW_WIDTH:    /* FALLTHROUGH */

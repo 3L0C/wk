@@ -126,7 +126,7 @@ typedef struct Wayland
 } Wayland;
 
 void freeWayland(Wayland* wayland);
-bool initWayland(WkMenu* props, Wayland* wayland);
-int  runWayland(WkMenu* props);
+bool initWayland(Menu* props, Wayland* wayland);
+int  runWayland(Menu* props);
 
 #endif /* WK_WAYLAND_WAYLAND_H_ */

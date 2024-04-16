@@ -7,52 +7,101 @@
 #include "string.h"
 #include "memory.h"
 
+typedef int (*ConversionFp)(int);
+
 void
-appendInt32ToString(String* string, int32_t i)
+appendInt32ToString(String* dest, int32_t i)
 {
     size_t len = snprintf(NULL, 0, "%d", i);
     char buffer[len + 1]; /* +1 for null byte. */
     snprintf(buffer, len + 1, "%d", i);
-    appendToString(string, buffer, len);
+    appendToString(dest, buffer, len);
 }
 
 void
-appendUInt32ToString(String* string, uint32_t i)
+appendUInt32ToString(String* dest, uint32_t i)
 {
     size_t len = snprintf(NULL, 0, "%u", i);
     char buffer[len + 1]; /* +1 for null byte. */
     snprintf(buffer, len + 1, "%u", i);
-    appendToString(string, buffer, len);
+    appendToString(dest, buffer, len);
 }
 
 void
-appendCharToString(String* string, char c)
+appendCharToString(String* dest, char c)
 {
-    assert(string);
+    assert(dest);
 
     char buffer[] = { c, '\0' };
-    appendToString(string, buffer, 1);
+    appendToString(dest, buffer, 1);
 }
 
 void
-appendToString(String *string, const char* source, size_t len)
+appendToString(String *dest, const char* source, size_t len)
 {
-    assert(string && source);
-
+    assert(dest && source);
     if (len < 1) return;
 
-    while (string->count + len + 1 > string->capacity)
+    while (dest->count + len + 1 > dest->capacity)
     {
-        size_t oldCapacity = string->capacity;
-        string->capacity = GROW_CAPACITY(oldCapacity);
-        string->string = GROW_ARRAY(
-            char, string->string, oldCapacity, string->capacity
+        size_t oldCapacity = dest->capacity;
+        dest->capacity = GROW_CAPACITY(oldCapacity);
+        dest->string = GROW_ARRAY(
+            char, dest->string, oldCapacity, dest->capacity
         );
     }
 
-    memcpy(string->string + string->count, source, len);
-    string->count += len;
-    string->string[string->count] = '\0';
+    memcpy(dest->string + dest->count, source, len);
+    dest->count += len;
+    dest->string[dest->count] = '\0';
+}
+
+static void
+appendCharsToStringWithFunc(String* dest, const char* source, size_t len, ConversionFp fp)
+{
+    assert(dest && source);
+    if (len < 1) return;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        appendCharToString(dest, fp(source[i]));
+    }
+}
+
+void
+appendToStringWithState(String* dest, const char* source, size_t len, StringAppendState state)
+{
+    assert(dest && source);
+    if (len < 1) return;
+
+    switch (state)
+    {
+    case STRING_APPEND_UPPER_FIRST:
+    {
+        appendCharToString(dest, toupper(*source));
+        appendToString(dest, source + 1, len - 1);
+        break;
+    }
+    case STRING_APPEND_LOWER_FIRST:
+    {
+        appendCharToString(dest, tolower(*source));
+        appendToString(dest, source + 1, len - 1);
+        break;
+    }
+    case STRING_APPEND_UPPER_ALL:
+    {
+        appendCharToString(dest, toupper(*source));
+        appendCharsToStringWithFunc(dest, source + 1, len - 1, toupper);
+        break;
+    }
+    case STRING_APPEND_LOWER_ALL:
+    {
+        appendCharToString(dest, tolower(*source));
+        appendCharsToStringWithFunc(dest, source + 1, len - 1, tolower);
+        break;
+    }
+    default: break;
+    }
 }
 
 void
@@ -73,12 +122,12 @@ freeString(String* string)
 }
 
 void
-initFromCharString(String* string, char* source)
+initFromCharString(String* dest, char* source)
 {
     size_t len = strlen(source);
-    string->string = source;
-    string->count = len;
-    string->capacity = len;
+    dest->string = source;
+    dest->count = len;
+    dest->capacity = len;
 }
 
 void
@@ -92,6 +141,8 @@ initString(String *string)
 void
 rtrimString(String* string)
 {
+    assert(string);
+
     while (string->count > 0 && isspace(string->string[string->count - 1]))
     {
         string->count--;

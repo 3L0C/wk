@@ -18,14 +18,14 @@
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/menu.h"
-#include "common/types.h"
+#include "common/key_chord.h"
 #include "common/util.h"
 
 /* local includes */
 #include "cairo.h"
 
 static Cairo* cairo;
-static WkMenu* mainMenu;
+static Menu* mainMenu;
 static uint32_t width;
 static uint32_t height;
 static int ellipsisWidth = -1;
@@ -57,7 +57,7 @@ cairoDestroy(Cairo* cairo)
 }
 
 uint32_t
-cairoGetHeight(WkMenu* menu, cairo_surface_t* surface, uint32_t maxHeight)
+cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 {
     assert(menu && surface);
 
@@ -93,44 +93,44 @@ cairoGetHeight(WkMenu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 }
 
 static void
-cairoSetColors(CairoPaint* paint, WkHexColor* colors)
+cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
 {
     /* foreground */
-    paint->fg.r = (float)colors[WK_COLOR_FOREGROUND].r / 255.0f;
-    paint->fg.g = (float)colors[WK_COLOR_FOREGROUND].g / 255.0f;
-    paint->fg.b = (float)colors[WK_COLOR_FOREGROUND].b / 255.0f;
-    paint->fg.a = (float)colors[WK_COLOR_FOREGROUND].a / 255.0f;
+    paint->fg.r = (float)colors[MENU_COLOR_FOREGROUND].r / 255.0f;
+    paint->fg.g = (float)colors[MENU_COLOR_FOREGROUND].g / 255.0f;
+    paint->fg.b = (float)colors[MENU_COLOR_FOREGROUND].b / 255.0f;
+    paint->fg.a = (float)colors[MENU_COLOR_FOREGROUND].a / 255.0f;
 
     /* background */
-    paint->bg.r = (float)colors[WK_COLOR_BACKGROUND].r / 255.0f;
-    paint->bg.g = (float)colors[WK_COLOR_BACKGROUND].g / 255.0f;
-    paint->bg.b = (float)colors[WK_COLOR_BACKGROUND].b / 255.0f;
-    paint->bg.a = (float)colors[WK_COLOR_BACKGROUND].a / 255.0f;
+    paint->bg.r = (float)colors[MENU_COLOR_BACKGROUND].r / 255.0f;
+    paint->bg.g = (float)colors[MENU_COLOR_BACKGROUND].g / 255.0f;
+    paint->bg.b = (float)colors[MENU_COLOR_BACKGROUND].b / 255.0f;
+    paint->bg.a = (float)colors[MENU_COLOR_BACKGROUND].a / 255.0f;
 
     /* border */
-    paint->bd.r = (float)colors[WK_COLOR_BORDER].r / 255.0f;
-    paint->bd.g = (float)colors[WK_COLOR_BORDER].g / 255.0f;
-    paint->bd.b = (float)colors[WK_COLOR_BORDER].b / 255.0f;
-    paint->bd.a = (float)colors[WK_COLOR_BORDER].a / 255.0f;
+    paint->bd.r = (float)colors[MENU_COLOR_BORDER].r / 255.0f;
+    paint->bd.g = (float)colors[MENU_COLOR_BORDER].g / 255.0f;
+    paint->bd.b = (float)colors[MENU_COLOR_BORDER].b / 255.0f;
+    paint->bd.a = (float)colors[MENU_COLOR_BORDER].a / 255.0f;
 }
 
 void
-cairoInitPaint(WkMenu* menu, CairoPaint* paint)
+cairoInitPaint(Menu* menu, CairoPaint* paint)
 {
     cairoSetColors(paint, menu->colors);
     paint->font = menu->font;
 }
 
 static bool
-setSourceRgba(WkColor type)
+setSourceRgba(MenuColor type)
 {
     CairoColor* color = NULL;
 
     switch (type)
     {
-    case WK_COLOR_FOREGROUND: color = &cairo->paint->fg; break;
-    case WK_COLOR_BACKGROUND: color = &cairo->paint->bg; break;
-    case WK_COLOR_BORDER: color = &cairo->paint->bd; break;
+    case MENU_COLOR_FOREGROUND: color = &cairo->paint->fg; break;
+    case MENU_COLOR_BACKGROUND: color = &cairo->paint->bg; break;
+    case MENU_COLOR_BORDER: color = &cairo->paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;
     }
 
@@ -160,7 +160,7 @@ drawBackground()
 {
     assert(cairo && mainMenu);
 
-    if (!setSourceRgba(WK_COLOR_BACKGROUND)) return false;
+    if (!setSourceRgba(MENU_COLOR_BACKGROUND)) return false;
 
     double radius = mainMenu->borderRadius;
 
@@ -181,7 +181,7 @@ drawBorder()
 
     double lineW = cairo_get_line_width(cairo->cr);
     cairo_set_line_width(cairo->cr, mainMenu->borderWidth);
-    if (!setSourceRgba(WK_COLOR_BORDER)) return false;
+    if (!setSourceRgba(MENU_COLOR_BORDER)) return false;
 
     double radius = mainMenu->borderRadius;
 
@@ -269,7 +269,7 @@ drawGrid()
     pango_layout_set_font_description(layout, fontDesc);
     pango_font_description_free(fontDesc);
 
-    if (!setSourceRgba(WK_COLOR_FOREGROUND)) goto fail;
+    if (!setSourceRgba(MENU_COLOR_FOREGROUND)) goto fail;
 
     if (mainMenu->debug)
     {
@@ -319,7 +319,7 @@ end:
 }
 
 bool
-cairoPaint(Cairo* cr, WkMenu* menu)
+cairoPaint(Cairo* cr, Menu* menu)
 {
     assert(cr && menu);
 

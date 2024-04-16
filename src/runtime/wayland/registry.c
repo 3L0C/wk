@@ -716,7 +716,7 @@ waylandRegistryDestroy(Wayland* wayland)
 }
 
 bool
-waylandRegistryRegister(Wayland* wayland, WkMenu* props)
+waylandRegistryRegister(Wayland* wayland, Menu* props)
 {
     assert(wayland && props);
 

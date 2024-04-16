@@ -15,7 +15,7 @@
 #include "common.h"
 #include "debug.h"
 #include "menu.h"
-#include "types.h"
+#include "key_chord.h"
 #include "util.h"
 
 void
@@ -36,19 +36,19 @@ calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint
 }
 
 uint32_t
-countKeyChords(const WkKeyChord* keyChords)
+countKeyChords(const KeyChord* keyChords)
 {
     assert(keyChords);
 
     uint32_t count = 0;
-    while (keyChords[count].state == WK_KEY_CHORD_STATE_NOT_NULL) count++;
+    while (keyChords[count].state == KEY_CHORD_STATE_NOT_NULL) count++;
 
     return count;
 }
 
 
 static bool
-modsEqual(const WkMods* a, const WkMods* b, bool checkShift)
+modsEqual(const KeyChordMods* a, const KeyChordMods* b, bool checkShift)
 {
     if (checkShift)
     {
@@ -67,17 +67,17 @@ modsEqual(const WkMods* a, const WkMods* b, bool checkShift)
 }
 
 static bool
-isSpecialKey(const WkKeyChord* keyChord, WkKey* key)
+isSpecialKey(const KeyChord* keyChord, Key* key)
 {
     return (
-        key->special != WK_SPECIAL_NONE &&
+        key->special != SPECIAL_KEY_NONE &&
         keyChord->special == key->special &&
         modsEqual(&keyChord->mods, &key->mods, true)
     );
 }
 
 static bool
-isKey(const WkKeyChord* keyChord, WkKey* key)
+isKey(const KeyChord* keyChord, Key* key)
 {
     if (isSpecialKey(keyChord, key)) return true;
     return (
@@ -87,18 +87,18 @@ isKey(const WkKeyChord* keyChord, WkKey* key)
     );
 }
 
-static WkStatus
-handlePrefix(WkMenu* menu, const WkKeyChord* keyChord)
+static MenuStatus
+handlePrefix(Menu* menu, const KeyChord* keyChord)
 {
     debugMsg(menu->debug, "Found prefix.");
 
     menu->keyChords = keyChord->keyChords;
     countMenuKeyChords(menu);
-    return WK_STATUS_DAMAGED;
+    return MENU_STATUS_DAMAGED;
 }
 
 static void
-handleCommand(WkMenu* props, const WkKeyChord* keyChord)
+handleCommand(Menu* props, const KeyChord* keyChord)
 {
     if (keyChord->flags.write)
     {
@@ -108,20 +108,20 @@ handleCommand(WkMenu* props, const WkKeyChord* keyChord)
     spawn(props, keyChord->command, keyChord->flags.syncCommand);
 }
 
-static WkStatus
-handleCommands(WkMenu* props, const WkKeyChord* keyChord)
+static MenuStatus
+handleCommands(Menu* props, const KeyChord* keyChord)
 {
     /* no command */
-    if (!keyChord->command) return WK_STATUS_EXIT_OK;
+    if (!keyChord->command) return MENU_STATUS_EXIT_OK;
 
-    if (keyChord->before) spawn(props, keyChord->before, keyChord->flags.beforeSync);
+    if (keyChord->before) spawn(props, keyChord->before, keyChord->flags.syncBefore);
     handleCommand(props, keyChord);
-    if (keyChord->after) spawn(props, keyChord->after, keyChord->flags.afterSync);
-    return keyChord->flags.keep ? WK_STATUS_RUNNING : WK_STATUS_EXIT_OK;
+    if (keyChord->after) spawn(props, keyChord->after, keyChord->flags.syncAfter);
+    return keyChord->flags.keep ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
 }
 
-static WkStatus
-pressKey(WkMenu* menu, const WkKeyChord* keyChord)
+static MenuStatus
+pressKey(Menu* menu, const KeyChord* keyChord)
 {
     assert(menu && keyChord);
 
@@ -129,11 +129,11 @@ pressKey(WkMenu* menu, const WkKeyChord* keyChord)
     return handleCommands(menu, keyChord);
 }
 
-WkStatus
-handleKeypress(WkMenu* menu, WkKey* key)
+MenuStatus
+handleKeypress(Menu* menu, Key* key)
 {
     uint32_t len = menu->keyChordCount;
-    const WkKeyChord* keyChords = menu->keyChords;
+    const KeyChord* keyChords = menu->keyChords;
 
     for (uint32_t i = 0; i < len; i++)
     {
@@ -155,7 +155,7 @@ handleKeypress(WkMenu* menu, WkKey* key)
         disassembleKey(key);
     }
 
-    return WK_STATUS_EXIT_SOFTWARE;
+    return MENU_STATUS_EXIT_SOFTWARE;
 }
 
 bool
@@ -176,7 +176,7 @@ isUtf8MultiByteStartByte(char byte)
     return (byte & 0x80) == 0x80 && (byte & 0xC0) != 0x80;
 }
 
-static WkStatus
+static MenuStatus
 spawnSync(const char* shell, const char* cmd)
 {
     assert(shell && cmd);
@@ -198,10 +198,10 @@ spawnSync(const char* shell, const char* cmd)
 fail:
     free(exec[0]);
     free(exec[2]);
-    return WK_STATUS_EXIT_SOFTWARE;
+    return MENU_STATUS_EXIT_SOFTWARE;
 }
 
-static WkStatus
+static MenuStatus
 spawnAsync(const char* shell, const char* cmd)
 {
     assert(shell && cmd);
@@ -210,11 +210,11 @@ spawnAsync(const char* shell, const char* cmd)
     {
         spawnSync(shell, cmd);
     }
-    return WK_STATUS_EXIT_OK;
+    return MENU_STATUS_EXIT_OK;
 }
 
-WkStatus
-spawn(WkMenu* menu, const char* cmd, bool sync)
+MenuStatus
+spawn(Menu* menu, const char* cmd, bool sync)
 {
     assert(menu && cmd);
 
@@ -224,7 +224,7 @@ spawn(WkMenu* menu, const char* cmd, bool sync)
     {
         errorMsg("Could not fork process:");
         perror(NULL);
-        return WK_STATUS_EXIT_SOFTWARE;
+        return MENU_STATUS_EXIT_SOFTWARE;
     }
 
     if (child == 0)
@@ -248,24 +248,24 @@ spawn(WkMenu* menu, const char* cmd, bool sync)
         {
             errorMsg("Could not wait for child process:");
             perror(NULL);
-            return WK_STATUS_EXIT_SOFTWARE;
+            return MENU_STATUS_EXIT_SOFTWARE;
         }
 
-        return WIFEXITED(status) ? WK_STATUS_EXIT_OK : WK_STATUS_EXIT_SOFTWARE;
+        return WIFEXITED(status) ? MENU_STATUS_EXIT_OK : MENU_STATUS_EXIT_SOFTWARE;
     }
 
     wait(NULL);
-    return WK_STATUS_EXIT_OK;
+    return MENU_STATUS_EXIT_OK;
 }
 
 bool
-statusIsError(WkStatus status)
+statusIsError(MenuStatus status)
 {
-    return status == WK_STATUS_EXIT_SOFTWARE;
+    return status == MENU_STATUS_EXIT_SOFTWARE;
 }
 
 bool
-statusIsRunning(WkStatus status)
+statusIsRunning(MenuStatus status)
 {
-    return status == WK_STATUS_RUNNING || status == WK_STATUS_DAMAGED;
+    return status == MENU_STATUS_RUNNING || status == MENU_STATUS_DAMAGED;
 }

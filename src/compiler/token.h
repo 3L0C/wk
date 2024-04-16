@@ -125,9 +125,12 @@ void errorAtToken(Token* token, const char* filepath, const char* fmt, ...);
 bool getDoubleFromToken(Token* token, double* dest, bool debug);
 bool getInt32FromToken(Token* token, int32_t* dest, bool debug);
 bool getUint32FromToken(Token* token, uint32_t* dest, bool debug);
+const char* getTokenRepr(TokenType type);
 void initToken(Token* token);
-void initTokenArray(TokenArray* array);
-void freeTokenArray(TokenArray* array);
-void writeTokenArray(TokenArray* array, Token* token);
+void initTokenArray(TokenArray* tokens);
+bool isTokenHookType(TokenType type);
+bool isTokenModType(TokenType type);
+void freeTokenArray(TokenArray* tokens);
+void writeTokenArray(TokenArray* tokens, Token* token);
 
 #endif /* WK_COMPILER_TOKEN_H_ */

@@ -1,8 +1,10 @@
 #ifndef WK_COMPILER_PIECE_TABLE_H_
 #define WK_COMPILER_PIECE_TABLE_H_
 
-#include "common/string.h"
 #include <stddef.h>
+
+/* common includes */
+#include "common/string.h"
 
 typedef enum
 {

@@ -256,12 +256,12 @@ static const struct wl_callback_listener callbackListener = {
 };
 
 static uint32_t
-getAlignAnchor(WkWindowPosition position)
+getAlignAnchor(MenuWindowPosition position)
 {
     debugMsg(debug, "lib/wayland/window.c:getAlignAnchor:257");
     uint32_t anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
 
-    if (position == WK_WIN_POS_BOTTOM)
+    if (position == MENU_WIN_POS_BOTTOM)
     {
         anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
     }
@@ -296,7 +296,7 @@ getThrowawaySurface(WaylandWindow* window)
 }
 
 static void
-resizeWinWidth(WaylandWindow* window, WkMenu* props)
+resizeWinWidth(WaylandWindow* window, Menu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinWidth:297");
     int32_t windowWidth = props->windowWidth;
@@ -320,7 +320,7 @@ resizeWinWidth(WaylandWindow* window, WkMenu* props)
 }
 
 static void
-resizeWinHeight(WaylandWindow* window, WkMenu* props)
+resizeWinHeight(WaylandWindow* window, Menu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinHeight:321");
     /* Output* output = window->wayland->selectedOutput; */
@@ -335,7 +335,7 @@ resizeWinHeight(WaylandWindow* window, WkMenu* props)
 }
 
 static void
-resizeWinGap(WaylandWindow* window, WkMenu* props)
+resizeWinGap(WaylandWindow* window, Menu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinGap:336");
     int32_t windowGap = props->windowGap;
@@ -368,7 +368,7 @@ resizeWinGap(WaylandWindow* window, WkMenu* props)
 
 
 static void
-resizeWindow(WaylandWindow* window, WkMenu* props)
+resizeWindow(WaylandWindow* window, Menu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWindow:369");
     assert(window && props);
@@ -387,7 +387,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
         window->layerSurface, window->width * window->scale, window->height * window->scale
     );
     zwlr_layer_surface_v1_set_anchor(window->layerSurface, window->alignAnchor);
-    if (window->position == WK_WIN_POS_BOTTOM)
+    if (window->position == MENU_WIN_POS_BOTTOM)
     {
         zwlr_layer_surface_v1_set_margin(
             window->layerSurface, 0, 0, window->windowGap * window->scale, 0
@@ -404,7 +404,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
 }
 
 bool
-windowRender(WaylandWindow* window, struct wl_display* display, WkMenu* props)
+windowRender(WaylandWindow* window, struct wl_display* display, Menu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:windowRender:405");
     assert(window && props);
@@ -488,14 +488,14 @@ getWindowWidth(WaylandWindow* window)
 }
 
 static uint32_t
-getWindowHeight(WaylandWindow* window, WkMenu* props)
+getWindowHeight(WaylandWindow* window, Menu* props)
 {
     debugMsg(debug, "lib/wayland/window.c:getWindowHeight:489");
     return cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);;
 }
 
 void
-windowSetAlign(WaylandWindow* window, struct wl_display* display, WkWindowPosition position)
+windowSetAlign(WaylandWindow* window, struct wl_display* display, MenuWindowPosition position)
 {
     debugMsg(debug, "lib/wayland/window.c:windowSetAlign:496");
     assert(window);
@@ -536,7 +536,7 @@ windowCreate(
     struct wl_output* wlOutput,
     struct zwlr_layer_shell_v1* layerShell,
     struct wl_surface* surface,
-    WkMenu* props
+    Menu* props
 )
 {
     debugMsg(debug, "lib/wayland/window.c:windowCreate:538");

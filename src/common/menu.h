@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "string.h"
-#include "types.h"
+#include "key_chord.h"
 
 #define MENU_MIN_WIDTH 80
 
@@ -12,11 +12,11 @@ typedef void (*CleanupFP)(void* xp);
 
 typedef enum
 {
-    WK_COLOR_FOREGROUND,
-    WK_COLOR_BACKGROUND,
-    WK_COLOR_BORDER,
-    WK_COLOR_LAST
-} WkColor;
+    MENU_COLOR_FOREGROUND,
+    MENU_COLOR_BACKGROUND,
+    MENU_COLOR_BORDER,
+    MENU_COLOR_LAST
+} MenuColor;
 
 typedef struct
 {
@@ -25,21 +25,21 @@ typedef struct
     uint8_t g;
     uint8_t b;
     uint8_t a;
-} WkHexColor;
+} MenuHexColor;
 
 typedef enum
 {
-    WK_STATUS_RUNNING,
-    WK_STATUS_DAMAGED,
-    WK_STATUS_EXIT_OK,
-    WK_STATUS_EXIT_SOFTWARE,
-} WkStatus;
+    MENU_STATUS_RUNNING,
+    MENU_STATUS_DAMAGED,
+    MENU_STATUS_EXIT_OK,
+    MENU_STATUS_EXIT_SOFTWARE,
+} MenuStatus;
 
 typedef enum
 {
-    WK_WIN_POS_BOTTOM,
-    WK_WIN_POS_TOP
-} WkWindowPosition;
+    MENU_WIN_POS_BOTTOM,
+    MENU_WIN_POS_TOP
+} MenuWindowPosition;
 
 typedef struct
 {
@@ -54,14 +54,14 @@ typedef struct
     uint32_t cols;
     uint32_t width;
     uint32_t height;
-    WkWindowPosition position;
+    MenuWindowPosition position;
     uint32_t borderWidth;
     double borderRadius;
-    WkHexColor colors[WK_COLOR_LAST];
+    MenuHexColor colors[MENU_COLOR_LAST];
     const char* shell;
     const char* font;
-    WkKeyChord* keyChords;
-    WkKeyChord* keyChordsHead;
+    KeyChord* keyChords;
+    KeyChord keyChordsHead;
     uint32_t keyChordCount;
     bool debug;
     bool dirty;
@@ -83,11 +83,11 @@ typedef struct
     } garbage;
     CleanupFP cleanupfp;
     void* xp;
-} WkMenu;
+} Menu;
 
-void countMenuKeyChords(WkMenu* menu);
-int displayMenu(WkMenu* menu);
-void initMenu(WkMenu* menu, WkKeyChord* keyChords);
-void setMenuColor(WkMenu* menu, const char* color, WkColor colorType);
+void countMenuKeyChords(Menu* menu);
+int displayMenu(Menu* menu);
+void initMenu(Menu* menu, KeyChord* keyChords);
+void setMenuColor(Menu* menu, const char* color, MenuColor colorType);
 
 #endif /* WK_COMMON_MENU_H_ */

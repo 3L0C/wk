@@ -87,7 +87,7 @@ getNum(double* num)
 }
 
 void
-parseArgs(WkMenu* menu, int* argc, char*** argv)
+parseArgs(Menu* menu, int* argc, char*** argv)
 {
 #define GET_ARG(arg)        ((*arg)[(optind == 1 ? optind : optind - 1)])
 
@@ -136,8 +136,8 @@ parseArgs(WkMenu* menu, int* argc, char*** argv)
         case 'h': usage(); exit(EXIT_FAILURE);
         case 'v': puts("wk v"VERSION); exit(EXIT_SUCCESS);
         case 'd': menu->debug = true; break;
-        case 't': menu->position = WK_WIN_POS_TOP; break;
-        case 'b': menu->position = WK_WIN_POS_BOTTOM; break;
+        case 't': menu->position = MENU_WIN_POS_TOP; break;
+        case 'b': menu->position = MENU_WIN_POS_BOTTOM; break;
         case 's': menu->client.tryScript = true; break;
         /* requires argument */
         case 'm':
@@ -227,9 +227,9 @@ parseArgs(WkMenu* menu, int* argc, char*** argv)
             menu->hpadding = (uint32_t)n;
             break;
         }
-        case 0x094: setMenuColor(menu, optarg, WK_COLOR_FOREGROUND); break;
-        case 0x095: setMenuColor(menu, optarg, WK_COLOR_BACKGROUND); break;
-        case 0x096: setMenuColor(menu, optarg, WK_COLOR_BORDER); break;
+        case 0x094: setMenuColor(menu, optarg, MENU_COLOR_FOREGROUND); break;
+        case 0x095: setMenuColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
+        case 0x096: setMenuColor(menu, optarg, MENU_COLOR_BORDER); break;
         case 0x097: menu->shell = optarg; break;
         case 0x098: menu->font = optarg; break;
         /* Errors */
@@ -303,7 +303,7 @@ fail:
 }
 
 bool
-tryStdin(WkMenu* menu)
+tryStdin(Menu* menu)
 {
     assert(menu);
 

@@ -6,9 +6,9 @@
 #include "menu.h"
 
 void errorMsg(const char* fmt, ...);
-void parseArgs(WkMenu* menu, int* argc, char*** argv);
+void parseArgs(Menu* menu, int* argc, char*** argv);
 char* readFile(const char* filepath);
-bool tryStdin(WkMenu* menu);
+bool tryStdin(Menu* menu);
 void warnMsg(const char* fmt, ...);
 
 #endif /* WK_COMMON_COMMON_H_ */

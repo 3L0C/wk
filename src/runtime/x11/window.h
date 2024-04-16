@@ -39,16 +39,16 @@ typedef struct
         uint32_t x, y, w, h;
     } root;
     CairoPaint paint;
-    bool (*render)(Cairo* cairo, WkMenu* menu);
-} WkX11Window;
+    bool (*render)(Cairo* cairo, Menu* menu);
+} X11Window;
 
 typedef struct
 {
     Display* dispaly;
-    WkX11Window window;
-    WkMenu* menu;
+    X11Window window;
+    Menu* menu;
 } X11;
 
-int runX11(WkMenu* menu);
+int runX11(Menu* menu);
 
 #endif /* WK_X11_WINDOW_H_ */

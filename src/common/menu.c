@@ -1,7 +1,5 @@
-#include "src/common/common.h"
-#include "src/common/types.h"
-#include "util.h"
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
@@ -18,19 +16,23 @@
 #include "config/config.h"
 
 /* local includes */
+#include "common.h"
 #include "debug.h"
 #include "menu.h"
+#include "util.h"
+#include "key_chord.h"
 
 void
-countMenuKeyChords(WkMenu* menu)
+countMenuKeyChords(Menu* menu)
 {
     assert(menu);
 
+    debugMsg(menu->debug, "Here?");
     menu->keyChordCount = countKeyChords(menu->keyChords);
 }
 
 int
-displayMenu(WkMenu* props)
+displayMenu(Menu* props)
 {
 #ifdef WK_WAYLAND_BACKEND
     if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
@@ -48,7 +50,7 @@ displayMenu(WkMenu* props)
 }
 
 static bool
-initColor(WkHexColor* hexColor, const char* color)
+initColor(MenuHexColor* hexColor, const char* color)
 {
     assert(hexColor && color);
 
@@ -67,18 +69,18 @@ initColor(WkHexColor* hexColor, const char* color)
 }
 
 static void
-initColors(WkHexColor* hexColors)
+initColors(MenuHexColor* hexColors)
 {
     assert(hexColors);
 
-    static const char* defaultColors[WK_COLOR_LAST] = {
+    static const char* defaultColors[MENU_COLOR_LAST] = {
         "#DCD7BA", "#181616", "#7FB4CA"
     };
 
-    const char* colors[WK_COLOR_LAST] = {
+    const char* colors[MENU_COLOR_LAST] = {
         foreground, background, border
     };
-    for (int i = 0; i < WK_COLOR_LAST; i++)
+    for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
         if (!initColor(&hexColors[i], colors[i]))
         {
@@ -86,9 +88,9 @@ initColors(WkHexColor* hexColors)
             warnMsg("Invalid color string '%s'.", colors[i]);
             switch (i)
             {
-            case WK_COLOR_FOREGROUND: colorType = "foreground"; break;
-            case WK_COLOR_BACKGROUND: colorType = "background"; break;
-            case WK_COLOR_BORDER: colorType = "border"; break;
+            case MENU_COLOR_FOREGROUND: colorType = "foreground"; break;
+            case MENU_COLOR_BACKGROUND: colorType = "background"; break;
+            case MENU_COLOR_BORDER: colorType = "border"; break;
             default: colorType = "UNKNOWN"; break;
             }
             fprintf(stderr, "setting %s to '%s'.\n", colorType, defaultColors[i]);
@@ -98,7 +100,7 @@ initColors(WkHexColor* hexColors)
 }
 
 void
-initMenu(WkMenu* menu, WkKeyChord* keyChords)
+initMenu(Menu* menu, KeyChord* keyChords)
 {
     assert(menu);
 
@@ -113,14 +115,14 @@ initMenu(WkMenu* menu, WkKeyChord* keyChords)
     menu->cols = 0;
     menu->width = 0;
     menu->height = 0;
-    menu->position = (windowPosition ? WK_WIN_POS_TOP : WK_WIN_POS_BOTTOM);
+    menu->position = (windowPosition ? MENU_WIN_POS_TOP : MENU_WIN_POS_BOTTOM);
     menu->borderWidth = borderWidth;
     menu->borderRadius = borderRadius;
     initColors(menu->colors);
     menu->shell = shell;
     menu->font = font;
     menu->keyChords = keyChords;
-    menu->keyChordsHead = keyChords;
+    initKeyChord(&menu->keyChordsHead);
     menu->keyChordCount = 0;
     menu->debug = false;
     menu->dirty = true;
@@ -139,9 +141,9 @@ initMenu(WkMenu* menu, WkKeyChord* keyChords)
 }
 
 void
-setMenuColor(WkMenu* menu, const char* color, WkColor colorType)
+setMenuColor(Menu* menu, const char* color, MenuColor colorType)
 {
-    assert(menu && colorType < WK_COLOR_LAST && !(colorType < 0));
+    assert(menu && colorType < MENU_COLOR_LAST && !(colorType < 0));
 
     if (!initColor(&menu->colors[colorType], color)) warnMsg("Invalid color string: '%s'.", color);
 }

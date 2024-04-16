@@ -30,8 +30,8 @@ typedef struct
 
 bool cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface);
 void cairoDestroy(Cairo* cairo);
-uint32_t cairoGetHeight(WkMenu* menu, cairo_surface_t* surface, uint32_t maxHeight);
-void cairoInitPaint(WkMenu* menu, CairoPaint* paint);
-bool cairoPaint(Cairo* cairo, WkMenu* menu);
+uint32_t cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight);
+void cairoInitPaint(Menu* menu, CairoPaint* paint);
+bool cairoPaint(Cairo* cairo, Menu* menu);
 
 #endif /* WK_RUNTIME_CAIRO_H_ */

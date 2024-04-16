@@ -46,27 +46,27 @@ typedef struct
     int32_t scale;
     uint32_t displayed;
     struct wl_list link;
-    WkWindowPosition position;
+    MenuWindowPosition position;
     /* int32_t yOffset; */
     uint32_t alignAnchor;
     bool renderPending;
-    bool (*render)(Cairo* cairo, WkMenu* menu);
+    bool (*render)(Cairo* cairo, Menu* menu);
 } WaylandWindow;
 
 void windowScheduleRender(WaylandWindow* window);
-bool windowRender(WaylandWindow* window, struct wl_display* display, WkMenu* menu);
+bool windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu);
 void windowDestroy(WaylandWindow* window);
 void windowSetWidth(WaylandWindow* window,
                     struct wl_display* display,
                     uint32_t margin,
                     float factor,
-                    WkMenu* menu);
-void windowSetAlign(WaylandWindow* window, struct wl_display* display, WkWindowPosition position);
+                    Menu* menu);
+void windowSetAlign(WaylandWindow* window, struct wl_display* display, MenuWindowPosition position);
 void windowSetYOffset(WaylandWindow* window, struct wl_display* display, int32_t yOffset);
 void windowGrabKeyboard(WaylandWindow* window, struct wl_display* display, bool grab);
 void windowSetOverlap(WaylandWindow* window, struct wl_display* display, bool overlap);
 bool windowCreate(WaylandWindow* window, struct wl_display* display, struct wl_shm* shm,
                   struct wl_output* wlOutput, struct zwlr_layer_shell_v1* layerShell,
-                  struct wl_surface* surface, WkMenu* menu);
+                  struct wl_surface* surface, Menu* menu);
 
 #endif /* WK_WAYLAND_WINDOW_H_ */

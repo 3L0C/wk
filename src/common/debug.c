@@ -8,7 +8,7 @@
 #include "common.h"
 #include "debug.h"
 #include "menu.h"
-#include "types.h"
+#include "key_chord.h"
 #include "util.h"
 
 static const int MAX_HEADER_WIDTH = 80;
@@ -160,7 +160,7 @@ disassembleGrid(
 }
 
 static void
-disassembleHexColor(const WkHexColor* color)
+disassembleHexColor(const MenuHexColor* color)
 {
     assert(color);
 
@@ -174,18 +174,18 @@ disassembleHexColor(const WkHexColor* color)
 }
 
 void
-disassembleHexColors(const WkHexColor* colors)
+disassembleHexColors(const MenuHexColor* colors)
 {
     assert(colors);
 
-    for (int i = 0; i < WK_COLOR_LAST; i++)
+    for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
         /* TODO refactor */
         switch (i)
         {
-        case WK_COLOR_FOREGROUND: debugMsg(true, "|------- Foreground color -------"); break;
-        case WK_COLOR_BACKGROUND: debugMsg(true, "|------- Background color -------"); break;
-        case WK_COLOR_BORDER:     debugMsg(true, "|--------- Border color ---------"); break;
+        case MENU_COLOR_FOREGROUND: debugMsg(true, "|------- Foreground color -------"); break;
+        case MENU_COLOR_BACKGROUND: debugMsg(true, "|------- Background color -------"); break;
+        case MENU_COLOR_BORDER:     debugMsg(true, "|--------- Border color ---------"); break;
         default: errorMsg("| Got unexpected color index: '%d'.", i); return;
         }
 
@@ -203,20 +203,20 @@ getDelim(int* count, char a, char b)
 }
 
 static void
-disassembleMod(const WkMods* mods, int indent)
+disassembleMod(const KeyChordMods* mods, int indent)
 {
     assert(mods);
 
     debugMsgWithIndent(indent, "| Mods:              ");
 
-    if (!IS_MOD(*mods))
+    if (!isKeyChordMod(mods))
     {
         printf("NONE\n");
         return;
     }
 
     printf("| Mods                ");
-    int count = COUNT_MODS(*mods);
+    int count = countKeyChordMods(mods);
     if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
     if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
     if (mods->hyper) printf("HYPER%c", getDelim(&count, '|', '\n'));
@@ -224,7 +224,7 @@ disassembleMod(const WkMods* mods, int indent)
 }
 
 static bool
-disassembleSpecial(WkSpecial special, int indent)
+disassembleSpecial(SpecialKey special, int indent)
 {
     debugMsgWithIndent(indent, "| Special:           ");
     const char* text = NULL;
@@ -232,22 +232,22 @@ disassembleSpecial(WkSpecial special, int indent)
 
     switch (special)
     {
-    case WK_SPECIAL_NONE:       text = "WK_SPECIAL_NONE";       flag = false; break;
-    case WK_SPECIAL_LEFT:       text = "WK_SPECIAL_LEFT";       break;
-    case WK_SPECIAL_RIGHT:      text = "WK_SPECIAL_RIGHT";      break;
-    case WK_SPECIAL_UP:         text = "WK_SPECIAL_UP";         break;
-    case WK_SPECIAL_DOWN:       text = "WK_SPECIAL_DOWN";       break;
-    case WK_SPECIAL_TAB:        text = "WK_SPECIAL_TAB";        break;
-    case WK_SPECIAL_SPACE:      text = "WK_SPECIAL_SPACE";      break;
-    case WK_SPECIAL_RETURN:     text = "WK_SPECIAL_RETURN";     break;
-    case WK_SPECIAL_DELETE:     text = "WK_SPECIAL_DELETE";     break;
-    case WK_SPECIAL_ESCAPE:     text = "WK_SPECIAL_ESCAPE";     break;
-    case WK_SPECIAL_HOME:       text = "WK_SPECIAL_HOME";       break;
-    case WK_SPECIAL_PAGE_UP:    text = "WK_SPECIAL_PAGE_UP";    break;
-    case WK_SPECIAL_PAGE_DOWN:  text = "WK_SPECIAL_PAGE_DOWN";  break;
-    case WK_SPECIAL_END:        text = "WK_SPECIAL_END";        break;
-    case WK_SPECIAL_BEGIN:      text = "WK_SPECIAL_BEGIN";      break;
-    default: text = "UNKNOWN"; flag = false; break;
+    case SPECIAL_KEY_NONE: text = "SPECIAL_KEY_NONE"; flag = false; break;
+    case SPECIAL_KEY_LEFT: text = "SPECIAL_KEY_LEFT"; break;
+    case SPECIAL_KEY_RIGHT: text = "SPECIAL_KEY_RIGHT"; break;
+    case SPECIAL_KEY_UP: text = "SPECIAL_KEY_UP"; break;
+    case SPECIAL_KEY_DOWN: text = "SPECIAL_KEY_DOWN"; break;
+    case SPECIAL_KEY_TAB: text = "SPECIAL_KEY_TAB"; break;
+    case SPECIAL_KEY_SPACE: text = "SPECIAL_KEY_SPACE"; break;
+    case SPECIAL_KEY_RETURN: text = "SPECIAL_KEY_RETURN"; break;
+    case SPECIAL_KEY_DELETE: text = "SPECIAL_KEY_DELETE"; break;
+    case SPECIAL_KEY_ESCAPE: text = "SPECIAL_KEY_ESCAPE"; break;
+    case SPECIAL_KEY_HOME: text = "SPECIAL_KEY_HOME"; break;
+    case SPECIAL_KEY_PAGE_UP: text = "SPECIAL_KEY_PAGE_UP"; break;
+    case SPECIAL_KEY_PAGE_DOWN: text = "SPECIAL_KEY_PAGE_DOWN"; break;
+    case SPECIAL_KEY_END: text = "SPECIAL_KEY_END"; break;
+    case SPECIAL_KEY_BEGIN: text = "SPECIAL_KEY_BEGIN"; break;
+    default: text = "SPECIAL_KEY_UNKNOWN"; flag = false; break;
     }
 
     printf("%s|%d\n", text, special);
@@ -255,7 +255,7 @@ disassembleSpecial(WkSpecial special, int indent)
 }
 
 static bool
-disassembleSpecialRepr(WkSpecial special, int indent)
+disassembleSpecialRepr(SpecialKey special, int indent)
 {
     debugMsgWithIndent(indent, "| Key:               ");
     const char* text = NULL;
@@ -263,21 +263,21 @@ disassembleSpecialRepr(WkSpecial special, int indent)
 
     switch (special)
     {
-    case WK_SPECIAL_NONE:       text = "NONE";          flag = false; break;
-    case WK_SPECIAL_LEFT:       text = "'Left'";        break;
-    case WK_SPECIAL_RIGHT:      text = "'Right'";       break;
-    case WK_SPECIAL_UP:         text = "'Up'";          break;
-    case WK_SPECIAL_DOWN:       text = "'Down'";        break;
-    case WK_SPECIAL_TAB:        text = "'TAB'";         break;
-    case WK_SPECIAL_SPACE:      text = "'SPC'";         break;
-    case WK_SPECIAL_RETURN:     text = "'RET'";         break;
-    case WK_SPECIAL_DELETE:     text = "'DEL'";         break;
-    case WK_SPECIAL_ESCAPE:     text = "'ESC'";         break;
-    case WK_SPECIAL_HOME:       text = "'Home'";        break;
-    case WK_SPECIAL_PAGE_UP:    text = "'PgUp'";        break;
-    case WK_SPECIAL_PAGE_DOWN:  text = "'PgDown'";      break;
-    case WK_SPECIAL_END:        text = "'End'";         break;
-    case WK_SPECIAL_BEGIN:      text = "'Begin'";       break;
+    case SPECIAL_KEY_NONE: text = "NONE"; flag = false; break;
+    case SPECIAL_KEY_LEFT: text = "'Left'"; break;
+    case SPECIAL_KEY_RIGHT: text = "'Right'"; break;
+    case SPECIAL_KEY_UP: text = "'Up'"; break;
+    case SPECIAL_KEY_DOWN: text = "'Down'"; break;
+    case SPECIAL_KEY_TAB: text = "'TAB'"; break;
+    case SPECIAL_KEY_SPACE: text = "'SPC'"; break;
+    case SPECIAL_KEY_RETURN: text = "'RET'"; break;
+    case SPECIAL_KEY_DELETE: text = "'DEL'"; break;
+    case SPECIAL_KEY_ESCAPE: text = "'ESC'"; break;
+    case SPECIAL_KEY_HOME: text = "'Home'"; break;
+    case SPECIAL_KEY_PAGE_UP: text = "'PgUp'"; break;
+    case SPECIAL_KEY_PAGE_DOWN: text = "'PgDown'"; break;
+    case SPECIAL_KEY_END: text = "'End'"; break;
+    case SPECIAL_KEY_BEGIN: text = "'Begin'"; break;
     default: text = "UNKNOWN"; flag = false; break;
     }
 
@@ -293,7 +293,7 @@ debugString(const char* text, const char* value, int indent)
 }
 
 void
-disassembleKey(const WkKey* key)
+disassembleKey(const Key* key)
 {
     assert(key);
 
@@ -315,19 +315,19 @@ disassembleKey(const WkKey* key)
 
 
 static void
-disassembleFlags(const WkFlags* flags, int indent)
+disassembleFlags(const KeyChordFlags* flags, int indent)
 {
     assert(flags);
 
     debugMsgWithIndent(indent, "| Flags:             ");
 
-    if (!HAS_FLAG(*flags))
+    if (!hasFlags(flags))
     {
         printf("WK_FLAG_DEFAULTS\n");
         return;
     }
 
-    int count = COUNT_FLAGS(*flags);
+    int count = countKeyChordFlags(flags);
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
     if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
@@ -338,12 +338,12 @@ disassembleFlags(const WkFlags* flags, int indent)
     if (flags->noafter) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
     if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
     if (flags->syncCommand) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
-    if (flags->beforeSync) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
-    if (flags->afterSync) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->syncBefore) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
+    if (flags->syncAfter) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
 }
 
 void
-disassembleKeyChord(const WkKeyChord* keyChord, int indent)
+disassembleKeyChord(const KeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
@@ -359,7 +359,7 @@ disassembleKeyChord(const WkKeyChord* keyChord, int indent)
 }
 
 void
-disassembleKeyChords(const WkKeyChord* keyChords, int indent)
+disassembleKeyChords(const KeyChord* keyChords, int indent)
 {
     assert(keyChords);
 
@@ -367,7 +367,7 @@ disassembleKeyChords(const WkKeyChord* keyChords, int indent)
     {
         debugPrintHeaderWithIndent(indent, " KeyChords ");
     }
-    for (uint32_t i = 0; keyChords[i].state == WK_KEY_CHORD_STATE_NOT_NULL; i++)
+    for (uint32_t i = 0; keyChords[i].state == KEY_CHORD_STATE_NOT_NULL; i++)
     {
         debugMsgWithIndent(indent, "|");
         debugMsgWithIndent(indent, "| Chord Index:       %04u", i);
@@ -388,7 +388,7 @@ disassembleKeyChords(const WkKeyChord* keyChords, int indent)
 }
 
 void
-disassembleKeyChordsShallow(const WkKeyChord* keyChords, uint32_t len)
+disassembleKeyChordsShallow(const KeyChord* keyChords, uint32_t len)
 {
     assert(keyChords);
 
@@ -399,7 +399,7 @@ disassembleKeyChordsShallow(const WkKeyChord* keyChords, uint32_t len)
 }
 
 void
-disassembleKeyChordWithHeader(const WkKeyChord* keyChord, int indent)
+disassembleKeyChordWithHeader(const KeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
@@ -411,7 +411,7 @@ disassembleKeyChordWithHeader(const WkKeyChord* keyChord, int indent)
 }
 
 void
-disassembleMenu(const WkMenu* menu)
+disassembleMenu(const Menu* menu)
 {
     assert(menu);
 
@@ -429,7 +429,7 @@ disassembleMenu(const WkMenu* menu)
     debugMsgWithIndent(0, "| Width:             %04u",  menu->width);
     debugMsgWithIndent(0, "| Height:            %04u",  menu->height);
     debugMsgWithIndent(0, "| Window position:   %s",
-        (menu->position == WK_WIN_POS_BOTTOM ? "BOTTOM" : "TOP")
+        (menu->position == MENU_WIN_POS_BOTTOM ? "BOTTOM" : "TOP")
     );
     debugMsgWithIndent(0, "| Border width:      %04u",  menu->borderWidth);
     debugMsgWithIndent(0, "|");
@@ -462,14 +462,14 @@ disassembleMenu(const WkMenu* menu)
 }
 
 void
-disassembleStatus(WkStatus status)
+disassembleStatus(MenuStatus status)
 {
     switch (status)
     {
-    case WK_STATUS_RUNNING: debugMsg(true, "WK_STATUS_RUNNING"); break;
-    case WK_STATUS_DAMAGED: debugMsg(true, "WK_STATUS_DAMAGED"); break;
-    case WK_STATUS_EXIT_OK: debugMsg(true, "WK_STATUS_EXIT_OK"); break;
-    case WK_STATUS_EXIT_SOFTWARE: debugMsg(true, "WK_STATUS_EXIT_SOFTWARE"); break;
+    case MENU_STATUS_RUNNING: debugMsg(true, "WK_STATUS_RUNNING"); break;
+    case MENU_STATUS_DAMAGED: debugMsg(true, "WK_STATUS_DAMAGED"); break;
+    case MENU_STATUS_EXIT_OK: debugMsg(true, "WK_STATUS_EXIT_OK"); break;
+    case MENU_STATUS_EXIT_SOFTWARE: debugMsg(true, "WK_STATUS_EXIT_SOFTWARE"); break;
     default: debugMsg(true, "WK_STATUS_UNKNOWN"); break;
     }
 }

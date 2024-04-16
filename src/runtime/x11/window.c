@@ -20,7 +20,7 @@
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/menu.h"
-#include "common/types.h"
+#include "common/key_chord.h"
 #include "common/util.h"
 
 /* runtime includes */
@@ -32,44 +32,44 @@
 
 typedef struct
 {
-    WkSpecial special;
+    SpecialKey special;
     KeySym keysym;
-} SpecialKey;
+} X11SpecialKey;
 
 static X11 x11;
-static WkX11Window* window = &x11.window;
-static WkMenu* mainMenu;
+static X11Window* window = &x11.window;
+static Menu* mainMenu;
 static bool debug;
 
-static const SpecialKey specialkeys[] = {
-    { WK_SPECIAL_NONE,      XK_VoidSymbol },
-    { WK_SPECIAL_LEFT,      XK_Left },
-    { WK_SPECIAL_LEFT,      XK_KP_Left },
-    { WK_SPECIAL_RIGHT,     XK_Right },
-    { WK_SPECIAL_RIGHT,     XK_KP_Right },
-    { WK_SPECIAL_UP,        XK_Up },
-    { WK_SPECIAL_UP,        XK_KP_Up },
-    { WK_SPECIAL_DOWN,      XK_Down },
-    { WK_SPECIAL_DOWN,      XK_KP_Down },
-    { WK_SPECIAL_TAB,       XK_Tab },
-    { WK_SPECIAL_TAB,       XK_KP_Tab },
-    { WK_SPECIAL_SPACE,     XK_space },
-    { WK_SPECIAL_SPACE,     XK_KP_Space },
-    { WK_SPECIAL_RETURN,    XK_Return },
-    { WK_SPECIAL_RETURN,    XK_KP_Enter },
-    { WK_SPECIAL_DELETE,    XK_Delete },
-    { WK_SPECIAL_DELETE,    XK_KP_Delete },
-    { WK_SPECIAL_ESCAPE,    XK_Escape },
-    { WK_SPECIAL_HOME,      XK_Home },
-    { WK_SPECIAL_HOME,      XK_KP_Home },
-    { WK_SPECIAL_PAGE_UP,   XK_Page_Up },
-    { WK_SPECIAL_PAGE_UP,   XK_KP_Page_Up },
-    { WK_SPECIAL_PAGE_DOWN, XK_Page_Down },
-    { WK_SPECIAL_PAGE_DOWN, XK_KP_Page_Down },
-    { WK_SPECIAL_END,       XK_End },
-    { WK_SPECIAL_END,       XK_KP_End },
-    { WK_SPECIAL_BEGIN,     XK_Begin },
-    { WK_SPECIAL_BEGIN,     XK_KP_Begin }
+static const X11SpecialKey specialkeys[] = {
+    { SPECIAL_KEY_NONE,      XK_VoidSymbol },
+    { SPECIAL_KEY_LEFT,      XK_Left },
+    { SPECIAL_KEY_LEFT,      XK_KP_Left },
+    { SPECIAL_KEY_RIGHT,     XK_Right },
+    { SPECIAL_KEY_RIGHT,     XK_KP_Right },
+    { SPECIAL_KEY_UP,        XK_Up },
+    { SPECIAL_KEY_UP,        XK_KP_Up },
+    { SPECIAL_KEY_DOWN,      XK_Down },
+    { SPECIAL_KEY_DOWN,      XK_KP_Down },
+    { SPECIAL_KEY_TAB,       XK_Tab },
+    { SPECIAL_KEY_TAB,       XK_KP_Tab },
+    { SPECIAL_KEY_SPACE,     XK_space },
+    { SPECIAL_KEY_SPACE,     XK_KP_Space },
+    { SPECIAL_KEY_RETURN,    XK_Return },
+    { SPECIAL_KEY_RETURN,    XK_KP_Enter },
+    { SPECIAL_KEY_DELETE,    XK_Delete },
+    { SPECIAL_KEY_DELETE,    XK_KP_Delete },
+    { SPECIAL_KEY_ESCAPE,    XK_Escape },
+    { SPECIAL_KEY_HOME,      XK_Home },
+    { SPECIAL_KEY_HOME,      XK_KP_Home },
+    { SPECIAL_KEY_PAGE_UP,   XK_Page_Up },
+    { SPECIAL_KEY_PAGE_UP,   XK_KP_Page_Up },
+    { SPECIAL_KEY_PAGE_DOWN, XK_Page_Down },
+    { SPECIAL_KEY_PAGE_DOWN, XK_KP_Page_Down },
+    { SPECIAL_KEY_END,       XK_End },
+    { SPECIAL_KEY_END,       XK_KP_End },
+    { SPECIAL_KEY_BEGIN,     XK_Begin },
+    { SPECIAL_KEY_BEGIN,     XK_KP_Begin }
 };
 
 static const size_t specialkeysLen = sizeof(specialkeys) / sizeof(specialkeys[0]);
@@ -95,7 +95,7 @@ getThrowawaySurface(void)
 }
 
 static bool
-desiriedPos(WkWindowPosition pos)
+desiriedPos(MenuWindowPosition pos)
 {
     assert(x11.menu);
     return x11.menu->position == pos;
@@ -156,7 +156,7 @@ resizeWinHeight(void)
         window->height = root->h;
     }
 
-    if (desiriedPos(WK_WIN_POS_BOTTOM))
+    if (desiriedPos(MENU_WIN_POS_BOTTOM))
     {
         window->y = root->h - window->height - window->y + root->y;
     }
@@ -463,7 +463,7 @@ grabkeyboard(void)
 }
 
 static void
-setKeyEventMods(WkMods* mods, unsigned int state)
+setKeyEventMods(KeyChordMods* mods, unsigned int state)
 {
     if (state & ControlMask) mods->ctrl = true;
     if (state & Mod1Mask) mods->alt = true;
@@ -471,59 +471,59 @@ setKeyEventMods(WkMods* mods, unsigned int state)
     if (state & ShiftMask) mods->shift = true;
 }
 
-static WkSpecial
+static SpecialKey
 getSpecialKey(KeySym keysym)
 {
     for (size_t i = 0; i < specialkeysLen; i++)
     {
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
     }
-    return WK_SPECIAL_NONE;
+    return SPECIAL_KEY_NONE;
 }
 
-static WkKeyType
-processKey(WkKey* key, unsigned int state, KeySym keysym, const char* buffer, int len)
+static KeyType
+processKey(Key* key, unsigned int state, KeySym keysym, const char* buffer, int len)
 {
     key->key = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, state);
     key->special = getSpecialKey(keysym);
-    if (keyIsStrictlyMod(key)) return WK_KEY_IS_STRICTLY_MOD;
-    if (keyIsSpecial(key)) return WK_KEY_IS_SPECIAL;
-    if (keyIsNormal(key)) return WK_KEY_IS_NORMAL;
-    return WK_KEY_IS_UNKNOWN;
+    if (keyIsStrictlyMod(key)) return KEY_TYPE_IS_STRICTLY_MOD;
+    if (keyIsSpecial(key)) return KEY_TYPE_IS_SPECIAL;
+    if (keyIsNormal(key)) return KEY_TYPE_IS_NORMAL;
+    return KEY_TYPE_IS_UNKNOWN;
     /* return (*key->key != '\0' || key->special != WK_SPECIAL_NONE); */
 }
 
-static WkStatus
+static MenuStatus
 keypress(XKeyEvent* keyEvent)
 {
     KeySym keysym = XK_VoidSymbol;
     Status status;
     char buffer[32] = {0};
     int len;
-    WkKey key = {0};
+    Key key = {0};
     unsigned int state = keyEvent->state;
 
     keyEvent->state &= ~(ControlMask);
 
     len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
 
-    if (status == XLookupNone || status == XBufferOverflow) return WK_STATUS_RUNNING;
+    if (status == XLookupNone || status == XBufferOverflow) return MENU_STATUS_RUNNING;
 
     switch (processKey(&key, state, keysym, buffer, len))
     {
-    case WK_KEY_IS_STRICTLY_MOD: return WK_STATUS_RUNNING;
-    case WK_KEY_IS_SPECIAL: /* FALLTHROUGH */
-    case WK_KEY_IS_NORMAL: return handleKeypress(mainMenu, &key);
-    case WK_KEY_IS_UNKNOWN:
+    case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
+    case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
+    case KEY_TYPE_IS_NORMAL: return handleKeypress(mainMenu, &key);
+    case KEY_TYPE_IS_UNKNOWN:
         debugMsg(debug, "Encountered an unknown key. Most likely a modifier key press event.");
         if (debug) disassembleKey(&key);
-        return WK_STATUS_RUNNING;
+        return MENU_STATUS_RUNNING;
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
 
-    return WK_STATUS_EXIT_SOFTWARE;
+    return MENU_STATUS_EXIT_SOFTWARE;
 }
 
 static int
@@ -554,10 +554,10 @@ eventHandler(void)
         case KeyPress:
             switch (keypress(&ev.xkey))
             {
-            case WK_STATUS_RUNNING: break;
-            case WK_STATUS_DAMAGED: if (!render()) return EX_SOFTWARE; break;
-            case WK_STATUS_EXIT_OK: return EX_OK;
-            case WK_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
+            case MENU_STATUS_RUNNING: break;
+            case MENU_STATUS_DAMAGED: if (!render()) return EX_SOFTWARE; break;
+            case MENU_STATUS_EXIT_OK: return EX_OK;
+            case MENU_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
             }
             break;
         case ButtonPress: return EX_SOFTWARE;
@@ -575,7 +575,7 @@ eventHandler(void)
 }
 
 int
-runX11(WkMenu* menu)
+runX11(Menu* menu)
 {
     assert(menu);
 

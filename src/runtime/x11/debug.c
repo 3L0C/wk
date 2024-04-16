@@ -18,7 +18,7 @@ debugRootDispaly(struct display* root)
 }
 
 void
-debugWindow(WkX11Window* window)
+debugWindow(X11Window* window)
 {
     debugPrintHeader(" WkX11Window ");
     debugMsgWithIndent(0, "|");

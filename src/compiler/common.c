@@ -8,7 +8,7 @@
 /* common includes */
 #include "common/common.h"
 #include "common/debug.h"
-#include "common/types.h"
+#include "common/key_chord.h"
 #include "common/util.h"
 
 /* local includes */
@@ -17,7 +17,7 @@
 #include "token.h"
 
 static bool
-addMod(WkKey* key, TokenType type)
+addMod(Key* key, TokenType type)
 {
     switch (type)
     {
@@ -32,41 +32,41 @@ addMod(WkKey* key, TokenType type)
 }
 
 static bool
-addSpecial(WkKey* key, TokenType type)
+addSpecial(Key* key, TokenType type)
 {
     key->key = NULL;
 
     switch (type)
     {
-    case TOKEN_SPECIAL_LEFT: key->special = WK_SPECIAL_LEFT; break;
-    case TOKEN_SPECIAL_RIGHT: key->special = WK_SPECIAL_RIGHT; break;
-    case TOKEN_SPECIAL_UP: key->special = WK_SPECIAL_UP; break;
-    case TOKEN_SPECIAL_DOWN: key->special = WK_SPECIAL_DOWN; break;
-    case TOKEN_SPECIAL_TAB: key->special = WK_SPECIAL_TAB; break;
-    case TOKEN_SPECIAL_SPACE: key->special = WK_SPECIAL_SPACE; break;
-    case TOKEN_SPECIAL_RETURN: key->special = WK_SPECIAL_RETURN; break;
-    case TOKEN_SPECIAL_DELETE: key->special = WK_SPECIAL_DELETE; break;
-    case TOKEN_SPECIAL_ESCAPE: key->special = WK_SPECIAL_ESCAPE; break;
-    case TOKEN_SPECIAL_HOME: key->special = WK_SPECIAL_HOME; break;
-    case TOKEN_SPECIAL_PAGE_UP: key->special = WK_SPECIAL_PAGE_UP; break;
-    case TOKEN_SPECIAL_PAGE_DOWN: key->special = WK_SPECIAL_PAGE_DOWN; break;
-    case TOKEN_SPECIAL_END: key->special = WK_SPECIAL_END; break;
-    case TOKEN_SPECIAL_BEGIN: key->special = WK_SPECIAL_BEGIN; break;
+    case TOKEN_SPECIAL_LEFT: key->special = SPECIAL_KEY_LEFT; break;
+    case TOKEN_SPECIAL_RIGHT: key->special = SPECIAL_KEY_RIGHT; break;
+    case TOKEN_SPECIAL_UP: key->special = SPECIAL_KEY_UP; break;
+    case TOKEN_SPECIAL_DOWN: key->special = SPECIAL_KEY_DOWN; break;
+    case TOKEN_SPECIAL_TAB: key->special = SPECIAL_KEY_TAB; break;
+    case TOKEN_SPECIAL_SPACE: key->special = SPECIAL_KEY_SPACE; break;
+    case TOKEN_SPECIAL_RETURN: key->special = SPECIAL_KEY_RETURN; break;
+    case TOKEN_SPECIAL_DELETE: key->special = SPECIAL_KEY_DELETE; break;
+    case TOKEN_SPECIAL_ESCAPE: key->special = SPECIAL_KEY_ESCAPE; break;
+    case TOKEN_SPECIAL_HOME: key->special = SPECIAL_KEY_HOME; break;
+    case TOKEN_SPECIAL_PAGE_UP: key->special = SPECIAL_KEY_PAGE_UP; break;
+    case TOKEN_SPECIAL_PAGE_DOWN: key->special = SPECIAL_KEY_PAGE_DOWN; break;
+    case TOKEN_SPECIAL_END: key->special = SPECIAL_KEY_END; break;
+    case TOKEN_SPECIAL_BEGIN: key->special = SPECIAL_KEY_BEGIN; break;
     default: return false;
     }
 
     return true;
 }
 
-static WkStatus
-pressKey(WkMenu* menu, Scanner* scanner)
+static MenuStatus
+pressKey(Menu* menu, Scanner* scanner)
 {
     assert(menu && scanner);
 
     static const size_t bufmax = 32;
     char buffer[bufmax];
     memset(buffer, 0, 32);
-    WkKey key = {0};
+    Key key = {0};
     Token token = {0};
     initToken(&token);
     scanTokenForCompiler(scanner, &token);
@@ -78,11 +78,11 @@ pressKey(WkMenu* menu, Scanner* scanner)
 
     if (token.type == TOKEN_KEY)
     {
-        key.special = WK_SPECIAL_NONE;
+        key.special = SPECIAL_KEY_NONE;
         if (token.length > bufmax)
         {
             errorMsg("Key is longer than max size of %zu: %04zu", bufmax, token.length);
-            return WK_STATUS_EXIT_SOFTWARE;
+            return MENU_STATUS_EXIT_SOFTWARE;
         }
         memcpy(buffer, token.start, token.length);
         buffer[token.length] = '\0';
@@ -95,7 +95,7 @@ pressKey(WkMenu* menu, Scanner* scanner)
             "Key does not appear to be a regular key or a special key: '%.*s'.",
             (int)token.length, token.start
         );
-        return WK_STATUS_EXIT_SOFTWARE;
+        return MENU_STATUS_EXIT_SOFTWARE;
     }
 
     if (menu->debug)
@@ -104,39 +104,39 @@ pressKey(WkMenu* menu, Scanner* scanner)
         disassembleKey(&key);
     }
 
-    WkStatus status = handleKeypress(menu, &key);
+    MenuStatus status = handleKeypress(menu, &key);
 
-    if (status == WK_STATUS_EXIT_SOFTWARE)
+    if (status == MENU_STATUS_EXIT_SOFTWARE)
     {
         errorMsg("Could not press key: '%.*s'.", (int)token.length, token.start);
         return status;
     }
 
-    if (status == WK_STATUS_EXIT_OK)
+    if (status == MENU_STATUS_EXIT_OK)
     {
         scanTokenForCompiler(scanner, &token);
         if (token.type == TOKEN_EOF) return status;
-        return WK_STATUS_EXIT_SOFTWARE;
+        return MENU_STATUS_EXIT_SOFTWARE;
     }
 
     return status;
 }
 
-WkStatus
-pressKeys(WkMenu* menu, const char* keys)
+MenuStatus
+pressKeys(Menu* menu, const char* keys)
 {
     assert(menu && keys);
 
     Scanner scanner;
     initScanner(&scanner, keys, "KEYS");
-    WkStatus status = pressKey(menu, &scanner);
+    MenuStatus status = pressKey(menu, &scanner);
 
     while (!isAtEnd(&scanner) && statusIsRunning(status))
     {
         status = pressKey(menu, &scanner);
     }
 
-    if (status == WK_STATUS_EXIT_OK && *scanner.current != '\0')
+    if (status == MENU_STATUS_EXIT_OK && *scanner.current != '\0')
     {
         errorMsg(
             "Reached end of chords but not end of keys: '%s'.",
