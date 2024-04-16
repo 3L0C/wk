@@ -7,24 +7,6 @@
 #include "util.h"
 
 void
-copyKeyChord(KeyChord* from, KeyChord* to)
-{
-    assert(from && to);
-
-    to->state = from->state;
-    copyKeyChordMods(&from->mods, &to->mods);
-    to->special = from->special;
-    to->key = from->key;
-    to->description = from->description;
-    to->hint = from->hint;
-    to->command = from->command;
-    to->before = from->before;
-    to->after = from->after;
-    copyKeyChordFlags(&from->flags, &to->flags);
-    to->keyChords = from->keyChords;
-}
-
-void
 copyKeyChordFlags(KeyChordFlags* from, KeyChordFlags* to)
 {
     assert(from && to);
@@ -42,17 +24,6 @@ copyKeyChordFlags(KeyChordFlags* from, KeyChordFlags* to)
     to->syncCommand = from->syncCommand;
     to->syncBefore = from->syncBefore;
     to->syncAfter = from->syncAfter;
-}
-
-void
-copyKeyChordMods(KeyChordMods* from, KeyChordMods* to)
-{
-    assert(from && to);
-
-    to->ctrl = from->ctrl;
-    to->alt = from->alt;
-    to->hyper = from->hyper;
-    to->shift = from->shift;
 }
 
 uint32_t
@@ -139,6 +110,37 @@ hasFlags(const KeyChordFlags* flags)
     );
 }
 
+static void
+resetKeyChordMods(KeyChordMods* mods)
+{
+    assert(mods);
+
+    mods->ctrl = false;
+    mods->alt = false;
+    mods->hyper = false;
+    mods->shift = false;
+}
+
+static void
+resetKeyChordFlags(KeyChordFlags* flags)
+{
+    assert(flags);
+
+    flags->keep = false;
+    flags->close = false;
+    flags->inherit = false;
+    flags->ignore = false;
+    flags->unhook = false;
+    flags->deflag = false;
+    flags->nobefore = false;
+    flags->noafter = false;
+    flags->write = false;
+    flags->execute = false;
+    flags->syncCommand = false;
+    flags->syncBefore = false;
+    flags->syncAfter = false;
+}
+
 void
 initKeyChord(KeyChord* keyChord)
 {
@@ -211,7 +213,6 @@ bool
 keyIsStrictlyMod(const Key* key)
 {
     return (isKeyChordMod(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
-    return (isKeyChordMod(&key->mods) && *key->key == '\0' && key->special == SPECIAL_KEY_NONE);
 }
 
 void
@@ -232,35 +233,33 @@ makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords)
     }
 }
 
-void
-resetKeyChordFlags(KeyChordFlags* flags)
+static void
+copyKeyChordMods(KeyChordMods* from, KeyChordMods* to)
 {
-    assert(flags);
+    assert(from && to);
 
-    flags->keep = false;
-    flags->close = false;
-    flags->inherit = false;
-    flags->ignore = false;
-    flags->unhook = false;
-    flags->deflag = false;
-    flags->nobefore = false;
-    flags->noafter = false;
-    flags->write = false;
-    flags->execute = false;
-    flags->syncCommand = false;
-    flags->syncBefore = false;
-    flags->syncAfter = false;
+    to->ctrl = from->ctrl;
+    to->alt = from->alt;
+    to->hyper = from->hyper;
+    to->shift = from->shift;
 }
 
-void
-resetKeyChordMods(KeyChordMods* mods)
+static void
+copyKeyChord(KeyChord* from, KeyChord* to)
 {
-    assert(mods);
+    assert(from && to);
 
-    mods->ctrl = false;
-    mods->alt = false;
-    mods->hyper = false;
-    mods->shift = false;
+    to->state = from->state;
+    copyKeyChordMods(&from->mods, &to->mods);
+    to->special = from->special;
+    to->key = from->key;
+    to->description = from->description;
+    to->hint = from->hint;
+    to->command = from->command;
+    to->before = from->before;
+    to->after = from->after;
+    copyKeyChordFlags(&from->flags, &to->flags);
+    to->keyChords = from->keyChords;
 }
 
 KeyChord*

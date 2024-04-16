@@ -114,6 +114,14 @@ typedef struct
     bool syncAfter:1;
 } KeyChordFlags;
 
+typedef struct
+{
+    KeyChordMods mods;
+    SpecialKey special;
+    const char* key;
+    int len;
+} Key;
+
 typedef struct KeyChord
 {
     KeyChordState state;
@@ -136,17 +144,7 @@ typedef struct
     size_t capacity;
 } KeyChordArray;
 
-typedef struct
-{
-    KeyChordMods mods;
-    SpecialKey special;
-    const char* key;
-    int len;
-} Key;
-
-void copyKeyChord(KeyChord* from, KeyChord* to);
 void copyKeyChordFlags(KeyChordFlags* from, KeyChordFlags* to);
-void copyKeyChordMods(KeyChordMods* from, KeyChordMods* to);
 uint32_t countKeyChordMods(const KeyChordMods* mods);
 uint32_t countKeyChordFlags(const KeyChordFlags* flags);
 const char* getSpecialKeyRepr(const SpecialKey special);
@@ -159,8 +157,6 @@ bool keyIsNormal(const Key* key);
 bool keyIsSpecial(const Key* key);
 bool keyIsStrictlyMod(const Key* key);
 void makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords);
-void resetKeyChordFlags(KeyChordFlags* flags);
-void resetKeyChordMods(KeyChordMods* mods);
 KeyChord* writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord);
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */
