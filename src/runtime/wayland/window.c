@@ -137,8 +137,7 @@ createBuffer(
     int32_t height,
     uint32_t format,
     int32_t scale,
-    CairoPaint* paint
-)
+    CairoPaint* paint)
 {
     debugMsg(debug, "lib/wayland/window.c:createBuffer:139");
     uint32_t stride = width * 4;
@@ -296,10 +295,10 @@ getThrowawaySurface(WaylandWindow* window)
 }
 
 static void
-resizeWinWidth(WaylandWindow* window, Menu* props)
+resizeWinWidth(WaylandWindow* window, Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinWidth:297");
-    int32_t windowWidth = props->windowWidth;
+    int32_t windowWidth = menu->windowWidth;
     uint32_t outputWidth = window->maxWidth;
 
     if (windowWidth < 0)
@@ -320,7 +319,7 @@ resizeWinWidth(WaylandWindow* window, Menu* props)
 }
 
 static void
-resizeWinHeight(WaylandWindow* window, Menu* props)
+resizeWinHeight(WaylandWindow* window, Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinHeight:321");
     /* Output* output = window->wayland->selectedOutput; */
@@ -335,16 +334,16 @@ resizeWinHeight(WaylandWindow* window, Menu* props)
 }
 
 static void
-resizeWinGap(WaylandWindow* window, Menu* props)
+resizeWinGap(WaylandWindow* window, Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWinGap:336");
-    int32_t windowGap = props->windowGap;
+    int32_t windowGap = menu->windowGap;
     uint32_t outputHeight = window->maxHeight;
 
     if (windowGap < 0)
     {
         /* set gap to 1/10th the size of the output */
-        debugMsg(props->debug, "Setting windowGap to 1/10th the screen height.");
+        debugMsg(menu->debug, "Setting windowGap to 1/10th the screen height.");
         window->windowGap = (outputHeight / 10);
     }
     /* else if (windowGap == 0 || (uint32_t)windowGap > output->height) */
@@ -352,7 +351,7 @@ resizeWinGap(WaylandWindow* window, Menu* props)
     {
         /* make the window as large as possible */
         debugMsg(
-            props->debug,
+            menu->debug,
             "Setting windowGap to maximum gapsize possible: %u.",
             outputHeight - window->height
         );
@@ -361,22 +360,22 @@ resizeWinGap(WaylandWindow* window, Menu* props)
     else
     {
         /* make the gap as large as the user wants */
-        debugMsg(props->debug, "Setting windowGap to user value: %u.", windowGap);
+        debugMsg(menu->debug, "Setting windowGap to user value: %u.", windowGap);
         window->windowGap = windowGap;
     }
 }
 
 
 static void
-resizeWindow(WaylandWindow* window, Menu* props)
+resizeWindow(WaylandWindow* window, Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:resizeWindow:369");
-    assert(window && props);
+    assert(window && menu);
 
-    window->height = cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);
-    resizeWinWidth(window, props);
-    resizeWinHeight(window, props);
-    resizeWinGap(window, props);
+    window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);
+    resizeWinWidth(window, menu);
+    resizeWinHeight(window, menu);
+    resizeWinGap(window, menu);
 }
 
 static void
@@ -404,12 +403,12 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
 }
 
 bool
-windowRender(WaylandWindow* window, struct wl_display* display, Menu* props)
+windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:windowRender:405");
-    assert(window && props);
+    assert(window && menu);
 
-    resizeWindow(window, props);
+    resizeWindow(window, menu);
 
     Buffer* buffer = nextBuffer(window);
     if (!buffer)
@@ -418,9 +417,9 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* props)
         return false;
     }
 
-    props->width = buffer->width;
-    props->height = buffer->height;
-    window->render(&buffer->cairo, props);
+    menu->width = buffer->width;
+    menu->height = buffer->height;
+    window->render(&buffer->cairo, menu);
     cairo_surface_flush(buffer->cairo.surface);
 
     moveResizeWindow(window, display);
@@ -455,8 +454,7 @@ layerSurfaceConfigure(
     struct zwlr_layer_surface_v1* layerSurface,
     uint32_t serial,
     uint32_t width,
-    uint32_t height
-)
+    uint32_t height)
 {
     debugMsg(debug, "lib/wayland/window.c:layerSurfaceConfigure:457");
     WaylandWindow* window = data;
@@ -488,10 +486,10 @@ getWindowWidth(WaylandWindow* window)
 }
 
 static uint32_t
-getWindowHeight(WaylandWindow* window, Menu* props)
+getWindowHeight(WaylandWindow* window, Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:getWindowHeight:489");
-    return cairoGetHeight(props, getThrowawaySurface(window), window->maxHeight);;
+    return cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);;
 }
 
 void
@@ -536,8 +534,7 @@ windowCreate(
     struct wl_output* wlOutput,
     struct zwlr_layer_shell_v1* layerShell,
     struct wl_surface* surface,
-    Menu* props
-)
+    Menu* menu)
 {
     debugMsg(debug, "lib/wayland/window.c:windowCreate:538");
     assert(window);
@@ -560,13 +557,13 @@ windowCreate(
     wl_display_roundtrip(display);
 
     zwlr_layer_surface_v1_set_size(
-        window->layerSurface, getWindowWidth(window), getWindowHeight(window, props)
+        window->layerSurface, getWindowWidth(window), getWindowHeight(window, menu)
     );
 
     window->shm = shm;
     window->surface = surface;
 
-    cairoInitPaint(props, &window->paint);
+    cairoInitPaint(menu, &window->paint);
 
     return true;
 }
