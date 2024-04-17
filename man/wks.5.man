@@ -299,9 +299,37 @@ flag               -> \[aq]+\[aq] ( \[aq]keep\[aq]
                           | \[aq]no-before\[aq]
                           | \[aq]no-after\[aq]
                           | \[aq]write\[aq]
+                          | \[aq]execute\[aq]
                           | \[aq]sync-command\[aq] ) ;
 
-preprocessor_macro -> \[aq]:\[aq] ( \[aq]include\[aq] \[aq]\[dq]\[aq] [\[ha]\[dq]]+ \[aq]\[dq]\[aq] ) ;
+preprocessor_macro -> \[aq]:\[aq] ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+
+string_macro       -> ( \[aq]include\[aq]
+                      | \[aq]fg-color\[aq]
+                      | \[aq]bg-color\[aq]
+                      | \[aq]bd-color\[aq]
+                      | \[aq]shell\[aq]
+                      | \[aq]font\[aq] ) \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] )* \[aq]\[dq]\[aq] ) ;
+
+switch_macro       -> ( \[aq]debug\[aq]
+                      | \[aq]sort\[aq]
+                      | \[aq]top\[aq]
+                      | \[aq]bottom\[aq] );
+
+
+integer_macro      -> ( \[aq]window-width\[aq]
+                      | \[aq]window-gap\[aq] ) \[aq]-\[aq]? [0-9]+ ;
+
+unsigned_macro     -> ( \[aq]max-columns\[aq]
+                      | \[aq]border-width\[aq]
+                      | \[aq]width-padding\[aq]
+                      | \[aq]height-padding\[aq] ) [0-9]+ ;
+
+number_macro       -> ( \[aq]border-radius\[aq] ) [0-9]+ ( \[aq].\[aq] [0-9]* )? ;
 .EE
 .SS KEY CHORD
 A \f[I]key chord\f[R] is the top-level construct in the grammar and

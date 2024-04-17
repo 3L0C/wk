@@ -302,9 +302,37 @@ flag               -> '+' ( 'keep'
                           | 'no-before'
                           | 'no-after'
                           | 'write'
+                          | 'execute'
                           | 'sync-command' ) ;
 
-preprocessor_macro -> ':' ( 'include' '"' [^"]+ '"' ) ;
+preprocessor_macro -> ':' ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+
+string_macro       -> ( 'include'
+                      | 'fg-color'
+                      | 'bg-color'
+                      | 'bd-color'
+                      | 'shell'
+                      | 'font' ) '"' ( '\\"' | [^"] )* '"' ) ;
+
+switch_macro       -> ( 'debug'
+                      | 'sort'
+                      | 'top'
+                      | 'bottom' );
+
+
+integer_macro      -> ( 'window-width'
+                      | 'window-gap' ) '-'? [0-9]+ ;
+
+unsigned_macro     -> ( 'max-columns'
+                      | 'border-width'
+                      | 'width-padding'
+                      | 'height-padding' ) [0-9]+ ;
+
+number_macro       -> ( 'border-radius' ) [0-9]+ ( '.' [0-9]* )? ;
 #+end_example
 
 ** KEY CHORD
