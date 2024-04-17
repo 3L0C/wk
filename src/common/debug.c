@@ -203,20 +203,19 @@ getDelim(int* count, char a, char b)
 }
 
 static void
-disassembleMod(const KeyChordMods* mods, int indent)
+disassembleMod(const Modifiers* mods, int indent)
 {
     assert(mods);
 
     debugMsgWithIndent(indent, "| Mods:              ");
 
-    if (!isKeyChordMod(mods))
+    if (!hasActiveModifier(mods))
     {
         printf("NONE\n");
         return;
     }
 
-    printf("| Mods                ");
-    int count = countKeyChordMods(mods);
+    int count = countModifiers(mods);
     if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
     if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
     if (mods->hyper) printf("HYPER%c", getDelim(&count, '|', '\n'));
@@ -293,7 +292,7 @@ debugString(const char* text, const char* value, int indent)
 }
 
 void
-disassembleKey(const KeyChordKey* key)
+disassembleKey(const Key* key)
 {
     assert(key);
 
@@ -315,19 +314,19 @@ disassembleKey(const KeyChordKey* key)
 
 
 void
-disassembleFlags(const KeyChordFlags* flags, int indent)
+disassembleFlags(const ChordFlags* flags, int indent)
 {
     assert(flags);
 
     debugMsgWithIndent(indent, "| Flags:             ");
 
-    if (!hasFlags(flags))
+    if (!hasChordFlags(flags))
     {
         printf("WK_FLAG_DEFAULTS\n");
         return;
     }
 
-    int count = countKeyChordFlags(flags);
+    int count = countChordFlags(flags);
     if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
     if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
     if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));

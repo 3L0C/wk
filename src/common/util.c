@@ -46,53 +46,6 @@ countKeyChords(const KeyChord* keyChords)
     return count;
 }
 
-
-static bool
-modsEqual(const KeyChordMods* a, const KeyChordMods* b, bool checkShift)
-{
-    assert(a && b);
-
-    if (checkShift)
-    {
-        return (
-            a->ctrl == b->ctrl &&
-            a->alt == b->alt &&
-            a->hyper == b->hyper &&
-            a->shift == b->shift
-        );
-    }
-    return (
-        a->ctrl == b->ctrl &&
-        a->alt == b->alt &&
-        a->hyper == b->hyper
-    );
-}
-
-static bool
-isSpecialKey(const KeyChord* keyChord, const KeyChordKey* key)
-{
-    assert(keyChord && key);
-
-    return (
-        key->special != SPECIAL_KEY_NONE &&
-        keyChord->key.special == key->special &&
-        modsEqual(&keyChord->key.mods, &key->mods, true)
-    );
-}
-
-static bool
-isKey(const KeyChord* keyChord, const KeyChordKey* key)
-{
-    assert(keyChord && key);
-
-    if (isSpecialKey(keyChord, key)) return true;
-    return (
-        modsEqual(&keyChord->key.mods, &key->mods, false) &&
-        keyChord->key.special == key->special &&
-        strcmp(keyChord->key.repr, key->repr) == 0
-    );
-}
-
 static MenuStatus
 handlePrefix(Menu* menu, const KeyChord* keyChord)
 {
@@ -142,7 +95,7 @@ pressKey(Menu* menu, const KeyChord* keyChord)
 }
 
 MenuStatus
-handleKeypress(Menu* menu, const KeyChordKey* key)
+handleKeypress(Menu* menu, const Key* key)
 {
     assert(menu && key);
 
@@ -151,7 +104,7 @@ handleKeypress(Menu* menu, const KeyChordKey* key)
 
     for (uint32_t i = 0; i < len; i++)
     {
-        if (isKey(&keyChords[i], key))
+        if (keysAreEqual(&keyChords[i].key, key))
         {
             if (menu->debug)
             {

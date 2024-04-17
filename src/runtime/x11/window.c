@@ -463,7 +463,7 @@ grabkeyboard(void)
 }
 
 static void
-setKeyEventMods(KeyChordMods* mods, unsigned int state)
+setKeyEventMods(Modifiers* mods, unsigned int state)
 {
     if (state & ControlMask) mods->ctrl = true;
     if (state & Mod1Mask) mods->alt = true;
@@ -482,7 +482,7 @@ getSpecialKey(KeySym keysym)
 }
 
 static KeyType
-processKey(KeyChordKey* key, unsigned int state, KeySym keysym, char* buffer, int len)
+processKey(Key* key, unsigned int state, KeySym keysym, char* buffer, int len)
 {
     key->repr = buffer;
     key->len = len;
@@ -492,7 +492,6 @@ processKey(KeyChordKey* key, unsigned int state, KeySym keysym, char* buffer, in
     if (keyIsSpecial(key)) return KEY_TYPE_IS_SPECIAL;
     if (keyIsNormal(key)) return KEY_TYPE_IS_NORMAL;
     return KEY_TYPE_IS_UNKNOWN;
-    /* return (*key->key != '\0' || key->special != WK_SPECIAL_NONE); */
 }
 
 static MenuStatus
@@ -502,7 +501,7 @@ keypress(XKeyEvent* keyEvent)
     Status status;
     char buffer[32] = {0};
     int len;
-    KeyChordKey key = {0};
+    Key key = {0};
     unsigned int state = keyEvent->state;
 
     keyEvent->state &= ~(ControlMask);

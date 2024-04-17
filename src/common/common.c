@@ -102,6 +102,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         { "top",            no_argument,        0, 't' },
         { "bottom",         no_argument,        0, 'b' },
         { "script",         no_argument,        0, 's' },
+        { "sort",           no_argument,        0, 'S' },
         /*                  required argument           */
         { "max-columns",    required_argument,  0, 'm' },
         { "press",          required_argument,  0, 'p' },
@@ -127,7 +128,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
     while (true)
     {
 
-        opt = getopt_long(*argc, *argv, ":hvdtbsm:p:T:c:w:g:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvdtbsSm:p:T:c:w:g:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
@@ -139,6 +140,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         case 't': menu->position = MENU_WIN_POS_TOP; break;
         case 'b': menu->position = MENU_WIN_POS_BOTTOM; break;
         case 's': menu->client.tryScript = true; break;
+        case 'S': menu->sort = true; break;
         /* requires argument */
         case 'm':
         {

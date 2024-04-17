@@ -18,6 +18,7 @@ typedef enum
     /* preprocessor macros */
     TOKEN_INCLUDE,
     TOKEN_DEBUG,
+    TOKEN_SORT,
     TOKEN_TOP,
     TOKEN_BOTTOM,
     TOKEN_MAX_COLUMNS,

@@ -2,8 +2,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* common includes */
@@ -133,7 +133,7 @@ synchronize(Compiler* compiler)
 }
 
 static void
-addMod(TokenType type, KeyChordMods* mod)
+addMod(TokenType type, Modifiers* mod)
 {
     assert(mod);
 
@@ -201,6 +201,7 @@ compileKeyFromToken(Compiler* compiler, KeyChord* keyChord)
     initString(&result);
     appendToString(&result, token->start, token->length);
     keyChord->key.repr = result.string;
+    keyChord->key.len = result.count;
     disownString(&result);
 }
 
@@ -213,6 +214,12 @@ compileKey(Compiler* compiler, KeyChord* keyChord)
     if (!isKey(compiler)) return errorAtCurrent(compiler, "Expected key or special.");
     compileKeyFromToken(compiler, keyChord);
     consume(compiler, currentType(compiler), "Expected key or special.");
+}
+
+static size_t
+compilerGetIndex(Compiler* compiler)
+{
+    return compiler->keyChordDest->count;
 }
 
 static void
@@ -235,9 +242,9 @@ compileDescription(Compiler* compiler, KeyChord* keyChord)
         Token* token = currentToken(compiler);
         switch (token->type)
         {
-        case TOKEN_THIS_KEY: appendToString(&result, keyChord->key.repr, strlen(keyChord->key.repr)); break;
-        case TOKEN_INDEX: appendUInt32ToString(&result, compiler->index); break;
-        case TOKEN_INDEX_ONE: appendUInt32ToString(&result, compiler->index + 1); break;
+        case TOKEN_THIS_KEY: appendToString(&result, keyChord->key.repr, keyChord->key.len); break;
+        case TOKEN_INDEX: appendUInt32ToString(&result, compilerGetIndex(compiler)); break;
+        case TOKEN_INDEX_ONE: appendUInt32ToString(&result, compilerGetIndex(compiler) + 1); break;
         case TOKEN_DESC_INTERP: /* FALLTHROUGH */
         case TOKEN_DESCRIPTION: appendToString(&result, token->start, token->length); break;
         default: errorAtCurrent(compiler, "Malfromed description."); goto fail;
@@ -246,6 +253,7 @@ compileDescription(Compiler* compiler, KeyChord* keyChord)
         advanceCompiler(compiler);
     }
 
+    rtrimString(&result);
     keyChord->description = result.string;
     disownString(&result);
     consume(compiler, TOKEN_DESCRIPTION, "Expect description.");
@@ -279,11 +287,7 @@ compileCommand(Compiler* compiler, KeyChord* keyChord, char** dest)
         Token* token = currentToken(compiler);
         switch (token->type)
         {
-        case TOKEN_THIS_KEY:
-        {
-            appendToString(&result, keyChord->key.repr, strlen(keyChord->key.repr));
-            break;
-        }
+        case TOKEN_THIS_KEY: appendToString(&result, keyChord->key.repr, keyChord->key.len); break;
         case TOKEN_THIS_DESC:
         {
             appendToString(&result, keyChord->description, strlen(keyChord->description));
@@ -321,16 +325,8 @@ compileCommand(Compiler* compiler, KeyChord* keyChord, char** dest)
             );
             break;
         }
-        case TOKEN_INDEX:
-        {
-            appendUInt32ToString(&result, compiler->index);
-            break;
-        }
-        case TOKEN_INDEX_ONE:
-        {
-            appendUInt32ToString(&result, compiler->index + 1);
-            break;
-        }
+        case TOKEN_INDEX: appendUInt32ToString(&result, compilerGetIndex(compiler)); break;
+        case TOKEN_INDEX_ONE: appendUInt32ToString(&result, compilerGetIndex(compiler) + 1); break;
         case TOKEN_COMM_INTERP: /* FALLTHROUGH */
         case TOKEN_COMMAND: appendToString(&result, token->start, token->length); break;
         default: errorAtCurrent(compiler, "Malformed command."); goto fail;
@@ -339,6 +335,7 @@ compileCommand(Compiler* compiler, KeyChord* keyChord, char** dest)
         advanceCompiler(compiler);
     }
 
+    rtrimString(&result);
     *dest = result.string;
     disownString(&result);
     consume(compiler, TOKEN_COMMAND, "Expected command.");
@@ -357,12 +354,12 @@ compileHint(Compiler* compiler, KeyChord* keyChord)
 
     String result = {0};
     initString(&result);
-    KeyChordMods* mods = &keyChord->key.mods;
+    Modifiers* mods = &keyChord->key.mods;
     if (mods->ctrl) appendToString(&result, "C-", strlen("C-"));
     if (mods->alt) appendToString(&result, "A-", strlen("A-"));
     if (mods->hyper) appendToString(&result, "H-", strlen("H-"));
     if (mods->shift) appendToString(&result, "S-", strlen("S-"));
-    appendToString(&result, keyChord->key.repr, strlen(keyChord->key.repr));
+    appendToString(&result, keyChord->key.repr, keyChord->key.len);
     appendToString(&result, delimiter, delimiterLen);
     appendToString(&result, keyChord->description, strlen(keyChord->description));
     keyChord->hint = result.string;
@@ -492,11 +489,11 @@ compileChord(Compiler* compiler)
         return;
     }
 
-    writeKeyChordArray(compiler->keyChordDest, keyChord);
+    writeChordArray(compiler->keyChordDest, keyChord);
     initKeyChord(keyChord);
 
     /* Increment index counter */
-    compiler->index++;
+    /* compiler->index++; */
 }
 
 static void
@@ -583,7 +580,7 @@ compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t in
         Token* token = &tokens->tokens[i];
         switch (token->type)
         {
-        case TOKEN_THIS_KEY: appendToString(&result, to->key.repr, strlen(to->key.repr)); break;
+        case TOKEN_THIS_KEY: appendToString(&result, to->key.repr, to->key.len); break;
         case TOKEN_THIS_DESC:
         {
             appendToString(&result, to->description, strlen(to->description));
@@ -635,6 +632,7 @@ compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t in
         }
     }
 
+    rtrimString(&result);
     *dest = result.string;
     disownString(&result);
 }
@@ -667,7 +665,7 @@ compileMissingKeyChordInfo(
     if (!to->command) compileStringFromTokens(commandTokens, to, &to->command, index);
     if (!to->before && from->before) compileString(from->before, &to->before);
     if (!to->after && from->after) compileString(from->after, &to->after);
-    if (keyChordHasDefaultFlags(&to->flags)) copyKeyChordFlags(&from->flags, &to->flags);
+    if (hasDefaultChordFlags(&to->flags)) copyChordFlags(&from->flags, &to->flags);
 }
 
 static void
@@ -718,10 +716,7 @@ compileChordArray(Compiler* compiler)
             compileKey(compiler, keyChord);
         }
 
-        writeKeyChordArray(compiler->keyChordDest, keyChord);
-
-        /* increment index counter */
-        compiler->index++;
+        writeChordArray(compiler->keyChordDest, keyChord);
     }
 
     consume(compiler, TOKEN_RIGHT_BRACKET, "Expect ']' after key list.");
@@ -738,13 +733,13 @@ compileChordArray(Compiler* compiler)
     collectCommandTokens(compiler, &commandTokens);
 
     /* Write chords in chord array to destination */
-    KeyChordArray* array = compiler->keyChordDest;
+    ChordArray* array = compiler->keyChordDest;
     size_t arrayEnd = array->count;
     for (size_t i = arrayStart; i < arrayEnd; i++)
     {
         KeyChord* keyChord = &(*array->keyChords)[i];
         compileMissingKeyChordInfo(
-            compiler, &dummy, keyChord, &descriptionTokens, &commandTokens, i - arrayStart
+            compiler, &dummy, keyChord, &descriptionTokens, &commandTokens, i
         );
     }
 
@@ -763,7 +758,7 @@ compileNullKeyChord(Compiler* compiler)
 {
     assert(compiler);
 
-    writeKeyChordArray(compiler->keyChordDest, &nullKeyChord);
+    writeChordArray(compiler->keyChordDest, &nullKeyChord);
 }
 
 static void
@@ -815,7 +810,7 @@ setHooks(KeyChord* parent, KeyChord* child)
 }
 
 static void
-setFlags(KeyChordFlags* parent, KeyChordFlags* child)
+setFlags(ChordFlags* parent, ChordFlags* child)
 {
     assert(parent && child);
 
@@ -828,7 +823,7 @@ setFlags(KeyChordFlags* parent, KeyChordFlags* child)
 }
 
 static void
-setHooksAndFlags(KeyChord* parent, KeyChordArray* children)
+setHooksAndFlags(KeyChord* parent, ChordArray* children)
 {
     assert(parent && children);
 
@@ -845,11 +840,31 @@ setHooksAndFlags(KeyChord* parent, KeyChordArray* children)
         setFlags(&parent->flags, &child->flags);
         if (child->keyChords)
         {
-            KeyChordArray array = {0};
-            makePsuedoKeyChordArray(&array, &child->keyChords);
+            ChordArray array = {0};
+            makePsuedoChordArray(&array, &child->keyChords);
             setHooksAndFlags(child, &array);
         }
     }
+}
+
+static int
+compareKeyChords(const void* a, const void* b)
+{
+    const Key* keyA = &((KeyChord*)a)->key;
+    const Key* keyB = &((KeyChord*)b)->key;
+
+    bool hasModsA = hasActiveModifier(&keyA->mods);
+    bool hasModsB = hasActiveModifier(&keyB->mods);
+
+    if (hasModsA == hasModsB) return strcmp(keyA->repr, keyB->repr);
+    if (hasModsA) return 1;
+    return -1;
+}
+
+static void
+sortChordArray(KeyChord* keyChords, size_t count)
+{
+    qsort(keyChords, count, sizeof(KeyChord), compareKeyChords);
 }
 
 static void
@@ -858,19 +873,19 @@ compilePrefix(Compiler* compiler)
     assert(compiler);
 
     /* Backup information */
-    KeyChordArray* parent = compiler->keyChordPrefix;
-    KeyChordArray* dest = compiler->keyChordDest;
-    KeyChordArray  child = {0};
-    uint32_t outerIndex = compiler->index;
-    compiler->index = 0;
+    ChordArray* parent = compiler->keyChordPrefix;
+    ChordArray* dest = compiler->keyChordDest;
+    ChordArray  child = {0};
+    /* uint32_t outerIndex = compiler->index; */
+    /* compiler->index = 0; */
 
     /* advance */
     compiler->keyChordPrefix = compiler->keyChordDest;
-    KeyChord* keyChord = writeKeyChordArray(compiler->keyChordDest, &compiler->keyChord);
+    KeyChord* keyChord = writeChordArray(compiler->keyChordDest, &compiler->keyChord);
     compiler->keyChordDest = &child;
 
     /* start new scope */
-    initKeyChordArray(compiler->keyChordDest, &keyChord->keyChords);
+    initChordArray(compiler->keyChordDest, &keyChord->keyChords);
 
     /* Compile children */
     while (!compilerIsAtEnd(compiler) && !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
@@ -882,10 +897,10 @@ compilePrefix(Compiler* compiler)
 
     /* end prefix */
     setHooksAndFlags(keyChord, compiler->keyChordDest);
+    if (compiler->sort) sortChordArray(*compiler->keyChordDest->keyChords, compilerGetIndex(compiler));
     compileNullKeyChord(compiler);
     compiler->keyChordPrefix = parent;
     compiler->keyChordDest = dest;
-    compiler->index = outerIndex;
 }
 
 static void
@@ -914,14 +929,15 @@ compileKeyChords(Compiler* compiler, Menu* menu)
 {
     assert(compiler && menu);
 
-    /* Initialize globals */
+    /* Initialize globals and defaults */
     initKeyChord(&nullKeyChord);
     nullKeyChord.state = KEY_CHORD_STATE_IS_NULL;
     debug = menu->debug;
     delimiter = menu->delimiter;
     delimiterLen = strlen(delimiter);
+    compiler->sort = menu->sort;
 
-    initKeyChordArray(&compiler->keyChords, &menu->keyChordsHead);
+    initChordArray(&compiler->keyChords, &menu->keyChordsHead);
     compiler->keyChordDest = &compiler->keyChords;
     if (debug) debugPrintScannedTokenHeader();
 
@@ -931,6 +947,7 @@ compileKeyChords(Compiler* compiler, Menu* menu)
         compileKeyChord(compiler);
     }
 
+    if (compiler->sort) sortChordArray(*compiler->keyChordDest->keyChords, compilerGetIndex(compiler));
     compileNullKeyChord(compiler);
 
     if (debug)
@@ -950,9 +967,10 @@ initCompiler(Compiler* compiler, char *source, const char *filepath)
     initScanner(&compiler->scanner, source, filepath);
     compiler->hadError = false;
     compiler->panicMode = false;
-    compiler->index = 0;
+    /* compiler->index = 0; */
     initKeyChord(&compiler->keyChord);
     compiler->keyChordDest = NULL;
     compiler->keyChordPrefix = NULL;
     compiler->source = source;
+    compiler->sort = false;
 }

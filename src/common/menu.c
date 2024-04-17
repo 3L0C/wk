@@ -124,6 +124,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->keyChordsHead = NULL;
     menu->keyChordCount = 0;
     menu->debug = false;
+    menu->sort = false;
     menu->dirty = true;
     menu->client.keys = NULL;
     menu->client.transpile = NULL;

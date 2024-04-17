@@ -64,6 +64,7 @@ typedef struct
     KeyChord* keyChordsHead;
     uint32_t keyChordCount;
     bool debug;
+    bool sort;
     bool dirty;
     struct Client
     {

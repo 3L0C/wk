@@ -1,13 +1,14 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "key_chord.h"
 #include "memory.h"
 #include "util.h"
 
 void
-copyKeyChordFlags(KeyChordFlags* from, KeyChordFlags* to)
+copyChordFlags(ChordFlags* from, ChordFlags* to)
 {
     assert(from && to);
 
@@ -27,7 +28,7 @@ copyKeyChordFlags(KeyChordFlags* from, KeyChordFlags* to)
 }
 
 uint32_t
-countKeyChordMods(const KeyChordMods* mods)
+countModifiers(const Modifiers* mods)
 {
     assert(mods);
 
@@ -41,7 +42,7 @@ countKeyChordMods(const KeyChordMods* mods)
 }
 
 uint32_t
-countKeyChordFlags(const KeyChordFlags* flags)
+countChordFlags(const ChordFlags* flags)
 {
     assert(flags);
 
@@ -89,7 +90,7 @@ getSpecialKeyRepr(const SpecialKey special)
 }
 
 bool
-hasFlags(const KeyChordFlags* flags)
+hasChordFlags(const ChordFlags* flags)
 {
     assert(flags);
 
@@ -111,7 +112,7 @@ hasFlags(const KeyChordFlags* flags)
 }
 
 static void
-resetKeyChordMods(KeyChordMods* mods)
+resetKeyChordMods(Modifiers* mods)
 {
     assert(mods);
 
@@ -122,7 +123,7 @@ resetKeyChordMods(KeyChordMods* mods)
 }
 
 static void
-resetKeyChordFlags(KeyChordFlags* flags)
+resetKeyChordFlags(ChordFlags* flags)
 {
     assert(flags);
 
@@ -150,6 +151,7 @@ initKeyChord(KeyChord* keyChord)
     resetKeyChordMods(&keyChord->key.mods);
     keyChord->key.special = SPECIAL_KEY_NONE;
     keyChord->key.repr = NULL;
+    keyChord->key.len = 0;
     keyChord->description = NULL;
     keyChord->hint = NULL;
     keyChord->command = NULL;
@@ -160,7 +162,7 @@ initKeyChord(KeyChord* keyChord)
 }
 
 void
-initKeyChordArray(KeyChordArray* dest, KeyChord** source)
+initChordArray(ChordArray* dest, KeyChord** source)
 {
     assert(dest && source && !*source);
 
@@ -170,7 +172,7 @@ initKeyChordArray(KeyChordArray* dest, KeyChord** source)
 }
 
 bool
-isKeyChordMod(const KeyChordMods* mods)
+hasActiveModifier(const Modifiers* mods)
 {
     assert(mods);
 
@@ -178,7 +180,7 @@ isKeyChordMod(const KeyChordMods* mods)
 }
 
 bool
-keyChordHasDefaultFlags(const KeyChordFlags* flags)
+hasDefaultChordFlags(const ChordFlags* flags)
 {
     return (
         flags->keep == false &&
@@ -197,26 +199,79 @@ keyChordHasDefaultFlags(const KeyChordFlags* flags)
     );
 }
 
+static bool
+modsAreEqual(const Modifiers* a, const Modifiers* b, bool checkShift)
+{
+    assert(a && b);
+
+    if (checkShift)
+    {
+        return (
+            a->ctrl == b->ctrl &&
+            a->alt == b->alt &&
+            a->hyper == b->hyper &&
+            a->shift == b->shift
+        );
+    }
+    return (
+        a->ctrl == b->ctrl &&
+        a->alt == b->alt &&
+        a->hyper == b->hyper
+    );
+}
+
+static bool
+keysAreSpecial(const Key* a, const Key* b)
+{
+    assert(a && b);
+
+    return a->special != SPECIAL_KEY_NONE && b->special != SPECIAL_KEY_NONE;
+}
+
+static bool
+specialKeysAreEqual(const Key* a, const Key* b)
+{
+    assert(a && b);
+
+    return (
+        a->special == b->special &&
+        modsAreEqual(&a->mods, &b->mods, true)
+    );
+}
+
 bool
-keyIsNormal(const KeyChordKey* key)
+keysAreEqual(const Key* a, const Key* b)
+{
+    assert(a && b);
+
+    if (keysAreSpecial(a, b) && specialKeysAreEqual(a, b)) return true;
+    return (
+        a->special == b->special &&
+        modsAreEqual(&a->mods, &b->mods, false) &&
+        strcmp(a->repr, b->repr) == 0
+    );
+}
+
+bool
+keyIsNormal(const Key* key)
 {
     return (!keyIsSpecial(key) && *key->repr != '\0');
 }
 
 bool
-keyIsSpecial(const KeyChordKey* key)
+keyIsSpecial(const Key* key)
 {
     return (key->special != SPECIAL_KEY_NONE);
 }
 
 bool
-keyIsStrictlyMod(const KeyChordKey* key)
+keyIsStrictlyMod(const Key* key)
 {
-    return (isKeyChordMod(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
+    return (hasActiveModifier(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
 }
 
 void
-makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords)
+makePsuedoChordArray(ChordArray* array, KeyChord** keyChords)
 {
     assert(array && keyChords);
 
@@ -234,7 +289,7 @@ makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords)
 }
 
 static void
-copyKeyChordMods(KeyChordMods* from, KeyChordMods* to)
+copyKeyChordMods(Modifiers* from, Modifiers* to)
 {
     assert(from && to);
 
@@ -253,17 +308,18 @@ copyKeyChord(KeyChord* from, KeyChord* to)
     copyKeyChordMods(&from->key.mods, &to->key.mods);
     to->key.special = from->key.special;
     to->key.repr = from->key.repr;
+    to->key.len = from->key.len;
     to->description = from->description;
     to->hint = from->hint;
     to->command = from->command;
     to->before = from->before;
     to->after = from->after;
-    copyKeyChordFlags(&from->flags, &to->flags);
+    copyChordFlags(&from->flags, &to->flags);
     to->keyChords = from->keyChords;
 }
 
 KeyChord*
-writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord)
+writeChordArray(ChordArray* array, KeyChord* keyChord)
 {
     assert(array && keyChord);
 

@@ -9,7 +9,7 @@
 #define MAKE_MODS(                      \
     _ctrl, _alt, _hyper, _shift         \
 )                                       \
-    (KeyChordMods){                     \
+    (Modifiers){                        \
         .ctrl = (_ctrl),                \
         .alt = (_alt),                  \
         .hyper = (_hyper),              \
@@ -25,7 +25,7 @@
     _syncCommand, _syncBefore,          \
     _syncAfter                          \
 )                                       \
-    (KeyChordFlags){                    \
+    (ChordFlags){                       \
         .keep = (_keep),                \
         .close = (_close),              \
         .inherit = (_inherit),          \
@@ -47,7 +47,7 @@
     _special,                           \
     _key, _len                          \
 )                                       \
-    (KeyChordKey){                      \
+    (Key){                              \
         MAKE_MODS((_ctrl), (_alt),      \
                   (_hyper), (_shift)),  \
         (_special), (_key), (_len)      \
@@ -55,7 +55,7 @@
 
 #define MAKE_NULL_KEY \
     MAKE_KEY(false, false, false, false, \
-             SPECIAL_KEY_NONE, NULL, -1)
+             SPECIAL_KEY_NONE, NULL, 0)
 
 /* chord macros */
 #define NULL_KEY_CHORD                          \
@@ -66,7 +66,7 @@
         NULL,                                   \
         NULL,                                   \
         NULL,                                   \
-        (KeyChordFlags){0}, NULL,               \
+        (ChordFlags){0}, NULL,                  \
     }
 
 #define PREFIX(...) (KeyChord[]){ __VA_ARGS__, NULL_KEY_CHORD }
@@ -92,7 +92,7 @@ typedef struct
     bool alt:1;
     bool hyper:1;
     bool shift:1;
-} KeyChordMods;
+} Modifiers;
 
 typedef enum
 {
@@ -128,26 +128,26 @@ typedef struct
     bool syncCommand:1;
     bool syncBefore:1;
     bool syncAfter:1;
-} KeyChordFlags;
+} ChordFlags;
 
 typedef struct
 {
-    KeyChordMods mods;
+    Modifiers mods;
     SpecialKey special;
     char* repr;
-    int len;
-} KeyChordKey;
+    size_t len;
+} Key;
 
 typedef struct KeyChord
 {
     KeyChordState state;
-    KeyChordKey key;
+    Key key;
     char* description;
     char* hint;
     char* command;
     char* before;
     char* after;
-    KeyChordFlags flags;
+    ChordFlags flags;
     struct KeyChord* keyChords;
 } KeyChord;
 
@@ -156,21 +156,22 @@ typedef struct
     KeyChord** keyChords;
     size_t count;
     size_t capacity;
-} KeyChordArray;
+} ChordArray;
 
-void copyKeyChordFlags(KeyChordFlags* from, KeyChordFlags* to);
-uint32_t countKeyChordMods(const KeyChordMods* mods);
-uint32_t countKeyChordFlags(const KeyChordFlags* flags);
+void copyChordFlags(ChordFlags* from, ChordFlags* to);
+uint32_t countModifiers(const Modifiers* mods);
+uint32_t countChordFlags(const ChordFlags* flags);
 const char* getSpecialKeyRepr(const SpecialKey special);
-bool hasFlags(const KeyChordFlags* flags);
+bool hasChordFlags(const ChordFlags* flags);
 void initKeyChord(KeyChord* keyChord);
-void initKeyChordArray(KeyChordArray* dest, KeyChord** source);
-bool isKeyChordMod(const KeyChordMods* mods);
-bool keyChordHasDefaultFlags(const KeyChordFlags* flags);
-bool keyIsNormal(const KeyChordKey* key);
-bool keyIsSpecial(const KeyChordKey* key);
-bool keyIsStrictlyMod(const KeyChordKey* key);
-void makePsuedoKeyChordArray(KeyChordArray* array, KeyChord** keyChords);
-KeyChord* writeKeyChordArray(KeyChordArray* array, KeyChord* keyChord);
+void initChordArray(ChordArray* dest, KeyChord** source);
+bool hasActiveModifier(const Modifiers* mods);
+bool hasDefaultChordFlags(const ChordFlags* flags);
+bool keysAreEqual(const Key* a, const Key* b);
+bool keyIsNormal(const Key* key);
+bool keyIsSpecial(const Key* key);
+bool keyIsStrictlyMod(const Key* key);
+void makePsuedoChordArray(ChordArray* array, KeyChord** keyChords);
+KeyChord* writeChordArray(ChordArray* array, KeyChord* keyChord);
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

@@ -157,7 +157,7 @@ xkbCleanState(struct xkb_state* oldState, uint32_t group)
 }
 
 static void
-setKeyEventMods(KeyChordMods* wkMods, uint32_t mods)
+setKeyEventMods(Modifiers* wkMods, uint32_t mods)
 {
     if (mods & MOD_CTRL) wkMods->ctrl = true;
     if (mods & MOD_ALT) wkMods->alt = true;
@@ -176,7 +176,7 @@ getSpecialKey(xkb_keysym_t keysym)
 }
 
 static KeyType
-processKey(KeyChordKey* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t len)
+processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t len)
 {
     key->repr = buffer;
     key->len = len;
@@ -204,7 +204,7 @@ pollKey(Menu* props, Wayland* wayland)
     struct xkb_state* cleanState = xkbCleanState(wayland->input.xkb.state, wayland->input.xkb.group);
     char buffer[32] = {0};
     size_t size = 32;
-    KeyChordKey key = {0};
+    Key key = {0};
     size_t len = xkb_state_key_get_utf8(
         cleanState, wayland->input.code, buffer, size
     );

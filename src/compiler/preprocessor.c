@@ -359,6 +359,7 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
         {
         /* Switches with no args. */
         case TOKEN_DEBUG: menu->debug = true; break;
+        case TOKEN_SORT: menu->sort = true; break;
         case TOKEN_TOP: menu->position = MENU_WIN_POS_TOP; break;
         case TOKEN_BOTTOM: menu->position = MENU_WIN_POS_BOTTOM; break;
 

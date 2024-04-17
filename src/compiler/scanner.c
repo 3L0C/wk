@@ -314,7 +314,12 @@ getPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 3, "ont")) result = TOKEN_FONT;
         break;
     }
-    case 's': if (isKeyword(scanner, 1, 4, "hell")) result = TOKEN_SHELL; break;
+    case 's':
+    {
+        if (isKeyword(scanner, 1, 4, "hell")) result = TOKEN_SHELL;
+        else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_SORT;
+        break;
+    }
     default: break;
     }
 
@@ -350,7 +355,6 @@ getDescription(Scanner* scanner, Token* token)
             break;
         }
         case '\\':
-            /* if (peekNext(scanner) == '\'') */
             if (peekNext(scanner) == '\"')
             {
                 advanceScanner(scanner);
@@ -679,8 +683,17 @@ scanTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag)
         char c = advanceScanner(scanner);
         switch (c)
         {
+        case '#':
+        {
+            while (!isAtEnd(scanner))
+            {
+                if (advanceScanner(scanner) == '\n') break;
+            }
+            break;
+        }
         case '%':
         {
+            /* Skip over any false positives preproccessor macros in commands */
             if (matchScanner(scanner, '{') && matchScanner(scanner, '{'))
             {
                 while (!isAtEnd(scanner))
@@ -694,8 +707,18 @@ scanTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag)
         case ':': makeScannerCurrent(scanner); return getPreprocessorMacro(scanner, result);
         case '\"':
         {
-            /* Ignore if not scanning for descriptions, a.k.a. strings. */
-            if (flag != SCANNER_WANTS_DESCRIPTION) break;
+            /* Don't scan ad a description unless requsted */
+            if (flag != SCANNER_WANTS_DESCRIPTION)
+            {
+                /* Skip over any false positives preproccessor macros in descriptions */
+                while (!isAtEnd(scanner))
+                {
+                    char e = advanceScanner(scanner);
+                    if (e == '\\') advanceScanner(scanner);
+                    else if (e == '\"') break;
+                }
+                break;
+            }
             makeScannerCurrent(scanner);
             return getDescription(scanner, result);
         }
