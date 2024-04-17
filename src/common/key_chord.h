@@ -151,27 +151,23 @@ typedef struct KeyChord
     struct KeyChord* keyChords;
 } KeyChord;
 
-typedef struct
-{
-    KeyChord** keyChords;
-    size_t count;
-    size_t capacity;
-} ChordArray;
-
-void copyChordFlags(ChordFlags* from, ChordFlags* to);
+void copyChordFlags(const ChordFlags* from, ChordFlags* to);
+void copyChordModifiers(const Modifiers* from, Modifiers* to);
+void copyKey(const Key* from, Key* to);
+void copyKeyChord(const KeyChord* from, KeyChord* to);
 uint32_t countModifiers(const Modifiers* mods);
 uint32_t countChordFlags(const ChordFlags* flags);
 const char* getSpecialKeyRepr(const SpecialKey special);
 bool hasChordFlags(const ChordFlags* flags);
+void initKey(Key* key);
 void initKeyChord(KeyChord* keyChord);
-void initChordArray(ChordArray* dest, KeyChord** source);
+void initChordFlags(ChordFlags* flags);
+void initChordModifiers(Modifiers* mods);
 bool hasActiveModifier(const Modifiers* mods);
 bool hasDefaultChordFlags(const ChordFlags* flags);
 bool keysAreEqual(const Key* a, const Key* b);
 bool keyIsNormal(const Key* key);
 bool keyIsSpecial(const Key* key);
 bool keyIsStrictlyMod(const Key* key);
-void makePsuedoChordArray(ChordArray* array, KeyChord** keyChords);
-KeyChord* writeChordArray(ChordArray* array, KeyChord* keyChord);
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

@@ -16,7 +16,7 @@
 #include "token.h"
 
 void
-copyToken(Token* from, Token* to)
+copyToken(const Token* from, Token* to)
 {
     assert(from && to);
 
@@ -30,7 +30,7 @@ copyToken(Token* from, Token* to)
 }
 
 void
-copyTokenArray(TokenArray* from, TokenArray* to)
+copyTokenArray(const TokenArray* from, TokenArray* to)
 {
     assert(from && to);
 
@@ -49,7 +49,7 @@ copyTokenArray(TokenArray* from, TokenArray* to)
 }
 
 void
-errorAtToken(Token* token, const char* filepath, const char* fmt, ...)
+errorAtToken(const Token* token, const char* filepath, const char* fmt, ...)
 {
     assert(token && filepath && fmt);
 
@@ -81,7 +81,7 @@ errorAtToken(Token* token, const char* filepath, const char* fmt, ...)
 }
 
 bool
-getDoubleFromToken(Token* token, double* dest, bool debug)
+getDoubleFromToken(const Token* token, double* dest, bool debug)
 {
     char* endptr;
     int oldErrno = errno;
@@ -117,7 +117,7 @@ getDoubleFromToken(Token* token, double* dest, bool debug)
 }
 
 bool
-getInt32FromToken(Token* token, int32_t* dest, bool debug)
+getInt32FromToken(const Token* token, int32_t* dest, bool debug)
 {
     char* endptr;
     int oldErrno = errno;
@@ -162,7 +162,7 @@ getInt32FromToken(Token* token, int32_t* dest, bool debug)
 }
 
 bool
-getUint32FromToken(Token* token, uint32_t* dest, bool debug)
+getUint32FromToken(const Token* token, uint32_t* dest, bool debug)
 {
     char* endptr;
     int oldErrno = errno;
@@ -207,7 +207,7 @@ getUint32FromToken(Token* token, uint32_t* dest, bool debug)
 }
 
 const char*
-getTokenRepr(TokenType type)
+getTokenRepr(const TokenType type)
 {
     switch (type)
     {
@@ -343,7 +343,7 @@ freeTokenArray(TokenArray* tokens)
 }
 
 bool
-isTokenHookType(TokenType type)
+isTokenHookType(const TokenType type)
 {
     return (
         type == TOKEN_BEFORE || type == TOKEN_AFTER ||
@@ -352,7 +352,7 @@ isTokenHookType(TokenType type)
 }
 
 bool
-isTokenModType(TokenType type)
+isTokenModType(const TokenType type)
 {
     return (
         type == TOKEN_MOD_CTRL || type == TOKEN_MOD_ALT ||

@@ -120,17 +120,17 @@ typedef struct
     size_t capacity;
 } TokenArray;
 
-void copyToken(Token* from, Token* to);
-void copyTokenArray(TokenArray* from, TokenArray* to);
-void errorAtToken(Token* token, const char* filepath, const char* fmt, ...);
-bool getDoubleFromToken(Token* token, double* dest, bool debug);
-bool getInt32FromToken(Token* token, int32_t* dest, bool debug);
-bool getUint32FromToken(Token* token, uint32_t* dest, bool debug);
-const char* getTokenRepr(TokenType type);
+void copyToken(const Token* from, Token* to);
+void copyTokenArray(const TokenArray* from, TokenArray* to);
+void errorAtToken(const Token* token, const char* filepath, const char* fmt, ...);
+bool getDoubleFromToken(const Token* token, double* dest, bool debug);
+bool getInt32FromToken(const Token* token, int32_t* dest, bool debug);
+bool getUint32FromToken(const Token* token, uint32_t* dest, bool debug);
+const char* getTokenRepr(const TokenType type);
 void initToken(Token* token);
 void initTokenArray(TokenArray* tokens);
-bool isTokenHookType(TokenType type);
-bool isTokenModType(TokenType type);
+bool isTokenHookType(const TokenType type);
+bool isTokenModType(const TokenType type);
 void freeTokenArray(TokenArray* tokens);
 void writeTokenArray(TokenArray* tokens, Token* token);
 

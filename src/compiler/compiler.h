@@ -9,6 +9,27 @@
 #include "token.h"
 #include "scanner.h"
 
+typedef struct PseudoChord PseudoChord;
+
+typedef struct
+{
+    PseudoChord* chords;
+    size_t count;
+    size_t capacity;
+} PseudoChordArray;
+
+struct PseudoChord
+{
+    Key key;
+    TokenArray description;
+    char* hint;
+    TokenArray command;
+    TokenArray before;
+    TokenArray after;
+    ChordFlags flags;
+    PseudoChordArray chords;
+};
+
 typedef struct
 {
     Scanner scanner;
@@ -16,10 +37,9 @@ typedef struct
     Token previous;
     bool hadError;
     bool panicMode;
-    KeyChord keyChord;
-    ChordArray* keyChordDest;
-    ChordArray* keyChordPrefix;
-    ChordArray keyChords;
+    PseudoChord chord;
+    PseudoChordArray* chordsDest;
+    PseudoChordArray chords;
     char* source;
     bool sort;
 } Compiler;

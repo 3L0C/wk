@@ -1,14 +1,15 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "key_chord.h"
-#include "memory.h"
-#include "util.h"
+/* #include "memory.h" */
+/* #include "util.h" */
 
 void
-copyChordFlags(ChordFlags* from, ChordFlags* to)
+copyChordFlags(const ChordFlags* from, ChordFlags* to)
 {
     assert(from && to);
 
@@ -25,6 +26,44 @@ copyChordFlags(ChordFlags* from, ChordFlags* to)
     to->syncCommand = from->syncCommand;
     to->syncBefore = from->syncBefore;
     to->syncAfter = from->syncAfter;
+}
+
+void
+copyChordModifiers(const Modifiers* from, Modifiers* to)
+{
+    assert(from && to);
+
+    to->ctrl = from->ctrl;
+    to->alt = from->alt;
+    to->hyper = from->hyper;
+    to->shift = from->shift;
+}
+
+void
+copyKey(const Key* from, Key* to)
+{
+    assert(from && to);
+
+    copyChordModifiers(&from->mods, &to->mods);
+    to->special = from->special;
+    to->repr = from->repr;
+    to->len = from->len;
+}
+
+void
+copyKeyChord(const KeyChord* from, KeyChord* to)
+{
+    assert(from && to);
+
+    to->state = from->state;
+    copyKey(&from->key, &to->key);
+    to->description = from->description;
+    to->hint = from->hint;
+    to->command = from->command;
+    to->before = from->before;
+    to->after = from->after;
+    copyChordFlags(&from->flags, &to->flags);
+    to->keyChords = from->keyChords;
 }
 
 uint32_t
@@ -143,15 +182,23 @@ resetKeyChordFlags(ChordFlags* flags)
 }
 
 void
+initKey(Key* key)
+{
+    assert(key);
+
+    initChordModifiers(&key->mods);
+    key->special = SPECIAL_KEY_NONE;
+    key->repr = NULL;
+    key->len = 0;
+}
+
+void
 initKeyChord(KeyChord* keyChord)
 {
     assert(keyChord);
 
     keyChord->state = KEY_CHORD_STATE_NOT_NULL;
-    resetKeyChordMods(&keyChord->key.mods);
-    keyChord->key.special = SPECIAL_KEY_NONE;
-    keyChord->key.repr = NULL;
-    keyChord->key.len = 0;
+    initKey(&keyChord->key);
     keyChord->description = NULL;
     keyChord->hint = NULL;
     keyChord->command = NULL;
@@ -162,13 +209,19 @@ initKeyChord(KeyChord* keyChord)
 }
 
 void
-initChordArray(ChordArray* dest, KeyChord** source)
+initChordFlags(ChordFlags* flags)
 {
-    assert(dest && source && !*source);
+    assert(flags);
 
-    dest->keyChords = source;
-    dest->count = 0;
-    dest->capacity = 0;
+    resetKeyChordFlags(flags);
+}
+
+void
+initChordModifiers(Modifiers* mods)
+{
+    assert(mods);
+
+    resetKeyChordMods(mods);
 }
 
 bool
@@ -268,68 +321,4 @@ bool
 keyIsStrictlyMod(const Key* key)
 {
     return (hasActiveModifier(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
-}
-
-void
-makePsuedoChordArray(ChordArray* array, KeyChord** keyChords)
-{
-    assert(array && keyChords);
-
-    array->keyChords = keyChords;
-    if (!*keyChords)
-    {
-        array->count = 0;
-        array->capacity = 0;
-    }
-    else
-    {
-        array->count = countKeyChords(*keyChords);
-        array->capacity = array->count;
-    }
-}
-
-static void
-copyKeyChordMods(Modifiers* from, Modifiers* to)
-{
-    assert(from && to);
-
-    to->ctrl = from->ctrl;
-    to->alt = from->alt;
-    to->hyper = from->hyper;
-    to->shift = from->shift;
-}
-
-static void
-copyKeyChord(KeyChord* from, KeyChord* to)
-{
-    assert(from && to);
-
-    to->state = from->state;
-    copyKeyChordMods(&from->key.mods, &to->key.mods);
-    to->key.special = from->key.special;
-    to->key.repr = from->key.repr;
-    to->key.len = from->key.len;
-    to->description = from->description;
-    to->hint = from->hint;
-    to->command = from->command;
-    to->before = from->before;
-    to->after = from->after;
-    copyChordFlags(&from->flags, &to->flags);
-    to->keyChords = from->keyChords;
-}
-
-KeyChord*
-writeChordArray(ChordArray* array, KeyChord* keyChord)
-{
-    assert(array && keyChord);
-
-    if (array->count == array->capacity)
-    {
-        size_t oldCapacity = array->capacity;
-        array->capacity = GROW_CAPACITY(oldCapacity);
-        *array->keyChords = GROW_ARRAY(KeyChord, *array->keyChords, oldCapacity, array->capacity);
-    }
-
-    copyKeyChord(keyChord, &(*array->keyChords)[array->count]);
-    return &(*array->keyChords)[array->count++];
 }
