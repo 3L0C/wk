@@ -39,7 +39,9 @@ appendCharToString(String* dest, char c)
 void
 appendToString(String *dest, const char* source, size_t len)
 {
-    assert(dest && source);
+    /* assert(dest && source); */
+    assert(dest);
+    assert(source);
     if (len < 1) return;
 
     while (dest->count + len + 1 > dest->capacity)
@@ -142,6 +144,7 @@ void
 rtrimString(String* string)
 {
     assert(string);
+    if (string->count == 0) return;
 
     while (string->count > 0 && isspace(string->string[string->count - 1]))
     {

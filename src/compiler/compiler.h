@@ -20,9 +20,9 @@ typedef struct
 
 struct PseudoChord
 {
+    KeyChordState state;
     Key key;
     TokenArray description;
-    char* hint;
     TokenArray command;
     TokenArray before;
     TokenArray after;

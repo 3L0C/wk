@@ -14,6 +14,7 @@ void disassembleFlags(const ChordFlags* flags, int indent);
 void disassembleGrid(uint32_t x, uint32_t y, uint32_t r, uint32_t c, uint32_t wp, uint32_t hp, uint32_t cw, uint32_t ch, uint32_t count);
 void disassembleHexColors(const MenuHexColor* colors);
 void disassembleKey(const Key* key);
+void disassembleKeyWithoutHeader(const Key* key, int indent);
 void disassembleKeyChord(const KeyChord* keyChord, int indent);
 void disassembleKeyChords(const KeyChord* keyChords, int indent);
 void disassembleKeyChordsShallow(const KeyChord* keyChords, uint32_t len);

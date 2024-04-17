@@ -29,7 +29,7 @@ debugPrintScannedTokenHeader(void)
 }
 
 void
-disassemblePiece(PieceTable* pieceTable, size_t index)
+disassemblePiece(const PieceTable* pieceTable, size_t index)
 {
     assert(pieceTable);
 
@@ -52,11 +52,11 @@ disassemblePiece(PieceTable* pieceTable, size_t index)
 }
 
 static void
-disassemblePieceArray(PieceTable* pieceTable)
+disassemblePieceArray(const PieceTable* pieceTable)
 {
     assert(pieceTable);
 
-    PieceArray* array = &pieceTable->pieces;
+    const PieceArray* array = &pieceTable->pieces;
     for (size_t i = 0; i < array->count; i++)
     {
         debugMsg(true, "|----------- Piece number: %04zu ------------", i);
@@ -66,7 +66,7 @@ disassemblePieceArray(PieceTable* pieceTable)
 }
 
 void
-disassemblePieceTable(PieceTable* pieceTable)
+disassemblePieceTable(const PieceTable* pieceTable)
 {
     assert(pieceTable);
 
@@ -91,8 +91,29 @@ disassemblePieceTable(PieceTable* pieceTable)
     debugPrintHeader("");
 }
 
+void
+disassemblePseudoChord(const PseudoChord* chord)
+{
+    assert(chord);
+
+    debugPrintHeader(" PseudoChord ");
+    debugMsg(true, "| ");
+    debugMsg(
+        true, "| State:             %s",
+        chord->state == KEY_CHORD_STATE_IS_NULL ? "STATE_IS_NULL" : "STATE_NOT_NULL"
+    );
+    disassembleKeyWithoutHeader(&chord->key, 0);
+    disassembleTokenArray(&chord->description);
+    disassembleTokenArray(&chord->command);
+    disassembleTokenArray(&chord->before);
+    disassembleTokenArray(&chord->after);
+    disassembleFlags(&chord->flags, 0);
+    debugMsg(true, "| ");
+    debugPrintHeader("");
+}
+
 static void
-printErrorToken(Token* token)
+printErrorToken(const Token* token)
 {
     debugMsg(
         true,
@@ -103,7 +124,7 @@ printErrorToken(Token* token)
 }
 
 static void
-printSimpleToken(Token* token, const char* type)
+printSimpleToken(const Token* token, const char* type)
 {
     debugMsg(
         true,
@@ -114,7 +135,7 @@ printSimpleToken(Token* token, const char* type)
 }
 
 void
-disassembleToken(Token* token)
+disassembleToken(const Token* token)
 {
     assert(token);
 
@@ -215,12 +236,23 @@ disassembleToken(Token* token)
 
 
 void
-disassembleSingleToken(Token* token)
+disassembleSingleToken(const Token* token)
 {
     assert(token);
 
     debugPrintHeader("-");
-    /* debugMsg(true, "| Line:Col  | TokenType                   | Lexeme                     |"); */
     disassembleToken(token);
     debugPrintHeader("");
+}
+
+void
+disassembleTokenArray(const TokenArray* tokens)
+{
+    assert(tokens);
+    if (tokens->count == 0) return;
+
+    for (size_t i = 0; i < tokens->count; i++)
+    {
+        disassembleToken(&tokens->tokens[i]);
+    }
 }

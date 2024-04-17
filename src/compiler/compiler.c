@@ -42,9 +42,9 @@ initPseudoChord(PseudoChord* chord)
 {
     assert(chord);
 
+    chord->state = KEY_CHORD_STATE_NOT_NULL;
     initKey(&chord->key);
     initTokenArray(&chord->description);
-    chord->hint = NULL;
     initTokenArray(&chord->command);
     initTokenArray(&chord->command);
     initTokenArray(&chord->command);
@@ -53,18 +53,58 @@ initPseudoChord(PseudoChord* chord)
 }
 
 static void
+makeNullPseudoChord(PseudoChord* chord)
+{
+    assert(chord);
+
+    initPseudoChord(chord);
+    chord->state = KEY_CHORD_STATE_IS_NULL;
+}
+
+static void
 copyPseudoChord(PseudoChord* from, PseudoChord* to)
 {
     assert(from && to);
 
+    to->state = from->state;
     copyKey(&from->key, &to->key);
     copyTokenArray(&from->description, &to->description);
-    to->hint = from->hint;
     copyTokenArray(&from->command, &to->command);
     copyTokenArray(&from->before, &to->before);
     copyTokenArray(&from->after, &to->after);
     copyChordFlags(&from->flags, &to->flags);
     to->chords = from->chords;
+}
+
+static void freePseudoChordArray(PseudoChordArray* chords);
+
+static void
+freePseudoChord(PseudoChord* chord)
+{
+    assert(chord);
+
+    freeTokenArray(&chord->description);
+    freeTokenArray(&chord->command);
+    freeTokenArray(&chord->before);
+    freeTokenArray(&chord->after);
+    if (chord->chords.count) freePseudoChordArray(&chord->chords);
+    initPseudoChord(chord);
+}
+
+void
+freePseudoChordArray(PseudoChordArray* chords)
+{
+    assert(chords);
+
+    for (size_t i = 0; i < chords->count; i++)
+    {
+        /* disassemblePseudoChord(&chords->chords[i]); */
+        freePseudoChord(&chords->chords[i]);
+    }
+    FREE_ARRAY(PseudoChordArray, chords->chords, chords->count);
+    chords->chords = NULL;
+    chords->count = 0;
+    chords->capacity = 0;
 }
 
 static PseudoChord*
@@ -80,7 +120,9 @@ writePseudoChordArray(PseudoChordArray* array, PseudoChord* chord)
     }
 
     copyPseudoChord(chord, &array->chords[array->count]);
-    return &array->chords[array->count++];
+    PseudoChord* result = &array->chords[array->count++];
+    if (debug) disassemblePseudoChord(result);
+    return result;
 }
 
 static void
@@ -205,15 +247,15 @@ addMod(TokenType type, Modifiers* mod)
 }
 
 static void
-compileMods(Compiler* compiler, PseudoChord* chord)
+compileMods(Compiler* compiler, Modifiers* mods)
 {
-    assert(compiler && chord);
+    assert(compiler && mods);
     if (compiler->panicMode) return;
 
     TokenType type = currentType(compiler);
     while (isTokenModType(type))
     {
-        addMod(type, &chord->key.mods);
+        addMod(type, mods);
         type = advanceCompiler(compiler);
     }
 }
@@ -599,7 +641,7 @@ compileChord(Compiler* compiler)
     PseudoChord* chord = &compiler->chord;
     initPseudoChord(chord);
 
-    compileMods(compiler, chord);
+    compileMods(compiler, &chord->key.mods);
     compileKey(compiler, chord);
     collectDescriptionTokens(compiler, &chord->description);
     /* Don't compile hint until the end of scope */
@@ -618,7 +660,7 @@ compileChord(Compiler* compiler)
     }
 
     writePseudoChordArray(compiler->chordsDest, chord);
-    initPseudoChord(chord);
+    freePseudoChord(chord);
 }
 
 static void
@@ -755,7 +797,7 @@ compileChordArray(Compiler* compiler)
 
         if (matchCompiler(compiler, TOKEN_LEFT_PAREN))
         {
-            compileMods(compiler, chord);
+            compileMods(compiler, &chord->key.mods);
             compileKey(compiler, chord);
             collectDescriptionTokens(compiler, &chord->description);
             /* don't compile command until the end */
@@ -765,11 +807,12 @@ compileChordArray(Compiler* compiler)
         }
         else
         {
-            compileMods(compiler, chord);
+            compileMods(compiler, &chord->key.mods);
             compileKey(compiler, chord);
         }
 
         writePseudoChordArray(compiler->chordsDest, chord);
+        freePseudoChord(chord);
     }
 
     consume(compiler, TOKEN_RIGHT_BRACKET, "Expect ']' after key list.");
@@ -791,10 +834,12 @@ compileChordArray(Compiler* compiler)
         );
     }
 
+    freePseudoChord(&dummy);
     return;
 
 fail:
     compiler->hadError = true;
+    freePseudoChord(&compiler->chord);
     return;
 }
 
@@ -917,6 +962,7 @@ compilePrefix(Compiler* compiler)
 
     /* start new scope */
     initPseudoChordArray(compiler->chordsDest);
+    freePseudoChord(&compiler->chord);
 
     /* Compile children */
     while (!compilerIsAtEnd(compiler) && !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
@@ -959,8 +1005,6 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
 {
     assert(compiler && dest);
 
-    debugMsg(debug, "Before sort.");
-    debugMsg(debug, "After sort.");
     PseudoChordArray* array = compiler->chordsDest;
     size_t count = compiler->chordsDest->count;
     *dest = ALLOCATE(KeyChord, count);
@@ -968,6 +1012,16 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
     {
         KeyChord* chord = &(*dest)[i];
         PseudoChord* pseudo = &array->chords[i];
+        initKeyChord(chord);
+        /* Reached null key chord */
+        if (pseudo->state == KEY_CHORD_STATE_IS_NULL)
+        {
+            makeNullKeyChord(chord);
+            break;
+        }
+        /* Set state */
+        chord->state = KEY_CHORD_STATE_NOT_NULL;
+        /* Key */
         copyKey(&pseudo->key, &chord->key);
         /* Description */
         compileStringFromTokens(&pseudo->description, chord, &chord->description, i);
@@ -976,6 +1030,7 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
         /* Hooks */
         compileStringFromTokens(&pseudo->before, chord, &chord->before, i);
         compileStringFromTokens(&pseudo->after, chord, &chord->after, i);
+        copyChordFlags(&pseudo->flags, &chord->flags);
         /* Command */
         compileStringFromTokens(&pseudo->command, chord, &chord->command, i);
         if (pseudo->chords.count)
@@ -988,6 +1043,7 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
         }
     }
 
+    freePseudoChordArray(compiler->chordsDest);
     return *dest;
 }
 
@@ -997,7 +1053,7 @@ compileKeyChords(Compiler* compiler, Menu* menu)
     assert(compiler && menu);
 
     /* Initialize globals and defaults */
-    initPseudoChord(&nullPseudoChord);
+    makeNullPseudoChord(&nullPseudoChord);
     debug = menu->debug;
     delimiter = menu->delimiter;
     delimiterLen = strlen(delimiter);

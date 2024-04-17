@@ -63,11 +63,11 @@ appendToPieceTable(PieceTable* pieceTable, PieceSource source, const char* text,
 }
 
 char*
-compilePieceTableToString(PieceTable* pieceTable)
+compilePieceTableToString(const PieceTable* pieceTable)
 {
     String result;
     initString(&result);
-    PieceArray* pieces = &pieceTable->pieces;
+    const PieceArray* pieces = &pieceTable->pieces;
     for (size_t i = 0; i < pieces->count; i++)
     {
         Piece* piece = &pieces->pieces[i];
@@ -83,6 +83,7 @@ freePieceArray(PieceArray* array)
     assert(array);
 
     FREE_ARRAY(PieceArray, array->pieces, array->capacity);
+    array->pieces = NULL;
     array->count = 0;
     array->capacity = 0;
 }
@@ -97,7 +98,7 @@ freePieceTable(PieceTable* pieceTable)
 }
 
 const char*
-getTextAtPiece(PieceTable* pieceTable, Piece* piece)
+getTextAtPiece(const PieceTable* pieceTable, Piece* piece)
 {
     return (
         piece->source == PIECE_SOURCE_ADD

@@ -322,3 +322,19 @@ keyIsStrictlyMod(const Key* key)
 {
     return (hasActiveModifier(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
 }
+
+void
+makeNullKeyChord(KeyChord* keyChord)
+{
+    assert(keyChord);
+
+    keyChord->state = KEY_CHORD_STATE_IS_NULL;
+    initKey(&keyChord->key);
+    keyChord->description = NULL;
+    keyChord->hint = NULL;
+    keyChord->command = NULL;
+    keyChord->before = NULL;
+    keyChord->after = NULL;
+    resetKeyChordFlags(&keyChord->flags);
+    keyChord->keyChords = NULL;
+}

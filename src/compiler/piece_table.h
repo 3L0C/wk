@@ -35,9 +35,9 @@ typedef struct
 } PieceTable;
 
 void appendToPieceTable(PieceTable* pieceTable, PieceSource source, const char* text, size_t len);
-char* compilePieceTableToString(PieceTable* pieceTable);
+char* compilePieceTableToString(const PieceTable* pieceTable);
 void freePieceTable(PieceTable* pieceTable);
-const char* getTextAtPiece(PieceTable* pieceTable, Piece* piece);
+const char* getTextAtPiece(const PieceTable* pieceTable, Piece* piece);
 void initPieceTable(PieceTable* pieceTable, const char* original);
 
 #endif /* WK_COMPILER_PIECE_TABLE_H_ */

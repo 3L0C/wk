@@ -288,7 +288,7 @@ debugString(const char* text, const char* value, int indent)
 {
     assert(text);
 
-    debugMsgWithIndent(indent, "| %-19s '%s'", text, value);
+    debugMsgWithIndent(indent, "| %-19s'%s'", text, value);
 }
 
 void
@@ -298,20 +298,27 @@ disassembleKey(const Key* key)
 
     debugPrintHeader(" Key ");
     debugMsgWithIndent(0, "|");
-    disassembleMod(&key->mods, 0);
-    if (disassembleSpecial(key->special, 0))
-    {
-        disassembleSpecialRepr(key->special, 0);
-    }
-    else
-    {
-        debugString("Key", key->repr, 0);
-    }
-    debugMsgWithIndent(0, "| Length:            %04d", key->len);
+    disassembleKeyWithoutHeader(key, 0);
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
 }
 
+void
+disassembleKeyWithoutHeader(const Key* key, int indent)
+{
+    assert(key);
+
+    disassembleMod(&key->mods, indent);
+    if (disassembleSpecial(key->special, indent))
+    {
+        disassembleSpecialRepr(key->special, indent);
+    }
+    else
+    {
+        debugString("Key:", key->repr, indent);
+    }
+    debugMsgWithIndent(indent, "| Length:            %04d", key->len);
+}
 
 void
 disassembleFlags(const ChordFlags* flags, int indent)
@@ -347,9 +354,7 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
-    disassembleMod(&keyChord->key.mods, indent);
-    disassembleSpecial(keyChord->key.special, indent);
-    debugMsgWithIndent(indent, "| Key:               '%s'", keyChord->key);
+    disassembleKeyWithoutHeader(&keyChord->key, indent);
     debugMsgWithIndent(indent, "| Description:       \"%s\"", keyChord->description);
     debugMsgWithIndent(indent, "| Hint:              '%s'", keyChord->hint);
     debugMsgWithIndent(indent, "| Command:           %{{ %s }}", keyChord->command);

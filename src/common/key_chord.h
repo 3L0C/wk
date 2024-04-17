@@ -169,5 +169,6 @@ bool keysAreEqual(const Key* a, const Key* b);
 bool keyIsNormal(const Key* key);
 bool keyIsSpecial(const Key* key);
 bool keyIsStrictlyMod(const Key* key);
+void makeNullKeyChord(KeyChord* keyChord);
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */
