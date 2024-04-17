@@ -30,11 +30,12 @@ static uint32_t width;
 static uint32_t height;
 static int ellipsisWidth = -1;
 static int ellipsisHeight = -1;
+static bool ellipsisIsSet = false;
 
 bool
 cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface)
 {
-    assert(cairo && surface);
+    assert(cairo), assert(surface);
 
     cairo->cr = cairo_create(surface);
     if (!cairo->cr) goto fail;
@@ -52,6 +53,8 @@ fail:
 void
 cairoDestroy(Cairo* cairo)
 {
+    assert(cairo);
+
     if (cairo->cr) cairo_destroy(cairo->cr);
     if (cairo->surface) cairo_surface_destroy(cairo->surface);
 }
@@ -59,7 +62,7 @@ cairoDestroy(Cairo* cairo)
 uint32_t
 cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 {
-    assert(menu && surface);
+    assert(menu), assert(surface);
 
     uint32_t height = 0;
     countMenuKeyChords(menu);
@@ -95,6 +98,8 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 static void
 cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
 {
+    assert(paint), assert(colors);
+
     /* foreground */
     paint->fg.r = (float)colors[MENU_COLOR_FOREGROUND].r / 255.0f;
     paint->fg.g = (float)colors[MENU_COLOR_FOREGROUND].g / 255.0f;
@@ -117,6 +122,8 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
 void
 cairoInitPaint(Menu* menu, CairoPaint* paint)
 {
+    assert(menu), assert(paint);
+
     cairoSetColors(paint, menu->colors);
     paint->font = menu->font;
 }
@@ -158,7 +165,7 @@ cairoDrawRoundedPath(double radius)
 static bool
 drawBackground()
 {
-    assert(cairo && mainMenu);
+    assert(cairo), assert(mainMenu);
 
     if (!setSourceRgba(MENU_COLOR_BACKGROUND)) return false;
 
@@ -177,7 +184,7 @@ drawBackground()
 static bool
 drawBorder()
 {
-    assert(cairo && mainMenu);
+    assert(cairo), assert(mainMenu);
 
     double lineW = cairo_get_line_width(cairo->cr);
     cairo_set_line_width(cairo->cr, mainMenu->borderWidth);
@@ -203,34 +210,62 @@ drawBorder()
 static void
 drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 {
+    assert(layout), assert(text);
+
     size_t len = strlen(text);
-    size_t beglen = len;
-    int textw, texth;
+    int textw;
+    int texth;
+    uint32_t truncatedWidth = 0;
     char buffer[len + 1]; /* +1 for null byte '\0' */
     memcpy(buffer, text, len + 1); /* +1 to copy null byte '\0' */
 
     pango_layout_set_text(layout, buffer, len);
     pango_layout_get_pixel_size(layout, &textw, &texth);
 
-    while (len && (uint32_t)(textw + ellipsisWidth) > cellw)
+    truncatedWidth = textw + ellipsisWidth;
+    if (truncatedWidth <= cellw) return;
+
+    size_t left = 0;
+    size_t right = len;
+    while (left < right)
     {
-        len--;
-        while (len && !isUtf8StartByte(buffer[len])) len--;
-        pango_layout_set_text(layout, buffer, len);
+        while (left < right && isUtf8ContByte(buffer[left])) left++;
+        size_t mid = (left + right) / 2;
+        while (mid > left && !isUtf8StartByte(buffer[mid])) mid--;
+
+        pango_layout_set_text(layout, buffer, mid);
         pango_layout_get_pixel_size(layout, &textw, &texth);
+
+        truncatedWidth = textw + ellipsisWidth;
+        if (truncatedWidth < cellw)
+        {
+            left = mid + 1;
+        }
+        else if (truncatedWidth == cellw)
+        {
+            left = mid;
+            break;
+        }
+        else
+        {
+            right = mid;
+        }
     }
 
-    if (len < beglen && ellipsisWidth)
+    len = truncatedWidth == cellw ? left : left - 1;
+    if (truncatedWidth != cellw && len)
     {
-        memcpy(buffer + len, "...", 4);
-        pango_layout_set_text(layout, buffer, -1);
+        while (len && !isUtf8StartByte(buffer[len])) len--;
     }
+
+    memcpy(buffer + len, "...", 4);
+    pango_layout_set_text(layout, buffer, -1);
 }
 
 static void
 drawHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 {
-    assert(layout && text);
+    assert(layout), assert(text);
 
     int w, h;
     pango_layout_set_text(layout, text, -1);
@@ -245,7 +280,7 @@ drawHintText(PangoLayout* layout, const char* text, uint32_t cellw)
 static bool
 drawGrid()
 {
-    assert(cairo && mainMenu);
+    assert(cairo), assert(mainMenu);
 
     if (mainMenu->borderWidth * 2 >= width)
     {
@@ -278,8 +313,9 @@ drawGrid()
         disassembleKeyChordsShallow(mainMenu->keyChords, mainMenu->keyChordCount);
     }
 
-    if (ellipsisWidth == -1 || ellipsisHeight == -1)
+    if (!ellipsisIsSet)
     {
+        ellipsisIsSet = true;
         pango_layout_set_text(layout, "...", -1);
         pango_layout_get_pixel_size(layout, &ellipsisWidth, &ellipsisHeight);
     }
@@ -321,7 +357,7 @@ end:
 bool
 cairoPaint(Cairo* cr, Menu* menu)
 {
-    assert(cr && menu);
+    assert(cr), assert(menu);
 
     cairo = cr;
     mainMenu = menu;
