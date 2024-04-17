@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <ctype.h>
-#include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -27,7 +26,7 @@ typedef enum
 void
 initScanner(Scanner* scanner, const char* source, const char* filepath)
 {
-    assert(scanner && source);
+    assert(scanner), assert(source);
 
     scanner->head = source;
     scanner->start = source;
@@ -43,6 +42,8 @@ initScanner(Scanner* scanner, const char* source, const char* filepath)
 static void
 cloneScanner(Scanner* scanner, Scanner* clone)
 {
+    assert(scanner), assert(clone);
+
     clone->head = scanner->head;
     clone->start = scanner->start;
     clone->current = scanner->current;
@@ -56,6 +57,8 @@ cloneScanner(Scanner* scanner, Scanner* clone)
 void
 makeScannerCurrent(Scanner* scanner)
 {
+    assert(scanner);
+
     scanner->start = scanner->current;
 }
 
@@ -76,12 +79,16 @@ isDigit(char c)
 bool
 isAtEnd(const Scanner* scanner)
 {
+    assert(scanner);
+
     return *scanner->current == '\0';
 }
 
 static void
 scannerUpdateLineAndColumn(Scanner* scanner, char c)
 {
+    assert(scanner);
+
     switch (c)
     {
     case '\n': scanner->line++; scanner->column = 0; break;
@@ -92,6 +99,8 @@ scannerUpdateLineAndColumn(Scanner* scanner, char c)
 static char
 advanceScanner(Scanner* scanner)
 {
+    assert(scanner);
+
     scannerUpdateLineAndColumn(scanner, *scanner->current++);
     return scanner->current[-1];
 }
@@ -99,12 +108,16 @@ advanceScanner(Scanner* scanner)
 static char
 peek(const Scanner* scanner)
 {
+    assert(scanner);
+
     return *scanner->current;
 }
 
 static char
 peekNext(const Scanner* scanner)
 {
+    assert(scanner);
+
     if (isAtEnd(scanner)) return '\0';
     return scanner->current[1];
 }
@@ -112,6 +125,8 @@ peekNext(const Scanner* scanner)
 static bool
 matchScanner(Scanner* scanner, const char expected)
 {
+    assert(scanner);
+
     if (isAtEnd(scanner)) return false;
     if (*scanner->current != expected) return false;
     scanner->current++;
@@ -121,7 +136,7 @@ matchScanner(Scanner* scanner, const char expected)
 static void
 makeToken(const Scanner* scanner, Token* token, const TokenType type)
 {
-    assert(token);
+    assert(scanner), assert(token);
 
     token->type = type;
     token->start = scanner->start;
@@ -136,7 +151,7 @@ makeToken(const Scanner* scanner, Token* token, const TokenType type)
 static void
 errorToken(const Scanner* scanner, Token* token, const char* message)
 {
-    assert(token);
+    assert(scanner), assert(token);
 
     token->type = TOKEN_ERROR;
     token->start = scanner->start;
@@ -151,6 +166,8 @@ errorToken(const Scanner* scanner, Token* token, const char* message)
 static void
 skipWhitespace(Scanner* scanner)
 {
+    assert(scanner);
+
     while (true)
     {
         char c = peek(scanner);
@@ -173,6 +190,8 @@ skipWhitespace(Scanner* scanner)
 static bool
 isKeyword(Scanner* scanner, int start, int length, const char* rest)
 {
+    assert(scanner);
+
     return (
         scanner->current - scanner->start == start + length &&
         memcmp(scanner->start + start, rest, length) == 0
@@ -182,6 +201,8 @@ isKeyword(Scanner* scanner, int start, int length, const char* rest)
 static CharTypeStatus
 seekToCharType(Scanner* scanner, CharType charType)
 {
+    assert(scanner);
+
     switch (charType)
     {
     case CHAR_TYPE_WHITESPACE:
@@ -202,7 +223,7 @@ seekToCharType(Scanner* scanner, CharType charType)
 static void
 getHook(Scanner* scanner, Token* token)
 {
-    assert(scanner);
+    assert(scanner), assert(token);
 
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_WHITESPACE) == CHAR_TYPE_STATUS_ERROR)
@@ -233,7 +254,7 @@ getHook(Scanner* scanner, Token* token)
 static void
 getFlag(Scanner* scanner, Token* token)
 {
-    assert(scanner);
+    assert(scanner), assert(token);
 
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_WHITESPACE) == CHAR_TYPE_STATUS_ERROR)
@@ -274,7 +295,7 @@ getFlag(Scanner* scanner, Token* token)
 static void
 getPreprocessorMacro(Scanner* scanner, Token* token)
 {
-    assert(scanner);
+    assert(scanner), assert(token);
 
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_WHITESPACE) == CHAR_TYPE_STATUS_ERROR)
@@ -330,6 +351,8 @@ getPreprocessorMacro(Scanner* scanner, Token* token)
 static void
 getDescription(Scanner* scanner, Token* token)
 {
+    assert(scanner), assert(token);
+
     while (!isAtEnd(scanner))
     {
         switch (peek(scanner))
@@ -370,6 +393,8 @@ getDescription(Scanner* scanner, Token* token)
 static void
 getCommand(Scanner* scanner, Token* token)
 {
+    assert(scanner), assert(token);
+
     static int32_t braces = 0;
     while (!isAtEnd(scanner))
     {
@@ -420,51 +445,46 @@ getMod(const char c)
 }
 
 static TokenType
-checkSpecial(Scanner* scanner, size_t start, size_t length, const char* rest, TokenType type)
-{
-    if (isKeyword(scanner, start, length, rest))
-    {
-        return type;
-    }
-
-    return TOKEN_ERROR;
-}
-
-static TokenType
 specialType(Scanner* scanner)
 {
+    assert(scanner);
+
+    TokenType result = TOKEN_ERROR;
+
     switch (*scanner->start)
     {
-    case 'L': return checkSpecial(scanner, 1, 3, "eft", TOKEN_SPECIAL_LEFT);
+    case 'L': if(isKeyword(scanner, 1, 3, "eft")) result = TOKEN_SPECIAL_LEFT; break;
     case 'R':
-        if (isKeyword(scanner, 1, 4, "ight")) return TOKEN_SPECIAL_RIGHT;
-        if (isKeyword(scanner, 1, 2, "ET")) return TOKEN_SPECIAL_RETURN;
+        if (isKeyword(scanner, 1, 4, "ight")) result = TOKEN_SPECIAL_RIGHT;
+        else if (isKeyword(scanner, 1, 2, "ET")) result = TOKEN_SPECIAL_RETURN;
         break;
-    case 'U': return checkSpecial(scanner, 1, 1, "p", TOKEN_SPECIAL_UP);
+    case 'U': if(isKeyword(scanner, 1, 1, "p")) result = TOKEN_SPECIAL_UP; break;
     case 'D':
-        if (isKeyword(scanner, 1, 3, "own")) return TOKEN_SPECIAL_DOWN;
-        if (isKeyword(scanner, 1, 2, "EL")) return TOKEN_SPECIAL_DELETE;
+        if (isKeyword(scanner, 1, 3, "own")) result = TOKEN_SPECIAL_DOWN;
+        else if (isKeyword(scanner, 1, 2, "EL")) result = TOKEN_SPECIAL_DELETE;
         break;
-    case 'T': return checkSpecial(scanner, 1, 2, "AB", TOKEN_SPECIAL_TAB);
-    case 'S': return checkSpecial(scanner, 1, 2, "PC", TOKEN_SPECIAL_SPACE);
+    case 'T': if (isKeyword(scanner, 1, 2, "AB")) result = TOKEN_SPECIAL_TAB; break;
+    case 'S': if (isKeyword(scanner, 1, 2, "PC")) result = TOKEN_SPECIAL_SPACE; break;
     case 'E':
-        if (isKeyword(scanner, 1, 2, "SC")) return TOKEN_SPECIAL_ESCAPE;
-        if (isKeyword(scanner, 1, 2, "nd")) return TOKEN_SPECIAL_END;
+        if (isKeyword(scanner, 1, 2, "SC")) result = TOKEN_SPECIAL_ESCAPE;
+        else if (isKeyword(scanner, 1, 2, "nd")) result = TOKEN_SPECIAL_END;
         break;
-    case 'H': return checkSpecial(scanner, 1, 3, "ome", TOKEN_SPECIAL_HOME);
+    case 'H': if (isKeyword(scanner, 1, 3, "ome")) result = TOKEN_SPECIAL_HOME; break;
     case 'P':
-        if (isKeyword(scanner, 1, 3, "gUp")) return TOKEN_SPECIAL_PAGE_UP;
-        if (isKeyword(scanner, 1, 5, "gDown")) return TOKEN_SPECIAL_PAGE_DOWN;
+        if (isKeyword(scanner, 1, 3, "gUp")) result = TOKEN_SPECIAL_PAGE_UP;
+        else if (isKeyword(scanner, 1, 5, "gDown")) result = TOKEN_SPECIAL_PAGE_DOWN;
         break;
-    case 'B': return checkSpecial(scanner, 1, 4, "egin", TOKEN_SPECIAL_BEGIN);
+    case 'B': if (isKeyword(scanner, 1, 4, "egin")) result = TOKEN_SPECIAL_BEGIN; break;
     }
 
-    return TOKEN_ERROR;
+    return result;
 }
 
 static void
 getSpecialKey(Scanner* scanner, Token* token)
 {
+    assert(scanner), assert(token);
+
     while (isAlpha(peek(scanner))) advanceScanner(scanner);
     TokenType type = specialType(scanner);
     if (type == TOKEN_ERROR) return errorToken(scanner, token, "Invalid special key");
@@ -474,6 +494,8 @@ getSpecialKey(Scanner* scanner, Token* token)
 static void
 getKey(Scanner* scanner, Token* token, char c)
 {
+    assert(scanner), assert(token);
+
     if (isUtf8MultiByteStartByte(c))
     {
         /* NOTE scanning multi byte character */
@@ -501,7 +523,7 @@ getKey(Scanner* scanner, Token* token, char c)
 static void
 checkInterpolation(Scanner* scanner, Token* token)
 {
-    assert(scanner);
+    assert(scanner), assert(token);
 
     /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
     if (seekToCharType(scanner, CHAR_TYPE_INTERP_END) == CHAR_TYPE_STATUS_ERROR)
@@ -547,6 +569,8 @@ checkInterpolation(Scanner* scanner, Token* token)
 static void
 getInterpolation(Scanner* scanner, Token* token)
 {
+    assert(scanner), assert(token);
+
     skipWhitespace(scanner);
     if (isAtEnd(scanner))
     {
@@ -578,7 +602,7 @@ getInterpolation(Scanner* scanner, Token* token)
 static void
 getDouble(Scanner* scanner, Token* result)
 {
-    assert(scanner && result);
+    assert(scanner), assert(result);
 
     while (isDigit(peek(scanner))) advanceScanner(scanner);
     if (peek(scanner) == '.')
@@ -593,7 +617,7 @@ getDouble(Scanner* scanner, Token* result)
 static void
 getInteger(Scanner* scanner, Token* result)
 {
-    assert(scanner && result);
+    assert(scanner), assert(result);
 
     while (isDigit(peek(scanner))) advanceScanner(scanner);
 
@@ -603,7 +627,7 @@ getInteger(Scanner* scanner, Token* result)
 static void
 getUnsignedInteger(Scanner* scanner, Token* result)
 {
-    assert(scanner && result);
+    assert(scanner), assert(result);
 
     while (isDigit(peek(scanner))) advanceScanner(scanner);
 
@@ -613,7 +637,7 @@ getUnsignedInteger(Scanner* scanner, Token* result)
 void
 scanTokenForCompiler(Scanner* scanner, Token* result)
 {
-    assert(scanner && result);
+    assert(scanner), assert(result);
 
     initToken(result);
 
@@ -674,7 +698,7 @@ scanTokenForCompiler(Scanner* scanner, Token* result)
 void
 scanTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag)
 {
-    assert(scanner && result);
+    assert(scanner), assert(result);
 
     initToken(result);
 

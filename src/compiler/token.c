@@ -18,7 +18,7 @@
 void
 copyToken(const Token* from, Token* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     to->type = from->type;
     to->start = from->start;
@@ -32,7 +32,7 @@ copyToken(const Token* from, Token* to)
 void
 copyTokenArray(const TokenArray* from, TokenArray* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     if (from->count == 0)
     {
@@ -51,7 +51,7 @@ copyTokenArray(const TokenArray* from, TokenArray* to)
 void
 errorAtToken(const Token* token, const char* filepath, const char* fmt, ...)
 {
-    assert(token && filepath && fmt);
+    assert(token), assert(filepath), assert(fmt);
 
     fprintf(stderr, "%s:%u:%u: error", filepath, token->line, token->column);
 
@@ -83,6 +83,8 @@ errorAtToken(const Token* token, const char* filepath, const char* fmt, ...)
 bool
 getDoubleFromToken(const Token* token, double* dest, bool debug)
 {
+    assert(token), assert(dest);
+
     char* endptr;
     int oldErrno = errno;
     errno = 0;
@@ -119,6 +121,8 @@ getDoubleFromToken(const Token* token, double* dest, bool debug)
 bool
 getInt32FromToken(const Token* token, int32_t* dest, bool debug)
 {
+    assert(token), assert(dest);
+
     char* endptr;
     int oldErrno = errno;
     errno = 0;
@@ -164,6 +168,8 @@ getInt32FromToken(const Token* token, int32_t* dest, bool debug)
 bool
 getUint32FromToken(const Token* token, uint32_t* dest, bool debug)
 {
+    assert(token), assert(dest);
+
     char* endptr;
     int oldErrno = errno;
     errno = 0;
@@ -313,6 +319,8 @@ getTokenRepr(const TokenType type)
 void
 initToken(Token* token)
 {
+    assert(token);
+
     token->type = TOKEN_EMPTY;
     token->start = NULL;
     token->length = 0;
@@ -364,7 +372,7 @@ isTokenModType(const TokenType type)
 void
 writeTokenArray(TokenArray* tokens, Token* token)
 {
-    assert(tokens && token);
+    assert(tokens), assert(token);
 
     if (tokens->count == tokens->capacity)
     {

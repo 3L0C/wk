@@ -12,6 +12,8 @@ typedef int (*ConversionFp)(int);
 void
 appendInt32ToString(String* dest, int32_t i)
 {
+    assert(dest);
+
     size_t len = snprintf(NULL, 0, "%d", i);
     char buffer[len + 1]; /* +1 for null byte. */
     snprintf(buffer, len + 1, "%d", i);
@@ -21,6 +23,8 @@ appendInt32ToString(String* dest, int32_t i)
 void
 appendUInt32ToString(String* dest, uint32_t i)
 {
+    assert(dest);
+
     size_t len = snprintf(NULL, 0, "%u", i);
     char buffer[len + 1]; /* +1 for null byte. */
     snprintf(buffer, len + 1, "%u", i);
@@ -39,9 +43,7 @@ appendCharToString(String* dest, char c)
 void
 appendToString(String *dest, const char* source, size_t len)
 {
-    /* assert(dest && source); */
-    assert(dest);
-    assert(source);
+    assert(dest), assert(source);
     if (len < 1) return;
 
     while (dest->count + len + 1 > dest->capacity)
@@ -61,7 +63,7 @@ appendToString(String *dest, const char* source, size_t len)
 static void
 appendCharsToStringWithFunc(String* dest, const char* source, size_t len, ConversionFp fp)
 {
-    assert(dest && source);
+    assert(dest), assert(source);
     if (len < 1) return;
 
     for (size_t i = 0; i < len; i++)
@@ -73,7 +75,7 @@ appendCharsToStringWithFunc(String* dest, const char* source, size_t len, Conver
 void
 appendToStringWithState(String* dest, const char* source, size_t len, StringAppendState state)
 {
-    assert(dest && source);
+    assert(dest), assert(source);
     if (len < 1) return;
 
     switch (state)
@@ -109,6 +111,8 @@ appendToStringWithState(String* dest, const char* source, size_t len, StringAppe
 void
 disownString(String* string)
 {
+    assert(string);
+
     string->string = NULL;
     string->count = 0;
     string->capacity = 0;
@@ -117,6 +121,8 @@ disownString(String* string)
 void
 freeString(String* string)
 {
+    assert(string);
+
     FREE_ARRAY(char, string->string, string->count);
     string->string = NULL;
     string->count = 0;
@@ -124,17 +130,21 @@ freeString(String* string)
 }
 
 void
-initFromCharString(String* dest, char* source)
+initFromCharString(String* string, char* source)
 {
+    assert(string);
+
     size_t len = strlen(source);
-    dest->string = source;
-    dest->count = len;
-    dest->capacity = len;
+    string->string = source;
+    string->count = len;
+    string->capacity = len;
 }
 
 void
 initString(String *string)
 {
+    assert(string);
+
     string->string = NULL;
     string->count = 0;
     string->capacity = 0;

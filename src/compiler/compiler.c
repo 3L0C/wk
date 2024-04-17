@@ -22,11 +22,6 @@
 
 static void compileKeyChord(Compiler* compiler);
 
-static bool debug = false;
-static const char* delimiter = NULL;
-static size_t delimiterLen = 0;
-static PseudoChord nullPseudoChord = {0};
-
 static void
 initPseudoChordArray(PseudoChordArray* array)
 {
@@ -64,7 +59,7 @@ makeNullPseudoChord(PseudoChord* chord)
 static void
 copyPseudoChord(PseudoChord* from, PseudoChord* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     to->state = from->state;
     copyKey(&from->key, &to->key);
@@ -107,10 +102,11 @@ freePseudoChordArray(PseudoChordArray* chords)
 }
 
 static PseudoChord*
-writePseudoChordArray(PseudoChordArray* array, PseudoChord* chord)
+writePseudoChordArray(Compiler* compiler, PseudoChord* chord)
 {
-    assert(array && chord);
+    assert(compiler), assert(chord);
 
+    PseudoChordArray* array = compiler->chordsDest;
     if (array->count == array->capacity)
     {
         size_t oldCapacity = array->capacity;
@@ -120,14 +116,16 @@ writePseudoChordArray(PseudoChordArray* array, PseudoChord* chord)
 
     copyPseudoChord(chord, &array->chords[array->count]);
     PseudoChord* result = &array->chords[array->count++];
-    if (debug) disassemblePseudoChord(result);
+    if (compiler->debug) disassemblePseudoChord(result);
     return result;
 }
 
 static void
 errorAtCurrent(Compiler* compiler, const char* fmt, ...)
 {
+    assert(compiler), assert(fmt);
     if (compiler->panicMode) return;
+
     compiler->panicMode = true;
     compiler->hadError = true;
 
@@ -140,12 +138,14 @@ errorAtCurrent(Compiler* compiler, const char* fmt, ...)
 static TokenType
 advanceCompiler(Compiler* compiler)
 {
+    assert(compiler);
+
     copyToken(&compiler->current, &compiler->previous);
 
     while (true)
     {
         scanTokenForCompiler(&compiler->scanner, &compiler->current);
-        if (debug) disassembleToken(&compiler->current);
+        if (compiler->debug) disassembleToken(&compiler->current);
         if (compiler->current.type != TOKEN_ERROR) break;
 
         errorAtCurrent(compiler, compiler->current.message);
@@ -157,6 +157,8 @@ advanceCompiler(Compiler* compiler)
 static void
 consume(Compiler* compiler, TokenType type, const char* message)
 {
+    assert(compiler), assert(message);
+
     if (compiler->current.type == type)
     {
         advanceCompiler(compiler);
@@ -169,18 +171,24 @@ consume(Compiler* compiler, TokenType type, const char* message)
 static bool
 checkCompiler(Compiler* compiler, TokenType type)
 {
+    assert(compiler);
+
     return compiler->current.type == type;
 }
 
 static bool
 compilerIsAtEnd(Compiler* compiler)
 {
+    assert(compiler);
+
     return isAtEnd(&compiler->scanner);
 }
 
 static bool
 matchCompiler(Compiler* compiler, TokenType type)
 {
+    assert(compiler);
+
     if (!checkCompiler(compiler, type)) return false;
     advanceCompiler(compiler);
     return true;
@@ -189,12 +197,16 @@ matchCompiler(Compiler* compiler, TokenType type)
 static TokenType
 currentType(Compiler* compiler)
 {
+    assert(compiler);
+
     return compiler->current.type;
 }
 
 static Token*
 currentToken(Compiler* compiler)
 {
+    assert(compiler);
+
     return &compiler->current;
 }
 
@@ -249,7 +261,7 @@ addMod(TokenType type, Modifiers* mod)
 static void
 compileMods(Compiler* compiler, Modifiers* mods)
 {
-    assert(compiler && mods);
+    assert(compiler), assert(mods);
     if (compiler->panicMode) return;
 
     TokenType type = currentType(compiler);
@@ -292,7 +304,7 @@ isKey(Compiler* compiler)
 static void
 compileKeyFromToken(Compiler* compiler, PseudoChord* chord)
 {
-    assert(compiler && chord);
+    assert(compiler), assert(chord);
     if (compiler->panicMode) return;
 
     Token* token = currentToken(compiler);
@@ -307,7 +319,7 @@ compileKeyFromToken(Compiler* compiler, PseudoChord* chord)
 static void
 compileKey(Compiler* compiler, PseudoChord* chord)
 {
-    assert(compiler && chord);
+    assert(compiler), assert(chord);
     if (compiler->panicMode) return;
 
     if (!isKey(compiler)) return errorAtCurrent(compiler, "Expected key or special.");
@@ -318,13 +330,15 @@ compileKey(Compiler* compiler, PseudoChord* chord)
 static size_t
 compilerGetIndex(Compiler* compiler)
 {
+    assert(compiler);
+
     return compiler->chordsDest->count;
 }
 
 static void
 collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
 {
-    assert(compiler && tokens);
+    assert(compiler), assert(tokens);
     if (compiler->panicMode) return;
 
     if (!checkCompiler(compiler, TOKEN_DESC_INTERP) &&
@@ -357,7 +371,7 @@ collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
 static void
 collectCommandTokens(Compiler* compiler, TokenArray* tokens)
 {
-    assert(compiler && tokens);
+    assert(compiler), assert(tokens);
     if (compiler->panicMode) return;
 
     if (!checkCompiler(compiler, TOKEN_COMM_INTERP) &&
@@ -395,7 +409,7 @@ collectCommandTokens(Compiler* compiler, TokenArray* tokens)
 static void
 compileHint(Compiler* compiler, KeyChord* keyChord)
 {
-    assert(compiler && keyChord);
+    assert(compiler), assert(keyChord);
     if (compiler->panicMode) return;
 
     String result = {0};
@@ -406,7 +420,7 @@ compileHint(Compiler* compiler, KeyChord* keyChord)
     if (mods->hyper) appendToString(&result, "H-", strlen("H-"));
     if (mods->shift) appendToString(&result, "S-", strlen("S-"));
     appendToString(&result, keyChord->key.repr, keyChord->key.len);
-    appendToString(&result, delimiter, delimiterLen);
+    appendToString(&result, compiler->delimiter, compiler->delimiterLen);
     appendToString(&result, keyChord->description, strlen(keyChord->description));
     keyChord->hint = result.string;
     disownString(&result);
@@ -415,7 +429,7 @@ compileHint(Compiler* compiler, KeyChord* keyChord)
 static bool
 compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
 {
-    assert(compiler && chord);
+    assert(compiler), assert(chord);
     if (compiler->panicMode) return false;
 
     switch (type)
@@ -473,7 +487,7 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
 static bool
 compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
 {
-    assert(compiler && chord);
+    assert(compiler), assert(chord);
     if (compiler->panicMode) return false;
 
     switch (type)
@@ -495,7 +509,7 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
 static void
 compileHooksAndFlags(Compiler* compiler, PseudoChord* keyChord)
 {
-    assert(compiler && keyChord);
+    assert(compiler), assert(keyChord);
     if (compiler->panicMode) return;
 
     TokenType type = currentType(compiler);
@@ -535,14 +549,14 @@ compileChord(Compiler* compiler)
         return;
     }
 
-    writePseudoChordArray(compiler->chordsDest, chord);
+    writePseudoChordArray(compiler, chord);
     freePseudoChord(chord);
 }
 
 static void
 compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t index)
 {
-    assert(tokens && to && dest);
+    assert(tokens), assert(to), assert(dest);
 
     String result = {0};
     initString(&result);
@@ -618,7 +632,7 @@ compileMissingKeyChordInfo(
     TokenArray* commandTokens,
     size_t index)
 {
-    assert(compiler && from && to && descriptionTokens && commandTokens);
+    assert(compiler), assert(from), assert(to), assert(descriptionTokens), assert(commandTokens);
 
     if (!to->description.count) copyTokenArray(&from->description, &to->description);
     if (!to->command.count) copyTokenArray(&from->command, &to->command);
@@ -675,7 +689,7 @@ compileChordArray(Compiler* compiler)
             compileKey(compiler, chord);
         }
 
-        writePseudoChordArray(compiler->chordsDest, chord);
+        writePseudoChordArray(compiler, chord);
         freePseudoChord(chord);
     }
 
@@ -712,13 +726,13 @@ compileNullKeyChord(Compiler* compiler)
 {
     assert(compiler);
 
-    writePseudoChordArray(compiler->chordsDest, &nullPseudoChord);
+    writePseudoChordArray(compiler, &compiler->nullPseudoChord);
 }
 
 static void
 setBeforeHook(PseudoChord* parent, PseudoChord* child)
 {
-    assert(parent && child);
+    assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
     if (child->flags.nobefore || !parent->before.count) return;
@@ -732,7 +746,7 @@ setBeforeHook(PseudoChord* parent, PseudoChord* child)
 static void
 setAfterHook(PseudoChord* parent, PseudoChord* child)
 {
-    assert(parent && child);
+    assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
     if (child->flags.noafter || !parent->after.count) return;
@@ -746,7 +760,7 @@ setAfterHook(PseudoChord* parent, PseudoChord* child)
 static void
 setHooks(PseudoChord* parent, PseudoChord* child)
 {
-    assert(parent && child);
+    assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
     if (child->flags.unhook) return;
@@ -758,7 +772,7 @@ setHooks(PseudoChord* parent, PseudoChord* child)
 static void
 setFlags(ChordFlags* parent, ChordFlags* child)
 {
-    assert(parent && child);
+    assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
     if (child->deflag) return;
@@ -771,7 +785,7 @@ setFlags(ChordFlags* parent, ChordFlags* child)
 static void
 setHooksAndFlags(PseudoChord* parent, PseudoChordArray* children)
 {
-    assert(parent && children);
+    assert(parent), assert(children);
 
     for (size_t i = 0; i < children->count; i++)
     {
@@ -794,6 +808,8 @@ setHooksAndFlags(PseudoChord* parent, PseudoChordArray* children)
 static int
 compareKeyChords(const void* a, const void* b)
 {
+    assert(a), assert(b);
+
     const Key* keyA = &((PseudoChord*)a)->key;
     const Key* keyB = &((PseudoChord*)b)->key;
 
@@ -808,6 +824,8 @@ compareKeyChords(const void* a, const void* b)
 static void
 sortPseudoChordArray(PseudoChord* chords, size_t count)
 {
+    assert(chords);
+
     qsort(chords, count, sizeof(PseudoChord), compareKeyChords);
 }
 
@@ -820,7 +838,7 @@ compilePrefix(Compiler* compiler)
     PseudoChordArray* previousDest = compiler->chordsDest;
 
     /* advance */
-    PseudoChord* parent = writePseudoChordArray(compiler->chordsDest, &compiler->chord);
+    PseudoChord* parent = writePseudoChordArray(compiler, &compiler->chord);
     freePseudoChord(&compiler->chord);
     PseudoChordArray* children = &parent->chords;
     compiler->chordsDest = children;
@@ -838,7 +856,7 @@ compilePrefix(Compiler* compiler)
 
     /* end prefix */
     setHooksAndFlags(parent, compiler->chordsDest);
-    if (compiler->sort) sortPseudoChordArray(compiler->chordsDest->chords, compilerGetIndex(compiler));
+    if (compiler->sort) sortPseudoChordArray(children->chords, compilerGetIndex(compiler));
     compileNullKeyChord(compiler);
     compiler->chordsDest = previousDest;
 }
@@ -868,7 +886,7 @@ compileKeyChord(Compiler* compiler)
 static KeyChord*
 compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
 {
-    assert(compiler && dest);
+    assert(compiler), assert(dest);
 
     PseudoChordArray* array = compiler->chordsDest;
     size_t count = compiler->chordsDest->count;
@@ -915,16 +933,9 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
 KeyChord*
 compileKeyChords(Compiler* compiler, Menu* menu)
 {
-    assert(compiler && menu);
+    assert(compiler), assert(menu);
 
-    /* Initialize globals and defaults */
-    makeNullPseudoChord(&nullPseudoChord);
-    debug = menu->debug;
-    delimiter = menu->delimiter;
-    delimiterLen = strlen(delimiter);
-    compiler->sort = menu->sort;
-
-    if (debug) debugPrintScannedTokenHeader();
+    if (compiler->debug) debugPrintScannedTokenHeader();
 
     advanceCompiler(compiler);
     while (!compilerIsAtEnd(compiler))
@@ -932,12 +943,12 @@ compileKeyChords(Compiler* compiler, Menu* menu)
         compileKeyChord(compiler);
     }
 
-    if (compiler->sort) sortPseudoChordArray(compiler->chordsDest->chords, compilerGetIndex(compiler));
+    if (compiler->sort) sortPseudoChordArray(compiler->chords.chords, compilerGetIndex(compiler));
     compileNullKeyChord(compiler);
 
     menu->keyChords = compileFromPseudoChords(compiler, &menu->keyChordsHead);
 
-    if (debug)
+    if (compiler->debug)
     {
         debugPrintScannedTokenFooter();
         disassembleKeyChords(menu->keyChordsHead, 0);
@@ -947,15 +958,20 @@ compileKeyChords(Compiler* compiler, Menu* menu)
 }
 
 void
-initCompiler(Compiler* compiler, char *source, const char *filepath)
+initCompiler(const Menu* menu, Compiler* compiler, char *source, const char *filepath)
 {
-    assert(compiler && source && filepath);
+    assert(compiler), assert(source), assert(filepath);
 
     initScanner(&compiler->scanner, source, filepath);
     compiler->hadError = false;
     compiler->panicMode = false;
+    compiler->sort = menu->sort;
+    compiler->debug = menu->debug;
+    compiler->delimiter = menu->delimiter;
+    compiler->delimiterLen = strlen(menu->delimiter);
+    makeNullPseudoChord(&compiler->nullPseudoChord);
+    initPseudoChord(&compiler->chord);
     initPseudoChordArray(&compiler->chords);
     compiler->chordsDest = &compiler->chords;
     compiler->source = source;
-    compiler->sort = false;
 }

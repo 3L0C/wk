@@ -37,15 +37,19 @@ typedef struct
     Token previous;
     bool hadError;
     bool panicMode;
+    bool sort;
+    bool debug;
+    const char* delimiter;
+    size_t delimiterLen;
+    PseudoChord nullPseudoChord;
     PseudoChord chord;
     PseudoChordArray* chordsDest;
     PseudoChordArray chords;
     char* source;
-    bool sort;
 } Compiler;
 
 KeyChord* compileKeyChords(Compiler* compiler, Menu* menu);
-void initCompiler(Compiler* compiler, char* source, const char* filepath);
+void initCompiler(const Menu* menu, Compiler* compiler, char* source, const char* filepath);
 
 
 #endif /* WK_COMPILER_COMPILER_H_ */

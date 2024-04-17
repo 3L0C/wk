@@ -12,6 +12,8 @@
 static bool
 isWithinOriginalBounds(PieceTable* pieceTable, const char* text)
 {
+    assert(pieceTable);
+
     return (
         !(text < pieceTable->original) &&
         !(text > pieceTable->original + pieceTable->originalLen)
@@ -21,7 +23,7 @@ isWithinOriginalBounds(PieceTable* pieceTable, const char* text)
 static void
 copyPiece(Piece* from, Piece* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     to->source = from->source;
     to->index = from->index;
@@ -31,6 +33,8 @@ copyPiece(Piece* from, Piece* to)
 static void
 writePieceToPieceArray(PieceArray* array, PieceSource source, size_t index, size_t len)
 {
+    assert(array);
+
     if (array->count == array->capacity)
     {
         size_t oldCapacity = array->capacity;
@@ -65,6 +69,8 @@ appendToPieceTable(PieceTable* pieceTable, PieceSource source, const char* text,
 char*
 compilePieceTableToString(const PieceTable* pieceTable)
 {
+    assert(pieceTable);
+
     String result;
     initString(&result);
     const PieceArray* pieces = &pieceTable->pieces;
@@ -100,6 +106,8 @@ freePieceTable(PieceTable* pieceTable)
 const char*
 getTextAtPiece(const PieceTable* pieceTable, Piece* piece)
 {
+    assert(pieceTable), assert(piece);
+
     return (
         piece->source == PIECE_SOURCE_ADD
         ? pieceTable->add.string + piece->index
@@ -120,7 +128,7 @@ initPieceArray(PieceArray* array)
 void
 initPieceTable(PieceTable* pieceTable, const char* original)
 {
-    assert(pieceTable && original);
+    assert(pieceTable), assert(original);
 
     pieceTable->original = original;
     pieceTable->originalLen = strlen(original);

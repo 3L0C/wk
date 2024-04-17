@@ -21,7 +21,7 @@
 void
 calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols)
 {
-    assert(rows && cols);
+    assert(rows), assert(cols);
 
     if (maxCols == 0 || maxCols >= count)
     {
@@ -49,7 +49,7 @@ countKeyChords(const KeyChord* keyChords)
 static MenuStatus
 handlePrefix(Menu* menu, const KeyChord* keyChord)
 {
-    assert(menu && keyChord);
+    assert(menu), assert(keyChord);
 
     debugMsg(menu->debug, "Found prefix.");
 
@@ -61,7 +61,7 @@ handlePrefix(Menu* menu, const KeyChord* keyChord)
 static void
 handleCommand(Menu* menu, const KeyChord* keyChord)
 {
-    assert(menu && keyChord);
+    assert(menu), assert(keyChord);
 
     if (keyChord->flags.write)
     {
@@ -74,7 +74,7 @@ handleCommand(Menu* menu, const KeyChord* keyChord)
 static MenuStatus
 handleCommands(Menu* menu, const KeyChord* keyChord)
 {
-    assert(menu && keyChord);
+    assert(menu), assert(keyChord);
 
     /* no command */
     if (!keyChord->command) return MENU_STATUS_EXIT_OK;
@@ -88,7 +88,7 @@ handleCommands(Menu* menu, const KeyChord* keyChord)
 static MenuStatus
 pressKey(Menu* menu, const KeyChord* keyChord)
 {
-    assert(menu && keyChord);
+    assert(menu), assert(keyChord);
 
     if (keyChord->keyChords) return handlePrefix(menu, keyChord);
     return handleCommands(menu, keyChord);
@@ -97,7 +97,7 @@ pressKey(Menu* menu, const KeyChord* keyChord)
 MenuStatus
 handleKeypress(Menu* menu, const Key* key)
 {
-    assert(menu && key);
+    assert(menu), assert(key);
 
     uint32_t len = menu->keyChordCount;
     const KeyChord* keyChords = menu->keyChords;
@@ -146,7 +146,7 @@ isUtf8MultiByteStartByte(char byte)
 static MenuStatus
 spawnSync(const char* shell, const char* cmd)
 {
-    assert(shell && cmd);
+    assert(shell), assert(cmd);
 
     setsid();
     char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL };
@@ -171,7 +171,7 @@ fail:
 static MenuStatus
 spawnAsync(const char* shell, const char* cmd)
 {
-    assert(shell && cmd);
+    assert(shell), assert(cmd);
 
     if (fork() == 0)
     {
@@ -183,7 +183,7 @@ spawnAsync(const char* shell, const char* cmd)
 MenuStatus
 spawn(const Menu* menu, const char* cmd, bool sync)
 {
-    assert(menu && cmd);
+    assert(menu), assert(cmd);
 
     pid_t child = fork();
 

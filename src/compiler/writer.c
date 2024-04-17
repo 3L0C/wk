@@ -65,6 +65,8 @@ writeChordsFooter(void)
 static void
 writeChordMods(const Modifiers* mods)
 {
+    assert(mods);
+
     printf(
         "    %-5s, %-5s, %-5s, %-5s,",
         (mods->ctrl ? "true" : "false"),
@@ -122,6 +124,8 @@ writeEscStringWithIndentAndNewline(const char* text, int indent)
 static void
 writeChordKey(const Key* key, int indent)
 {
+    assert(key);
+
     writeIndentWithNewline(indent);
     printf("MAKE_KEY(");
     writeIndentWithNewline(indent);
@@ -138,6 +142,8 @@ writeChordKey(const Key* key, int indent)
 static void
 writeChordFlags(const ChordFlags* flags, int indent)
 {
+    assert(flags);
+
     printf("MAKE_FLAGS(\n");
     writeIndent(indent);
     printf(

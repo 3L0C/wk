@@ -11,7 +11,7 @@
 void
 copyChordFlags(const ChordFlags* from, ChordFlags* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     to->keep = from->keep;
     to->close = from->close;
@@ -31,7 +31,7 @@ copyChordFlags(const ChordFlags* from, ChordFlags* to)
 void
 copyChordModifiers(const Modifiers* from, Modifiers* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     to->ctrl = from->ctrl;
     to->alt = from->alt;
@@ -42,7 +42,7 @@ copyChordModifiers(const Modifiers* from, Modifiers* to)
 void
 copyKey(const Key* from, Key* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     copyChordModifiers(&from->mods, &to->mods);
     to->special = from->special;
@@ -53,7 +53,7 @@ copyKey(const Key* from, Key* to)
 void
 copyKeyChord(const KeyChord* from, KeyChord* to)
 {
-    assert(from && to);
+    assert(from), assert(to);
 
     to->state = from->state;
     copyKey(&from->key, &to->key);
@@ -150,37 +150,6 @@ hasChordFlags(const ChordFlags* flags)
     );
 }
 
-static void
-resetKeyChordMods(Modifiers* mods)
-{
-    assert(mods);
-
-    mods->ctrl = false;
-    mods->alt = false;
-    mods->hyper = false;
-    mods->shift = false;
-}
-
-static void
-resetKeyChordFlags(ChordFlags* flags)
-{
-    assert(flags);
-
-    flags->keep = false;
-    flags->close = false;
-    flags->inherit = false;
-    flags->ignore = false;
-    flags->unhook = false;
-    flags->deflag = false;
-    flags->nobefore = false;
-    flags->noafter = false;
-    flags->write = false;
-    flags->execute = false;
-    flags->syncCommand = false;
-    flags->syncBefore = false;
-    flags->syncAfter = false;
-}
-
 void
 initKey(Key* key)
 {
@@ -204,7 +173,7 @@ initKeyChord(KeyChord* keyChord)
     keyChord->command = NULL;
     keyChord->before = NULL;
     keyChord->after = NULL;
-    resetKeyChordFlags(&keyChord->flags);
+    initChordFlags(&keyChord->flags);
     keyChord->keyChords = NULL;
 }
 
@@ -213,7 +182,19 @@ initChordFlags(ChordFlags* flags)
 {
     assert(flags);
 
-    resetKeyChordFlags(flags);
+    flags->keep = false;
+    flags->close = false;
+    flags->inherit = false;
+    flags->ignore = false;
+    flags->unhook = false;
+    flags->deflag = false;
+    flags->nobefore = false;
+    flags->noafter = false;
+    flags->write = false;
+    flags->execute = false;
+    flags->syncCommand = false;
+    flags->syncBefore = false;
+    flags->syncAfter = false;
 }
 
 void
@@ -221,7 +202,10 @@ initChordModifiers(Modifiers* mods)
 {
     assert(mods);
 
-    resetKeyChordMods(mods);
+    mods->ctrl = false;
+    mods->alt = false;
+    mods->hyper = false;
+    mods->shift = false;
 }
 
 bool
@@ -255,7 +239,7 @@ hasDefaultChordFlags(const ChordFlags* flags)
 static bool
 modsAreEqual(const Modifiers* a, const Modifiers* b, bool checkShift)
 {
-    assert(a && b);
+    assert(a), assert(b);
 
     if (checkShift)
     {
@@ -276,7 +260,7 @@ modsAreEqual(const Modifiers* a, const Modifiers* b, bool checkShift)
 static bool
 keysAreSpecial(const Key* a, const Key* b)
 {
-    assert(a && b);
+    assert(a), assert(b);
 
     return a->special != SPECIAL_KEY_NONE && b->special != SPECIAL_KEY_NONE;
 }
@@ -284,7 +268,7 @@ keysAreSpecial(const Key* a, const Key* b)
 static bool
 specialKeysAreEqual(const Key* a, const Key* b)
 {
-    assert(a && b);
+    assert(a), assert(b);
 
     return (
         a->special == b->special &&
@@ -295,7 +279,7 @@ specialKeysAreEqual(const Key* a, const Key* b)
 bool
 keysAreEqual(const Key* a, const Key* b)
 {
-    assert(a && b);
+    assert(a), assert(b);
 
     if (keysAreSpecial(a, b) && specialKeysAreEqual(a, b)) return true;
     return (
@@ -308,18 +292,24 @@ keysAreEqual(const Key* a, const Key* b)
 bool
 keyIsNormal(const Key* key)
 {
+    assert(key);
+
     return (!keyIsSpecial(key) && *key->repr != '\0');
 }
 
 bool
 keyIsSpecial(const Key* key)
 {
+    assert(key);
+
     return (key->special != SPECIAL_KEY_NONE);
 }
 
 bool
 keyIsStrictlyMod(const Key* key)
 {
+    assert(key);
+
     return (hasActiveModifier(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
 }
 
@@ -335,6 +325,6 @@ makeNullKeyChord(KeyChord* keyChord)
     keyChord->command = NULL;
     keyChord->before = NULL;
     keyChord->after = NULL;
-    resetKeyChordFlags(&keyChord->flags);
+    initChordFlags(&keyChord->flags);
     keyChord->keyChords = NULL;
 }

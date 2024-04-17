@@ -21,6 +21,8 @@
 static char*
 getLitteralIncludePath(const char* start, size_t len)
 {
+    assert(start);
+
     String result = {0};
     initString(&result);
     appendToString(&result, start, len);
@@ -55,6 +57,8 @@ getBaseDirLength(const char* sourcePath)
 static char*
 getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
 {
+    assert(start), assert(sourcePath);
+
     /* If the include path is an absolute file, just copy the path directly. */
     if (*start == '/') return getLitteralIncludePath(start, len);
 
@@ -81,7 +85,7 @@ getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
 static void
 handleIncludeMacro(Menu* menu, Scanner* scanner, PieceTable* result, Token* includeFile)
 {
-    assert(menu && scanner && result && includeFile);
+    assert(menu), assert(scanner), assert(result), assert(includeFile);
 
     /* currently pointing at the 'i' in ':include', so take off one. */
     const char* sourcePath = scanner->filepath;
@@ -146,7 +150,7 @@ fail:
 static void
 handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable* pieceTable)
 {
-    assert(scanner && menu && token && pieceTable);
+    assert(scanner), assert(menu), assert(token), assert(pieceTable);
 
     makeScannerCurrent(scanner);
 
@@ -212,7 +216,7 @@ handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable*
 static void
 handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
 {
-    assert(scanner && menu && token);
+    assert(scanner), assert(menu), assert(token);
 
     makeScannerCurrent(scanner);
 
@@ -250,7 +254,7 @@ fail:
 static void
 handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
 {
-    assert(scanner && menu && token);
+    assert(scanner), assert(menu), assert(token);
 
     makeScannerCurrent(scanner);
 
@@ -289,7 +293,7 @@ fail:
 static void
 handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
 {
-    assert(scanner && menu && token);
+    assert(scanner), assert(menu), assert(token);
 
     makeScannerCurrent(scanner);
 
@@ -332,7 +336,7 @@ fail:
 char*
 runPreprocessor(Menu* menu, const char* source, const char* filepath)
 {
-    assert(menu && source);
+    assert(menu), assert(source);
 
     Scanner scanner = {0};
     initScanner(&scanner, source, filepath);

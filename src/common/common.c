@@ -26,7 +26,7 @@ errorMsg(const char* fmt, ...)
     vfprintf(stderr, fmt, ap);
     va_end(ap);
 
-    fputc((fmt[len] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
 }
 
 static void
@@ -68,6 +68,8 @@ usage(void)
 static bool
 getInt(int* num)
 {
+    assert(num);
+
     *num = atoi(optarg);
     if (*num != 0) return true;
     for (int i = 0; optarg[i] != '\0'; i++)
@@ -80,6 +82,8 @@ getInt(int* num)
 static bool
 getNum(double* num)
 {
+    assert(num);
+
     errno = 0;
     char* end;
     *num = strtod(optarg, &end);
@@ -91,7 +95,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
 {
 #define GET_ARG(arg)        ((*arg)[(optind == 1 ? optind : optind - 1)])
 
-    assert(menu && argc && argv);
+    assert(menu), assert(argc), assert(argv);
 
     int opt = '\0';
     static struct option longOpts[] = {
@@ -329,11 +333,11 @@ warnMsg(const char* fmt, ...)
     assert(fmt);
 
     fprintf(stderr, "[WARNING] ");
-    int len = strlen(fmt) + 1; /* 1 = '\0' */
+    int len = strlen(fmt); /* 1 = '\0' */
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
 
-    fputc((fmt[len] == ':' ? ' ' : '\n'), stderr);
+    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
 }

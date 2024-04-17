@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
-#include "config/test.h"
+/* config includes */
+#include "config/key_chords.h"
 
 /* common includes */
 #include "common/common.h"
@@ -76,7 +77,7 @@ compileSource(Compiler* compiler, char* source, const char* filepath)
 {
     assert(compiler && source && filepath);
 
-    initCompiler(compiler, source, filepath);
+    initCompiler(&mainMenu, compiler, source, filepath);
 
     /* Compile lines, retruns null on error. */
     mainMenu.keyChordsHead = mainMenu.keyChords = compileKeyChords(compiler, &mainMenu);
@@ -161,7 +162,7 @@ transpileWksFile(void)
         goto end;
     }
 
-    Compiler compiler;
+    Compiler compiler = {0};
     result = compileSource(&compiler, processedSource, mainMenu.client.transpile);
     if (result != EX_OK) goto fail;
 

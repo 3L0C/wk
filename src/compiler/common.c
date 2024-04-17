@@ -19,6 +19,8 @@
 static bool
 addMod(Key* key, TokenType type)
 {
+    assert(key);
+
     switch (type)
     {
     case TOKEN_MOD_CTRL: key->mods.ctrl = true; break;
@@ -34,6 +36,8 @@ addMod(Key* key, TokenType type)
 static bool
 addSpecial(Key* key, TokenType type)
 {
+    assert(key);
+
     key->repr = NULL;
 
     switch (type)
@@ -61,7 +65,7 @@ addSpecial(Key* key, TokenType type)
 static MenuStatus
 pressKey(Menu* menu, Scanner* scanner)
 {
-    assert(menu && scanner);
+    assert(menu), assert(scanner);
 
     static const size_t bufmax = 32;
     char buffer[bufmax];
@@ -125,7 +129,7 @@ pressKey(Menu* menu, Scanner* scanner)
 MenuStatus
 pressKeys(Menu* menu, const char* keys)
 {
-    assert(menu && keys);
+    assert(menu), assert(keys);
 
     Scanner scanner;
     initScanner(&scanner, keys, "KEYS");

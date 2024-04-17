@@ -16,23 +16,33 @@ typedef enum
     TOKEN_RIGHT_PAREN,
 
     /* preprocessor macros */
+
+    /* string macros */
     TOKEN_INCLUDE,
-    TOKEN_DEBUG,
-    TOKEN_SORT,
-    TOKEN_TOP,
-    TOKEN_BOTTOM,
-    TOKEN_MAX_COLUMNS,
-    TOKEN_WINDOW_WIDTH,
-    TOKEN_WINDOW_GAP,
-    TOKEN_BORDER_WIDTH,
-    TOKEN_BORDER_RADIUS,
-    TOKEN_WIDTH_PADDING,
-    TOKEN_HEIGHT_PADDING,
     TOKEN_FOREGROUND_COLOR,
     TOKEN_BACKGROUND_COLOR,
     TOKEN_BORDER_COLOR,
     TOKEN_SHELL,
     TOKEN_FONT,
+
+    /* switch macros */
+    TOKEN_DEBUG,
+    TOKEN_SORT,
+    TOKEN_TOP,
+    TOKEN_BOTTOM,
+
+    /* [-]digit macros */
+    TOKEN_WINDOW_WIDTH,
+    TOKEN_WINDOW_GAP,
+
+    /* digit macros */
+    TOKEN_MAX_COLUMNS,
+    TOKEN_BORDER_WIDTH,
+    TOKEN_WIDTH_PADDING,
+    TOKEN_HEIGHT_PADDING,
+
+    /* number macros */
+    TOKEN_BORDER_RADIUS,
 
     /* identifiers */
     TOKEN_THIS_KEY,

@@ -115,6 +115,8 @@ disassemblePseudoChord(const PseudoChord* chord)
 static void
 printErrorToken(const Token* token)
 {
+    assert(token);
+
     debugMsg(
         true,
         "| %04zu:%04zu | %-27s | %-26.*s |",
@@ -126,6 +128,8 @@ printErrorToken(const Token* token)
 static void
 printSimpleToken(const Token* token, const char* type)
 {
+    assert(token);
+
     debugMsg(
         true,
         "| %04zu:%04zu | %-27s | %-26.*s |",
@@ -249,6 +253,7 @@ void
 disassembleTokenArray(const TokenArray* tokens)
 {
     assert(tokens);
+
     if (tokens->count == 0) return;
 
     for (size_t i = 0; i < tokens->count; i++)

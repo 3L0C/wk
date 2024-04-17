@@ -29,7 +29,7 @@ debugMsg(bool debug, const char* fmt, ...)
     vprintf(fmt, ap);
     va_end(ap);
 
-    fputc((fmt[len] == ':' ? ' ' : '\n'), stdout);
+    fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stdout);
 }
 
 void

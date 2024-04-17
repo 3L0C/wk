@@ -31,18 +31,20 @@ countMenuKeyChords(Menu* menu)
 }
 
 int
-displayMenu(Menu* props)
+displayMenu(Menu* menu)
 {
+    assert(menu);
+
 #ifdef WK_WAYLAND_BACKEND
     if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
     {
-        debugMsg(props->debug, "Running on wayland.");
-        return runWayland(props);
+        debugMsg(menu->debug, "Running on wayland.");
+        return runWayland(menu);
     }
 #endif
 #ifdef WK_X11_BACKEND
-    debugMsg(props->debug, "Running on x11.");
-    return runX11(props);
+    debugMsg(menu->debug, "Running on x11.");
+    return runX11(menu);
 #endif
     errorMsg("Can only run under X11 and/or Wayland.");
     return EX_SOFTWARE;
@@ -51,7 +53,7 @@ displayMenu(Menu* props)
 static bool
 initColor(MenuHexColor* hexColor, const char* color)
 {
-    assert(hexColor && color);
+    assert(hexColor), assert(color);
 
     unsigned int r, g, b, a = 255;
     int count = sscanf(color, "#%2x%2x%2x%2x", &r, &g, &b, &a);
@@ -84,7 +86,7 @@ initColors(MenuHexColor* hexColors)
         if (!initColor(&hexColors[i], colors[i]))
         {
             char* colorType;
-            warnMsg("Invalid color string '%s'.", colors[i]);
+            warnMsg("Invalid color string '%s':", colors[i]);
             switch (i)
             {
             case MENU_COLOR_FOREGROUND: colorType = "foreground"; break;
@@ -143,7 +145,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
 void
 setMenuColor(Menu* menu, const char* color, MenuColor colorType)
 {
-    assert(menu && colorType < MENU_COLOR_LAST && !(colorType < 0));
+    assert(menu), assert(colorType < MENU_COLOR_LAST), assert(!(colorType < 0));
 
     if (!initColor(&menu->colors[colorType], color)) warnMsg("Invalid color string: '%s'.", color);
 }
