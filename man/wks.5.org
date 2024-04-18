@@ -128,7 +128,7 @@ a "A prefix with a hook and flag" ^before %{{echo "I am /almost/ always run firs
 }
 #+end_example
 
-For a more formal understanding, see *INHERITENCE* below.
+For a more formal understanding, see *INHERITANCE* below.
 
 ** THE INCLUDE PREPROCESSOR MACRO
 Here is a simple example of the /:include/ *PREPROCESSOR
@@ -579,7 +579,7 @@ The following are valid /hooks/:
   section for best practices regarding blocking /commands/.
 #+end_quote
 
-See *INHERITENCE* for an explanation of how /hooks/ work
+See *INHERITANCE* for an explanation of how /hooks/ work
 when given to a /prefix/.
 
 See *EXAMPLES* for a demonstration on /hooks/.
@@ -657,7 +657,7 @@ behavior of *wk*:
   the pitfalls of blocking /commands/ in *wk*.
 #+end_quote
 
-See *INHERITENCE* for an explanation of how /flags/ work
+See *INHERITANCE* for an explanation of how /flags/ work
 when given to a /prefix/.
 
 See *EXAMPLES* for a demonstration on /hooks/.
@@ -693,3 +693,6 @@ their affects on *wks* files.
   all that. See *EXAMPLES* for a demonstration.
 #+end_quote
 
+
+* NOTES
+** INHERITANCE

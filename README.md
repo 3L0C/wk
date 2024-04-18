@@ -123,68 +123,233 @@ above help message, or your configuration can be built into
 the binary by changing the settings in
 [config.def.h](config/config.def.h). 
 
-```c
-/* Delimiter when displaying chords. */
-static const char* delimiter = " -> ";
-/* Max number of columns to use. */
-static const uint32_t maxCols = 4;
-/* Window width. Set to '-1' for 1/2 the width of your screen. */
-static const int32_t windowWidth = -1;
-/* Window gap between top/bottom of screen. Set to '-1' for a gap of 1/10th of the screen height. */
-static const int32_t windowGap = -1;
-/* X-Padding around key/description text in cells. */
-static const uint32_t widthPadding = 6;
-/* Y-Padding around key/description text in cells. */
-static const uint32_t heightPadding = 2;
-/* Position to place the window. '0' = bottom; '1' = top. */
-static const uint32_t windowPosition = 0;
-/* Window border width */
-static const uint32_t borderWidth = 4;
-/* Window border radius. 0 means no curve */
-static const double borderRadius = 0;
-/* Window foreground color */
-static const char* foreground = "#DCD7BA";
-/* Window background color */
-static const char* background = "#181616";
-/* Window border color */
-static const char* border = "#7FB4CA";
-/* Default shell to run chord commands with. */
-static const char* shell = "/bin/sh";
-/* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
-static const char* font = "monospace, 14";
+## wks Files
+
+Which-Key source (`wks`) are the driving force behind `wk`.
+The syntax is novel, but provides a flexible means to manage
+and organize key chords. Below is a brief introduction to
+get users up and running. For a deep dive see the
+[man](man/wks.5.org) page.
+
+### The Basics
+
+A key chord is some series of keys that must be pressed in
+order to execute some action. In a `wks` file the most basic
+key chord includes one key, a description, and a command to
+execute.
+
+```
+a "A simple key chord" %{{echo "Hello, World!"}}
 ```
 
-## wks Files
+A key chord that does not result in some command being
+executed is a prefix. A prefix is one common part of
+multiple individual key chords. In a `wks` file a prefix has
+a key, a description, and a block of one or more key chords.
+
+```
+a "+A prefix" 
+{
+    b "A chord" %{{echo "It takes two keys to reach me!"}}
+    c "+More key chords"
+    {
+        d "A useful description" %{{echo "It takes three keys to reach me!"}}
+    }
+}
+```
+
+This is all pretty standard when it comes to key chords, but
+`wks` files can get a bit different. Let's start with hooks
+and flags.
+
+### Hooks
+
+One new concept that `wks` files offer for key chords is the
+use of hooks and flags. A hook is a command that can be run
+before or after a key chords command. In a `wks` file they
+go between the description and the key chord command, like
+this:
+
+```
+h "Hooks galore!" ^before %{{echo "I run first!"}} ^after %{{echo "I run third!"}}
+    %{{echo "I run second!"}}
+```
+
+In the above example when the key chord `h` is used, `wk`
+will run the before hook, the command, and then the after
+hook for the chord. By default these are all run
+asynchronously to prevent a hook or command from interfering
+with `wk` in the case where the command may not complete.
+
+For a full overview see the [hooks](man/wks.5.org#hook)
+section of the man page.
+
+### Flags
+
+While hooks add commands to key chords, flags change the
+behavior of `wk`. In a `wks` file they also go between the
+description and the command. Hooks and flags have the same
+precedence, meaning they can be given before or after one
+another without issue, so long as they are all between the
+description and command. Here are a few hooks that I use
+most often.
+
+```
+n "Next" +keep %{{mpc next}}
+p "Previous" +keep %{{mpc previous}}
+w "Write" +write %{{This doesn't look like a shell command...}} 
+```
+
+The two flags above are the `+keep` and `+write` flags. The
+`+keep` flag keeps `wk` open after the key chord is
+triggered. This is useful when you may want to repeat the
+key chord without having to start from the begining. The
+second flag is the `+write` flag. Normally, everything
+between the `%{{` and `}}` delimiters is run as a shell
+command. However, you may want to simply write this
+information to the console instead. I find this handy for
+scripts as a sort of `dmenu` altrenative. I have some
+[examples](#examples) below that feature the `+write` flag.
+
+The full list of flags is covered in the
+[man](man/wks.5.org#flag) page.
+
+### Hooks and Flags with Prefixes
+
+Hooks and flags can also be given to prefixes. To give a
+hook or flag to a prefix, simply add it after the
+description and before the opening brace `{` like this:
+
+```
+m "+Music" +keep 
+{
+    n "Next" %{{mpc next}}
+    p "Previous" %{{mpc previous}}
+}
+```
+
+When a hook or flag is given to a prefix it propagates to
+all chords within the block. If the block contains any
+prefixes, the hooks and flags will not propagate to these by
+default. This is a shallow inheritance that can be
+overridden with the `+inherit` flag for prefixes that wish
+to propagate their parent's hooks and flags to the next
+block. 
+
+See [inheritance](man/wks.5.org#inheritance) for more
+information. 
+
+### Comments and Special Symbols
+
+Comments are normal part of most configuration files. `wks`
+supports comments with the `#` character. After the `#` the
+rest of the line will be treated as a comment until the end
+of the line. The only caveat to this is that `#` symbols
+inside descriptions and commands are not interpreted as
+comments. Everywhere else they are interpreted as the start
+of a comment. To use the `#` symbol as a trigger key, simply
+add a `\` before the `#`. The same can be done for any of
+the special characters: `[]{}#":^+()`. 
+
+### Key Syntax 
+
+Keys, or trigger keys, are a pretty important part of key
+chords. In a `wks` file any utf8 character can be
+interpreted as a key. The only exceptions are the special
+characters: `[]{}#":^+()`. To use these as a key simply add
+a `\` infront of the character. 
+
+#### Special keys
+
+While many keys are simple keys you would normally type, not
+all are like this. Thankfully, `wks` supports the following
+special keys in the corresponding forms:
+
+```
+# Specail key = wks form
+Left arrow = Left
+Right arrow = Right
+Up arrow = Up
+Down arrow = Down
+
+Tab key = TAB
+Space bar = SPC
+Enter/return key = RET
+Delete key = DEL
+Esc key = ESC
+
+Home key = Home
+Page up key = PgUp
+Page down key = PgDown
+End key = End
+Begin key = Begin
+```
+
+I plan to add additional special keys like the `F` keys as
+well as volume and brigthness control, but that is still a
+work in progress.
+
+#### Modifiers 
+
+Many people use modifiers with trigger keys. These are
+supported in `wks` files via `C-`, `A-`, `H-`, and `S-`
+which correspond to `Control`, `Alt`, `Hyper` or `Super`,
+and `Shift`. Multiple modifiers can be given to a trigger
+key like so:
+
+```
+C-A-H-A "That's a lot of keys" %{{echo "Was it worth it?"}}
+```
+
+The above key chord is triggered when a user presses
+`Control + Alt + Hyper + Shift + a`. The notable point about
+modifiers is that the `S-` modifier is only considered by
+`wk` when given to a special key. Aside from those keys
+users should use the shifted version of their trigger key as
+shown here. I'm open to changing this behavior in the future.
+
+### Chord Arrays
+
+Some chords only vary slightly one from another. To make
+these chords easier to express `wks` files support chord
+arrays.
+
+```
+# Chord
+[arstgmnei] "Tag %(index+1)" %{{dwmc %(index)}}
+```
+
 
 The `wks` syntax is what I believe sets `wk` apart from the
 small list of alternatives (not to mention most don't show
 the key chords in a popup menu). So what is this `wks` file
 type that I keep talking about? Let me show you.
 
-```
-# This is a comment
-    # This is also a comment
+<!-- ``` -->
 
-# This is a chord.
-# The trigger key is 'a'.
-# The description is "A chord".
-# The command is 'echo "Hello, World"'.
-a "A chord" %{{echo "Hello, world!"}}
+<!-- # This is a comment -->
+<!--     # This is also a comment -->
 
-# This is a prefix.
-# The trigger key is 'Control + a'
-C-a "A prefix"
-{
-    # This is a chord that can only be accessed after triggering the parent prefix.
-    b "A chord" %{{echo "Hello from inside prefix 'C-a'"}}
+<!-- # This is a chord. -->
+<!-- # The trigger key is 'a'. -->
+<!-- # The description is "A chord". -->
+<!-- # The command is 'echo "Hello, World"'. -->
+<!-- a "A chord" %{{echo "Hello, world!"}} -->
 
-    # Prefixes can nest additional prefixes arbitrarily deep
-    c "Another prefix"
-    {
-        d "Done" %{{echo "You've reached the end!"}}
-    }
-}
-```
+<!-- # This is a prefix. -->
+<!-- # The trigger key is 'Control + a' -->
+<!-- C-a "A prefix" -->
+<!-- { -->
+<!--     # This is a chord that can only be accessed after triggering the parent prefix. -->
+<!--     b "A chord" %{{echo "Hello from inside prefix 'C-a'"}} -->
+
+<!--     # Prefixes can nest additional prefixes arbitrarily deep -->
+<!--     c "Another prefix" -->
+<!--     { -->
+<!--         d "Done" %{{echo "You've reached the end!"}} -->
+<!--     } -->
+<!-- } -->
+<!-- ``` -->
 
 I know, very cool. But it gets better. I use `dwm` with a
 patch that lets me control windows, and run other functions
@@ -288,11 +453,11 @@ installed `wk`.
 Additionally, there are several example files included in
 the examples section for testing and understanding. 
 
-There is also a [wks-mode.el]() package for emacs that is a
-work in progress but currently provides syntax highlighting,
-and proper indentation of `wks` files.  I'm no elisp wizard,
-if you have any way to make that package better, please
-reach out.
+There is also a [wks-mode](https://github.com/3L0C/wks-mode)
+package for emacs that is a work in progress but currently
+provides syntax highlighting, and proper indentation in
+`wks` files.  I'm no elisp wizard, if you have any way to
+make that package better, please reach out.
 
 ## Acknowledgments 
 
