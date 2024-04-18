@@ -116,7 +116,6 @@ writePseudoChordArray(Compiler* compiler, PseudoChord* chord)
 
     copyPseudoChord(chord, &array->chords[array->count]);
     PseudoChord* result = &array->chords[array->count++];
-    if (compiler->debug) disassemblePseudoChord(result);
     return result;
 }
 
@@ -369,10 +368,11 @@ collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
 }
 
 static void
-collectCommandTokens(Compiler* compiler, TokenArray* tokens)
+collectCommandTokens(Compiler* compiler, TokenArray* tokens, bool inChordArray)
 {
     assert(compiler), assert(tokens);
     if (compiler->panicMode) return;
+    if (inChordArray && checkCompiler(compiler, TOKEN_RIGHT_PAREN)) return;
 
     if (!checkCompiler(compiler, TOKEN_COMM_INTERP) &&
         !checkCompiler(compiler, TOKEN_COMMAND))
@@ -442,7 +442,7 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
             errorAtCurrent(compiler, "Expected command after '^before' hook.");
             return false;
         }
-        collectCommandTokens(compiler, &chord->before);
+        collectCommandTokens(compiler, &chord->before, false);
         return true;
     }
     case TOKEN_AFTER:
@@ -453,7 +453,7 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
             errorAtCurrent(compiler, "Expected command after '^after' hook.");
             return false;
         }
-        collectCommandTokens(compiler, &chord->after);
+        collectCommandTokens(compiler, &chord->after, false);
         return true;
     }
     case TOKEN_SYNC_BEFORE:
@@ -464,7 +464,7 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
             errorAtCurrent(compiler, "Expected command after '^sync-before' hook.");
             return false;
         }
-        collectCommandTokens(compiler, &chord->before);
+        collectCommandTokens(compiler, &chord->before, false);
         chord->flags.syncBefore = true;
         return true;
     }
@@ -476,7 +476,7 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
             errorAtCurrent(compiler, "Expected command after '^sync-after' hook.");
             return false;
         }
-        collectCommandTokens(compiler, &chord->after);
+        collectCommandTokens(compiler, &chord->after, false);
         chord->flags.syncAfter = true;
         return true;
     }
@@ -540,7 +540,7 @@ compileChord(Compiler* compiler)
     /* Prefix */
     if (checkCompiler(compiler, TOKEN_LEFT_BRACE)) return;
 
-    collectCommandTokens(compiler, &chord->command);
+    collectCommandTokens(compiler, &chord->command, false);
 
     /* Check for brace after command */
     if (checkCompiler(compiler, TOKEN_LEFT_BRACE))
@@ -680,7 +680,7 @@ compileChordArray(Compiler* compiler)
             collectDescriptionTokens(compiler, &chord->description);
             /* don't compile command until the end */
             compileHooksAndFlags(compiler, chord);
-            collectCommandTokens(compiler, &chord->command);
+            collectCommandTokens(compiler, &chord->command, true);
             consume(compiler, TOKEN_RIGHT_PAREN, "Expect closing parenthesis after '('.");
         }
         else
@@ -699,7 +699,7 @@ compileChordArray(Compiler* compiler)
 
     collectDescriptionTokens(compiler, &dummy.description);
     compileHooksAndFlags(compiler, &dummy);
-    collectCommandTokens(compiler, &dummy.command);
+    collectCommandTokens(compiler, &dummy.command, false);
 
     /* Write chords in chord array to destination */
     PseudoChordArray* array = compiler->chordsDest;
