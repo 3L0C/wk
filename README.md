@@ -6,7 +6,7 @@ Displays available key chords in a popup window.
 Inspired by 
 [emacs-which-key](https://github.com/justbur/emacs-which-key), 
 [dmenu](https://tools.suckless.org/dmenu/), and 
-[bemenu](https://tools.suckless.org/dmenu/). 
+[bemenu](https://github.com/Cloudef/bemenu). 
 
 ![wk.png](./wk.png)
 
@@ -224,15 +224,15 @@ on.
 The first new bit of syntax is seen in `+keep`. This is a
 **flag**. There are many flags that effect the behavior of
 `wk`. For a thorough explanation please see the
-[flags](man/wks.5.org#flags) section of the man page.
+[flags](man/wks.5.org#flag) section of the man page.
 
 ### Chord Arrays and Interpolations 
 
-So the first thing that I find very useful it the `chord
-array` syntax. This allows me to group similar chords
-together and cut down on repetition. Taking a closer look at
-key chord `w t` there are two ways the chords in the prefix
-could have been written. 
+Flags are great, and so is the `chord array` syntax. This
+allows users to group similar chords together and cut down
+on repetition. Taking a closer look at key chord `w t` there
+are two ways the chords in the prefix could have been
+written. 
 
 ```
 # The simple way
@@ -252,8 +252,65 @@ i "View tag 9" %{{dwmc viewex 8}}
 
 Both produce equivelent result in the popup menu. This is
 handy when you have commands that vary in minor ways, and it
-leverages [interpolations](#interpolations).
-At least,
-that is true by default. See [sorting](#sorting) for more
-information on how index interpolations can be effected when
-a `wks` file is sorted.
+leverages [interpolations](man/wks.5.org#interpolation).
+There are a number of interpolations offered to users, check
+'em out.
+
+### Chord Expressions in Chord Arrays
+
+So the weirdest thing about this example is probably the
+`chord expressions`. This syntax is only supported with a
+chord array, but it lets users fit those stubbornly unique
+key chords into a chord array that may or may not be
+relatively simple. 
+
+Here, the common thread is the command being run by the
+chords with the only variation being the descriptions, and
+the argument to the command. However, the chord expression
+syntax supports more than just a unique description. Users
+can specify flags, hooks, and even a command that is unique
+to that chord. Whatever the chord expression is missing,
+aside from the description, is filled in with the bits from
+the chord array.
+
+### Probably Should Mention Special Keys
+
+There is a lot I could say about this but I really should
+mention `special keys`. 
+
+### Full documentation
+
+The above is useful as quick and dirty introduction to the
+`wks` syntax. For complete details, see [man](man/wks.5.org)
+page here in this repo, or through `man 5 wks` if you have
+installed `wk`. 
+
+Additionally, there are several example files included in
+the examples section for testing and understanding. 
+
+There is also a [wks-mode.el]() package for emacs that is a
+work in progress but currently provides syntax highlighting,
+and proper indentation of `wks` files.  I'm no elisp wizard,
+if you have any way to make that package better, please
+reach out.
+
+## Acknowledgments 
+
+This project would not be where it is without
+[dmenu](https://tools.suckless.org/dmenu/), and
+[bemenu](https://github.com/Cloudef/bemenu).  I first tried
+to hack `dmenu` into an which-key like abomination, but
+failing to do that I looked to create my own solution.
+However, I am not a programmer by trade, and my knowledge of
+X11 and Wayland is very limited. It is thanks to those
+projects that `wk` runs on either environment. `bemenu`
+especially was a life saver. The code for the Wayland
+runtime has been lightly addapted for use with `wk`. All
+credit goes to the people who work on that project for the
+code there. 
+
+## Contributing
+
+Contributions are welcome! If you find any issues or have
+suggestions for improvements, please open an issue or submit
+a pull request.
