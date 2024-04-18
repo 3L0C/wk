@@ -419,9 +419,11 @@ compileHint(Compiler* compiler, KeyChord* keyChord)
     if (mods->alt) appendToString(&result, "A-", strlen("A-"));
     if (mods->hyper) appendToString(&result, "H-", strlen("H-"));
     if (mods->shift) appendToString(&result, "S-", strlen("S-"));
-    appendToString(&result, keyChord->key.repr, keyChord->key.len);
-    appendToString(&result, compiler->delimiter, compiler->delimiterLen);
-    appendToString(&result, keyChord->description, strlen(keyChord->description));
+    if (keyChord->key.repr) appendToString(&result, keyChord->key.repr, keyChord->key.len);
+    if (compiler->delimiter) appendToString(&result, compiler->delimiter, compiler->delimiterLen);
+    if (keyChord->description) appendToString(
+        &result, keyChord->description, strlen(keyChord->description)
+    );
     keyChord->hint = result.string;
     disownString(&result);
 }
