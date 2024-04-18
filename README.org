@@ -1,3 +1,0 @@
-[[./wk.png]]
-
-* wk - Which-Key via X11 and Wayland
