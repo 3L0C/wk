@@ -2,12 +2,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 /* common includes */
 #include "common/common.h"
 #include "common/debug.h"
+#include "common/memory.h"
 #include "common/menu.h"
 #include "common/string.h"
 
@@ -18,15 +20,102 @@
 #include "scanner.h"
 #include "token.h"
 
-static char*
-getLitteralIncludePath(const char* start, size_t len)
+typedef struct
 {
-    assert(start);
+    const char** files;
+    size_t count;
+    size_t capacity;
+} IncludeStack;
 
-    String result = {0};
-    initString(&result);
-    appendToString(&result, start, len);
-    return result.string;
+static IncludeStack stack = {0};
+
+static void
+initIncludeStack(IncludeStack* stack)
+{
+    assert(stack);
+
+    stack->files = NULL;
+    stack->count = 0;
+    stack->capacity = 0;
+}
+
+static void
+freeIncludeStack(IncludeStack* stack)
+{
+    assert(stack);
+
+    FREE_ARRAY(const char*, stack->files, stack->capacity);
+    initIncludeStack(stack);
+}
+
+static void
+pushIncludeStack(IncludeStack* stack, const char* filepath)
+{
+    assert(stack), assert(filepath);
+
+    if (stack->count == stack->capacity)
+    {
+        size_t oldCapacity = stack->capacity;
+        stack->capacity = GROW_CAPACITY(oldCapacity);
+        stack->files = GROW_ARRAY(const char*, stack->files, oldCapacity, stack->capacity);
+    }
+
+    stack->files[stack->count++] = filepath;
+}
+
+static void
+popIncludeStack(IncludeStack* stack)
+{
+    assert(stack);
+    if (stack->count == 0) return;
+
+    stack->count--;
+}
+
+static bool
+isFileInIncludeStack(IncludeStack* stack, const char* filepath)
+{
+    assert(stack), assert(filepath);
+
+    for (size_t i = 0; i < stack->count; i++)
+    {
+        if (strcmp(stack->files[i], filepath) == 0) return true;
+    }
+
+    return false;
+}
+
+static void
+disassembleIncludeStack(IncludeStack* stack)
+{
+    assert(stack);
+
+    char* pwd = getenv("PWD");
+    if (!pwd)
+    {
+        warnMsg("Could not get environment variable '$PWD' for include stack debug output.");
+        pwd = "";
+    }
+    size_t pwdLen = strlen(pwd);
+
+    debugPrintHeader(" IncludeStack ");
+    debugMsg(true, "|");
+    for (size_t i = 0; i < stack->count; i++)
+    {
+        const char* file = stack->files[i];
+        if (strncmp(file, pwd, pwdLen) == 0 && file[pwdLen] == '/')
+        {
+            /* File path starts with PWD, display relative path */
+            debugMsg(true, "| %4zu | %s", i, file + pwdLen + 1);
+        }
+        else
+        {
+            /* File path is not relative to PWD, display absolute path */
+            debugMsg(true, "| %4zu | %s", i, file);
+        }
+    }
+    debugMsg(true, "|");
+    debugPrintHeader("");
 }
 
 static size_t
@@ -55,31 +144,28 @@ getBaseDirLength(const char* sourcePath)
 }
 
 static char*
-getIncludeFilePath(const char* start, size_t len, const char* sourcePath)
+getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
 {
-    assert(start), assert(sourcePath);
+    assert(filepath), assert(sourcePath);
 
-    /* If the include path is an absolute file, just copy the path directly. */
-    if (*start == '/') return getLitteralIncludePath(start, len);
-
-    /* NOTE could implement a different function to get the sourcePath
-     * length i.e. '/home/john/wks/main.wks' would return the length
-     * until the last '/' in the path. In this case it would be 15.
-     * Because we have to check this in either case, there may be no
-     * to distinguish an absolute vs relative sourcePath. */
     size_t baseLen = getBaseDirLength(sourcePath);
+    String includeFilePath = {0};
+    initString(&includeFilePath);
 
-    /* sourcePath is a relative file from the PWD. Just use the path
-     * from the include directive. */
-    if (baseLen == 0) return getLitteralIncludePath(start, len);
+    /* If filepath is not absolute and source path is not in the PWD add base path */
+    if (*filepath != '/' && baseLen) appendToString(&includeFilePath, sourcePath, baseLen);
 
-    /* sourcePath is not in the PWD, return the sourcePath where the include
-     * should be appended to. */
-    String result = {0};
-    initString(&result);
-    appendToString(&result, sourcePath, baseLen);
-    appendToString(&result, start, len);
-    return result.string;
+    appendToString(&includeFilePath, filepath, len);
+    char* result = realpath(includeFilePath.string, NULL);
+    if (!result)
+    {
+        warnMsg("Could not get the realpath for file: '%.*s'.", len, filepath);
+        disownString(&includeFilePath);
+        return includeFilePath.string;
+    }
+
+    freeString(&includeFilePath);
+    return result;
 }
 
 static void
@@ -101,11 +187,24 @@ handleIncludeMacro(Menu* menu, Scanner* scanner, PieceTable* result, Token* incl
     char* includeResult = NULL;
 
     /* Get the path to the included file */
-    includeFilePath = getIncludeFilePath(includeFile->start, includeFile->length, sourcePath);
+    includeFilePath = getAbsolutePath(
+        includeFile->start, includeFile->length, sourcePath
+    );
     if (!includeFilePath)
     {
         errorMsg("Failed to get the included file path.");
         scanner->hadError = true;
+        goto fail;
+    }
+
+    if (isFileInIncludeStack(&stack, includeFilePath))
+    {
+        printf(
+            "%s:%u:%u: wk does not support circular includes: ':include \"%.*s\"'.\n",
+            sourcePath, includeFile->line, includeFile->column,
+            (int)includeFile->length, includeFile->start
+        );
+        if (menu->debug) disassembleIncludeStack(&stack);
         goto fail;
     }
 
@@ -340,9 +439,16 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
 
     Scanner scanner = {0};
     initScanner(&scanner, source, filepath);
+    const char* scannerStart = scanner.head;
+
     PieceTable pieceTable;
     initPieceTable(&pieceTable, source);
-    const char* scannerStart = scanner.head;
+
+    /* Only init once. */
+    if (stack.count == 0) initIncludeStack(&stack);
+    char* absoluteFilePath = getAbsolutePath(filepath, strlen(filepath), ".");
+    pushIncludeStack(&stack, absoluteFilePath);
+    if (menu->debug) disassembleIncludeStack(&stack);
 
     while (!isAtEnd(&scanner))
     {
@@ -430,6 +536,9 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
     char* result = compilePieceTableToString(&pieceTable);
 
 fail:
+    popIncludeStack(&stack);
+    if (stack.count == 0) freeIncludeStack(&stack);
+    free(absoluteFilePath);
     freePieceTable(&pieceTable);
     return scanner.hadError ? NULL : result;
 }
