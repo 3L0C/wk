@@ -6,6 +6,7 @@
 # The description is "A chord".
 # The command is 'echo "Hello, World"'.
 a "A chord" %{{echo "Hello, world!"}}
+
 # This is a prefix.
 # The trigger key is 'Control + a'
 C-a "A prefix"

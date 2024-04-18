@@ -44,7 +44,7 @@ usage(void)
         "    -s, --script               Read script from stdin to use as key chords.\n"
         "    -m, --max-columns INT      Set maximum columns to INT.\n"
         "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
-        "    -T, --transpile FILE       Transpile FILE to valid 'chords.h' syntax and print to stdout.\n"
+        "    -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.\n"
         "    -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.\n"
         "    -w, --window-width INT     Set window width to INT.\n"
         "    -g, --window-gap INT       Set window gap between top/bottom of screen to INT.\n"

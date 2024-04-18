@@ -1,6 +1,17 @@
-a "An invalid Chord" -write %{{Look at all these errors!}}
-b "A valid Chord" +write %{{That looks better}}
-a "Bad prefix" -unhook
-{
-    [bcd] "Good %(key)" +write %{{nice a quiet.}}
-}
+# a "An invalid Chord" -write %{{Look at all these errors!}}
+# b "A valid Chord" +write %{{That looks better}}
+# a "Bad prefix" -unhook
+# {
+#     [bcd] "Good %(key)" +write %{{nice a quiet.}}
+# }
+# Invalid key
+@ "Invalid key" %{{echo "This should fail"}}
+
+# Unterminated string
+a "Unterminated string %{{echo "This should also fail"}}
+
+# Invalid interpolation
+b "Invalid interpolation" %{{echo "%(invalid)"}}
+
+# Unexpected token
+c +invalid %{{echo "This should fail"}}

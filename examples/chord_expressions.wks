@@ -2,18 +2,18 @@
 c "Client"
 {
     # Tag & follow prefix
-    m "Tag & follow" :before %{{dwmc tagex %(index)}} :keep
+    m "Tag & follow" ^before %{{dwmc tagex %(index)}} +keep
     {
         [
             arst
-            (g "special key" :unhook %{{echo a special command}})
+            (g "special key" +unhook %{{echo a special command}})
             mnei
         ] "Tag %(index+1)" %{{dwmc viewex %(index)}}
     }
     q "Quit" %{{sleep 0.1 ; dwmc killclient}}
     s "Sticky" %{{dwmc togglesticky}}
     # Tag prefix
-    t "Tag" :keep
+    t "Tag" +keep
     {
         [arstgmnei] "Tag %(index+1)" %{{dwmc tagex %(index)}}
     }

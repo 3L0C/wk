@@ -1,0 +1,3 @@
+:window-width 80
+:font "monospace, 30"
+[wk] "" %{{%(key)}}
