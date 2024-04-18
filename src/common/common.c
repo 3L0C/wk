@@ -46,9 +46,9 @@ usage(void)
         "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
         "    -T, --transpile FILE       Transpile FILE to valid 'chords.h' syntax and print to stdout.\n"
         "    -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.\n"
-        "    -w, --width INT            Set window width to INT.\n"
-        "    -g, --gap INT              Set window gap between top/bottom of screen to INT.\n"
-        "                               Set to '-1' for a gap 1/10th the size of your screen height.\n"
+        "    -w, --window-width INT     Set window width to INT.\n"
+        "    -g, --window-gap INT       Set window gap between top/bottom of screen to INT.\n"
+        "                               Set to '-1' for a gap equal to 1/10th of the screen height.\n"
         "    --border-width INT         Set border width to INT.\n"
         "    --border-radius NUM        Set border radius to NUM.\n"
         "    --wpadding INT             Set left and right padding around hint text to INT.\n"
@@ -112,8 +112,8 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         { "press",          required_argument,  0, 'p' },
         { "transpile",      required_argument,  0, 'T' },
         { "key-chords",     required_argument,  0, 'k' },
-        { "width",          required_argument,  0, 'w' },
-        { "gap",            required_argument,  0, 'g' },
+        { "window-width",   required_argument,  0, 'w' },
+        { "window-gap",     required_argument,  0, 'g' },
         { "border-width",   required_argument,  0, 0x090 },
         { "border-radius",  required_argument,  0, 0x091 },
         { "wpadding",       required_argument,  0, 0x092 },
