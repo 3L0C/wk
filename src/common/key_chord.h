@@ -111,6 +111,49 @@ typedef enum
     SPECIAL_KEY_PAGE_DOWN,
     SPECIAL_KEY_END,
     SPECIAL_KEY_BEGIN,
+    SPECIAL_KEY_F1,
+    SPECIAL_KEY_F2,
+    SPECIAL_KEY_F3,
+    SPECIAL_KEY_F4,
+    SPECIAL_KEY_F5,
+    SPECIAL_KEY_F6,
+    SPECIAL_KEY_F7,
+    SPECIAL_KEY_F8,
+    SPECIAL_KEY_F9,
+    SPECIAL_KEY_F10,
+    SPECIAL_KEY_F11,
+    SPECIAL_KEY_F12,
+    SPECIAL_KEY_F13,
+    SPECIAL_KEY_F14,
+    SPECIAL_KEY_F15,
+    SPECIAL_KEY_F16,
+    SPECIAL_KEY_F17,
+    SPECIAL_KEY_F18,
+    SPECIAL_KEY_F19,
+    SPECIAL_KEY_F20,
+    SPECIAL_KEY_F21,
+    SPECIAL_KEY_F22,
+    SPECIAL_KEY_F23,
+    SPECIAL_KEY_F24,
+    SPECIAL_KEY_F25,
+    SPECIAL_KEY_F26,
+    SPECIAL_KEY_F27,
+    SPECIAL_KEY_F28,
+    SPECIAL_KEY_F29,
+    SPECIAL_KEY_F30,
+    SPECIAL_KEY_F31,
+    SPECIAL_KEY_F32,
+    SPECIAL_KEY_F33,
+    SPECIAL_KEY_F34,
+    SPECIAL_KEY_F35,
+    SPECIAL_KEY_AUDIO_VOL_DOWN,
+    SPECIAL_KEY_AUDIO_VOL_MUTE,
+    SPECIAL_KEY_AUDIO_VOL_UP,
+    SPECIAL_KEY_AUDIO_PLAY,
+    SPECIAL_KEY_AUDIO_STOP,
+    SPECIAL_KEY_AUDIO_PREV,
+    SPECIAL_KEY_AUDIO_NEXT,
+    SPECIAL_KEY_LAST,
 } SpecialKey;
 
 typedef struct
@@ -157,6 +200,7 @@ void copyKey(const Key* from, Key* to);
 void copyKeyChord(const KeyChord* from, KeyChord* to);
 uint32_t countModifiers(const Modifiers* mods);
 uint32_t countChordFlags(const ChordFlags* flags);
+const char* getSpecialKeyLiteral(const SpecialKey special);
 const char* getSpecialKeyRepr(const SpecialKey special);
 bool hasChordFlags(const ChordFlags* flags);
 void initKey(Key* key);

@@ -226,63 +226,13 @@ static bool
 disassembleSpecial(SpecialKey special, int indent)
 {
     debugMsgWithIndent(indent, "| Special:           ");
-    const char* text = NULL;
-    bool flag = true;
-
-    switch (special)
-    {
-    case SPECIAL_KEY_NONE: text = "SPECIAL_KEY_NONE"; flag = false; break;
-    case SPECIAL_KEY_LEFT: text = "SPECIAL_KEY_LEFT"; break;
-    case SPECIAL_KEY_RIGHT: text = "SPECIAL_KEY_RIGHT"; break;
-    case SPECIAL_KEY_UP: text = "SPECIAL_KEY_UP"; break;
-    case SPECIAL_KEY_DOWN: text = "SPECIAL_KEY_DOWN"; break;
-    case SPECIAL_KEY_TAB: text = "SPECIAL_KEY_TAB"; break;
-    case SPECIAL_KEY_SPACE: text = "SPECIAL_KEY_SPACE"; break;
-    case SPECIAL_KEY_RETURN: text = "SPECIAL_KEY_RETURN"; break;
-    case SPECIAL_KEY_DELETE: text = "SPECIAL_KEY_DELETE"; break;
-    case SPECIAL_KEY_ESCAPE: text = "SPECIAL_KEY_ESCAPE"; break;
-    case SPECIAL_KEY_HOME: text = "SPECIAL_KEY_HOME"; break;
-    case SPECIAL_KEY_PAGE_UP: text = "SPECIAL_KEY_PAGE_UP"; break;
-    case SPECIAL_KEY_PAGE_DOWN: text = "SPECIAL_KEY_PAGE_DOWN"; break;
-    case SPECIAL_KEY_END: text = "SPECIAL_KEY_END"; break;
-    case SPECIAL_KEY_BEGIN: text = "SPECIAL_KEY_BEGIN"; break;
-    default: text = "SPECIAL_KEY_UNKNOWN"; flag = false; break;
-    }
+    const char* text = getSpecialKeyLiteral(special);
+    bool flag = special == SPECIAL_KEY_NONE ? false : true;
 
     printf("%s|%d\n", text, special);
     return flag;
 }
 
-static bool
-disassembleSpecialRepr(SpecialKey special, int indent)
-{
-    debugMsgWithIndent(indent, "| Key:               ");
-    const char* text = NULL;
-    bool flag = true;
-
-    switch (special)
-    {
-    case SPECIAL_KEY_NONE: text = "NONE"; flag = false; break;
-    case SPECIAL_KEY_LEFT: text = "'Left'"; break;
-    case SPECIAL_KEY_RIGHT: text = "'Right'"; break;
-    case SPECIAL_KEY_UP: text = "'Up'"; break;
-    case SPECIAL_KEY_DOWN: text = "'Down'"; break;
-    case SPECIAL_KEY_TAB: text = "'TAB'"; break;
-    case SPECIAL_KEY_SPACE: text = "'SPC'"; break;
-    case SPECIAL_KEY_RETURN: text = "'RET'"; break;
-    case SPECIAL_KEY_DELETE: text = "'DEL'"; break;
-    case SPECIAL_KEY_ESCAPE: text = "'ESC'"; break;
-    case SPECIAL_KEY_HOME: text = "'Home'"; break;
-    case SPECIAL_KEY_PAGE_UP: text = "'PgUp'"; break;
-    case SPECIAL_KEY_PAGE_DOWN: text = "'PgDown'"; break;
-    case SPECIAL_KEY_END: text = "'End'"; break;
-    case SPECIAL_KEY_BEGIN: text = "'Begin'"; break;
-    default: text = "UNKNOWN"; flag = false; break;
-    }
-
-    printf("%s\n", text);
-    return flag;
-}
 static void
 debugString(const char* text, const char* value, int indent)
 {
@@ -311,7 +261,7 @@ disassembleKeyWithoutHeader(const Key* key, int indent)
     disassembleMod(&key->mods, indent);
     if (disassembleSpecial(key->special, indent))
     {
-        disassembleSpecialRepr(key->special, indent);
+        debugString("Key:", getSpecialKeyRepr(key->special), indent);
     }
     else
     {

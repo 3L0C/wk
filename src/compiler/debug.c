@@ -129,7 +129,7 @@ disassembleScanner(const Scanner* scanner)
     debugMsg(true, "| Had Error:         %s", scanner->hadError ? "true" : "false");
     /* debugMsg(true, "| State:             %s", *scanner->head); */
     /* debugMsg(true, "| Prev State:        %s", *scanner->head); */
-    debugMsg(true, "| Interp Type:       %s", getTokenRepr(scanner->interpType));
+    debugMsg(true, "| Interp Type:       %s", getTokenLiteral(scanner->interpType));
     debugMsg(true, "|");
     debugPrintHeader("");
 }
@@ -264,20 +264,7 @@ disassembleToken(const Token* token)
     case TOKEN_MOD_SHIFT: type = "TOKEN_MOD_SHIFT"; break;
 
     /* specials */
-    case TOKEN_SPECIAL_LEFT: type = "TOKEN_SPECIAL_LEFT"; break;
-    case TOKEN_SPECIAL_RIGHT: type = "TOKEN_SPECIAL_RIGHT"; break;
-    case TOKEN_SPECIAL_UP: type = "TOKEN_SPECIAL_UP"; break;
-    case TOKEN_SPECIAL_DOWN: type = "TOKEN_SPECIAL_DOWN"; break;
-    case TOKEN_SPECIAL_TAB: type = "TOKEN_SPECIAL_TAB"; break;
-    case TOKEN_SPECIAL_SPACE: type = "TOKEN_SPECIAL_SPACE"; break;
-    case TOKEN_SPECIAL_RETURN: type = "TOKEN_SPECIAL_RETURN"; break;
-    case TOKEN_SPECIAL_DELETE: type = "TOKEN_SPECIAL_DELETE"; break;
-    case TOKEN_SPECIAL_ESCAPE: type = "TOKEN_SPECIAL_ESCAPE"; break;
-    case TOKEN_SPECIAL_HOME: type = "TOKEN_SPECIAL_HOME"; break;
-    case TOKEN_SPECIAL_PAGE_UP: type = "TOKEN_SPECIAL_PAGE_UP"; break;
-    case TOKEN_SPECIAL_PAGE_DOWN: type = "TOKEN_SPECIAL_PAGE_DOWN"; break;
-    case TOKEN_SPECIAL_END: type = "TOKEN_SPECIAL_END"; break;
-    case TOKEN_SPECIAL_BEGIN: type = "TOKEN_SPECIAL_BEGIN"; break;
+    case TOKEN_SPECIAL_KEY: type = "TOKEN_SPECIAL_KEY"; break;
 
     /* control */
     case TOKEN_NO_INTERP: type = "TOKEN_NO_INTERP";   break;

@@ -79,7 +79,7 @@ writeChordMods(const Modifiers* mods)
 static void
 writeChordSpecial(SpecialKey special)
 {
-    printf("    %s,", getSpecialKeyRepr(special));
+    printf("    %s,", getSpecialKeyLiteral(special));
 }
 
 static void

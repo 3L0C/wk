@@ -83,30 +83,15 @@ typedef enum
     TOKEN_COMM_INTERP,
     TOKEN_DESC_INTERP,
 
-    /* keys */
-    TOKEN_KEY,
-
     /* mods */
     TOKEN_MOD_CTRL,
     TOKEN_MOD_ALT,
     TOKEN_MOD_HYPER,
     TOKEN_MOD_SHIFT,
 
-    /* special keys */
-    TOKEN_SPECIAL_LEFT,
-    TOKEN_SPECIAL_RIGHT,
-    TOKEN_SPECIAL_UP,
-    TOKEN_SPECIAL_DOWN,
-    TOKEN_SPECIAL_TAB,
-    TOKEN_SPECIAL_SPACE,
-    TOKEN_SPECIAL_RETURN,
-    TOKEN_SPECIAL_DELETE,
-    TOKEN_SPECIAL_ESCAPE,
-    TOKEN_SPECIAL_HOME,
-    TOKEN_SPECIAL_PAGE_UP,
-    TOKEN_SPECIAL_PAGE_DOWN,
-    TOKEN_SPECIAL_END,
-    TOKEN_SPECIAL_BEGIN,
+    /* keys */
+    TOKEN_KEY,
+    TOKEN_SPECIAL_KEY,
 
     /* control */
     TOKEN_NO_INTERP,
@@ -139,7 +124,7 @@ void errorAtToken(const Token* token, const char* filepath, const char* fmt, ...
 bool getDoubleFromToken(const Token* token, double* dest, bool debug);
 bool getInt32FromToken(const Token* token, int32_t* dest, bool debug);
 bool getUint32FromToken(const Token* token, uint32_t* dest, bool debug);
-const char* getTokenRepr(const TokenType type);
+const char* getTokenLiteral(const TokenType type);
 void initToken(Token* token);
 void initTokenArray(TokenArray* tokens);
 bool isTokenHookType(const TokenType type);

@@ -8,13 +8,14 @@
 #include <string.h>
 #include <sysexits.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <cairo-xlib.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xinerama.h>
-#include <unistd.h>
+#include <X11/XF86keysym.h>
 
 /* common includes */
 #include "common/common.h"
@@ -42,34 +43,77 @@ static Menu* mainMenu;
 static bool debug;
 
 static const X11SpecialKey specialkeys[] = {
-    { SPECIAL_KEY_NONE,      XK_VoidSymbol },
-    { SPECIAL_KEY_LEFT,      XK_Left },
-    { SPECIAL_KEY_LEFT,      XK_KP_Left },
-    { SPECIAL_KEY_RIGHT,     XK_Right },
-    { SPECIAL_KEY_RIGHT,     XK_KP_Right },
-    { SPECIAL_KEY_UP,        XK_Up },
-    { SPECIAL_KEY_UP,        XK_KP_Up },
-    { SPECIAL_KEY_DOWN,      XK_Down },
-    { SPECIAL_KEY_DOWN,      XK_KP_Down },
-    { SPECIAL_KEY_TAB,       XK_Tab },
-    { SPECIAL_KEY_TAB,       XK_KP_Tab },
-    { SPECIAL_KEY_SPACE,     XK_space },
-    { SPECIAL_KEY_SPACE,     XK_KP_Space },
-    { SPECIAL_KEY_RETURN,    XK_Return },
-    { SPECIAL_KEY_RETURN,    XK_KP_Enter },
-    { SPECIAL_KEY_DELETE,    XK_Delete },
-    { SPECIAL_KEY_DELETE,    XK_KP_Delete },
-    { SPECIAL_KEY_ESCAPE,    XK_Escape },
-    { SPECIAL_KEY_HOME,      XK_Home },
-    { SPECIAL_KEY_HOME,      XK_KP_Home },
-    { SPECIAL_KEY_PAGE_UP,   XK_Page_Up },
-    { SPECIAL_KEY_PAGE_UP,   XK_KP_Page_Up },
+    { SPECIAL_KEY_NONE, XK_VoidSymbol },
+    { SPECIAL_KEY_LEFT, XK_Left },
+    { SPECIAL_KEY_LEFT, XK_KP_Left },
+    { SPECIAL_KEY_RIGHT, XK_Right },
+    { SPECIAL_KEY_RIGHT, XK_KP_Right },
+    { SPECIAL_KEY_UP, XK_Up },
+    { SPECIAL_KEY_UP, XK_KP_Up },
+    { SPECIAL_KEY_DOWN, XK_Down },
+    { SPECIAL_KEY_DOWN, XK_KP_Down },
+    { SPECIAL_KEY_TAB, XK_Tab },
+    { SPECIAL_KEY_TAB, XK_KP_Tab },
+    { SPECIAL_KEY_SPACE, XK_space },
+    { SPECIAL_KEY_SPACE, XK_KP_Space },
+    { SPECIAL_KEY_RETURN, XK_Return },
+    { SPECIAL_KEY_RETURN, XK_KP_Enter },
+    { SPECIAL_KEY_DELETE, XK_Delete },
+    { SPECIAL_KEY_DELETE, XK_KP_Delete },
+    { SPECIAL_KEY_ESCAPE, XK_Escape },
+    { SPECIAL_KEY_HOME, XK_Home },
+    { SPECIAL_KEY_HOME, XK_KP_Home },
+    { SPECIAL_KEY_PAGE_UP, XK_Page_Up },
+    { SPECIAL_KEY_PAGE_UP, XK_KP_Page_Up },
     { SPECIAL_KEY_PAGE_DOWN, XK_Page_Down },
     { SPECIAL_KEY_PAGE_DOWN, XK_KP_Page_Down },
-    { SPECIAL_KEY_END,       XK_End },
-    { SPECIAL_KEY_END,       XK_KP_End },
-    { SPECIAL_KEY_BEGIN,     XK_Begin },
-    { SPECIAL_KEY_BEGIN,     XK_KP_Begin }
+    { SPECIAL_KEY_END, XK_End },
+    { SPECIAL_KEY_END, XK_KP_End },
+    { SPECIAL_KEY_BEGIN, XK_Begin },
+    { SPECIAL_KEY_BEGIN, XK_KP_Begin },
+    { SPECIAL_KEY_F1, XK_F1 },
+    { SPECIAL_KEY_F2, XK_F2 },
+    { SPECIAL_KEY_F3, XK_F3 },
+    { SPECIAL_KEY_F4, XK_F4 },
+    { SPECIAL_KEY_F5, XK_F5 },
+    { SPECIAL_KEY_F6, XK_F6 },
+    { SPECIAL_KEY_F7, XK_F7 },
+    { SPECIAL_KEY_F8, XK_F8 },
+    { SPECIAL_KEY_F9, XK_F9 },
+    { SPECIAL_KEY_F10, XK_F10 },
+    { SPECIAL_KEY_F11, XK_F11 },
+    { SPECIAL_KEY_F12, XK_F12 },
+    { SPECIAL_KEY_F13, XK_F13 },
+    { SPECIAL_KEY_F14, XK_F14 },
+    { SPECIAL_KEY_F15, XK_F15 },
+    { SPECIAL_KEY_F16, XK_F16 },
+    { SPECIAL_KEY_F17, XK_F17 },
+    { SPECIAL_KEY_F18, XK_F18 },
+    { SPECIAL_KEY_F19, XK_F19 },
+    { SPECIAL_KEY_F20, XK_F20 },
+    { SPECIAL_KEY_F21, XK_F21 },
+    { SPECIAL_KEY_F22, XK_F22 },
+    { SPECIAL_KEY_F23, XK_F23 },
+    { SPECIAL_KEY_F24, XK_F24 },
+    { SPECIAL_KEY_F25, XK_F25 },
+    { SPECIAL_KEY_F26, XK_F26 },
+    { SPECIAL_KEY_F27, XK_F27 },
+    { SPECIAL_KEY_F28, XK_F28 },
+    { SPECIAL_KEY_F29, XK_F29 },
+    { SPECIAL_KEY_F30, XK_F30 },
+    { SPECIAL_KEY_F31, XK_F31 },
+    { SPECIAL_KEY_F32, XK_F32 },
+    { SPECIAL_KEY_F33, XK_F33 },
+    { SPECIAL_KEY_F34, XK_F34 },
+    { SPECIAL_KEY_F35, XK_F35 },
+    /* XF86 keys */
+    { SPECIAL_KEY_AUDIO_VOL_DOWN, XF86XK_AudioLowerVolume },
+    { SPECIAL_KEY_AUDIO_VOL_MUTE, XF86XK_AudioMute },
+    { SPECIAL_KEY_AUDIO_VOL_UP, XF86XK_AudioRaiseVolume },
+    { SPECIAL_KEY_AUDIO_PLAY, XF86XK_AudioPlay },
+    { SPECIAL_KEY_AUDIO_STOP, XF86XK_AudioStop },
+    { SPECIAL_KEY_AUDIO_PREV, XF86XK_AudioPrev },
+    { SPECIAL_KEY_AUDIO_NEXT, XF86XK_AudioNext },
 };
 
 static const size_t specialkeysLen = sizeof(specialkeys) / sizeof(specialkeys[0]);
@@ -88,10 +132,6 @@ static cairo_surface_t*
 getThrowawaySurface(void)
 {
     return cairo_image_surface_create(CAIRO_FORMAT_ARGB32, window->width, window->height);
-    /* return cairo_xlib_surface_create( */
-    /*     window->display, window->drawable, window->visual, */
-    /*     window->width, window->height */
-    /* ); */
 }
 
 static bool
@@ -499,7 +539,7 @@ keypress(XKeyEvent* keyEvent)
 {
     KeySym keysym = XK_VoidSymbol;
     Status status;
-    char buffer[32] = {0};
+    char buffer[128] = {0};
     int len;
     Key key = {0};
     unsigned int state = keyEvent->state;

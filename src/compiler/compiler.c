@@ -280,25 +280,20 @@ isKey(Compiler* compiler)
 
     switch (currentType(compiler))
     {
-    /* is a key */
     case TOKEN_KEY: /* FALLTHROUGH */
-    case TOKEN_SPECIAL_LEFT:
-    case TOKEN_SPECIAL_RIGHT:
-    case TOKEN_SPECIAL_UP:
-    case TOKEN_SPECIAL_DOWN:
-    case TOKEN_SPECIAL_TAB:
-    case TOKEN_SPECIAL_SPACE:
-    case TOKEN_SPECIAL_RETURN:
-    case TOKEN_SPECIAL_DELETE:
-    case TOKEN_SPECIAL_ESCAPE:
-    case TOKEN_SPECIAL_HOME:
-    case TOKEN_SPECIAL_PAGE_UP:
-    case TOKEN_SPECIAL_PAGE_DOWN:
-    case TOKEN_SPECIAL_END:
-    case TOKEN_SPECIAL_BEGIN:   return true;
-    /* not a key */
+    case TOKEN_SPECIAL_KEY: return true;
     default: return false;
     }
+
+    return false;
+}
+
+static SpecialKey
+compilerGetSpecial(Compiler* compiler)
+{
+    assert(compiler);
+
+    return compiler->scanner.special;
 }
 
 static void
@@ -323,6 +318,7 @@ compileKey(Compiler* compiler, PseudoChord* chord)
     if (compiler->panicMode) return;
 
     if (!isKey(compiler)) return errorAtCurrent(compiler, "Expected key or special.");
+    if (currentType(compiler) == TOKEN_SPECIAL_KEY) chord->key.special = compilerGetSpecial(compiler);
     compileKeyFromToken(compiler, chord);
     consume(compiler, currentType(compiler), "Expected key or special.");
 }
@@ -591,7 +587,7 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
     {
         errorMsg(
             "Got unexpected token when compiling token array: '%s'.",
-            getTokenRepr(token->type)
+            getTokenLiteral(token->type)
         );
         break;
     }

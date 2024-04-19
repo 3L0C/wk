@@ -5,6 +5,7 @@
 
 /* common includes */
 #include "common/common.h"
+#include "common/key_chord.h"
 #include "common/util.h"
 
 /* local includes */
@@ -29,6 +30,7 @@ initScanner(Scanner* scanner, const char* source, const char* filepath)
     scanner->line = 1;
     scanner->column = 0;
     scanner->hadError = false;
+    scanner->special = SPECIAL_KEY_NONE;
     scanner->state = SCANNER_STATE_NORMAL;
     scanner->previousState = SCANNER_STATE_NORMAL;
     scanner->interpType = TOKEN_EMPTY;
@@ -46,6 +48,7 @@ cloneScanner(Scanner* scanner, Scanner* clone)
     clone->line = scanner->line;
     clone->column = scanner->column;
     clone->hadError = scanner->hadError;
+    clone->special = scanner->special;
     clone->state = scanner->state;
     clone->previousState = scanner->previousState;
     clone->interpType = scanner->interpType;
@@ -57,14 +60,6 @@ makeScannerCurrent(Scanner* scanner)
     assert(scanner);
 
     scanner->start = scanner->current;
-}
-
-static bool
-isAlpha(const char c)
-{
-    return ('a' <= c && c <= 'z') ||
-           ('A' <= c && c <= 'Z') ||
-            c == '+' || c == '-' || c == '_';
 }
 
 static bool
@@ -547,43 +542,17 @@ checkSpecialType(Scanner* scanner)
 {
     assert(scanner);
 
-    TokenType result = TOKEN_ERROR;
-
-    switch (peekStart(scanner))
+    for (size_t i = SPECIAL_KEY_NONE; i < SPECIAL_KEY_LAST; i++)
     {
-    case 'L': if (isKeyword(scanner, 1, 3, "eft")) result = TOKEN_SPECIAL_LEFT; break;
-    case 'R':
-    {
-        if (isKeyword(scanner, 1, 4, "ight")) result = TOKEN_SPECIAL_RIGHT;
-        else if (isKeyword(scanner, 1, 2, "ET")) result = TOKEN_SPECIAL_RETURN;
-        break;
-    }
-    case 'U': if (isKeyword(scanner, 1, 1, "p")) result = TOKEN_SPECIAL_UP; break;
-    case 'D':
-    {
-        if (isKeyword(scanner, 1, 3, "own")) result = TOKEN_SPECIAL_DOWN;
-        else if (isKeyword(scanner, 1, 2, "EL")) result = TOKEN_SPECIAL_DELETE;
-        break;
-    }
-    case 'T': if (isKeyword(scanner, 1, 2, "AB")) result = TOKEN_SPECIAL_TAB; break;
-    case 'S': if (isKeyword(scanner, 1, 2, "PC")) result = TOKEN_SPECIAL_SPACE; break;
-    case 'E':
-    {
-        if (isKeyword(scanner, 1, 2, "SC")) result = TOKEN_SPECIAL_ESCAPE;
-        else if (isKeyword(scanner, 1, 2, "nd")) result = TOKEN_SPECIAL_END;
-        break;
-    }
-    case 'H': if (isKeyword(scanner, 1, 3, "ome")) result = TOKEN_SPECIAL_HOME; break;
-    case 'P':
-    {
-        if (isKeyword(scanner, 1, 3, "gUp")) result = TOKEN_SPECIAL_PAGE_UP;
-        else if (isKeyword(scanner, 1, 5, "gDown")) result = TOKEN_SPECIAL_PAGE_DOWN;
-        break;
-    }
-    case 'B': if (isKeyword(scanner, 1, 4, "egin")) result = TOKEN_SPECIAL_BEGIN; break;
+        const char* repr = getSpecialKeyRepr(i);
+        if (isKeyword(scanner, 1, strlen(repr + 1), repr + 1))
+        {
+            scanner->special = i;
+            return TOKEN_SPECIAL_KEY;
+        }
     }
 
-    return result;
+    return TOKEN_ERROR;
 }
 
 static void
@@ -591,7 +560,9 @@ scanSpecialKey(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
 
-    while (isAlpha(peek(scanner))) advanceScanner(scanner);
+    /* Not an error if we get eof because this could be from `--press` which only has keys. */
+    seekToCharType(scanner, CHAR_TYPE_WHITESPACE);
+
     TokenType type = checkSpecialType(scanner);
     if (type == TOKEN_ERROR) return errorToken(scanner, token, "Invalid special key");
     return makeToken(scanner, token, type);
@@ -613,7 +584,7 @@ scanKey(Scanner* scanner, Token* token, char c)
         Scanner clone;
         cloneScanner(scanner, &clone);
         scanSpecialKey(&clone, token);
-        if (token->type != TOKEN_ERROR) return cloneScanner(&clone, scanner);
+        if (token->type == TOKEN_SPECIAL_KEY) return cloneScanner(&clone, scanner);
     }
 
     return makeToken(scanner, token, TOKEN_KEY);
@@ -693,6 +664,7 @@ scanTokenForCompiler(Scanner* scanner, Token* token)
     assert(scanner), assert(token);
 
     initToken(token);
+    scanner->special = SPECIAL_KEY_NONE;
 
     switch (scanner->state)
     {

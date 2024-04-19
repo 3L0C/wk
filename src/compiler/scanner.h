@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 /* local includes */
+#include "common/key_chord.h"
 #include "token.h"
 
 typedef enum
@@ -33,6 +34,7 @@ typedef struct
     size_t line;
     size_t column;
     bool hadError;
+    SpecialKey special;
     ScannerState state;
     ScannerState previousState;
     TokenType interpType;

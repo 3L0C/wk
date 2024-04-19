@@ -33,41 +33,12 @@ addMod(Key* key, TokenType type)
     return true;
 }
 
-static bool
-addSpecial(Key* key, TokenType type)
-{
-    assert(key);
-
-    key->repr = NULL;
-
-    switch (type)
-    {
-    case TOKEN_SPECIAL_LEFT: key->special = SPECIAL_KEY_LEFT; break;
-    case TOKEN_SPECIAL_RIGHT: key->special = SPECIAL_KEY_RIGHT; break;
-    case TOKEN_SPECIAL_UP: key->special = SPECIAL_KEY_UP; break;
-    case TOKEN_SPECIAL_DOWN: key->special = SPECIAL_KEY_DOWN; break;
-    case TOKEN_SPECIAL_TAB: key->special = SPECIAL_KEY_TAB; break;
-    case TOKEN_SPECIAL_SPACE: key->special = SPECIAL_KEY_SPACE; break;
-    case TOKEN_SPECIAL_RETURN: key->special = SPECIAL_KEY_RETURN; break;
-    case TOKEN_SPECIAL_DELETE: key->special = SPECIAL_KEY_DELETE; break;
-    case TOKEN_SPECIAL_ESCAPE: key->special = SPECIAL_KEY_ESCAPE; break;
-    case TOKEN_SPECIAL_HOME: key->special = SPECIAL_KEY_HOME; break;
-    case TOKEN_SPECIAL_PAGE_UP: key->special = SPECIAL_KEY_PAGE_UP; break;
-    case TOKEN_SPECIAL_PAGE_DOWN: key->special = SPECIAL_KEY_PAGE_DOWN; break;
-    case TOKEN_SPECIAL_END: key->special = SPECIAL_KEY_END; break;
-    case TOKEN_SPECIAL_BEGIN: key->special = SPECIAL_KEY_BEGIN; break;
-    default: return false;
-    }
-
-    return true;
-}
-
 static MenuStatus
 pressKey(Menu* menu, Scanner* scanner)
 {
     assert(menu), assert(scanner);
 
-    static const size_t bufmax = 32;
+    static const size_t bufmax = 128;
     char buffer[bufmax];
     memset(buffer, 0, 32);
     Key key = {0};
@@ -93,7 +64,12 @@ pressKey(Menu* menu, Scanner* scanner)
         key.repr = buffer;
         key.len = token.length;
     }
-    else if (!addSpecial(&key, token.type))
+    else if (token.type == TOKEN_SPECIAL_KEY)
+    {
+        key.repr = NULL;
+        key.special = scanner->special;
+    }
+    else
     {
         errorMsg(
             "Key does not appear to be a regular key or a special key: '%.*s'.",

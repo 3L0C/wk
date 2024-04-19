@@ -213,7 +213,7 @@ getUint32FromToken(const Token* token, uint32_t* dest, bool debug)
 }
 
 const char*
-getTokenRepr(const TokenType type)
+getTokenLiteral(const TokenType type)
 {
     switch (type)
     {
@@ -292,20 +292,7 @@ getTokenRepr(const TokenType type)
     case TOKEN_MOD_SHIFT: return "TOKEN_MOD_SHIFT";
 
     /* special keys */
-    case TOKEN_SPECIAL_LEFT: return "TOKEN_SPECIAL_LEFT";
-    case TOKEN_SPECIAL_RIGHT: return "TOKEN_SPECIAL_RIGHT";
-    case TOKEN_SPECIAL_UP: return "TOKEN_SPECIAL_UP";
-    case TOKEN_SPECIAL_DOWN: return "TOKEN_SPECIAL_DOWN";
-    case TOKEN_SPECIAL_TAB: return "TOKEN_SPECIAL_TAB";
-    case TOKEN_SPECIAL_SPACE: return "TOKEN_SPECIAL_SPACE";
-    case TOKEN_SPECIAL_RETURN: return "TOKEN_SPECIAL_RETURN";
-    case TOKEN_SPECIAL_DELETE: return "TOKEN_SPECIAL_DELETE";
-    case TOKEN_SPECIAL_ESCAPE: return "TOKEN_SPECIAL_ESCAPE";
-    case TOKEN_SPECIAL_HOME: return "TOKEN_SPECIAL_HOME";
-    case TOKEN_SPECIAL_PAGE_UP: return "TOKEN_SPECIAL_PAGE_UP";
-    case TOKEN_SPECIAL_PAGE_DOWN: return "TOKEN_SPECIAL_PAGE_DOWN";
-    case TOKEN_SPECIAL_END: return "TOKEN_SPECIAL_END";
-    case TOKEN_SPECIAL_BEGIN: return "TOKEN_SPECIAL_BEGIN";
+    case TOKEN_SPECIAL_KEY: return "TOKEN_SPECIAL_KEY";
 
     /* control */
     case TOKEN_NO_INTERP: return "TOKEN_NO_INTERP";
