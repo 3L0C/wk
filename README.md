@@ -42,12 +42,11 @@ make clean && make && sudo make install
 All runtime dependencies below are searched with
 `pkg-config`. 
 
-| Backend | Dependencies                      |
-|---------|-----------------------------------|
-| Common  | cairo, pango, pangocairo          |
-| X11     | x11, xinerama                     |
-| Wayland | wayland-client, wayland-protocols |
-
+| Backend | Dependencies                                |
+|---------|---------------------------------------------|
+| Common  | cairo, pango, pangocairo                    |
+| X11     | x11, xinerama                               |
+| Wayland | wayland-client, wayland-protocols xkbcommon |
 
 ## About Wayland support
 
@@ -343,7 +342,7 @@ The above example demonstrated the `%(index)` and
 `%(index+1)` interpolations. These correspond to the 0 and 1
 based index of each chord respectively. In this example the
 only chords are the ones shown, but every chord in a block
-has an index. 
+has an index, not just those in a chord array. 
 
 You may have noticed that the equivelent example is not
 sorted. The default behavior for `wk` is to not sort the key
