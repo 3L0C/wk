@@ -261,26 +261,34 @@ While many keys are simple keys you would normally type, not
 all are like this. Thankfully, `wks` supports the following
 special keys in the corresponding forms:
 
-| Key              | Representation in `wks` |
-|------------------|-------------------------|
-| Left arrow       | Left                    |
-| Right arrow      | Right                   |
-| Up arrow         | Up                      |
-| Down arrow       | Down                    |
-| Tab key          | TAB                     |
-| Space bar        | SPC                     |
-| Enter/return key | RET                     |
-| Delete key       | DEL                     |
-| Esc key          | ESC                     |
-| Home key         | Home                    |
-| Page up key      | PgUp                    |
-| Page down key    | PgDown                  |
-| End key          | End                     |
-| Begin key        | Begin                   |
+| Key            | Representation in `wks` |
+|----------------|-------------------------|
+| Left arrow     | Left                    |
+| Right arrow    | Right                   |
+| Up arrow       | Up                      |
+| Down arrow     | Down                    |
+| Tab            | TAB                     |
+| Space          | SPC                     |
+| Enter/Return   | RET                     |
+| Delete         | DEL                     |
+| Esc            | ESC                     |
+| Home           | Home                    |
+| Page up        | PgUp                    |
+| Page down      | PgDown                  |
+| End            | End                     |
+| Begin          | Begin                   |
+| F[1-35]        | F[1-35]                 |
+| Volume Down    | VolDown                 |
+| Mute Vol       | VolMute                 |
+| Volume Up      | VolUp                   |
+| Play Audio     | Play                    |
+| Stop Audio     | Stop                    |
+| Audio Previous | Prev                    |
+| Audio Next     | Next                    |
 
-I plan to add additional special keys like the `F` keys as
-well as volume and brigthness control, but that is still a
-work in progress.
+Regular keys are parsed without concern for whitespace, but
+special keys do require some whitespace after the final
+character to be properly parsed.
 
 #### Modifiers 
 
