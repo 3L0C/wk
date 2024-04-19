@@ -16,6 +16,14 @@ typedef enum
     SCANNER_WANTS_UNSIGNED_INTEGER,
 } ScannerFlag;
 
+typedef enum
+{
+    SCANNER_STATE_NORMAL,
+    SCANNER_STATE_DESCRIPTION,
+    SCANNER_STATE_COMMAND,
+    SCANNER_STATE_INTERPOLATION,
+} ScannerState;
+
 typedef struct
 {
     const char* head;
@@ -24,9 +32,10 @@ typedef struct
     const char* filepath;
     size_t line;
     size_t column;
-    TokenType interpType;
-    bool isInterpolation;
     bool hadError;
+    ScannerState state;
+    ScannerState previousState;
+    TokenType interpType;
 } Scanner;
 
 void initScanner(Scanner* scanner, const char* source, const char* filepath);

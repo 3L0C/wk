@@ -97,7 +97,7 @@ disassemblePseudoChord(const PseudoChord* chord)
     assert(chord);
 
     debugPrintHeader(" PseudoChord ");
-    debugMsg(true, "| ");
+    debugMsg(true, "|");
     debugMsg(
         true, "| State:             %s",
         chord->state == KEY_CHORD_STATE_IS_NULL ? "STATE_IS_NULL" : "STATE_NOT_NULL"
@@ -108,7 +108,39 @@ disassemblePseudoChord(const PseudoChord* chord)
     disassembleTokenArray(&chord->before);
     disassembleTokenArray(&chord->after);
     disassembleFlags(&chord->flags, 0);
-    debugMsg(true, "| ");
+    debugMsg(true, "|");
+    debugPrintHeader("");
+}
+
+void
+disassembleScanner(const Scanner* scanner)
+{
+    assert(scanner);
+
+    debugPrintHeader(" Scanner ");
+    debugMsg(true, "|");
+    debugMsg(true, "| Head:              '%c'", *scanner->head);
+    debugMsg(true, "| Start:             '%c'", *scanner->start);
+    debugMsg(true, "| Current:           '%c'", *scanner->current);
+    debugMsg(true, "| Lexeme:            '%.*s'", scanner->current - scanner->start, scanner->start);
+    debugMsg(true, "| Filepath:          '%s'", scanner->filepath);
+    debugMsg(true, "| Line:              %zu", scanner->line);
+    debugMsg(true, "| Column:            %zu", scanner->column);
+    debugMsg(true, "| Had Error:         %s", scanner->hadError ? "true" : "false");
+    /* debugMsg(true, "| State:             %s", *scanner->head); */
+    /* debugMsg(true, "| Prev State:        %s", *scanner->head); */
+    debugMsg(true, "| Interp Type:       %s", getTokenRepr(scanner->interpType));
+    debugMsg(true, "|");
+    debugPrintHeader("");
+}
+
+void
+disassembleSingleToken(const Token* token)
+{
+    assert(token);
+
+    debugPrintHeader("-");
+    disassembleToken(token);
     debugPrintHeader("");
 }
 
@@ -143,110 +175,117 @@ disassembleToken(const Token* token)
 {
     assert(token);
 
-    char* type = "";
+    char* type = "TOKEN_UNKNOWN";
     switch (token->type)
     {
     /* single characters */
-    case TOKEN_LEFT_BRACKET:            type = "TOKEN_LEFT_BRACKET";            break;
-    case TOKEN_RIGHT_BRACKET:           type = "TOKEN_RIGHT_BRACKET";           break;
-    case TOKEN_LEFT_BRACE:              type = "TOKEN_LEFT_BRACE";              break;
-    case TOKEN_RIGHT_BRACE:             type = "TOKEN_RIGHT_BRACE";             break;
-    case TOKEN_LEFT_PAREN:              type = "TOKEN_LEFT_PAREN";              break;
-    case TOKEN_RIGHT_PAREN:             type = "TOKEN_RIGHT_PAREN";             break;
+    case TOKEN_LEFT_BRACKET: type = "TOKEN_LEFT_BRACKET"; break;
+    case TOKEN_RIGHT_BRACKET: type = "TOKEN_RIGHT_BRACKET"; break;
+    case TOKEN_LEFT_BRACE: type = "TOKEN_LEFT_BRACE"; break;
+    case TOKEN_RIGHT_BRACE: type = "TOKEN_RIGHT_BRACE"; break;
+    case TOKEN_LEFT_PAREN: type = "TOKEN_LEFT_PAREN"; break;
+    case TOKEN_RIGHT_PAREN: type = "TOKEN_RIGHT_PAREN"; break;
 
     /* preprocessor macros */
-    case TOKEN_INCLUDE:                 type = "TOKEN_INCLUDE";                 break;
-    case TOKEN_DEBUG:                   type = "TOKEN_DEBUG";                   break;
-    case TOKEN_TOP:                     type = "TOKEN_TOP";                     break;
-    case TOKEN_BOTTOM:                  type = "TOKEN_BOTTOM";                  break;
-    case TOKEN_MAX_COLUMNS:             type = "TOKEN_MAX_COLUMNS";             break;
-    case TOKEN_WINDOW_WIDTH:            type = "TOKEN_WINDOW_WIDTH";            break;
-    case TOKEN_WINDOW_GAP:              type = "TOKEN_WINDOW_GAP";              break;
-    case TOKEN_BORDER_WIDTH:            type = "TOKEN_BORDER_WIDTH";            break;
-    case TOKEN_BORDER_RADIUS:           type = "TOKEN_BORDER_RADIUS";           break;
-    case TOKEN_WIDTH_PADDING:           type = "TOKEN_WIDTH_PADDING";           break;
-    case TOKEN_HEIGHT_PADDING:          type = "TOKEN_HEIGHT_PADDING";          break;
-    case TOKEN_FOREGROUND_COLOR:        type = "TOKEN_FOREGROUND_COLOR";        break;
-    case TOKEN_BACKGROUND_COLOR:        type = "TOKEN_BACKGROUND_COLOR";        break;
-    case TOKEN_BORDER_COLOR:            type = "TOKEN_BORDER_COLOR";            break;
-    case TOKEN_SHELL:                   type = "TOKEN_SHELL";                   break;
-    case TOKEN_FONT:                    type = "TOKEN_FONT";                    break;
+
+    /* string macros */
+    case TOKEN_INCLUDE: type = "TOKEN_INCLUDE"; break;
+    case TOKEN_FOREGROUND_COLOR: type = "TOKEN_FOREGROUND_COLOR"; break;
+    case TOKEN_BACKGROUND_COLOR: type = "TOKEN_BACKGROUND_COLOR"; break;
+    case TOKEN_BORDER_COLOR: type = "TOKEN_BORDER_COLOR"; break;
+    case TOKEN_SHELL: type = "TOKEN_SHELL"; break;
+    case TOKEN_FONT: type = "TOKEN_FONT"; break;
+
+    /* switch macros */
+    case TOKEN_DEBUG: type = "TOKEN_DEBUG"; break;
+    case TOKEN_SORT: type = "TOKEN_SORT"; break;
+    case TOKEN_TOP: type = "TOKEN_TOP"; break;
+    case TOKEN_BOTTOM: type = "TOKEN_BOTTOM"; break;
+
+    /* [-]digit macros */
+    case TOKEN_WINDOW_WIDTH: type = "TOKEN_WINDOW_WIDTH"; break;
+    case TOKEN_WINDOW_GAP: type = "TOKEN_WINDOW_GAP"; break;
+
+    /* digit macros */
+    case TOKEN_MAX_COLUMNS: type = "TOKEN_MAX_COLUMNS"; break;
+    case TOKEN_BORDER_WIDTH: type = "TOKEN_BORDER_WIDTH"; break;
+    case TOKEN_WIDTH_PADDING: type = "TOKEN_WIDTH_PADDING"; break;
+    case TOKEN_HEIGHT_PADDING: type = "TOKEN_HEIGHT_PADDING"; break;
+
+    /* number macros */
+    case TOKEN_BORDER_RADIUS: type = "TOKEN_BORDER_RADIUS"; break;
 
     /* identifiers */
-    case TOKEN_THIS_KEY:                type = "TOKEN_THIS_KEY";                break;
-    case TOKEN_INDEX:                   type = "TOKEN_INDEX";                   break;
-    case TOKEN_INDEX_ONE:               type = "TOKEN_INDEX_ONE";               break;
-    case TOKEN_THIS_DESC:               type = "TOKEN_THIS_DESC";               break;
-    case TOKEN_THIS_DESC_UPPER_FIRST:   type = "TOKEN_THIS_DESC_UPPER_FIRST";   break;
-    case TOKEN_THIS_DESC_LOWER_FIRST:   type = "TOKEN_THIS_DESC_LOWER_FIRST";   break;
-    case TOKEN_THIS_DESC_UPPER_ALL:     type = "TOKEN_THIS_DESC_UPPER_ALL";     break;
-    case TOKEN_THIS_DESC_LOWER_ALL:     type = "TOKEN_THIS_DESC_LOWER_ALL";     break;
+    case TOKEN_THIS_KEY: type = "TOKEN_THIS_KEY"; break;
+    case TOKEN_INDEX: type = "TOKEN_INDEX"; break;
+    case TOKEN_INDEX_ONE: type = "TOKEN_INDEX_ONE"; break;
+    case TOKEN_THIS_DESC: type = "TOKEN_THIS_DESC"; break;
+    case TOKEN_THIS_DESC_UPPER_FIRST: type = "TOKEN_THIS_DESC_UPPER_FIRST"; break;
+    case TOKEN_THIS_DESC_LOWER_FIRST: type = "TOKEN_THIS_DESC_LOWER_FIRST"; break;
+    case TOKEN_THIS_DESC_UPPER_ALL: type = "TOKEN_THIS_DESC_UPPER_ALL"; break;
+    case TOKEN_THIS_DESC_LOWER_ALL: type = "TOKEN_THIS_DESC_LOWER_ALL"; break;
 
-    /* keywords */
-    case TOKEN_BEFORE:                  type = "TOKEN_BEGIN";                   break;
-    case TOKEN_AFTER:                   type = "TOKEN_BEGIN";                   break;
-    case TOKEN_KEEP:                    type = "TOKEN_KEEP";                    break;
-    case TOKEN_INHERIT:                 type = "TOKEN_INHERIT";                 break;
-    case TOKEN_IGNORE:                  type = "TOKEN_IGNORE";                  break;
-    case TOKEN_UNHOOK:                  type = "TOKEN_UNHOOK";                  break;
-    case TOKEN_DEFLAG:                  type = "TOKEN_DEFLAG";                  break;
-    case TOKEN_NO_BEFORE:               type = "TOKEN_NO_BEFORE";               break;
-    case TOKEN_NO_AFTER:                type = "TOKEN_NO_AFTER";                break;
-    case TOKEN_WRITE:                   type = "TOKEN_WRITE";                   break;
-    case TOKEN_SYNC_CMD:                type = "TOKEN_SYNC_CMD";                break;
-    case TOKEN_SYNC_BEFORE:             type = "TOKEN_SYNC_BEFORE";             break;
-    case TOKEN_SYNC_AFTER:              type = "TOKEN_SYNC_AFTER";              break;
+    /* hooks */
+    case TOKEN_BEFORE: type = "TOKEN_BEGIN"; break;
+    case TOKEN_AFTER: type = "TOKEN_BEGIN"; break;
+    case TOKEN_SYNC_BEFORE: type = "TOKEN_SYNC_BEFORE"; break;
+    case TOKEN_SYNC_AFTER: type = "TOKEN_SYNC_AFTER"; break;
+
+    /* flags */
+    case TOKEN_KEEP: type = "TOKEN_KEEP"; break;
+    case TOKEN_CLOSE: type = "TOKEN_CLOSE"; break;
+    case TOKEN_INHERIT: type = "TOKEN_INHERIT"; break;
+    case TOKEN_IGNORE: type = "TOKEN_IGNORE"; break;
+    case TOKEN_UNHOOK: type = "TOKEN_UNHOOK"; break;
+    case TOKEN_DEFLAG: type = "TOKEN_DEFLAG"; break;
+    case TOKEN_NO_BEFORE: type = "TOKEN_NO_BEFORE"; break;
+    case TOKEN_NO_AFTER: type = "TOKEN_NO_AFTER"; break;
+    case TOKEN_WRITE: type = "TOKEN_WRITE"; break;
+    case TOKEN_SYNC_CMD: type = "TOKEN_SYNC_CMD"; break;
 
     /* literals */
-    case TOKEN_COMMAND:                 type = "TOKEN_COMMAND";                 break;
-    case TOKEN_COMM_INTERP:             type = "TOKEN_COMM_INTERP";             break;
-    case TOKEN_DESCRIPTION:             type = "TOKEN_DESCRIPTION";             break;
-    case TOKEN_DESC_INTERP:             type = "TOKEN_DESC_INTERP";             break;
+    case TOKEN_COMMAND: type = "TOKEN_COMMAND"; break;
+    case TOKEN_DESCRIPTION: type = "TOKEN_DESCRIPTION"; break;
+    case TOKEN_DOUBLE: type = "TOKEN_DOUBLE"; break;
+    case TOKEN_INTEGER: type = "TOKEN_INTEGER"; break;
+    case TOKEN_UNSIGNED_INTEGER: type = "TOKEN_UNSIGNED_INTEGER"; break;
+
+    /* interpolations */
+    case TOKEN_COMM_INTERP: type = "TOKEN_COMM_INTERP"; break;
+    case TOKEN_DESC_INTERP: type = "TOKEN_DESC_INTERP"; break;
 
     /* keys */
-    case TOKEN_KEY:                     type = "TOKEN_KEY";                     break;
+    case TOKEN_KEY: type = "TOKEN_KEY"; break;
 
     /* mods */
-    case TOKEN_MOD_CTRL:                type = "TOKEN_MOD_CTRL";                break;
-    case TOKEN_MOD_ALT:                 type = "TOKEN_MOD_ALT";                 break;
-    case TOKEN_MOD_HYPER:               type = "TOKEN_MOD_HYPER";               break;
-    case TOKEN_MOD_SHIFT:               type = "TOKEN_MOD_SHIFT";               break;
+    case TOKEN_MOD_CTRL: type = "TOKEN_MOD_CTRL"; break;
+    case TOKEN_MOD_ALT: type = "TOKEN_MOD_ALT"; break;
+    case TOKEN_MOD_HYPER: type = "TOKEN_MOD_HYPER"; break;
+    case TOKEN_MOD_SHIFT: type = "TOKEN_MOD_SHIFT"; break;
 
     /* specials */
-    case TOKEN_SPECIAL_LEFT:            type = "TOKEN_SPECIAL_LEFT";            break;
-    case TOKEN_SPECIAL_RIGHT:           type = "TOKEN_SPECIAL_RIGHT";           break;
-    case TOKEN_SPECIAL_UP:              type = "TOKEN_SPECIAL_UP";              break;
-    case TOKEN_SPECIAL_DOWN:            type = "TOKEN_SPECIAL_DOWN";            break;
-    case TOKEN_SPECIAL_TAB:             type = "TOKEN_SPECIAL_TAB";             break;
-    case TOKEN_SPECIAL_SPACE:           type = "TOKEN_SPECIAL_SPACE";           break;
-    case TOKEN_SPECIAL_RETURN:          type = "TOKEN_SPECIAL_RETURN";          break;
-    case TOKEN_SPECIAL_DELETE:          type = "TOKEN_SPECIAL_DELETE";          break;
-    case TOKEN_SPECIAL_ESCAPE:          type = "TOKEN_SPECIAL_ESCAPE";          break;
-    case TOKEN_SPECIAL_HOME:            type = "TOKEN_SPECIAL_HOME";            break;
-    case TOKEN_SPECIAL_PAGE_UP:         type = "TOKEN_SPECIAL_PAGE_UP";         break;
-    case TOKEN_SPECIAL_PAGE_DOWN:       type = "TOKEN_SPECIAL_PAGE_DOWN";       break;
-    case TOKEN_SPECIAL_END:             type = "TOKEN_SPECIAL_END";             break;
-    case TOKEN_SPECIAL_BEGIN:           type = "TOKEN_SPECIAL_BEGIN";           break;
+    case TOKEN_SPECIAL_LEFT: type = "TOKEN_SPECIAL_LEFT"; break;
+    case TOKEN_SPECIAL_RIGHT: type = "TOKEN_SPECIAL_RIGHT"; break;
+    case TOKEN_SPECIAL_UP: type = "TOKEN_SPECIAL_UP"; break;
+    case TOKEN_SPECIAL_DOWN: type = "TOKEN_SPECIAL_DOWN"; break;
+    case TOKEN_SPECIAL_TAB: type = "TOKEN_SPECIAL_TAB"; break;
+    case TOKEN_SPECIAL_SPACE: type = "TOKEN_SPECIAL_SPACE"; break;
+    case TOKEN_SPECIAL_RETURN: type = "TOKEN_SPECIAL_RETURN"; break;
+    case TOKEN_SPECIAL_DELETE: type = "TOKEN_SPECIAL_DELETE"; break;
+    case TOKEN_SPECIAL_ESCAPE: type = "TOKEN_SPECIAL_ESCAPE"; break;
+    case TOKEN_SPECIAL_HOME: type = "TOKEN_SPECIAL_HOME"; break;
+    case TOKEN_SPECIAL_PAGE_UP: type = "TOKEN_SPECIAL_PAGE_UP"; break;
+    case TOKEN_SPECIAL_PAGE_DOWN: type = "TOKEN_SPECIAL_PAGE_DOWN"; break;
+    case TOKEN_SPECIAL_END: type = "TOKEN_SPECIAL_END"; break;
+    case TOKEN_SPECIAL_BEGIN: type = "TOKEN_SPECIAL_BEGIN"; break;
 
     /* control */
-    case TOKEN_EOF:                                     return;
-    case TOKEN_ERROR:       printErrorToken(token);     return;
-    case TOKEN_NO_INTERP:   type = "TOKEN_NO_INTERP";   break;
-
-    default: type = "TOKEN_UNKNOWN!"; break;
+    case TOKEN_NO_INTERP: type = "TOKEN_NO_INTERP";   break;
+    case TOKEN_EMPTY: type = "TOKEN_EMPTY"; break;
+    case TOKEN_ERROR: printErrorToken(token); return;
+    case TOKEN_EOF: type = "TOKEN_EOF"; break;
     }
     printSimpleToken(token, type);
-}
-
-
-void
-disassembleSingleToken(const Token* token)
-{
-    assert(token);
-
-    debugPrintHeader("-");
-    disassembleToken(token);
-    debugPrintHeader("");
 }
 
 void

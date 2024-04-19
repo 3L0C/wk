@@ -109,7 +109,10 @@ typedef enum
     TOKEN_SPECIAL_BEGIN,
 
     /* control */
-    TOKEN_NO_INTERP, TOKEN_ERROR, TOKEN_EOF, TOKEN_EMPTY,
+    TOKEN_NO_INTERP,
+    TOKEN_EMPTY,
+    TOKEN_ERROR,
+    TOKEN_EOF,
 } TokenType;
 
 typedef struct
