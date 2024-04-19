@@ -53,7 +53,7 @@ usage(void)
         "    --border-width INT         Set border width to INT.\n"
         "    --border-radius NUM        Set border radius to NUM.\n"
         "    --wpadding INT             Set left and right padding around hint text to INT.\n"
-        "    --hpadding INT             Set up and down padding around hint text to INT.\n"
+        "    --hpadding INT             Set top and bottom padding around hint text to INT.\n"
         "    --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').\n"
         "    --bg COLOR                 Set window background to COLOR (e.g., '#F1CD39').\n"
         "    --bd COLOR                 Set window border to COLOR (e.g., '#F1CD39').\n"

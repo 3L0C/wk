@@ -55,7 +55,7 @@ Wayland is only supported by compositors that implement the
 [wlr-layer-shell](https://gitlab.freedesktop.org/wlroots/wlr-protocols/tree/master/unstable)
 protocol. Typically
 [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots/)-based 
-compositors. For those not on a `wlroots`,
+compositors. For those not on a `wlroots`-based compositor,
 [Xwayland](https://wayland.freedesktop.org/xserver.html) 
 does work based on my testing, but the popup menu seems to
 only display on one screen.
@@ -113,10 +113,6 @@ options:
 run `man 1 wk` for more info on each option.
 ```
 
-Above are some example uses of `wk`. A full list of
-options can be had with the `--help` flag, not to mention
-the `wks` file syntax that will be covered below.
-
 ## Configuration 
 
 `wk` can be configured at the command line as show in the
@@ -126,11 +122,11 @@ the binary by changing the settings in
 
 ## wks Files
 
-Which-Key source (`wks`) are the driving force behind `wk`.
-The syntax is novel, but provides a flexible means to manage
-and organize key chords. Below is a brief introduction to
-get users up and running. For a deep dive see the
-[man](man/wks.5.org) page.
+Which-Key source (`wks`) files are the driving force behind
+`wk`. The syntax is novel, but provides a flexible means to
+manage and express key chords. Below is an introduction to
+the `wks` syntax to get users up and running. For a deep
+dive see the [man](man/wks.5.org) page.
 
 ### The Basics
 
@@ -266,25 +262,22 @@ While many keys are simple keys you would normally type, not
 all are like this. Thankfully, `wks` supports the following
 special keys in the corresponding forms:
 
-```
-# Specail key = wks form
-Left arrow = Left
-Right arrow = Right
-Up arrow = Up
-Down arrow = Down
-
-Tab key = TAB
-Space bar = SPC
-Enter/return key = RET
-Delete key = DEL
-Esc key = ESC
-
-Home key = Home
-Page up key = PgUp
-Page down key = PgDown
-End key = End
-Begin key = Begin
-```
+| Key              | Representation in `wks` |
+|------------------|-------------------------|
+| Left arrow       | Left                    |
+| Right arrow      | Right                   |
+| Up arrow         | Up                      |
+| Down arrow       | Down                    |
+| Tab key          | TAB                     |
+| Space bar        | SPC                     |
+| Enter/return key | RET                     |
+| Delete key       | DEL                     |
+| Esc key          | ESC                     |
+| Home key         | Home                    |
+| Page up key      | PgUp                    |
+| Page down key    | PgDown                  |
+| End key          | End                     |
+| Begin key        | Begin                   |
 
 I plan to add additional special keys like the `F` keys as
 well as volume and brigthness control, but that is still a
