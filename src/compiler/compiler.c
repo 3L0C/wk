@@ -153,7 +153,7 @@ advanceCompiler(Compiler* compiler)
     return compiler->current.type;
 }
 
-static void
+static bool
 consume(Compiler* compiler, TokenType type, const char* message)
 {
     assert(compiler), assert(message);
@@ -161,10 +161,11 @@ consume(Compiler* compiler, TokenType type, const char* message)
     if (compiler->current.type == type)
     {
         advanceCompiler(compiler);
-        return;
+        return true;
     }
 
     errorAtCurrent(compiler, message);
+    return false;
 }
 
 static bool
@@ -367,18 +368,18 @@ collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
     return;
 }
 
-static void
-collectCommandTokens(Compiler* compiler, TokenArray* tokens, bool inChordArray)
+static bool
+collectCommandTokens(Compiler* compiler, TokenArray* tokens, bool inChordArray, const char* message)
 {
-    assert(compiler), assert(tokens);
-    if (compiler->panicMode) return;
-    if (inChordArray && checkCompiler(compiler, TOKEN_RIGHT_PAREN)) return;
+    assert(compiler), assert(tokens), assert(message);
+    if (compiler->panicMode) return false;
+    if (inChordArray && checkCompiler(compiler, TOKEN_RIGHT_PAREN)) return false;
 
     if (!checkCompiler(compiler, TOKEN_COMM_INTERP) &&
         !checkCompiler(compiler, TOKEN_COMMAND))
     {
-        errorAtCurrent(compiler, "Expected command.");
-        return;
+        errorAtCurrent(compiler, message);
+        return false;
     }
 
     while (!checkCompiler(compiler, TOKEN_EOF))
@@ -396,14 +397,13 @@ collectCommandTokens(Compiler* compiler, TokenArray* tokens, bool inChordArray)
         case TOKEN_THIS_DESC_LOWER_ALL:
         case TOKEN_COMM_INTERP:
         case TOKEN_COMMAND: writeTokenArray(tokens, token); break;
-        default: errorAtCurrent(compiler, "Malfromed command."); return;
+        default: errorAtCurrent(compiler, "Malfromed command."); return false;
         }
         if (checkCompiler(compiler, TOKEN_COMMAND)) break;
         advanceCompiler(compiler);
     }
 
-    consume(compiler, TOKEN_COMMAND, "Expect command.");
-    return;
+    return consume(compiler, TOKEN_COMMAND, "Expected end of command.");
 }
 
 static void
@@ -439,48 +439,32 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
     case TOKEN_BEFORE:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^before' hook.");
-        if (!checkCompiler(compiler, TOKEN_COMMAND) && !checkCompiler(compiler, TOKEN_COMM_INTERP))
-        {
-            errorAtCurrent(compiler, "Expected command after '^before' hook.");
-            return false;
-        }
-        collectCommandTokens(compiler, &chord->before, false);
-        return true;
+        return collectCommandTokens(
+            compiler, &chord->before, false, "Expected command after '^before' hook."
+        );
     }
     case TOKEN_AFTER:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^after' hook.");
-        if (!checkCompiler(compiler, TOKEN_COMMAND) && !checkCompiler(compiler, TOKEN_COMM_INTERP))
-        {
-            errorAtCurrent(compiler, "Expected command after '^after' hook.");
-            return false;
-        }
-        collectCommandTokens(compiler, &chord->after, false);
-        return true;
+        return collectCommandTokens(
+            compiler, &chord->after, false, "Expected command after '^after' hook."
+        );
     }
     case TOKEN_SYNC_BEFORE:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^sync-before' hook.");
-        if (!checkCompiler(compiler, TOKEN_COMMAND) && !checkCompiler(compiler, TOKEN_COMM_INTERP))
-        {
-            errorAtCurrent(compiler, "Expected command after '^sync-before' hook.");
-            return false;
-        }
-        collectCommandTokens(compiler, &chord->before, false);
         chord->flags.syncBefore = true;
-        return true;
+        return collectCommandTokens(
+            compiler, &chord->before, false, "Expected command after '^sync-before' hook."
+        );
     }
     case TOKEN_SYNC_AFTER:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^sync-after' hook.");
-        if (!checkCompiler(compiler, TOKEN_COMMAND) && !checkCompiler(compiler, TOKEN_COMM_INTERP))
-        {
-            errorAtCurrent(compiler, "Expected command after '^sync-after' hook.");
-            return false;
-        }
-        collectCommandTokens(compiler, &chord->after, false);
         chord->flags.syncAfter = true;
-        return true;
+        return collectCommandTokens(
+            compiler, &chord->after, false, "Expected command after '^sync-after' hook."
+        );
     }
     default: return false;
     }
@@ -542,7 +526,7 @@ compileChord(Compiler* compiler)
     /* Prefix */
     if (checkCompiler(compiler, TOKEN_LEFT_BRACE)) return;
 
-    collectCommandTokens(compiler, &chord->command, false);
+    collectCommandTokens(compiler, &chord->command, false, "Expected command.");
 
     /* Check for brace after command */
     if (checkCompiler(compiler, TOKEN_LEFT_BRACE))
@@ -556,6 +540,65 @@ compileChord(Compiler* compiler)
 }
 
 static void
+compileDescriptionWithState(String* result, TokenType type, const char* desc)
+{
+    assert(result), assert(desc);
+
+
+    StringAppendState state;
+    switch (type)
+    {
+    case TOKEN_THIS_DESC_UPPER_FIRST: state = STRING_APPEND_UPPER_FIRST; break;
+    case TOKEN_THIS_DESC_LOWER_FIRST: state = STRING_APPEND_LOWER_FIRST; break;
+    case TOKEN_THIS_DESC_UPPER_ALL: state = STRING_APPEND_UPPER_ALL; break;
+    case TOKEN_THIS_DESC_LOWER_ALL: state = STRING_APPEND_LOWER_ALL; break;
+    default:
+    {
+        errorMsg("Got unexpected token type to `compileDescriptionWithState`.");
+        appendToString(result, desc, strlen(desc));
+        return;
+    }
+    }
+
+    appendToStringWithState(result, desc, strlen(desc), state);
+}
+
+static void
+compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
+{
+    assert(token), assert(to), assert(result);
+
+
+    switch (token->type)
+    {
+    case TOKEN_THIS_KEY: appendToString(result, to->key.repr, to->key.len); break;
+    case TOKEN_THIS_DESC: appendToString(result, to->description, strlen(to->description)); break;
+    case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
+    case TOKEN_THIS_DESC_LOWER_FIRST:
+    case TOKEN_THIS_DESC_UPPER_ALL:
+    case TOKEN_THIS_DESC_LOWER_ALL:
+    {
+        compileDescriptionWithState(result, token->type, to->description);
+        break;
+    }
+    case TOKEN_INDEX: appendUInt32ToString(result, index); break;
+    case TOKEN_INDEX_ONE: appendUInt32ToString(result, index + 1); break;
+    case TOKEN_DESC_INTERP: /* FALLTHROUGH */
+    case TOKEN_DESCRIPTION:
+    case TOKEN_COMM_INTERP:
+    case TOKEN_COMMAND: appendToString(result, token->start, token->length); break;
+    default:
+    {
+        errorMsg(
+            "Got unexpected token when compiling token array: '%s'.",
+            getTokenRepr(token->type)
+        );
+        break;
+    }
+    }
+}
+
+static void
 compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t index)
 {
     assert(tokens), assert(to), assert(dest);
@@ -565,59 +608,7 @@ compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t in
 
     for (size_t i = 0; i < tokens->count; i++)
     {
-        Token* token = &tokens->tokens[i];
-        switch (token->type)
-        {
-        case TOKEN_THIS_KEY: appendToString(&result, to->key.repr, to->key.len); break;
-        case TOKEN_THIS_DESC:
-        {
-            appendToString(&result, to->description, strlen(to->description));
-            break;
-        }
-        case TOKEN_THIS_DESC_UPPER_FIRST:
-        {
-            appendToStringWithState(
-                &result, to->description,
-                strlen(to->description), STRING_APPEND_UPPER_FIRST
-            );
-            break;
-        }
-        case TOKEN_THIS_DESC_LOWER_FIRST:
-        {
-            appendToStringWithState(
-                &result, to->description,
-                strlen(to->description), STRING_APPEND_LOWER_FIRST
-            );
-            break;
-        }
-        case TOKEN_THIS_DESC_UPPER_ALL:
-        {
-            appendToStringWithState(
-                &result, to->description,
-                strlen(to->description), STRING_APPEND_UPPER_ALL
-            );
-            break;
-        }
-        case TOKEN_THIS_DESC_LOWER_ALL:
-        {
-            appendToStringWithState(
-                &result, to->description,
-                strlen(to->description), STRING_APPEND_LOWER_ALL
-            );
-            break;
-        }
-        case TOKEN_INDEX: appendUInt32ToString(&result, index); break;
-        case TOKEN_INDEX_ONE: appendUInt32ToString(&result, index + 1); break;
-        case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-        case TOKEN_DESCRIPTION:
-        case TOKEN_COMM_INTERP:
-        case TOKEN_COMMAND: appendToString(&result, token->start, token->length); break;
-        default:
-        {
-            errorMsg("Got strang token in chord array: '%s'.", getTokenRepr(token->type));
-            break;
-        }
-        }
+        compileStringFromToken(&tokens->tokens[i], to, &result, index);
     }
 
     rtrimString(&result);
@@ -682,7 +673,7 @@ compileChordArray(Compiler* compiler)
             collectDescriptionTokens(compiler, &chord->description);
             /* don't compile command until the end */
             compileHooksAndFlags(compiler, chord);
-            collectCommandTokens(compiler, &chord->command, true);
+            collectCommandTokens(compiler, &chord->command, true, "Expected command.");
             consume(compiler, TOKEN_RIGHT_PAREN, "Expect closing parenthesis after '('.");
         }
         else
@@ -701,7 +692,7 @@ compileChordArray(Compiler* compiler)
 
     collectDescriptionTokens(compiler, &dummy.description);
     compileHooksAndFlags(compiler, &dummy);
-    collectCommandTokens(compiler, &dummy.command, false);
+    collectCommandTokens(compiler, &dummy.command, false, "Expected command.");
 
     /* Write chords in chord array to destination */
     PseudoChordArray* array = compiler->chordsDest;
