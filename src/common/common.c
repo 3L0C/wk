@@ -42,6 +42,7 @@ usage(void)
         "    -t, --top                  Position window at top of screen.\n"
         "    -b, --bottom               Position window at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as key chords.\n"
+        "    -S, --sort                 Sort key chords read from --key-chords, or --script.\n"
         "    -m, --max-columns INT      Set maximum columns to INT.\n"
         "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
         "    -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.\n"

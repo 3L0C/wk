@@ -91,6 +91,7 @@ options:
     -t, --top                  Position window at top of screen.
     -b, --bottom               Position window at bottom of screen.
     -s, --script               Read script from stdin to use as key chords.
+    -S, --sort                 Sort key chords read from --key-chords, or --script.
     -m, --max-columns INT      Set maximum columns to INT.
     -p, --press KEY(s)         Press KEY(s) before dispalying window.
     -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.
@@ -308,140 +309,70 @@ modifiers is that the `S-` modifier is only considered by
 users should use the shifted version of their trigger key as
 shown here. I'm open to changing this behavior in the future.
 
-### Chord Arrays
+### Chord Arrays and Interpolations 
+
+#### Chord Arrays
 
 Some chords only vary slightly one from another. To make
-these chords easier to express `wks` files support chord
+these chords easier to express, `wks` files support chord
 arrays.
 
 ```
-# Chord
 [arstgmnei] "Tag %(index+1)" %{{dwmc %(index)}}
 ```
 
-
-The `wks` syntax is what I believe sets `wk` apart from the
-small list of alternatives (not to mention most don't show
-the key chords in a popup menu). So what is this `wks` file
-type that I keep talking about? Let me show you.
-
-<!-- ``` -->
-
-<!-- # This is a comment -->
-<!--     # This is also a comment -->
-
-<!-- # This is a chord. -->
-<!-- # The trigger key is 'a'. -->
-<!-- # The description is "A chord". -->
-<!-- # The command is 'echo "Hello, World"'. -->
-<!-- a "A chord" %{{echo "Hello, world!"}} -->
-
-<!-- # This is a prefix. -->
-<!-- # The trigger key is 'Control + a' -->
-<!-- C-a "A prefix" -->
-<!-- { -->
-<!--     # This is a chord that can only be accessed after triggering the parent prefix. -->
-<!--     b "A chord" %{{echo "Hello from inside prefix 'C-a'"}} -->
-
-<!--     # Prefixes can nest additional prefixes arbitrarily deep -->
-<!--     c "Another prefix" -->
-<!--     { -->
-<!--         d "Done" %{{echo "You've reached the end!"}} -->
-<!--     } -->
-<!-- } -->
-<!-- ``` -->
-
-I know, very cool. But it gets better. I use `dwm` with a
-patch that lets me control windows, and run other functions
-from the command-line. That on its own is very handy, but
-with a `wks` file, I can have something like this to take
-advantage of that conveniece.
+The above is equivelent to the following:
 
 ```
-# Window prefix
-w "+Window" 
-{
-    t "Tag" +keep
-    {
-        [arstgmnei] "View tag %(index+1)" %{{dwmc viewex %(index)}}
-    }
-    # Layout prefix
-    p "+Layout" +keep
-    {
-        [
-            (b "TTT Bstack") 
-            (c "|M| Centered")
-            (C ">M> Center float")
-            (d "[D] Deck")
-            (D "[\\] dwindle")
-            (f "><> Floating")
-            (t "[]= Tile")
-        ] "(null)" %{{dwmc setlayoutex %(index)}}
-    }
-}
+a "Tag 1" %{{dwmc 0}}
+r "Tag 2" %{{dwmc 1}}
+s "Tag 3" %{{dwmc 2}}
+t "Tag 4" %{{dwmc 3}}
+g "Tag 5" %{{dwmc 4}}
+m "Tag 6" %{{dwmc 5}}
+n "Tag 7" %{{dwmc 6}}
+e "Tag 8" %{{dwmc 7}}
+i "Tag 9" %{{dwmc 8}}
 ```
 
-That introduced a lot of stuff. Lets look at what's going
-on.
+#### Interpolations 
 
-### Flags 
+Chord arrays often go hand in hand with another `wks`
+feature, interpolations. Interpolations may be given in
+descriptions and commands to make use of meta information
+about the chord itself. An interpolation begins with `%(`
+and ends with `)`. Only recognized identifiers should go
+inbetween these delimiters. For a full list of supported
+identifiers please see the [man](man/wks.5.org#IDENTIFIER)
+page.
 
-The first new bit of syntax is seen in `+keep`. This is a
-**flag**. There are many flags that effect the behavior of
-`wk`. For a thorough explanation please see the
-[flags](man/wks.5.org#flag) section of the man page.
+The above example demonstrated the `%(index)` and
+`%(index+1)` interpolations. These correspond to the 0 and 1
+based index of each chord respectively. In this example the
+only chords are the ones shown, but every chord in a block
+has an index. 
 
-### Chord Arrays and Interpolations 
-
-Flags are great, and so is the `chord array` syntax. This
-allows users to group similar chords together and cut down
-on repetition. Taking a closer look at key chord `w t` there
-are two ways the chords in the prefix could have been
-written. 
+You may have noticed that the equivelent example is not
+sorted. The default behavior for `wk` is to not sort the key
+chords in `wks` files in order to not conflict with user
+expectations about the value of `%(index[+1])`
+interpolations. Had sorting been used the above example
+would have been equivelent to this: 
 
 ```
-# The simple way
-[arstgmnei] "View tag %(index+1)" %{{dwmc viewex %(index)}}
-
-# The verbose way
-a "View tag 1" %{{dwmc viewex 0}}
-r "View tag 2" %{{dwmc viewex 1}}
-s "View tag 3" %{{dwmc viewex 2}}
-t "View tag 4" %{{dwmc viewex 3}}
-g "View tag 5" %{{dwmc viewex 4}}
-m "View tag 6" %{{dwmc viewex 5}}
-n "View tag 7" %{{dwmc viewex 6}}
-e "View tag 8" %{{dwmc viewex 7}}
-i "View tag 9" %{{dwmc viewex 8}}
+a "Tag 1" %{{dwmc 0}}
+e "Tag 2" %{{dwmc 1}}
+g "Tag 3" %{{dwmc 2}}
+i "Tag 4" %{{dwmc 3}}
+m "Tag 5" %{{dwmc 4}}
+n "Tag 6" %{{dwmc 5}}
+r "Tag 7" %{{dwmc 6}}
+s "Tag 8" %{{dwmc 7}}
+t "Tag 9" %{{dwmc 8}}
 ```
 
-Both produce equivelent result in the popup menu. This is
-handy when you have commands that vary in minor ways, and it
-leverages [interpolations](man/wks.5.org#interpolation).
-There are a number of interpolations offered to users, check
-'em out.
-
-### Chord Expressions in Chord Arrays
-
-So the weirdest thing about this example is probably the
-`chord expressions`. This syntax is only supported with a
-chord array, but it lets users fit those stubbornly unique
-key chords into a chord array that may or may not be
-relatively simple. 
-
-Here, the common thread is the command being run by the
-chords with the only variation being the descriptions, and
-the argument to the command. However, the chord expression
-syntax supports more than just a unique description. Users
-can specify flags, hooks, and even a command that is unique
-to that chord. Whatever the chord expression is missing,
-aside from the description, is filled in with the bits from
-the chord array.
-
-### Probably Should Mention Special Keys
-
-There is a lot I could say about this but I really should
-mention `special keys`. 
+For a better understanding see the
+[sorting](man/wks.5.org#sorting) section of the man page.
 
 ### Full documentation
 
