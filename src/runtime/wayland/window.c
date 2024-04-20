@@ -44,6 +44,8 @@ error:
 static int
 createTmpfileCloexec(char* tmpName)
 {
+    assert(tmpName);
+
     int fd;
 
 #ifdef HAVE_MKOSTEMP
@@ -132,6 +134,8 @@ createBuffer(
     int32_t scale,
     CairoPaint* paint)
 {
+    assert(shm), assert(buffer), assert(paint);
+
     uint32_t stride = width * 4;
     uint32_t size = stride * height;
     int fd = osCreateAnonymousFile(size);
@@ -276,6 +280,8 @@ windowScheduleRender(WaylandWindow* window)
 static cairo_surface_t*
 getThrowawaySurface(WaylandWindow* window)
 {
+    assert(window);
+
     return cairo_image_surface_create(
         CAIRO_FORMAT_ARGB32, window->width * window->scale, window->height * window->scale
     );
@@ -284,6 +290,8 @@ getThrowawaySurface(WaylandWindow* window)
 static void
 resizeWinWidth(WaylandWindow* window, Menu* menu)
 {
+    assert(window), assert(menu);
+
     int32_t windowWidth = menu->windowWidth;
     uint32_t outputWidth = window->maxWidth;
 
@@ -307,6 +315,8 @@ resizeWinWidth(WaylandWindow* window, Menu* menu)
 static void
 resizeWinHeight(WaylandWindow* window, Menu* menu)
 {
+    assert(window), assert(menu);
+
     /* Output* output = window->wayland->selectedOutput; */
     uint32_t outputHeight = window->maxHeight;
 
@@ -321,6 +331,8 @@ resizeWinHeight(WaylandWindow* window, Menu* menu)
 static void
 resizeWinGap(WaylandWindow* window, Menu* menu)
 {
+    assert(window), assert(menu);
+
     int32_t windowGap = menu->windowGap;
     uint32_t outputHeight = window->maxHeight;
 
@@ -353,7 +365,7 @@ resizeWinGap(WaylandWindow* window, Menu* menu)
 static void
 resizeWindow(WaylandWindow* window, Menu* menu)
 {
-    assert(window && menu);
+    assert(window), assert(menu);
 
     window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);
     resizeWinWidth(window, menu);
@@ -364,6 +376,8 @@ resizeWindow(WaylandWindow* window, Menu* menu)
 static void
 moveResizeWindow(WaylandWindow* window, struct wl_display* display)
 {
+    assert(window);
+
     zwlr_layer_surface_v1_set_size(
         window->layerSurface, window->width * window->scale, window->height * window->scale
     );
@@ -387,7 +401,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
 bool
 windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
 {
-    assert(window && menu);
+    assert(window), assert(menu);
 
     resizeWindow(window, menu);
 
@@ -459,18 +473,24 @@ static const struct zwlr_layer_surface_v1_listener layerSurfaceListener = {
 static uint32_t
 getWindowWidth(WaylandWindow* window)
 {
+    assert(window);
+
     return window->width;
 }
 
 static uint32_t
 getWindowHeight(WaylandWindow* window, Menu* menu)
 {
+    assert(window), assert(menu);
+
     return cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);;
 }
 
 void
 windowGrabKeyboard(WaylandWindow* window, struct wl_display* display, bool grab)
 {
+    assert(window);
+
     zwlr_layer_surface_v1_set_keyboard_interactivity(window->layerSurface, grab);
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
@@ -479,6 +499,8 @@ windowGrabKeyboard(WaylandWindow* window, struct wl_display* display, bool grab)
 void
 windowSetOverlap(WaylandWindow* window, struct wl_display* display, bool overlap)
 {
+    assert(window);
+
     zwlr_layer_surface_v1_set_exclusive_zone(window->layerSurface, overlap ? -1 : 0); /* or ... -overlap */
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
@@ -494,7 +516,7 @@ windowCreate(
     struct wl_surface* surface,
     Menu* menu)
 {
-    assert(window);
+    assert(window), assert(menu);
 
     if (!layerShell) return false;
 

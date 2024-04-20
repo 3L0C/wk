@@ -37,11 +37,6 @@ typedef struct
     KeySym keysym;
 } X11SpecialKey;
 
-static X11 x11;
-static X11Window* window = &x11.window;
-static Menu* mainMenu;
-static bool debug;
-
 static const X11SpecialKey specialkeys[] = {
     { SPECIAL_KEY_NONE, XK_VoidSymbol },
     { SPECIAL_KEY_LEFT, XK_Left },
@@ -119,32 +114,39 @@ static const X11SpecialKey specialkeys[] = {
 static const size_t specialkeysLen = sizeof(specialkeys) / sizeof(specialkeys[0]);
 
 static void
-checkLocale(void)
+checkLocale(Menu* menu)
 {
+    assert(menu);
+
     if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
     {
         warnMsg("Locale not supported.");
     }
-    debugMsg(debug, "Locale supported.");
+    debugMsg(menu->debug, "Locale supported.");
 }
 
 static cairo_surface_t*
-getThrowawaySurface(void)
+getThrowawaySurface(X11Window* window)
 {
+    assert(window);
+
     return cairo_image_surface_create(CAIRO_FORMAT_ARGB32, window->width, window->height);
 }
 
 static bool
-desiriedPos(MenuWindowPosition pos)
+desiriedPos(Menu* menu, MenuWindowPosition pos)
 {
-    assert(x11.menu);
-    return x11.menu->position == pos;
+    assert(menu);
+
+    return menu->position == pos;
 }
 
 static void
-resizeWinWidth(void)
+resizeWinWidth(X11Window* window, Menu* menu)
 {
-    int32_t windowWidth = mainMenu->windowWidth;
+    assert(menu), assert(window);
+
+    int32_t windowWidth = menu->windowWidth;
     struct display* root = &window->root;
     if (windowWidth < 0)
     {
@@ -167,9 +169,11 @@ resizeWinWidth(void)
 }
 
 static void
-resizeWinHeight(void)
+resizeWinHeight(X11Window* window, Menu* menu)
 {
-    int32_t windowGap = mainMenu->windowGap;
+    assert(window), assert(menu);
+
+    int32_t windowGap = menu->windowGap;
     struct display* root = &window->root;
     window->maxHeight = root->h;
 
@@ -196,22 +200,26 @@ resizeWinHeight(void)
         window->height = root->h;
     }
 
-    if (desiriedPos(MENU_WIN_POS_BOTTOM))
+    if (desiriedPos(menu, MENU_WIN_POS_BOTTOM))
     {
         window->y = root->h - window->height - window->y + root->y;
     }
 }
 
 static void
-resizeWindow(void)
+resizeWindow(X11Window* window, Menu* menu)
 {
-    resizeWinWidth();
-    resizeWinHeight();
+    assert(window), assert(menu);
+
+    resizeWinWidth(window, menu);
+    resizeWinHeight(window, menu);
 }
 
 static void
-setMonitor(void)
+setMonitor(X11Window* window, Menu* menu)
 {
+    assert(window), assert(menu);
+
     static int32_t monitor = -1;
     Window root = DefaultRootWindow(window->display);
 
@@ -287,9 +295,9 @@ setMonitor(void)
             window->root.h = DisplayHeight(window->display, window->screen);
         }
 
-    window->height = cairoGetHeight(mainMenu, getThrowawaySurface(), window->root.h);
+    window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->root.h);
 
-    resizeWindow();
+    resizeWindow(window, menu);
 #undef INTERSECT
 #undef MIN
 #undef MAX
@@ -304,21 +312,25 @@ setMonitor(void)
 }
 
 static void
-initBuffer(void)
+initBuffer(X11Window* window)
 {
+    assert(window);
+
     Buffer* buffer = &window->buffer;
     memset(buffer, 0, sizeof(Buffer));
 }
 
 static bool
-initX11(void)
+initX11(X11* x11, X11Window* window, Menu* menu)
 {
-    debugMsg(debug, "Initializing x11.");
-    Display* display = window->display = x11.dispaly = XOpenDisplay(NULL);
-    if (!x11.dispaly) return false;
+    assert(x11), assert(window), assert(menu);
+
+    debugMsg(menu->debug, "Initializing x11.");
+    Display* display = window->display = x11->dispaly = XOpenDisplay(NULL);
+    if (!x11->dispaly) return false;
     window->screen = DefaultScreen(display);
     window->width = window->height = 1;
-    window->border = mainMenu->borderWidth;
+    window->border = menu->borderWidth;
     window->monitor = -1;
     window->visual = DefaultVisual(display, window->screen);
     XSetWindowAttributes wa = {
@@ -354,24 +366,28 @@ initX11(void)
         NULL
     );
     XSetClassHint(display, window->drawable, (XClassHint[]){{ .res_name = "wk", .res_class = "wk" }});
-    setMonitor();
+    setMonitor(window, menu);
     window->render = cairoPaint;
-    initBuffer();
-    cairoInitPaint(mainMenu, &window->paint);
-    if (debug) debugWindow(window);
+    initBuffer(window);
+    cairoInitPaint(menu, &window->paint);
+    if (menu->debug) debugWindow(window);
     return true;
 }
 
 static void
 destroyBuffer(Buffer* buffer)
 {
+    assert(buffer);
+
     cairoDestroy(&buffer->cairo);
     memset(buffer, 0, sizeof(Buffer));
 }
 
 static bool
-createBuffer(Buffer* buffer)
+createBuffer(X11Window* window, Buffer* buffer)
 {
+    assert(window), assert(buffer);
+
     cairo_surface_t* surface = cairo_xlib_surface_create(
         window->display, window->drawable, window->visual, window->width, window->height
     );
@@ -399,23 +415,27 @@ fail:
 }
 
 static Buffer*
-getBuffer(void)
+getBuffer(X11Window* window)
 {
+    assert(window);
+
     Buffer* buffer = &window->buffer;
 
     if (!buffer) return NULL;
     if (window->height != buffer->height) destroyBuffer(buffer);
-    if (!buffer->created && !createBuffer(buffer)) return NULL;
+    if (!buffer->created && !createBuffer(window, buffer)) return NULL;
 
     return buffer;
 }
 
 static bool
-render(void)
+render(X11Window* window, Menu* menu)
 {
+    assert(window), assert(menu);
+
     uint32_t oldh = window->height;
-    window->height = cairoGetHeight(mainMenu, getThrowawaySurface(), window->root.h);
-    resizeWinHeight();
+    window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->root.h);
+    resizeWinHeight(window, menu);
 
     if (oldh != window->height)
     {
@@ -425,16 +445,16 @@ render(void)
         );
     }
 
-    Buffer* buffer = getBuffer();
+    Buffer* buffer = getBuffer(window);
     if (!buffer)
     {
         errorMsg("Could not get buffer while rendering.");
         return false;
     }
 
-    mainMenu->width = buffer->width;
-    mainMenu->height = buffer->height;
-    if (!window->render(&buffer->cairo, mainMenu)) return false;
+    menu->width = buffer->width;
+    menu->height = buffer->height;
+    if (!window->render(&buffer->cairo, menu)) return false;
     cairo_surface_flush(buffer->cairo.surface);
     XFlush(window->display);
 
@@ -442,24 +462,28 @@ render(void)
 }
 
 static void
-cleanup(X11* x)
+cleanup(X11* x11)
 {
-    destroyBuffer(&x->window.buffer);
-    XUngrabKey(x->window.display, AnyKey, AnyModifier, DefaultRootWindow(x->window.display));
-    XSync(x->window.display, False);
-    XCloseDisplay(x->window.display);
+    assert(x11);
+
+    destroyBuffer(&x11->window.buffer);
+    XUngrabKey(x11->window.display, AnyKey, AnyModifier, DefaultRootWindow(x11->window.display));
+    XSync(x11->window.display, False);
+    XCloseDisplay(x11->window.display);
 }
 
 static void
 cleanupAsync(void* xp)
 {
-    X11* x = (X11*)xp;
-    close(ConnectionNumber(x->dispaly));
+    X11* x11 = (X11*)xp;
+    close(ConnectionNumber(x11->dispaly));
 }
 
 static bool
-grabfocus(void)
+grabfocus(X11* x11, X11Window* window)
 {
+    assert(x11), assert(window);
+
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 10000000 };
     Window focuswin;
     int i, revertwin;
@@ -472,14 +496,16 @@ grabfocus(void)
         nanosleep(&ts, NULL);
     }
 
-    cleanup(&x11);
+    cleanup(x11);
     errorMsg("Could not grab focus.");
     return false;
 }
 
 static bool
-grabkeyboard(void)
+grabkeyboard(X11* x11, X11Window* window)
 {
+    assert(x11), assert(window);
+
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000 };
     int i;
 
@@ -497,18 +523,18 @@ grabkeyboard(void)
         nanosleep(&ts, NULL);
     }
 
-    cleanup(&x11);
+    cleanup(x11);
     errorMsg("Could not grab keyboard.");
     return false;
 }
 
 static void
-setKeyEventMods(Modifiers* mods, unsigned int state)
+setKeyEventMods(Modifiers* mods, unsigned int x11Mods)
 {
-    if (state & ControlMask) mods->ctrl = true;
-    if (state & Mod1Mask) mods->alt = true;
-    if (state & Mod4Mask) mods->hyper = true;
-    if (state & ShiftMask) mods->shift = true;
+    if (x11Mods & ControlMask) mods->ctrl = true;
+    if (x11Mods & Mod1Mask) mods->alt = true;
+    if (x11Mods & Mod4Mask) mods->hyper = true;
+    if (x11Mods & ShiftMask) mods->shift = true;
 }
 
 static SpecialKey
@@ -535,8 +561,28 @@ processKey(Key* key, unsigned int state, KeySym keysym, char* buffer, int len)
 }
 
 static MenuStatus
-keypress(XKeyEvent* keyEvent)
+handleMysteryKeypress(Menu* menu, Key* key, KeySym keysym)
 {
+    assert(menu), assert(key);
+    debugMsg(menu->debug, "Checking mystery key.");
+
+    key->repr = XKeysymToString(keysym);
+    if (!key->repr)
+    {
+        debugMsg(menu->debug, "Got invalid keysym.");
+        return MENU_STATUS_RUNNING;
+    }
+    key->len = strlen(key->repr);
+    key->special = SPECIAL_KEY_NONE;
+
+    return handleKeypress(menu, key);
+}
+
+static MenuStatus
+keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
+{
+    assert(window), assert(menu), assert(keyEvent);
+
     KeySym keysym = XK_VoidSymbol;
     Status status;
     char buffer[128] = {0};
@@ -554,11 +600,8 @@ keypress(XKeyEvent* keyEvent)
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
-    case KEY_TYPE_IS_NORMAL: return handleKeypress(mainMenu, &key);
-    case KEY_TYPE_IS_UNKNOWN:
-        debugMsg(debug, "Encountered an unknown key. Most likely a modifier key press event.");
-        if (debug) disassembleKey(&key);
-        return MENU_STATUS_RUNNING;
+    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key);
+    case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
 
@@ -566,8 +609,10 @@ keypress(XKeyEvent* keyEvent)
 }
 
 static int
-eventHandler(void)
+eventHandler(X11* x11, X11Window* window, Menu* menu)
 {
+    assert(x11), assert(window), assert(menu);
+
     XEvent ev;
 
     while (!XNextEvent(window->display, &ev))
@@ -578,23 +623,23 @@ eventHandler(void)
         {
         case DestroyNotify:
             if (ev.xdestroywindow.window != window->drawable) break;
-            cleanup(&x11);
+            cleanup(x11);
             return EX_SOFTWARE;
         case Expose:
-            if (ev.xexpose.count == 0) if (!render()) return EX_SOFTWARE;
+            if (ev.xexpose.count == 0) if (!render(window, menu)) return EX_SOFTWARE;
             break;
         case FocusIn:
             /* regrab focus from parent window */
             if (ev.xfocus.window != window->drawable)
             {
-                if (!grabfocus()) return EX_SOFTWARE;
+                if (!grabfocus(x11, window)) return EX_SOFTWARE;
             }
             break;
         case KeyPress:
-            switch (keypress(&ev.xkey))
+            switch (keypress(window, menu, &ev.xkey))
             {
             case MENU_STATUS_RUNNING: break;
-            case MENU_STATUS_DAMAGED: if (!render()) return EX_SOFTWARE; break;
+            case MENU_STATUS_DAMAGED: if (!render(window, menu)) return EX_SOFTWARE; break;
             case MENU_STATUS_EXIT_OK: return EX_OK;
             case MENU_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
             }
@@ -619,16 +664,16 @@ runX11(Menu* menu)
     assert(menu);
 
     int result = EX_SOFTWARE;
-    checkLocale();
-    mainMenu = x11.menu = menu;
-    mainMenu->cleanupfp = cleanupAsync;
-    mainMenu->xp = &x11;
-    debug = mainMenu->debug;
-    if (!initX11()) return result;
-    grabkeyboard();
-    if (render())
+    checkLocale(menu);
+    X11 x11 = {0};
+    x11.menu = menu;
+    menu->cleanupfp = cleanupAsync;
+    menu->xp = &x11;
+    if (!initX11(&x11, &x11.window, menu)) return result;
+    grabkeyboard(&x11, &x11.window);
+    if (render(&x11.window, menu))
     {
-        result = eventHandler();
+        result = eventHandler(&x11, &x11.window, menu);
     }
     cleanup(&x11);
     return result;

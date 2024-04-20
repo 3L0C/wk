@@ -118,12 +118,14 @@ static int efd;
 static bool debug = false;
 
 static void
-renderWindowsIfPending(Menu* props, Wayland* wayland)
+renderWindowsIfPending(Menu* menu, Wayland* wayland)
 {
+    assert(menu), assert(wayland);
+
     WaylandWindow* window;
     wl_list_for_each(window, &wayland->windows, link)
     {
-        if (window->renderPending) windowRender(window, wayland->display, props);
+        if (window->renderPending) windowRender(window, wayland->display, menu);
     }
     wl_display_flush(wayland->display);
 }
@@ -131,6 +133,8 @@ renderWindowsIfPending(Menu* props, Wayland* wayland)
 static bool
 waitForEvents(Wayland* wayland)
 {
+    assert(wayland);
+
     wl_display_dispatch_pending(wayland->display);
 
     if (wl_display_flush(wayland->display) < 0 && errno != EAGAIN) return false;
@@ -157,27 +161,31 @@ waitForEvents(Wayland* wayland)
 }
 
 static void
-scheduleWindowsRenderIfDirty(Menu* props, Wayland* wayland)
+scheduleWindowsRenderIfDirty(Menu* menu, Wayland* wayland)
 {
+    assert(menu), assert(wayland);
+
     WaylandWindow* window;
     wl_list_for_each(window, &wayland->windows, link)
     {
         if (window->renderPending)
         {
-            renderWindowsIfPending(props, wayland);
+            renderWindowsIfPending(menu, wayland);
         }
-        if (props->dirty) windowScheduleRender(window);
+        if (menu->dirty) windowScheduleRender(window);
     }
 
-    props->dirty = false;
+    menu->dirty = false;
 }
 
 static bool
-render(Menu* props, Wayland* wayland)
+render(Menu* menu, Wayland* wayland)
 {
-    scheduleWindowsRenderIfDirty(props, wayland);
+    assert(menu), assert(wayland);
+
+    scheduleWindowsRenderIfDirty(menu, wayland);
     if (!waitForEvents(wayland)) return false;
-    renderWindowsIfPending(props, wayland);
+    renderWindowsIfPending(menu, wayland);
 
     return true;
 }
@@ -185,11 +193,15 @@ render(Menu* props, Wayland* wayland)
 static struct xkb_state*
 xkbCleanState(struct xkb_state* oldState, uint32_t group)
 {
+    assert(oldState);
+
     // Create a new xkb_state as a copy of the original state
     struct xkb_state* newState = xkb_state_new(xkb_state_get_keymap(oldState));
 
     // Get the control modifier mask
-    xkb_mod_mask_t ctrlMask = (1 << xkb_keymap_mod_get_index(xkb_state_get_keymap(oldState), XKB_MOD_NAME_CTRL));
+    xkb_mod_mask_t ctrlMask = (
+        1 << xkb_keymap_mod_get_index(xkb_state_get_keymap(oldState), XKB_MOD_NAME_CTRL)
+    );
 
     // Update the modifier mask of the new state, excluding the control modifier
     xkb_state_update_mask(newState,
@@ -200,12 +212,14 @@ xkbCleanState(struct xkb_state* oldState, uint32_t group)
 }
 
 static void
-setKeyEventMods(Modifiers* wkMods, uint32_t mods)
+setKeyEventMods(Modifiers* mods, uint32_t xkbMods)
 {
-    if (mods & MOD_CTRL) wkMods->ctrl = true;
-    if (mods & MOD_ALT) wkMods->alt = true;
-    if (mods & MOD_LOGO) wkMods->hyper = true;
-    if (mods & MOD_SHIFT) wkMods->shift = true;
+    assert(mods);
+
+    if (xkbMods & MOD_CTRL) mods->ctrl = true;
+    if (xkbMods & MOD_ALT) mods->alt = true;
+    if (xkbMods & MOD_LOGO) mods->hyper = true;
+    if (xkbMods & MOD_SHIFT) mods->shift = true;
 }
 
 static SpecialKey
@@ -221,6 +235,8 @@ getSpecialKey(xkb_keysym_t keysym)
 static KeyType
 processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t len)
 {
+    assert(key), assert(buffer);
+
     key->repr = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, mods);
@@ -232,9 +248,30 @@ processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t le
 }
 
 static MenuStatus
-pollKey(Menu* props, Wayland* wayland)
+handleMysteryKeypress(Menu* menu, Key* key, xkb_keysym_t keysym)
 {
-    assert(props && wayland);
+    assert(menu), assert(key);
+    debugMsg(debug, "Checking mystery key.");
+
+    char buffer[128] = {0};
+    int len = xkb_keysym_get_name(keysym, buffer, sizeof(buffer));
+    if (len == -1)
+    {
+        debugMsg(debug, "Got invalid keysym.");
+        return MENU_STATUS_RUNNING;
+    }
+
+    key->special = SPECIAL_KEY_NONE;
+    key->repr = buffer;
+    key->len = (size_t)len;
+
+    return handleKeypress(menu, key);
+}
+
+static MenuStatus
+pollKey(Menu* menu, Wayland* wayland)
+{
+    assert(menu), assert(wayland);
 
     if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
     {
@@ -245,8 +282,8 @@ pollKey(Menu* props, Wayland* wayland)
     xkb_keysym_t keysym = wayland->input.keysym;
     uint32_t mods = wayland->input.modifiers;
     struct xkb_state* cleanState = xkbCleanState(wayland->input.xkb.state, wayland->input.xkb.group);
-    char buffer[32] = {0};
-    size_t size = 32;
+    char buffer[128] = {0};
+    size_t size = 128;
     Key key = {0};
     size_t len = xkb_state_key_get_utf8(
         cleanState, wayland->input.code, buffer, size
@@ -268,11 +305,8 @@ pollKey(Menu* props, Wayland* wayland)
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
-    case KEY_TYPE_IS_NORMAL: return handleKeypress(props, &key);
-    case KEY_TYPE_IS_UNKNOWN:
-        errorMsg("Encountered an unknown key.");
-        if (debug) disassembleKey(&key);
-        return MENU_STATUS_EXIT_SOFTWARE;
+    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key);
+    case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
 
@@ -320,6 +354,8 @@ pollTouch(Wayland* wayland)
 static void
 destroyWindows(Wayland* wayland)
 {
+    assert(wayland);
+
     WaylandWindow* window;
     wl_list_for_each(window, &wayland->windows, link)
     {
@@ -331,6 +367,8 @@ destroyWindows(Wayland* wayland)
 static void
 windowUpdateOutput(WaylandWindow* window)
 {
+    assert(window);
+
     int32_t maxScale = 1;
     uint32_t minMaxHeight = 0;
     uint32_t minMaxWidth = 0;
@@ -477,6 +515,8 @@ fail:
 void
 freeWayland(Wayland* wayland)
 {
+    assert(wayland);
+
     destroyWindows(wayland);
     waylandRegistryDestroy(wayland);
     xkb_context_unref(wayland->input.xkb.context);
@@ -492,23 +532,23 @@ freeWayland(Wayland* wayland)
 }
 
 bool
-initWayland(Menu* props, Wayland* wayland)
+initWayland(Menu* menu, Wayland* wayland)
 {
-    assert(props && wayland);
+    assert(menu), assert(wayland);
 
     wl_list_init(&wayland->windows);
     wl_list_init(&wayland->outputs);
 
     if (!(wayland->display = wl_display_connect(NULL))) goto fail;
     if (!(wayland->input.xkb.context = xkb_context_new(XKB_CONTEXT_NO_FLAGS))) goto fail;
-    if (!waylandRegistryRegister(wayland, props)) goto fail;
+    if (!waylandRegistryRegister(wayland, menu)) goto fail;
 
     wayland->fds.display = wl_display_get_fd(wayland->display);
     wayland->fds.repeat = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
     wayland->input.repeatFd = &wayland->fds.repeat;
     wayland->input.keyPending = false;
 
-    recreateWindows(props, wayland);
+    recreateWindows(menu, wayland);
 
     if (!efd && (efd = epoll_create1(EPOLL_CLOEXEC)) < 0) goto fail;
 
