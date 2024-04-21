@@ -1,3 +1,4 @@
+#include "registry.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -16,6 +17,7 @@
 
 /* common includes */
 #include "common/common.h"
+#include "common/debug.h"
 #include "common/menu.h"
 
 /* local includes */
@@ -84,7 +86,8 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
     }
 
     struct xkb_state* state = xkb_state_new(keymap);
-    if (!state)
+    struct xkb_state* cleanState = xkb_state_new(keymap);
+    if (!state || !cleanState)
     {
         errorMsg("Failed to create XKB state.");
         xkb_keymap_unref(keymap);
@@ -95,6 +98,7 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
     xkb_state_unref(input->xkb.state);
     input->xkb.keymap = keymap;
     input->xkb.state = state;
+    input->xkb.cleanState = cleanState;
 
     for (uint32_t i = 0; i < MASK_LAST; i++)
     {
@@ -168,7 +172,7 @@ keyboardHandleKey(
     Input* input = data;
     enum wl_keyboard_key_state state = stateW;
 
-    if (!input->xkb.state) return;
+    if (!input->xkb.state || !input->xkb.cleanState) return;
 
     xkb_keysym_t keysym = xkb_state_key_get_one_sym(input->xkb.state, key + 8);
     press(input, keysym, key, state);
@@ -214,8 +218,18 @@ keyboardHandleModifiers(
 
     if (!input->xkb.keymap) return;
 
+    debugMsg(true, "Updating modifiers.");
     xkb_state_update_mask(input->xkb.state, modsDepressed, modsLatched, modsLocked, 0, 0, group);
-    xkb_mod_mask_t mask = xkb_state_serialize_mods(input->xkb.state, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED);
+    xkb_state_update_mask(
+        input->xkb.cleanState,
+        modsDepressed & ~(input->xkb.masks[MOD_CTRL]),
+        modsLatched & ~(input->xkb.masks[MOD_CTRL]),
+        modsLocked & ~(input->xkb.masks[MOD_CTRL]),
+        0, 0, group
+    );
+    xkb_mod_mask_t mask = xkb_state_serialize_mods(
+        input->xkb.state, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED
+    );
 
     input->modifiers = 0;
     for (uint32_t i = 0; i < MASK_LAST; i++)
@@ -717,12 +731,13 @@ waylandRegistryDestroy(Wayland* wayland)
 
     xkb_keymap_unref(wayland->input.xkb.keymap);
     xkb_state_unref(wayland->input.xkb.state);
+    xkb_state_unref(wayland->input.xkb.cleanState);
 }
 
 bool
 waylandRegistryRegister(Wayland* wayland, Menu* menu)
 {
-    assert(wayland && menu);
+    assert(wayland), assert(menu);
 
     debug = menu->debug;
     if (!(wayland->registry = wl_display_get_registry(wayland->display))) return false;

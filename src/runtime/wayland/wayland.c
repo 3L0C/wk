@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <bits/time.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -13,6 +14,7 @@
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 #include <wayland-util.h>
+#include <xkbcommon/xkbcommon-compat.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
@@ -190,36 +192,15 @@ render(Menu* menu, Wayland* wayland)
     return true;
 }
 
-static struct xkb_state*
-xkbCleanState(struct xkb_state* oldState, uint32_t group)
-{
-    assert(oldState);
-
-    // Create a new xkb_state as a copy of the original state
-    struct xkb_state* newState = xkb_state_new(xkb_state_get_keymap(oldState));
-
-    // Get the control modifier mask
-    xkb_mod_mask_t ctrlMask = (
-        1 << xkb_keymap_mod_get_index(xkb_state_get_keymap(oldState), XKB_MOD_NAME_CTRL)
-    );
-
-    // Update the modifier mask of the new state, excluding the control modifier
-    xkb_state_update_mask(newState,
-                          xkb_state_serialize_mods(oldState, XKB_STATE_MODS_EFFECTIVE) & ~ctrlMask,
-                          xkb_state_serialize_layout(oldState, XKB_STATE_LAYOUT_EFFECTIVE),
-                          0, 0, 0, group);
-    return newState;
-}
-
 static void
-setKeyEventMods(Modifiers* mods, uint32_t xkbMods)
+setKeyEventMods(Modifiers* mods, uint32_t state)
 {
     assert(mods);
 
-    if (xkbMods & MOD_CTRL) mods->ctrl = true;
-    if (xkbMods & MOD_ALT) mods->alt = true;
-    if (xkbMods & MOD_LOGO) mods->hyper = true;
-    if (xkbMods & MOD_SHIFT) mods->shift = true;
+    if (state & MOD_CTRL) mods->ctrl = true;
+    if (state & MOD_ALT) mods->alt = true;
+    if (state & MOD_LOGO) mods->hyper = true;
+    if (state & MOD_SHIFT) mods->shift = true;
 }
 
 static SpecialKey
@@ -232,20 +213,71 @@ getSpecialKey(xkb_keysym_t keysym)
     return SPECIAL_KEY_NONE;
 }
 
-static KeyType
-processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t len)
+/* static KeyType */
+/* processKey(Key* key, xkb_keysym_t keysym, uint32_t mods, char* buffer, size_t len) */
+/* { */
+/*     assert(key), assert(buffer); */
+
+/*     key->repr = buffer; */
+/*     key->len = len; */
+/*     setKeyEventMods(&key->mods, mods); */
+/*     key->special = getSpecialKey(keysym); */
+/*     if (keyIsStrictlyMod(key)) return KEY_TYPE_IS_STRICTLY_MOD; */
+/*     if (keyIsNormal(key)) return KEY_TYPE_IS_NORMAL; */
+/*     if (keyIsSpecial(key)) return KEY_TYPE_IS_SPECIAL; */
+/*     return KEY_TYPE_IS_UNKNOWN; */
+/* } */
+
+static bool
+xkbIsModifierKey(xkb_keysym_t keysym)
+{
+    return (
+        keysym == XKB_KEY_Shift_L || keysym == XKB_KEY_Shift_R ||
+        keysym == XKB_KEY_Control_L || keysym == XKB_KEY_Control_R ||
+        keysym == XKB_KEY_Caps_Lock || keysym == XKB_KEY_Shift_Lock ||
+        keysym == XKB_KEY_Meta_L || keysym == XKB_KEY_Meta_R ||
+        keysym == XKB_KEY_Alt_L || keysym == XKB_KEY_Alt_R ||
+        keysym == XKB_KEY_Super_L || keysym == XKB_KEY_Super_R ||
+        keysym == XKB_KEY_Hyper_L || keysym == XKB_KEY_Hyper_R
+    );
+}
+
+static bool
+xkbIsSpecialKey(Key* key, uint32_t mods, xkb_keysym_t keysym)
+{
+    assert(key);
+
+    key->special = getSpecialKey(keysym);
+    if (key->special == SPECIAL_KEY_NONE) return false;
+
+    key->repr = (char*)getSpecialKeyRepr(key->special);
+    key->len = strlen(key->repr);
+    return true;
+}
+
+static bool
+xkbIsNormalKey(Key* key, uint32_t mods, char* buffer, size_t len)
 {
     assert(key), assert(buffer);
+    if (!isUtf8StartByte(*buffer) && iscntrl(*buffer)) return false;
 
     key->repr = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, mods);
-    key->special = getSpecialKey(keysym);
-    if (keyIsStrictlyMod(key)) return KEY_TYPE_IS_STRICTLY_MOD;
-    if (keyIsNormal(key)) return KEY_TYPE_IS_NORMAL;
-    if (keyIsSpecial(key)) return KEY_TYPE_IS_SPECIAL;
+    return true;
+}
+
+static KeyType
+getKeyType(Key* key, uint32_t mods, xkb_keysym_t keysym, char* buffer, size_t len)
+{
+    assert(key), assert(buffer);
+
+    if (xkbIsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
+    if (xkbIsSpecialKey(key, mods, keysym)) return KEY_TYPE_IS_SPECIAL;
+    if (xkbIsNormalKey(key, mods, buffer, len)) return KEY_TYPE_IS_NORMAL;
     return KEY_TYPE_IS_UNKNOWN;
 }
+
 
 static MenuStatus
 handleMysteryKeypress(Menu* menu, Key* key, xkb_keysym_t keysym)
@@ -281,27 +313,27 @@ pollKey(Menu* menu, Wayland* wayland)
 
     xkb_keysym_t keysym = wayland->input.keysym;
     uint32_t mods = wayland->input.modifiers;
-    struct xkb_state* cleanState = xkbCleanState(wayland->input.xkb.state, wayland->input.xkb.group);
+    struct xkb_state* cleanState = wayland->input.xkb.cleanState;
     char buffer[128] = {0};
-    size_t size = 128;
     Key key = {0};
     size_t len = xkb_state_key_get_utf8(
-        cleanState, wayland->input.code, buffer, size
+        cleanState, wayland->input.code, buffer, sizeof(buffer)
     );
 
     /* Cleanup */
-    xkb_state_unref(cleanState);
     wayland->input.keyPending = false;
 
-    if (len > size)
+    if (len > sizeof(buffer))
     {
         errorMsg(
-            "Buffer too small when polling key. Buffer size '%zu', key length '%zu'.", size, len
+            "Buffer too small when polling key. Buffer size '%zu', key length '%zu'.",
+            sizeof(buffer), len
         );
         return MENU_STATUS_EXIT_SOFTWARE;
     }
 
-    switch (processKey(&key, keysym, mods, buffer, len))
+    debugMsg(menu->debug, "Key: '%s'", buffer);
+    switch (getKeyType(&key, mods, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
@@ -309,6 +341,15 @@ pollKey(Menu* menu, Wayland* wayland)
     case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }
+
+    /* switch (processKey(&key, keysym, mods, buffer, len)) */
+    /* { */
+    /* case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING; */
+    /* case KEY_TYPE_IS_SPECIAL: /\* FALLTHROUGH *\/ */
+    /* case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key); */
+    /* case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym); */
+    /* default: errorMsg("Got an unkown return value from 'processKey'."); break; */
+    /* } */
 
     return MENU_STATUS_EXIT_SOFTWARE;
 }

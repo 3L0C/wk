@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <locale.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -529,12 +530,12 @@ grabkeyboard(X11* x11, X11Window* window)
 }
 
 static void
-setKeyEventMods(Modifiers* mods, unsigned int x11Mods)
+setKeyEventMods(Modifiers* mods, unsigned int state)
 {
-    if (x11Mods & ControlMask) mods->ctrl = true;
-    if (x11Mods & Mod1Mask) mods->alt = true;
-    if (x11Mods & Mod4Mask) mods->hyper = true;
-    if (x11Mods & ShiftMask) mods->shift = true;
+    if (state & ControlMask) mods->ctrl = true;
+    if (state & Mod1Mask) mods->alt = true;
+    if (state & Mod4Mask) mods->hyper = true;
+    if (state & ShiftMask) mods->shift = true;
 }
 
 static SpecialKey
@@ -547,16 +548,38 @@ getSpecialKey(KeySym keysym)
     return SPECIAL_KEY_NONE;
 }
 
-static KeyType
-processKey(Key* key, unsigned int state, KeySym keysym, char* buffer, int len)
+static bool
+x11KeyIsSpecial(Key* key, unsigned int state, KeySym keysym)
 {
+    assert(key);
+    key->special = getSpecialKey(keysym);
+    if (key->special == SPECIAL_KEY_NONE) return false;
+
+    key->repr = (char*)getSpecialKeyRepr(key->special);
+    key->len = strlen(key->repr);
+    return true;
+}
+
+static bool
+x11KeyIsNormal(Key* key, unsigned int state, char* buffer, int len)
+{
+    assert(key), assert(buffer);
+    if (!isUtf8StartByte(*buffer) && iscntrl(*buffer)) return false;
+
     key->repr = buffer;
     key->len = len;
     setKeyEventMods(&key->mods, state);
-    key->special = getSpecialKey(keysym);
-    if (keyIsStrictlyMod(key)) return KEY_TYPE_IS_STRICTLY_MOD;
-    if (keyIsSpecial(key)) return KEY_TYPE_IS_SPECIAL;
-    if (keyIsNormal(key)) return KEY_TYPE_IS_NORMAL;
+    return true;
+}
+
+static KeyType
+getKeyType(Key* key, unsigned int state, KeySym keysym, char* buffer, int len)
+{
+    assert(key), assert(buffer);
+
+    if (IsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
+    if (x11KeyIsSpecial(key, state, keysym)) return KEY_TYPE_IS_SPECIAL;
+    if (x11KeyIsNormal(key, state, buffer, len)) return KEY_TYPE_IS_NORMAL;
     return KEY_TYPE_IS_UNKNOWN;
 }
 
@@ -596,7 +619,7 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
 
     if (status == XLookupNone || status == XBufferOverflow) return MENU_STATUS_RUNNING;
 
-    switch (processKey(&key, state, keysym, buffer, len))
+    switch (getKeyType(&key, state, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
