@@ -313,12 +313,19 @@ pollKey(Menu* menu, Wayland* wayland)
 
     xkb_keysym_t keysym = wayland->input.keysym;
     uint32_t mods = wayland->input.modifiers;
+    struct xkb_state* state = wayland->input.xkb.state;
     struct xkb_state* cleanState = wayland->input.xkb.cleanState;
     char buffer[128] = {0};
     Key key = {0};
     size_t len = xkb_state_key_get_utf8(
+        state, wayland->input.code, buffer, sizeof(buffer)
+    );
+    debugMsg(menu->debug, "Key: '%s'", buffer);
+
+    len = xkb_state_key_get_utf8(
         cleanState, wayland->input.code, buffer, sizeof(buffer)
     );
+    debugMsg(menu->debug, "Key: '%s'", buffer);
 
     /* Cleanup */
     wayland->input.keyPending = false;
@@ -332,7 +339,6 @@ pollKey(Menu* menu, Wayland* wayland)
         return MENU_STATUS_EXIT_SOFTWARE;
     }
 
-    debugMsg(menu->debug, "Key: '%s'", buffer);
     switch (getKeyType(&key, mods, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
