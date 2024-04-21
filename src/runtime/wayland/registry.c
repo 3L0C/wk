@@ -96,6 +96,7 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
 
     xkb_keymap_unref(input->xkb.keymap);
     xkb_state_unref(input->xkb.state);
+    xkb_state_unref(input->xkb.cleanState);
     input->xkb.keymap = keymap;
     input->xkb.state = state;
     input->xkb.cleanState = cleanState;
