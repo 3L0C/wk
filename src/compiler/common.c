@@ -83,7 +83,7 @@ pressKey(Menu* menu, Scanner* scanner)
         disassembleKey(&key);
     }
 
-    MenuStatus status = handleKeypress(menu, &key);
+    MenuStatus status = handleKeypress(menu, &key, true);
 
     if (status == MENU_STATUS_EXIT_SOFTWARE)
     {

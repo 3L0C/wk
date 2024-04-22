@@ -88,7 +88,7 @@ typedef struct
 
 void countMenuKeyChords(Menu* menu);
 int displayMenu(Menu* menu);
-MenuStatus handleKeypress(Menu* menu, const Key* key);
+MenuStatus handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant);
 void initMenu(Menu* menu, KeyChord* keyChords);
 void parseArgs(Menu* menu, int* argc, char*** argv);
 void setMenuColor(Menu* menu, const char* color, MenuColor colorType);

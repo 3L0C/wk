@@ -106,7 +106,7 @@ pressKey(Menu* menu, const KeyChord* keyChord)
 }
 
 MenuStatus
-handleKeypress(Menu* menu, const Key* key)
+handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
 {
     assert(menu), assert(key);
 
@@ -115,7 +115,7 @@ handleKeypress(Menu* menu, const Key* key)
 
     for (uint32_t i = 0; i < len; i++)
     {
-        if (keysAreEqual(&keyChords[i].key, key))
+        if (keysAreEqual(&keyChords[i].key, key, shiftIsSignificant))
         {
             if (menu->debug)
             {

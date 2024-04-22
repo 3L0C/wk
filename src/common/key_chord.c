@@ -287,23 +287,15 @@ hasDefaultChordFlags(const ChordFlags* flags)
 }
 
 static bool
-modsAreEqual(const Modifiers* a, const Modifiers* b, bool checkShift)
+modsAreEqual(const Modifiers* a, const Modifiers* b, bool shiftIsSignificant)
 {
     assert(a), assert(b);
 
-    if (checkShift)
-    {
-        return (
-            a->ctrl == b->ctrl &&
-            a->alt == b->alt &&
-            a->hyper == b->hyper &&
-            a->shift == b->shift
-        );
-    }
     return (
         a->ctrl == b->ctrl &&
         a->alt == b->alt &&
-        a->hyper == b->hyper
+        a->hyper == b->hyper &&
+        (!shiftIsSignificant || a->shift == b->shift)
     );
 }
 
@@ -327,14 +319,14 @@ specialKeysAreEqual(const Key* a, const Key* b)
 }
 
 bool
-keysAreEqual(const Key* a, const Key* b)
+keysAreEqual(const Key* a, const Key* b, bool shiftIsSignificant)
 {
     assert(a), assert(b);
 
     if (keysAreSpecial(a, b) && specialKeysAreEqual(a, b)) return true;
     return (
         a->special == b->special &&
-        modsAreEqual(&a->mods, &b->mods, false) &&
+        modsAreEqual(&a->mods, &b->mods, shiftIsSignificant) &&
         strcmp(a->repr, b->repr) == 0
     );
 }

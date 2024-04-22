@@ -35,8 +35,8 @@ typedef enum
 
 typedef struct
 {
-    struct xkb_state* state;
-    struct xkb_state* cleanState;
+    struct xkb_state* stateSansShift;
+    struct xkb_state* stateSansCtrl;
     struct xkb_context* context;
     struct xkb_keymap* keymap;
     xkb_mod_mask_t masks[MASK_LAST];

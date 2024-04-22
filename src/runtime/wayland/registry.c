@@ -84,9 +84,9 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
         return;
     }
 
-    struct xkb_state* state = xkb_state_new(keymap);
-    struct xkb_state* cleanState = xkb_state_new(keymap);
-    if (!state || !cleanState)
+    struct xkb_state* stateSansShift = xkb_state_new(keymap);
+    struct xkb_state* stateSansCtrl = xkb_state_new(keymap);
+    if (!stateSansShift || !stateSansCtrl)
     {
         errorMsg("Failed to create XKB state.");
         xkb_keymap_unref(keymap);
@@ -94,11 +94,11 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
     }
 
     xkb_keymap_unref(input->xkb.keymap);
-    xkb_state_unref(input->xkb.state);
-    xkb_state_unref(input->xkb.cleanState);
+    xkb_state_unref(input->xkb.stateSansShift);
+    xkb_state_unref(input->xkb.stateSansCtrl);
     input->xkb.keymap = keymap;
-    input->xkb.state = state;
-    input->xkb.cleanState = cleanState;
+    input->xkb.stateSansShift = stateSansShift;
+    input->xkb.stateSansCtrl = stateSansCtrl;
 
     for (uint32_t i = 0; i < MASK_LAST; i++)
     {
@@ -172,9 +172,9 @@ keyboardHandleKey(
     Input* input = data;
     enum wl_keyboard_key_state state = stateW;
 
-    if (!input->xkb.state || !input->xkb.cleanState) return;
+    if (!input->xkb.stateSansShift || !input->xkb.stateSansCtrl) return;
 
-    xkb_keysym_t keysym = xkb_state_key_get_one_sym(input->xkb.state, key + 8);
+    xkb_keysym_t keysym = xkb_state_key_get_one_sym(input->xkb.stateSansShift, key + 8);
     press(input, keysym, key, state);
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED &&
@@ -218,16 +218,34 @@ keyboardHandleModifiers(
 
     if (!input->xkb.keymap) return;
 
-    xkb_state_update_mask(input->xkb.state, modsDepressed, modsLatched, modsLocked, 0, 0, group);
+    /* Update state to get modifiers */
     xkb_state_update_mask(
-        input->xkb.cleanState,
+        input->xkb.stateSansShift,
+        modsDepressed,
+        modsLatched,
+        modsLocked,
+        0, 0, group
+    );
+
+    xkb_mod_mask_t mask = xkb_state_serialize_mods(
+        input->xkb.stateSansShift, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED
+    );
+
+    /* clean states of ctrl and shift */
+    xkb_state_update_mask(
+        input->xkb.stateSansCtrl,
         modsDepressed & ~(input->xkb.masks[MASK_CTRL]),
         modsLatched & ~(input->xkb.masks[MASK_CTRL]),
         modsLocked & ~(input->xkb.masks[MASK_CTRL]),
         0, 0, group
     );
-    xkb_mod_mask_t mask = xkb_state_serialize_mods(
-        input->xkb.state, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED
+
+    xkb_state_update_mask(
+        input->xkb.stateSansShift,
+        modsDepressed & ~(input->xkb.masks[MASK_SHIFT] | input->xkb.masks[MASK_CTRL]),
+        modsLatched & ~(input->xkb.masks[MASK_SHIFT] | input->xkb.masks[MASK_CTRL]),
+        modsLocked & ~(input->xkb.masks[MASK_SHIFT] | input->xkb.masks[MASK_CTRL]),
+        0, 0, group
     );
 
     input->modifiers = 0;
@@ -729,8 +747,8 @@ waylandRegistryDestroy(Wayland* wayland)
     if (wayland->registry) wl_registry_destroy(wayland->registry);
 
     xkb_keymap_unref(wayland->input.xkb.keymap);
-    xkb_state_unref(wayland->input.xkb.state);
-    xkb_state_unref(wayland->input.xkb.cleanState);
+    xkb_state_unref(wayland->input.xkb.stateSansShift);
+    xkb_state_unref(wayland->input.xkb.stateSansCtrl);
 }
 
 bool

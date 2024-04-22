@@ -191,6 +191,23 @@ render(Menu* menu, Wayland* wayland)
     return true;
 }
 
+static bool
+isShiftSignificant(Wayland* wayland, const char* check, size_t checkLen)
+{
+    assert(wayland), assert(check);
+
+    struct xkb_state* stateSansShift = wayland->input.xkb.stateSansShift;
+    char buffer[128] = {0};
+    size_t len = xkb_state_key_get_utf8(
+        stateSansShift, wayland->input.code, buffer, sizeof(buffer)
+    );
+
+    return !(
+        len == checkLen &&
+        memcmp(buffer, check, len) == 0
+    );
+}
+
 static void
 setKeyEventMods(Modifiers* mods, uint32_t state)
 {
@@ -263,7 +280,7 @@ handleMysteryKeypress(Menu* menu, Key* key, xkb_keysym_t keysym)
     key->repr = buffer;
     key->len = (size_t)len;
 
-    return handleKeypress(menu, key);
+    return handleKeypress(menu, key, true);
 }
 
 static MenuStatus
@@ -279,11 +296,12 @@ pollKey(Menu* menu, Wayland* wayland)
 
     xkb_keysym_t keysym = wayland->input.keysym;
     uint32_t mods = wayland->input.modifiers;
-    struct xkb_state* cleanState = wayland->input.xkb.cleanState;
+    struct xkb_state* stateSansCtrl = wayland->input.xkb.stateSansCtrl;
     char buffer[128] = {0};
     Key key = {0};
+    bool shiftIsSignificant = true;
     size_t len = xkb_state_key_get_utf8(
-        cleanState, wayland->input.code, buffer, sizeof(buffer)
+        stateSansCtrl, wayland->input.code, buffer, sizeof(buffer)
     );
 
     /* Cleanup */
@@ -298,11 +316,13 @@ pollKey(Menu* menu, Wayland* wayland)
         return MENU_STATUS_EXIT_SOFTWARE;
     }
 
+    if (mods & MOD_SHIFT) shiftIsSignificant = isShiftSignificant(wayland, buffer, len);
+
     switch (getKeyType(&key, mods, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
-    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key);
+    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key, !shiftIsSignificant);
     case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }

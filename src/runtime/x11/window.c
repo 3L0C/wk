@@ -528,9 +528,33 @@ grabkeyboard(X11* x11, X11Window* window)
     return false;
 }
 
+static bool
+isShiftSignificant(X11Window* window, XKeyEvent* keyEvent, const char* check, int checkLen)
+{
+    assert(window), assert(keyEvent), assert(check);
+
+    KeySym keysym = XK_VoidSymbol;
+    Status status;
+    char buffer[128] = {0};
+    int len;
+
+    keyEvent->state &= ~(ShiftMask);
+
+    len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
+
+    if (status == XLookupNone || status == XBufferOverflow) return true;
+
+    return !(
+        len == checkLen &&
+        memcmp(buffer, check, len) == 0
+    );
+}
+
 static void
 setKeyEventMods(Modifiers* mods, unsigned int state)
 {
+    assert(mods);
+
     if (state & ControlMask) mods->ctrl = true;
     if (state & Mod1Mask) mods->alt = true;
     if (state & Mod4Mask) mods->hyper = true;
@@ -541,6 +565,7 @@ static SpecialKey
 getSpecialKey(void* keysymPtr)
 {
     assert(keysymPtr);
+
     KeySym keysym = (*(KeySym*)keysymPtr);
     for (size_t i = 0; i < specialkeysLen; i++)
     {
@@ -579,7 +604,7 @@ handleMysteryKeypress(Menu* menu, Key* key, KeySym keysym)
     key->len = strlen(key->repr);
     key->special = SPECIAL_KEY_NONE;
 
-    return handleKeypress(menu, key);
+    return handleKeypress(menu, key, true);
 }
 
 static MenuStatus
@@ -592,6 +617,7 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
     char buffer[128] = {0};
     int len;
     Key key = {0};
+    bool shiftIsSignificant = true;
     unsigned int state = keyEvent->state;
 
     keyEvent->state &= ~(ControlMask);
@@ -600,11 +626,13 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
 
     if (status == XLookupNone || status == XBufferOverflow) return MENU_STATUS_RUNNING;
 
+    if (state & ShiftMask) shiftIsSignificant = isShiftSignificant(window, keyEvent, buffer, len);
+
     switch (getKeyType(&key, state, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
-    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key);
+    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key, !shiftIsSignificant);
     case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
     default: errorMsg("Got an unkown return value from 'processKey'."); break;
     }

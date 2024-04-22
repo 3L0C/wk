@@ -210,7 +210,7 @@ void initChordFlags(ChordFlags* flags);
 void initChordModifiers(Modifiers* mods);
 bool hasActiveModifier(const Modifiers* mods);
 bool hasDefaultChordFlags(const ChordFlags* flags);
-bool keysAreEqual(const Key* a, const Key* b);
+bool keysAreEqual(const Key* a, const Key* b, bool shiftIsSignificant);
 void makeNullKeyChord(KeyChord* keyChord);
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */
