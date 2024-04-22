@@ -197,21 +197,7 @@ hasChordFlags(const ChordFlags* flags)
 {
     assert(flags);
 
-    return (
-        flags->keep ||
-        flags->close ||
-        flags->inherit ||
-        flags->ignore ||
-        flags->unhook ||
-        flags->deflag ||
-        flags->nobefore ||
-        flags->noafter ||
-        flags->write ||
-        flags->execute ||
-        flags->syncCommand ||
-        flags->syncBefore ||
-        flags->syncAfter
-    );
+    return !hasDefaultChordFlags(flags);
 }
 
 void
@@ -283,20 +269,20 @@ hasActiveModifier(const Modifiers* mods)
 bool
 hasDefaultChordFlags(const ChordFlags* flags)
 {
-    return (
-        flags->keep == false &&
-        flags->close == false &&
-        flags->inherit == false &&
-        flags->ignore == false &&
-        flags->unhook == false &&
-        flags->deflag == false &&
-        flags->nobefore == false &&
-        flags->noafter == false &&
-        flags->write == false &&
-        flags->execute == false &&
-        flags->syncCommand == false &&
-        flags->syncBefore == false &&
-        flags->syncAfter == false
+    return !(
+        flags->keep ||
+        flags->close ||
+        flags->inherit ||
+        flags->ignore ||
+        flags->unhook ||
+        flags->deflag ||
+        flags->nobefore ||
+        flags->noafter ||
+        flags->write ||
+        flags->execute ||
+        flags->syncCommand ||
+        flags->syncBefore ||
+        flags->syncAfter
     );
 }
 
