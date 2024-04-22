@@ -342,30 +342,6 @@ keysAreEqual(const Key* a, const Key* b)
     );
 }
 
-bool
-keyIsNormal(const Key* key)
-{
-    assert(key);
-
-    return (!keyIsSpecial(key) && *key->repr != '\0');
-}
-
-bool
-keyIsSpecial(const Key* key)
-{
-    assert(key);
-
-    return (key->special != SPECIAL_KEY_NONE);
-}
-
-bool
-keyIsStrictlyMod(const Key* key)
-{
-    assert(key);
-
-    return (hasActiveModifier(&key->mods) && !keyIsNormal(key) && !keyIsSpecial(key));
-}
-
 void
 makeNullKeyChord(KeyChord* keyChord)
 {

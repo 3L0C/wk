@@ -1,4 +1,3 @@
-#include "registry.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -17,10 +16,10 @@
 
 /* common includes */
 #include "common/common.h"
-#include "common/debug.h"
 #include "common/menu.h"
 
 /* local includes */
+#include "registry.h"
 #include "wayland.h"
 #include "wlr-layer-shell-unstable-v1.h"
 
@@ -219,13 +218,12 @@ keyboardHandleModifiers(
 
     if (!input->xkb.keymap) return;
 
-    debugMsg(true, "Updating modifiers.");
     xkb_state_update_mask(input->xkb.state, modsDepressed, modsLatched, modsLocked, 0, 0, group);
     xkb_state_update_mask(
         input->xkb.cleanState,
-        modsDepressed & ~(input->xkb.masks[MOD_CTRL]),
-        modsLatched & ~(input->xkb.masks[MOD_CTRL]),
-        modsLocked & ~(input->xkb.masks[MOD_CTRL]),
+        modsDepressed & ~(input->xkb.masks[MASK_CTRL]),
+        modsLatched & ~(input->xkb.masks[MASK_CTRL]),
+        modsLocked & ~(input->xkb.masks[MASK_CTRL]),
         0, 0, group
     );
     xkb_mod_mask_t mask = xkb_state_serialize_mods(

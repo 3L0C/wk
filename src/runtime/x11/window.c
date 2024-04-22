@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <ctype.h>
 #include <locale.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -27,6 +26,7 @@
 
 /* runtime includes */
 #include "runtime/cairo.h"
+#include "runtime/common.h"
 
 /* local includes */
 #include "debug.h"
@@ -539,37 +539,15 @@ setKeyEventMods(Modifiers* mods, unsigned int state)
 }
 
 static SpecialKey
-getSpecialKey(KeySym keysym)
+getSpecialKey(void* keysymPtr)
 {
+    assert(keysymPtr);
+    KeySym keysym = (*(KeySym*)keysymPtr);
     for (size_t i = 0; i < specialkeysLen; i++)
     {
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
     }
     return SPECIAL_KEY_NONE;
-}
-
-static bool
-x11KeyIsSpecial(Key* key, unsigned int state, KeySym keysym)
-{
-    assert(key);
-    key->special = getSpecialKey(keysym);
-    if (key->special == SPECIAL_KEY_NONE) return false;
-
-    key->repr = (char*)getSpecialKeyRepr(key->special);
-    key->len = strlen(key->repr);
-    return true;
-}
-
-static bool
-x11KeyIsNormal(Key* key, unsigned int state, char* buffer, int len)
-{
-    assert(key), assert(buffer);
-    if (!isUtf8StartByte(*buffer) && iscntrl(*buffer)) return false;
-
-    key->repr = buffer;
-    key->len = len;
-    setKeyEventMods(&key->mods, state);
-    return true;
 }
 
 static KeyType
@@ -578,8 +556,12 @@ getKeyType(Key* key, unsigned int state, KeySym keysym, char* buffer, int len)
     assert(key), assert(buffer);
 
     if (IsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
-    if (x11KeyIsSpecial(key, state, keysym)) return KEY_TYPE_IS_SPECIAL;
-    if (x11KeyIsNormal(key, state, buffer, len)) return KEY_TYPE_IS_NORMAL;
+
+    setKeyEventMods(&key->mods, state);
+
+    if (isSpecialKey(key, &keysym, getSpecialKey)) return KEY_TYPE_IS_SPECIAL;
+    if (isNormalKey(key, buffer, len)) return KEY_TYPE_IS_NORMAL;
+
     return KEY_TYPE_IS_UNKNOWN;
 }
 

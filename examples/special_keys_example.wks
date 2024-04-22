@@ -1,0 +1,14 @@
+Left "Move left" %{{echo "Moving left"}}
+Right "Move right" %{{echo "Moving right"}}
+Up "Move up" %{{echo "Moving up"}}
+Down "Move down" %{{echo "Moving down"}}
+TAB "Tab" %{{echo "Tabbing"}}
+SPC "Space" %{{echo "Spacing"}}
+RET "Return" %{{echo "Returning"}}
+DEL "Delete" %{{echo "Deleting"}}
+ESC "Escape" %{{echo "Escaping"}}
+Home "Home" %{{echo "Going home"}}
+PgUp "Page up" %{{echo "Paging up"}}
+PgDown "Page down" %{{echo "Paging down"}}
+End "End" %{{echo "Going to the end"}}
+Begin "Begin" %{{echo "Beginning"}}
