@@ -535,12 +535,15 @@ isShiftSignificant(X11Window* window, XKeyEvent* keyEvent, const char* check, in
 
     KeySym keysym = XK_VoidSymbol;
     Status status;
+    unsigned int state = keyEvent->state;
     char buffer[128] = {0};
     int len;
 
-    keyEvent->state &= ~(ShiftMask);
+    keyEvent->state &= ~(ShiftMask | ControlMask);
 
     len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
+
+    keyEvent->state = state;
 
     if (status == XLookupNone || status == XBufferOverflow) return true;
 
@@ -574,16 +577,38 @@ getSpecialKey(void* keysymPtr)
     return SPECIAL_KEY_NONE;
 }
 
-static KeyType
-getKeyType(Key* key, unsigned int state, KeySym keysym, char* buffer, int len)
+static bool
+isUnshiftedSpecialKey(X11Window* window, Key* key, XKeyEvent* keyEvent, KeySym* keysym)
 {
-    assert(key), assert(buffer);
+    assert(window), assert(key), assert(keyEvent), assert(keysym);
+
+    Status status;
+    unsigned int state = keyEvent->state;
+    char buffer[128] = {0};
+
+    keyEvent->state &= ~(ShiftMask | ControlMask);
+
+    XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), keysym, &status);
+
+    keyEvent->state = state;
+
+    if (status == XLookupNone || status == XBufferOverflow) return false;
+
+    return isSpecialKey(key, keysym, getSpecialKey);
+}
+
+static KeyType
+getKeyType(X11Window* window, Key* key, XKeyEvent* keyEvent, KeySym keysym, char* buffer, int len)
+{
+    assert(window), assert(key), assert(keyEvent), assert(buffer);
 
     if (IsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
 
-    setKeyEventMods(&key->mods, state);
+    setKeyEventMods(&key->mods, keyEvent->state);
 
     if (isSpecialKey(key, &keysym, getSpecialKey)) return KEY_TYPE_IS_SPECIAL;
+    if ((keyEvent->state & ShiftMask) &&
+        isUnshiftedSpecialKey(window, key, keyEvent, &keysym)) return KEY_TYPE_IS_SPECIAL;
     if (isNormalKey(key, buffer, len)) return KEY_TYPE_IS_NORMAL;
 
     return KEY_TYPE_IS_UNKNOWN;
@@ -624,11 +649,13 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
 
     len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
 
+    keyEvent->state = state;
+
     if (status == XLookupNone || status == XBufferOverflow) return MENU_STATUS_RUNNING;
 
     if (state & ShiftMask) shiftIsSignificant = isShiftSignificant(window, keyEvent, buffer, len);
 
-    switch (getKeyType(&key, state, keysym, buffer, len))
+    switch (getKeyType(window, &key, keyEvent, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */

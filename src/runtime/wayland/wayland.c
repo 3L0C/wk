@@ -191,16 +191,60 @@ render(Menu* menu, Wayland* wayland)
     return true;
 }
 
+static void
+xkbStateUpdateMask(
+    Xkb* xkb,
+    uint32_t depressedMods,
+    uint32_t latchedMods,
+    uint32_t lockedMods,
+    uint32_t depressedLayout,
+    uint32_t lockedLayout,
+    uint32_t group)
+{
+    assert(xkb);
+
+    xkb_state_update_mask(
+        xkb->state, depressedMods, latchedMods, lockedMods, depressedLayout, lockedLayout, group
+    );
+}
+
+static void
+xkbStateRemoveMask(Xkb* xkb, xkb_mod_mask_t mask)
+{
+    assert(xkb);
+
+    xkbStateUpdateMask(
+        xkb,
+        xkb->depressedMods & ~(mask),
+        xkb->latchedMods & ~(mask),
+        xkb->lockedMods & ~(mask),
+        0, 0, xkb->group
+    );
+}
+
+static void
+xkbStateRestoreMask(Xkb* xkb)
+{
+    assert(xkb);
+
+    xkbStateUpdateMask(xkb, xkb->depressedMods, xkb->latchedMods, xkb->lockedMods, 0, 0, xkb->group);
+}
+
 static bool
 isShiftSignificant(Wayland* wayland, const char* check, size_t checkLen)
 {
     assert(wayland), assert(check);
 
-    struct xkb_state* stateSansShift = wayland->input.xkb.stateSansShift;
+    Xkb* xkb = &wayland->input.xkb;
+    struct xkb_state* state = xkb->state;
+    xkbStateRemoveMask(xkb, (xkb->masks[MASK_SHIFT] | xkb->masks[MASK_CTRL]));
+
     char buffer[128] = {0};
     size_t len = xkb_state_key_get_utf8(
-        stateSansShift, wayland->input.code, buffer, sizeof(buffer)
+        state, wayland->input.code, buffer, sizeof(buffer)
     );
+
+    xkbStateRestoreMask(xkb);
 
     return !(
         len == checkLen &&
@@ -232,6 +276,21 @@ getSpecialKey(void* keysymPtr)
 }
 
 static bool
+isUnshiftedSpecialKey(Wayland* wayland, Key* key)
+{
+    assert(wayland), assert(key);
+
+    Xkb* xkb = &wayland->input.xkb;
+    xkbStateRemoveMask(xkb, xkb->masks[MASK_SHIFT]);
+
+    xkb_keysym_t keysym = xkb_state_key_get_one_sym(xkb->state, wayland->input.code);
+
+    xkbStateRestoreMask(xkb);
+
+    return isSpecialKey(key, &keysym, getSpecialKey);
+}
+
+static bool
 xkbIsModifierKey(xkb_keysym_t keysym)
 {
     return (
@@ -246,15 +305,16 @@ xkbIsModifierKey(xkb_keysym_t keysym)
 }
 
 static KeyType
-getKeyType(Key* key, uint32_t mods, xkb_keysym_t keysym, char* buffer, size_t len)
+getKeyType(Wayland* wayland, Key* key, uint32_t mods, xkb_keysym_t keysym, char* buffer, size_t len)
 {
-    assert(key), assert(buffer);
+    assert(wayland), assert(key), assert(buffer);
 
     if (xkbIsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
 
     setKeyEventMods(&key->mods, mods);
 
     if (isSpecialKey(key, &keysym, getSpecialKey)) return KEY_TYPE_IS_SPECIAL;
+    if ((mods & MOD_SHIFT) && isUnshiftedSpecialKey(wayland, key)) return KEY_TYPE_IS_SPECIAL;
     if (isNormalKey(key, buffer, len)) return KEY_TYPE_IS_NORMAL;
 
     return KEY_TYPE_IS_UNKNOWN;
@@ -296,13 +356,18 @@ pollKey(Menu* menu, Wayland* wayland)
 
     xkb_keysym_t keysym = wayland->input.keysym;
     uint32_t mods = wayland->input.modifiers;
-    struct xkb_state* stateSansCtrl = wayland->input.xkb.stateSansCtrl;
+    Xkb* xkb = &wayland->input.xkb;
+    struct xkb_state* state = xkb->state;
+    xkbStateRemoveMask(xkb, xkb->masks[MASK_CTRL]);
+
     char buffer[128] = {0};
     Key key = {0};
     bool shiftIsSignificant = true;
     size_t len = xkb_state_key_get_utf8(
-        stateSansCtrl, wayland->input.code, buffer, sizeof(buffer)
+        state, wayland->input.code, buffer, sizeof(buffer)
     );
+
+    xkbStateRestoreMask(xkb);
 
     /* Cleanup */
     wayland->input.keyPending = false;
@@ -318,7 +383,7 @@ pollKey(Menu* menu, Wayland* wayland)
 
     if (mods & MOD_SHIFT) shiftIsSignificant = isShiftSignificant(wayland, buffer, len);
 
-    switch (getKeyType(&key, mods, keysym, buffer, len))
+    switch (getKeyType(wayland, &key, mods, keysym, buffer, len))
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
@@ -615,8 +680,6 @@ runWayland(Menu* menu)
         case MENU_STATUS_EXIT_OK: result = EX_OK; break;
         case MENU_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
-
-        if (debug) disassembleStatus(status);
     }
     while (statusIsRunning(status));
 

@@ -13,7 +13,6 @@
 
 /* common includes */
 #include "common/common.h"
-#include "common/debug.h"
 #include "common/memory.h"
 #include "common/menu.h"
 
@@ -339,24 +338,17 @@ resizeWinGap(WaylandWindow* window, Menu* menu)
     if (windowGap < 0)
     {
         /* set gap to 1/10th the size of the output */
-        debugMsg(menu->debug, "Setting windowGap to 1/10th the screen height.");
         window->windowGap = (outputHeight / 10);
     }
     /* else if (windowGap == 0 || (uint32_t)windowGap > output->height) */
     else if ((uint32_t)windowGap > outputHeight)
     {
         /* make the window as large as possible */
-        debugMsg(
-            menu->debug,
-            "Setting windowGap to maximum gap size possible: %u.",
-            outputHeight - window->height
-        );
         window->windowGap = outputHeight - window->height;
     }
     else
     {
         /* make the gap as large as the user wants */
-        debugMsg(menu->debug, "Setting windowGap to user value: %u.", windowGap);
         window->windowGap = windowGap;
     }
 }

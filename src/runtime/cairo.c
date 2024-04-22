@@ -324,7 +324,6 @@ drawGrid()
 
     if (mainMenu->debug)
     {
-        disassembleMenu(mainMenu);
         disassembleGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
         disassembleKeyChordsShallow(mainMenu->keyChords, mainMenu->keyChordCount);
     }
