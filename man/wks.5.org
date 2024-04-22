@@ -249,13 +249,13 @@ expectation. If anything is not behaving as you expect,
 please see *CONTACT* below to reach out.
 
 #+begin_example
-key_chord          -> prefix
-                    | chord
+key_chord          -> chord
+                    | prefix
                     | chord_array ;
 
-prefix             -> key description keyword* '{' ( key_chord )+ '}' ;
-
 chord              -> key description keyword* command ;
+
+prefix             -> key description keyword* '{' ( key_chord )+ '}' ;
 
 chord_array        -> '[' ( key | chord_expression )+ ']' description keyword* command ;
 

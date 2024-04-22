@@ -836,13 +836,17 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
     switch (token->type)
     {
     case TOKEN_THIS_KEY: appendToString(result, to->key.repr, to->key.len); break;
-    case TOKEN_THIS_DESC: appendToString(result, to->description, strlen(to->description)); break;
+    case TOKEN_THIS_DESC:
+    {
+        if (to->description) appendToString(result, to->description, strlen(to->description));
+        break;
+    }
     case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
     case TOKEN_THIS_DESC_LOWER_FIRST:
     case TOKEN_THIS_DESC_UPPER_ALL:
     case TOKEN_THIS_DESC_LOWER_ALL:
     {
-        compileDescriptionWithState(result, token->type, to->description);
+        if (to->description) compileDescriptionWithState(result, token->type, to->description);
         break;
     }
     case TOKEN_INDEX: appendUInt32ToString(result, index); break;
