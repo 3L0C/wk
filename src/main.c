@@ -20,8 +20,6 @@
 #include "compiler/preprocessor.h"
 #include "compiler/writer.h"
 
-static Menu mainMenu;
-
 static void
 freeKeyChords(KeyChord* keyChords)
 {
@@ -41,26 +39,26 @@ freeKeyChords(KeyChord* keyChords)
 }
 
 static void
-freeMenuGarbage(void)
+freeMenuGarbage(Menu* menu)
 {
-    if (mainMenu.garbage.shell) free(mainMenu.garbage.shell);
-    if (mainMenu.garbage.font) free(mainMenu.garbage.font);
-    if (mainMenu.garbage.foregroundColor) free(mainMenu.garbage.foregroundColor);
-    if (mainMenu.garbage.backgroundColor) free(mainMenu.garbage.backgroundColor);
-    if (mainMenu.garbage.borderColor) free(mainMenu.garbage.borderColor);
+    if (menu->garbage.shell) free(menu->garbage.shell);
+    if (menu->garbage.font) free(menu->garbage.font);
+    if (menu->garbage.foregroundColor) free(menu->garbage.foregroundColor);
+    if (menu->garbage.backgroundColor) free(menu->garbage.backgroundColor);
+    if (menu->garbage.borderColor) free(menu->garbage.borderColor);
 }
 
 static char*
-preprocessSource(const char* source, const char* filepath)
+preprocessSource(Menu* menu, const char* source, const char* filepath)
 {
-    assert(source);
+    assert(menu), assert(source);
 
-    char* processedSource = runPreprocessor(&mainMenu, source, filepath);
+    char* processedSource = runPreprocessor(menu, source, filepath);
     if (!processedSource)
     {
         errorMsg("Failed while running preprocessor on `wks` file: '%s'.", filepath);
     }
-    else if (mainMenu.debug)
+    else if (menu->debug)
     {
         debugPrintHeader(" Contents of Preprocessed Source ");
         debugMsg(true, "| ");
@@ -73,89 +71,95 @@ preprocessSource(const char* source, const char* filepath)
 }
 
 static int
-compileSource(Compiler* compiler, char* source, const char* filepath)
+compileSource(Menu* menu, Compiler* compiler, char* source, const char* filepath)
 {
-    assert(compiler && source && filepath);
+    assert(menu),assert(compiler), assert(source), assert(filepath);
 
-    initCompiler(&mainMenu, compiler, source, filepath);
+    initCompiler(menu, compiler, source, filepath);
 
     /* Compile lines, retruns null on error. */
-    mainMenu.keyChordsHead = mainMenu.keyChords = compileKeyChords(compiler, &mainMenu);
-    if (!mainMenu.keyChords) return EX_DATAERR;
+    menu->keyChordsHead = menu->keyChords = compileKeyChords(compiler, menu);
+    if (!menu->keyChords) return EX_DATAERR;
 
     return EX_OK;
 }
 
 static int
-runMenu(void)
+runMenu(Menu* menu)
 {
+    assert(menu);
+
     int result = EX_SOFTWARE;
     MenuStatus status = MENU_STATUS_RUNNING;
-    countMenuKeyChords(&mainMenu);
+    countMenuKeyChords(menu);
 
     /* Pre-press keys */
-    if (mainMenu.client.keys)
+    if (menu->client.keys)
     {
-        if (mainMenu.debug) debugMsg(true, "Trying to press key(s): '%s'.", mainMenu.client.keys);
-        status = pressKeys(&mainMenu, mainMenu.client.keys);
+        if (menu->debug) debugMsg(true, "Trying to press key(s): '%s'.", menu->client.keys);
+        status = pressKeys(menu, menu->client.keys);
     }
 
     /* If keys were pre-pressed there may be nothing to do, or an error to report. */
     if (status == MENU_STATUS_EXIT_SOFTWARE)
     {
-        errorMsg("Key(s) not found in key chords: '%s'.", mainMenu.client.keys);
+        errorMsg("Key(s) not found in key chords: '%s'.", menu->client.keys);
         result = EX_DATAERR;
     }
     else if (status == MENU_STATUS_EXIT_OK)
     {
-        debugMsg(mainMenu.debug, "Successfully pressed keys: '%s'.", mainMenu.client.keys);
+        debugMsg(menu->debug, "Successfully pressed keys: '%s'.", menu->client.keys);
         result = EX_OK;
     }
     else
     {
-        result = displayMenu(&mainMenu);
+        result = displayMenu(menu);
     }
     return result;
 }
 
 static int
-runSource(const char* source, const char* filepath)
+runSource(Menu* menu, const char* source, const char* filepath)
 {
+    assert(menu), assert(source), assert(filepath);
+
     int result = EX_SOFTWARE;
 
     /* Run preprocessor on `script` and fail if mallformed or other error. */
-    char* processedSource = preprocessSource(source, filepath);
+    char* processedSource = preprocessSource(menu, source, filepath);
     if (!processedSource) return EX_DATAERR;
 
     /* Begin compilation */
     Compiler compiler = {0};
-    result = compileSource(&compiler, processedSource, filepath);
+    result = compileSource(menu, &compiler, processedSource, filepath);
     if (result != EX_OK)
     {
         errorMsg("Could not compile `wks` file: '%s'.", filepath);
         goto fail;
     }
 
-    result = runMenu();
+    result = runMenu(menu);
 
+    freeKeyChords(menu->keyChordsHead);
 fail:
-    freeKeyChords(mainMenu.keyChordsHead);
     free(processedSource);
     return result;
 }
 
 /* Read the given '.wks' file, and transpile it into chords.h syntax. */
 static int
-transpileWksFile(void)
+transpileWksFile(Menu* menu)
 {
+    assert(menu);
+
     int result = EX_SOFTWARE;
 
     /* Read given file to `source` and exit if read failed. */
-    char* source = readFile(mainMenu.client.transpile);
+    char* source = readFile(menu->client.transpile);
     if (!source) return EX_IOERR;
 
     /* Run the preprocessor on source */
-    char* processedSource = preprocessSource(source, mainMenu.client.transpile);
+    char* processedSource = preprocessSource(menu, source, menu->client.transpile);
     if (!processedSource)
     {
         result = EX_DATAERR;
@@ -163,13 +167,13 @@ transpileWksFile(void)
     }
 
     Compiler compiler = {0};
-    result = compileSource(&compiler, processedSource, mainMenu.client.transpile);
+    result = compileSource(menu, &compiler, processedSource, menu->client.transpile);
     if (result != EX_OK) goto fail;
 
     /* Well formed file, write to stdout. */
-    writeBuiltinKeyChordsHeaderFile(mainMenu.keyChordsHead);
+    writeBuiltinKeyChordsHeaderFile(menu->keyChordsHead);
 
-    freeKeyChords(mainMenu.keyChordsHead);
+    freeKeyChords(menu->keyChordsHead);
 fail:
     free(processedSource);
 end:
@@ -181,15 +185,17 @@ end:
  * compile it into a Chord array, and execute like normal.
  */
 static int
-runScript(void)
+runScript(Menu* menu)
 {
+    assert(menu);
+
     int result = EX_SOFTWARE;
 
     /* Exit on failure to read stdin. */
-    if (!tryStdin(&mainMenu)) return EX_IOERR;
-    String* source = &mainMenu.client.script;
+    if (!tryStdin(menu)) return EX_IOERR;
+    String* source = &menu->client.script;
 
-    result = runSource(source->string, "[SCRIPT]");
+    result = runSource(menu, source->string, "[SCRIPT]");
 
     freeString(source);
     return result;
@@ -197,15 +203,17 @@ runScript(void)
 
 /* Read the given '.wks' file, compile it into a Chord array, and execute like normal. */
 static int
-runWksFile(void)
+runWksFile(Menu* menu)
 {
+    assert(menu);
+
     int result = EX_SOFTWARE;
 
     /* Exit on failure to read source file. */
-    char* source = readFile(mainMenu.client.wksFile);
+    char* source = readFile(menu->client.wksFile);
     if (!source) return EX_IOERR;
 
-    result = runSource(source, mainMenu.client.wksFile);
+    result = runSource(menu, source, menu->client.wksFile);
 
     free(source);
     return result;
@@ -213,10 +221,12 @@ runWksFile(void)
 
 /* Execute precompiled key chords. */
 static int
-runBuiltinKeyChords()
+runBuiltinKeyChords(Menu* menu)
 {
-    if (mainMenu.debug) disassembleKeyChords(mainMenu.keyChords, 0);
-    return runMenu();
+    assert(menu);
+
+    if (menu->debug) disassembleKeyChords(menu->keyChords, 0);
+    return runMenu(menu);
 }
 
 int
@@ -224,29 +234,30 @@ main(int argc, char** argv)
 {
     int result = EX_SOFTWARE;
 
-    initMenu(&mainMenu, builtinKeyChords);
-    parseArgs(&mainMenu, &argc, &argv);
+    Menu menu = {0};
+    initMenu(&menu, builtinKeyChords);
+    parseArgs(&menu, &argc, &argv);
 
-    if (mainMenu.debug) disassembleMenu(&mainMenu);
+    if (menu.debug) disassembleMenu(&menu);
 
-    if (mainMenu.client.transpile)
+    if (menu.client.transpile)
     {
-        result = transpileWksFile();
+        result = transpileWksFile(&menu);
     }
-    else if (mainMenu.client.tryScript)
+    else if (menu.client.tryScript)
     {
-        result = runScript();
+        result = runScript(&menu);
     }
-    else if (mainMenu.client.wksFile)
+    else if (menu.client.wksFile)
     {
-        result = runWksFile();
+        result = runWksFile(&menu);
     }
     else
     {
-        result = runBuiltinKeyChords();
+        result = runBuiltinKeyChords(&menu);
     }
 
-    freeMenuGarbage();
+    freeMenuGarbage(&menu);
 
     return result;
 }

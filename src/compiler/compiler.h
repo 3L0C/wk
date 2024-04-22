@@ -22,6 +22,7 @@ struct PseudoChord
 {
     KeyChordState state;
     Key key;
+    Token keyToken;
     TokenArray description;
     TokenArray command;
     TokenArray before;
