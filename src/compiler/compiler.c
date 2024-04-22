@@ -804,6 +804,18 @@ compileKeyFromToken(Token* token, Key* key)
 }
 
 static void
+compileKeyAndMods(String* result, const Key* key)
+{
+    assert(result), assert(key);
+
+    if (key->mods.ctrl) appendToString(result, "C-", 2);
+    if (key->mods.alt) appendToString(result, "A-", 2);
+    if (key->mods.hyper) appendToString(result, "H-", 2);
+    if (key->mods.shift) appendToString(result, "S-", 2);
+    appendToString(result, key->repr, key->len);
+}
+
+static void
 compileDescriptionWithState(String* result, TokenType type, const char* desc)
 {
     assert(result), assert(desc);
@@ -835,7 +847,7 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
 
     switch (token->type)
     {
-    case TOKEN_THIS_KEY: appendToString(result, to->key.repr, to->key.len); break;
+    case TOKEN_THIS_KEY: compileKeyAndMods(result, &to->key); break;
     case TOKEN_THIS_DESC:
     {
         if (to->description) appendToString(result, to->description, strlen(to->description));
