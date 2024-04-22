@@ -19,7 +19,6 @@
 #include "common/debug.h"
 #include "common/menu.h"
 #include "common/key_chord.h"
-#include "common/util.h"
 
 /* local includes */
 #include "cairo.h"
@@ -57,6 +56,23 @@ cairoDestroy(Cairo* cairo)
 
     if (cairo->cr) cairo_destroy(cairo->cr);
     if (cairo->surface) cairo_surface_destroy(cairo->surface);
+}
+
+static void
+calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint32_t* cols)
+{
+    assert(rows), assert(cols);
+
+    if (maxCols == 0 || maxCols >= count)
+    {
+        *rows = 1;
+        *cols = count;
+    }
+    else
+    {
+        *rows = (count + maxCols - 1) / maxCols;
+        *cols = (count + *rows - 1) / *rows;
+    }
 }
 
 uint32_t

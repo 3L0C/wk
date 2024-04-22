@@ -88,7 +88,13 @@ typedef struct
 
 void countMenuKeyChords(Menu* menu);
 int displayMenu(Menu* menu);
+MenuStatus handleKeypress(Menu* menu, const Key* key);
 void initMenu(Menu* menu, KeyChord* keyChords);
+void parseArgs(Menu* menu, int* argc, char*** argv);
 void setMenuColor(Menu* menu, const char* color, MenuColor colorType);
+MenuStatus spawn(const Menu* menu, const char* cmd, bool async);
+bool statusIsError(MenuStatus status);
+bool statusIsRunning(MenuStatus status);
+bool tryStdin(Menu* menu);
 
 #endif /* WK_COMMON_MENU_H_ */

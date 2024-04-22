@@ -5,7 +5,6 @@
 
 /* common includes */
 #include "common/key_chord.h"
-#include "common/util.h"
 
 /* local includes */
 #include "writer.h"

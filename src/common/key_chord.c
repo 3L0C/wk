@@ -132,20 +132,6 @@ copyKeyChord(const KeyChord* from, KeyChord* to)
 }
 
 uint32_t
-countModifiers(const Modifiers* mods)
-{
-    assert(mods);
-
-    uint32_t result = 0;
-    if (mods->ctrl) result++;
-    if (mods->alt) result++;
-    if (mods->hyper) result++;
-    if (mods->shift) result++;
-
-    return result;
-}
-
-uint32_t
 countChordFlags(const ChordFlags* flags)
 {
     assert(flags);
@@ -165,6 +151,31 @@ countChordFlags(const ChordFlags* flags)
     if (flags->syncCommand) result++;
     if (flags->syncBefore) result++;
     if (flags->syncAfter) result++;
+
+    return result;
+}
+
+uint32_t
+countKeyChords(const KeyChord* keyChords)
+{
+    assert(keyChords);
+
+    uint32_t count = 0;
+    while (keyChords[count].state == KEY_CHORD_STATE_NOT_NULL) count++;
+
+    return count;
+}
+
+uint32_t
+countModifiers(const Modifiers* mods)
+{
+    assert(mods);
+
+    uint32_t result = 0;
+    if (mods->ctrl) result++;
+    if (mods->alt) result++;
+    if (mods->hyper) result++;
+    if (mods->shift) result++;
 
     return result;
 }

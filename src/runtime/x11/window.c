@@ -22,7 +22,6 @@
 #include "common/debug.h"
 #include "common/menu.h"
 #include "common/key_chord.h"
-#include "common/util.h"
 
 /* runtime includes */
 #include "runtime/cairo.h"

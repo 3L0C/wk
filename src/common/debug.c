@@ -9,7 +9,6 @@
 #include "debug.h"
 #include "menu.h"
 #include "key_chord.h"
-#include "util.h"
 
 static const int MAX_HEADER_WIDTH = 80;
 static const int DEBUG_SPACE = 9; /* '[DEBUG] |' == 9 */

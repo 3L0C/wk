@@ -3,12 +3,11 @@
 
 #include <stdbool.h>
 
-#include "menu.h"
-
 void errorMsg(const char* fmt, ...);
-void parseArgs(Menu* menu, int* argc, char*** argv);
+bool isUtf8ContByte(char byte);
+bool isUtf8MultiByteStartByte(char byte);
+bool isUtf8StartByte(char byte);
 char* readFile(const char* filepath);
-bool tryStdin(Menu* menu);
 void warnMsg(const char* fmt, ...);
 
 #endif /* WK_COMMON_COMMON_H_ */

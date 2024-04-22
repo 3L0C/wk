@@ -3,8 +3,8 @@
 #include <string.h>
 
 /* common includes */
+#include "common/common.h"
 #include "common/key_chord.h"
-#include "common/util.h"
 
 /* local includes */
 #include "common.h"
