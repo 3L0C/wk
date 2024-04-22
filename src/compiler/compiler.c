@@ -123,6 +123,21 @@ writePseudoChordArray(Compiler* compiler, PseudoChord* chord)
 }
 
 static void
+errorAt(Compiler* compiler, Token* token, const char* fmt, ...)
+{
+    assert(compiler), assert(token), assert(fmt);
+    if (compiler->panicMode) return;
+
+    compiler->panicMode = true;
+    compiler->hadError = true;
+
+    va_list ap;
+    va_start(ap, fmt);
+    errorAtToken(token, compiler->scanner.filepath, fmt, ap);
+    va_end(ap);
+}
+
+static void
 errorAtCurrent(Compiler* compiler, const char* fmt, ...)
 {
     assert(compiler), assert(fmt);
@@ -133,7 +148,7 @@ errorAtCurrent(Compiler* compiler, const char* fmt, ...)
 
     va_list ap;
     va_start(ap, fmt);
-    errorAtToken(&compiler->current, compiler->scanner.filepath, fmt, ap);
+    errorAt(compiler, &compiler->current, fmt, ap);
     va_end(ap);
 }
 
@@ -700,6 +715,11 @@ compilePrefix(Compiler* compiler)
     }
     consume(compiler, TOKEN_RIGHT_BRACE, "Expect '}' after prefix.");
 
+    if (children->count == 0)
+    {
+        errorAt(compiler, &parent->keyToken, "No key chords set for prefix.");
+        compiler->hadError = true;
+    }
 
     /* end prefix */
     setHooksAndFlags(parent, compiler->chordsDest);

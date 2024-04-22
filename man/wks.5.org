@@ -253,7 +253,7 @@ key_chord          -> prefix
                     | chord
                     | chord_array ;
 
-prefix             -> key description keyword* '{' ( key_chord )* '}' ;
+prefix             -> key description keyword* '{' ( key_chord )+ '}' ;
 
 chord              -> key description keyword* command ;
 
