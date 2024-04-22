@@ -580,8 +580,8 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
     case TOKEN_INDEX: appendUInt32ToString(result, index); break;
     case TOKEN_INDEX_ONE: appendUInt32ToString(result, index + 1); break;
     case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-    case TOKEN_DESCRIPTION:
-    case TOKEN_COMM_INTERP:
+    case TOKEN_DESCRIPTION: appendEscStringToString(result, token->start, token->length); break;
+    case TOKEN_COMM_INTERP: /* FALLTHROUGH */
     case TOKEN_COMMAND: appendToString(result, token->start, token->length); break;
     default:
     {

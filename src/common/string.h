@@ -22,6 +22,7 @@ typedef enum
 void appendInt32ToString(String* dest, int32_t i);
 void appendUInt32ToString(String* dest, uint32_t i);
 void appendCharToString(String* dest, char c);
+void appendEscStringToString(String* dest, const char* source, size_t len);
 void appendToString(String* dest, const char* source, size_t len);
 void appendToStringWithState(String* dest, const char* source, size_t len, StringAppendState state);
 void disownString(String* string);

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+/* local includes */
 #include "string.h"
 #include "memory.h"
 
@@ -38,6 +39,19 @@ appendCharToString(String* dest, char c)
 
     char buffer[] = { c, '\0' };
     appendToString(dest, buffer, 1);
+}
+
+void
+appendEscStringToString(String* dest, const char* source, size_t len)
+{
+    assert(dest), assert(source);
+
+    for (size_t i = 0; i < len; i++)
+    {
+        size_t start = i;
+        while (i < len && source[i] != '\\') i++;
+        appendToString(dest, source + start, i - start);
+    }
 }
 
 void
