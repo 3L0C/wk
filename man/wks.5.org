@@ -249,9 +249,9 @@ expectation. If anything is not behaving as you expect,
 please see *CONTACT* below to reach out.
 
 #+begin_example
-key_chord          -> chord
-                    | prefix
-                    | chord_array ;
+key_chord          -> ( chord
+                      | prefix
+                      | chord_array ) ;
 
 chord              -> key description keyword* command ;
 
@@ -259,7 +259,7 @@ prefix             -> key description keyword* '{' ( key_chord )+ '}' ;
 
 chord_array        -> '[' ( key | chord_expression )+ ']' description keyword* command ;
 
-chord_expression   -> '(' chord ')' ;
+chord_expression   -> '(' key description keyword* command? ')' ;
 
 key                -> modifier* ( '\\'[\\\[\]{}#":^+()]
                                 | [^\s\[\]{}#":^+()]
@@ -322,7 +322,6 @@ switch_macro       -> ( 'debug'
                       | 'sort'
                       | 'top'
                       | 'bottom' );
-
 
 integer_macro      -> ( 'window-width'
                       | 'window-gap' ) '-'? [0-9]+ ;

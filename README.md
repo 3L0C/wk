@@ -127,252 +127,615 @@ manage and express key chords. Below is an introduction to
 the `wks` syntax to get users up and running. For a deep
 dive see the [man](man/wks.5.org) page.
 
-### The Basics
+### Comments
 
-A key chord is some series of keys that must be pressed in
-order to execute some action. In a `wks` file the most basic
-key chord includes one key, a description, and a command to
-execute.
+In `wks` files, comments can be added using the `#`
+character. When a `#` is encountered it signifies the start
+of a comment. The comment extends from the `#` character
+until the end of the line. It's important to note that the
+`#` character is treated as a literal character within
+descriptions and commands, and does not indicate the start
+of a comment in those contexts.
 
-```
-a "A simple key chord" %{{echo "Hello, World!"}}
-```
-
-A key chord that does not result in some command being
-executed is a prefix. A prefix is one common part of
-multiple individual key chords. In a `wks` file a prefix has
-a key, a description, and a block of one or more key chords.
+### A Key Chord
 
 ```
-a "+A prefix" 
+key_chord -> ( chord | prefix | chord_array ) ;
+```
+
+The `key_chord` is the main building block of a `wks` file.
+This can be either a `chord`, `prefix`, or a `chord_array`.
+The chord is the most basic example of a key chord, and
+serves as a good entry point for this discussion.
+
+#### Chords 
+
+A chord is key chord that results in some `wk` performing
+some action, like executing a command, when the trigger key
+is pressed. The formal grammar looks like this:
+
+```
+chord -> key description keyword* command ;
+```
+
+All chords must have a `key`, `description`, and a
+`command`. Zero or more `keyword`s may be given, these will
+be addressed later. For now let's breakdown the required
+parts of the chord.
+
+##### Keys
+
+A key, or trigger key, represents the specific keypress or
+key combination that triggers a corresponding action or
+command. In a `wks` file, it is the written representation
+of the physical key(s) pressed by the user on their
+keyboard. The grammar looks like this:
+
+```
+key -> modifier* ( '\\'[\\\[\]{}#":^+()] 
+                 | [^\s\[\]{}#":^+()] 
+                 | special_key ) ;
+```
+
+A key is then zero or more `modifiers` followed by an
+escaped character with special meaning, any non-whitespace,
+printable utf8 character, or a `special_key`. 
+
+The characters `\`, `[`, `]`, `{`, `}`, `#`, `"`, `:`, `^`,
+`+`, `(`, and `)` have special meaning in `wks` files. To
+use any of these as a key simply preced them with a
+backslash `\`.
+
+All other non-whitespace, printable utf8 characters prior to
+a description will be interpreted as a key. Those that are
+whitespace or non-printable fall into the `special_key`
+category.
+
+##### Special Keys
+
+Special keys like `tab`, `escape`, `spacebar`, and `F1` can
+still be used as trigger keys in `wks` files with the
+following special forms:
+
+| Special Key    | Representation in `wks` |
+|----------------|-------------------------|
+| Left arrow     | `Left`                  |
+| Right arrow    | `Right`                 |
+| Up arrow       | `Up`                    |
+| Down arrow     | `Down`                  |
+| Tab            | `TAB`                   |
+| Space          | `SPC`                   |
+| Enter/Return   | `RET`                   |
+| Delete         | `DEL`                   |
+| Esc            | `ESC`                   |
+| Home           | `Home`                  |
+| Page up        | `PgUp`                  |
+| Page down      | `PgDown`                |
+| End            | `End`                   |
+| Begin          | `Begin`                 |
+| F[1-35]        | `F[1-35]`               |
+| Volume Down    | `VolDown`               |
+| Mute Vol       | `VolMute`               |
+| Volume Up      | `VolUp`                 |
+| Play Audio     | `Play`                  |
+| Stop Audio     | `Stop`                  |
+| Audio Previous | `Prev`                  |
+| Audio Next     | `Next`                  |
+
+In `wks` files, whitespace is generally not significant
+around individual parts of the syntax, with one notable
+exception: special keys. When using special keys, it is
+recommended to include whitespace between the end of the
+special key and the start of the next item in the `wks`
+file.
+
+If you have any additional special keys that you would like
+`wks` files to support, please open an issue or a pull
+request.
+
+##### Modifiers
+
+As mentioned above, zero or more modifiers can be given in a
+key. The following modifiers are recognized with the
+corresponding forms in a `wks` file: 
+
+| Modifier    | Representation in `wks` |
+|-------------|-------------------------|
+| Control     | `C-`                    |
+| Alt         | `M-`                    |
+| Hyper/Super | `H-`                    |
+| Shift       | `S-`                    |
+
+Modifiers act as one would expect. To match the keypress
+`Control+c` use the form `C-c` in your `wks` file.
+
+Among the modifiers, the Shift modifier (`S-`) has a unique
+behavior when used with non-special key characters. Due to
+the way keys are interpreted, the `S-` modifier is not
+always necessary for these characters. To determine whether
+`S-` is required, it is recommended to test the character in
+a `wks` file by typing it with and without the Shift key
+pressed.
+
+If the character is non-whitespace, printable, and the
+shifted and unshifted versions produce different output,
+then the `S-` modifier is not needed. For instance, pressing
+the `a` key with the Shift key held down produces an
+uppercase `A`. This test demonstrates that the key's output
+changes based on the Shift key state.
+
+In such cases, using `S-a` in a `wks` file would not work as
+expected because the key will never match when the user
+presses `Shift+a`. 
+
+I am open to changing it so that `S-a` and `A` match the
+same `Shift+a` keypress but I have yet to find a fitting
+solution. The ones I can think of either involve depending
+on some utf8 library, writing the code by hand, or
+permitting this syntax for ascii but not other character
+sets. Each has it's own drawback, and I find the current
+solution to be intuitive in practice.
+
+##### Descriptions 
+
+Descriptions provide a hint about the purpose of the chord
+or prefix. 
+
+```
+description -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+```
+
+A description starts with a double quote (`"`), followed by
+zero or more escaped double quotes, non-double quote
+characters, or an interpolation and ends with a double
+quote. Aside from interpolations, a description looks like
+your typical string many programming languages. 
+
+##### Commands 
+
+Commands are the actions executed upon completing a key
+chord sequence. 
+
+```
+command -> '%{{' ( . | interpolation )* '}}' ;
+```
+
+A command begins with the `%{{` delimiter and ends with the
+`}}` delimiter. Everything in-between is taken as part of
+the command for the key chord. There is no need to do
+anything special here, just provide your shell command as
+you would at the command line. 
+
+##### Basic Chord Example 
+
+Having learned a large portion of the syntax so far we can
+create our first chord using `wks` syntax.
+
+```
+a "Chord" %{{echo "Hello, world!"}}
+```
+
+A lot of explanation to do something simple, but this will
+set us up for success in the long run. Next is the humble
+prefix.
+
+#### Prefixes
+
+A prefix has the following syntax:
+
+```
+prefix -> key description keyword* '{' ( key_chord )+ '}' ;
+```
+
+A prefix has many of the same components as a chord. It
+begins with a key, followed by a description, zero or more
+keywords and then a block of one or more key chords
+sourounded by an opening and closing brace, `{`, and `}`
+respectively.
+
+Note that a key chord may be a prefix, a chord, or a chord
+array, meaning many prefixes can be nested one inside
+another. It should also be noted that a prefix has no
+command compared to a chord.
+
+Here is a simple example of a prefix:
+
+```
+m "+mpc"
 {
-    b "A chord" %{{echo "It takes two keys to reach me!"}}
-    c "+More key chords"
+    n "Next" %{{mpc next}}
+    p "Prev" %{{mpc prev}}
+}
+```
+
+#### Chord Arrays 
+
+Chords and prefixes are standard fare in the realm of key
+chords, so what the heck is a chord array? Well, mostly
+syntactic sugar so you do not have to repeat yourself when
+it comes to chords that are very simlar but only differ in
+slightly different ways.
+
+```
+chord_array -> '[' ( key | chord_expression )+ ']' description keyword* command ;
+```
+
+To use a chord array begin with an open bracket (`[`)
+followed by one or more keys or chord expressions. The array
+portion ends with a closing bracket (`]`) followed by the
+standard chord components, a description, zero or more
+keywords, and a command. I think an example will make things
+more clear.
+
+```
+# Chord array version
+[arstgmnei] "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+
+# Individual chords and no interpolation
+a "Switch workspace 1" %{{xdotool set_desktop 0}}
+r "Switch workspace 2" %{{xdotool set_desktop 1}}
+s "Switch workspace 3" %{{xdotool set_desktop 2}}
+t "Switch workspace 4" %{{xdotool set_desktop 3}}
+g "Switch workspace 5" %{{xdotool set_desktop 4}}
+m "Switch workspace 6" %{{xdotool set_desktop 5}}
+n "Switch workspace 7" %{{xdotool set_desktop 6}}
+e "Switch workspace 8" %{{xdotool set_desktop 7}}
+i "Switch workspace 9" %{{xdotool set_desktop 8}}
+```
+
+As you can see, chord arrays can cut down on the need to
+repeat common information accross chords. However, this
+would not be useful if the resulting chords were exactly the
+same. Thankfully, interpolations make it easy for the
+resulting chords differ without interfering with the common
+elements. 
+
+Interpolations are covered in full detail later, but the
+main idea is they provide a means of inserting metadata
+about a chord into descriptions and commands. 
+
+##### Chord Expressions
+
+Chord arrays can be very simple with each chord being only
+slightly different one from another. However, it may make
+sense to include chords that mostly fit into the chord array
+with some more distinct differences. For this situation
+chord expressions may be the answer.
+
+```
+chord_expression -> '(' key description keyword* command? ')' ;
+```
+
+A chord expression is only valid within a chord array, and
+it is essentially a chord wrapped in parentheses with some
+added flexibility. Normally, a chord requires at least a
+key, a description, and a command. A chord expression on the
+other hand requires only a key and a description. Any other
+information will be filled in by the sourounding chord
+array. Here is an example of a chord expression within a
+chord array:
+
+```
+# With chord arrays and chord expressions
+[
+    (b "Brave")
+    (c "Mullvad Chrome" %{{mullvad-exclude chrome ~/startpage.html}})
+    x
+] "XDG-OPEN" %{{%(desc,,) ~/startpage.html}}
+
+# With chords and no interpolation
+b "Brave" %{{brave ~/startpage.html}}
+c "Mullvad Chrome" %{{mullvad-exclude chrome ~/startpage.html}}
+x "XDG-OPEN" %{{xdg-open ~/startpage.html}}
+```
+
+Admittedly, chord expressions may not be that useful but
+they were easy to implement so they are here for those who
+want to use them.
+
+#### Interpolations
+
+I have used interpolations in the last few examples without
+any explanation. Let's fix that.
+
+```
+interpolation -> '%(' identifier ')' ;
+```
+
+The basic syntax for an interpolation begins with a `%(`
+delimiter followed by an identifier and a closing
+parentheses (`)`). Note that interpolations can only be used
+in descriptions and commands.
+
+The basic idea of an interpolation is to provide users with
+easy access to metadata about a chord. The following
+identifiers are recognized in an interpolation along with
+their corresponding metadata.
+
+| Identifier | Metadata                                                                        |
+|------------|---------------------------------------------------------------------------------|
+| `key`      | The key portion of the chord.                                                   |
+| `index`    | The base 0 index of the chord in the current scope (prefixes begin new scopes). |
+| `index+1`  | The base 1 index of the chord in the current scope (prefixes begin new scopes). |
+| `desc`     | The description of the current chord. May not be given with the description.    |
+| `desc^`    | The description of the current chord with the first character capitalized.      |
+| `desc^^`   | The description of the current chord with all characters capitalized.           |
+| `desc,`    | The description of the current chord with the first character downcased.        |
+| `desc,,`   | The description of the current chord with all characters downcased.             |
+
+There are only a few identifiers that can be interpolated,
+but even this small set makes `wk` more scriptable.
+
+#### Keywords 
+
+So far keywords have been glossed over, but they are very
+handy.
+
+```
+keyword -> ( hook | flag ) ;
+```
+
+A keyword is either a hook or a flag. Both have equal
+precedence, meaning they can be mixed up wherever they are
+permitted.
+
+##### Hooks
+
+Hooks provide means of adding additional commands to a chord
+or prefix. 
+
+```
+hook -> '^' ( 'before'
+            | 'after'
+            | 'sync-before'
+            | 'sync-after' ) command ;
+```
+
+A hook begins with the caret character (`^`), followed by
+the type of hook, and finally the command the hook will run.
+
+The hook type has to do with the order the command will be
+run. The `before` hooks runs before the chord's command, and
+the `after` hooks run after the chord's command. The
+`sync-*` hooks relate to how `wk` runs the commands. By
+default, all commands are run asynchronously to prevent a
+command from blocking `wk`. However, if the hook must
+complete before `wk` can proceed you can use the `sync-*`
+variant to enforce this behavior. 
+
+**Note** that a blocking command may prevent `wk` from ever
+resuming execution. In the event that this happens, users
+may need to restart their system entirely to regain control
+of their keyboard.
+
+Users can certainly chain commands together the same way one
+would chain commands in a regular shell, but hooks help to
+reduce repition. They also make more sense in the context of
+prefixes.
+
+```
+# With hooked prefix
+e "+Emacs" ^before %{{xdotool set_desktop 1}}
+{
+    o "Open" %{{emacsclient -c -a ""}}
+    r "Roam" %{{emacsclient -c -a "" ~/20240101080032-startpage.org}}
+}
+
+# Without hooks 
+e "+Emacs"
+{
+    o "Open" %{{xdotool set_desktop 1 ; emacsclient -c -a ""}}
+    r "Roam" %{{xdotool set_desktop 1 ; emacsclient -c -a "" ~/20240101080032-startpage.org}}
+}
+```
+
+As you can see, this helps to cut down on repition, but it
+also helps me enforce a workflow rule without the need to
+setup desktop environment rules and such.
+
+This example also hints at the idea of inheritance as the
+hook was given to a prefix and not to individual chords.
+This topic is coverd after introducing flags as these also
+factor into the discussion.
+
+##### Flags
+
+Flags are similar to command-line flags in that they change
+the behavior of `wk`. 
+
+```
+flag -> '+' ( 'keep'
+            | 'close'
+            | 'inherit'
+            | 'ignore'
+            | 'unhook'
+            | 'deflag'
+            | 'no-before'
+            | 'no-after'
+            | 'write'
+            | 'execute'
+            | 'sync-command' ) ;
+```
+
+Flags begin with a plus character (`+`), followed by the
+flag itself. Here is how each flag changes the behavior of
+`wk`:
+
+| Flag           | Behavior                                                                                                                      |
+|----------------|-------------------------------------------------------------------------------------------------------------------------------|
+| `keep`         | Instead of closing after `wk` finds a matching chord, it keeps the `wk` menu open.                                            |
+| `close`        | Forces the `wk` window to close. Useful when `+keep` was given to a surrounding prefix.                                       |
+| `inherit`      | Causes the prefix to inherit flags and hooks from it's parent. Has no effect when given to a chord.                           |
+| `ignore`       | Ignore all hooks and flags from the surrounding prefix. Has no effect when given to a prefix.                                 |
+| `unhook`       | Ignore all hooks from the surrounding prefix.                                                                                 |
+| `deflag`       | Ignore all flags from the surrounding prefix.                                                                                 |
+| `no-before`    | Ignore `before` and `sync-before` hooks from the surrounding prefix.                                                          |
+| `no-after`     | Ignore `after` and `sync-after` hooks from the surrounding prefix.                                                            |
+| `write`        | Write commands to stdout rather than executing them.                                                                          |
+| `execute`      | Execute command rather than writting them to stdout. Useful when `+write` was given to a surrounding prefix.                  |
+| `sync-command` | Execute the command in a blocking fashion. See the note in [hooks](#hooks) regarding potential issues with blocking commands. |
+
+Each flag has a time and a place but I find `+keep`, and
+`+write` to be the most useful out of the bunch.
+
+The `+keep` flag can turn `wk` into a hydra of sorts. I use
+this to control music playback on my system like this:
+
+```
+m "+Music" +keep
+{
+    c "Clear mpc" %{{mpc clear}}
+    d "Display Song" %{{songinfo}}
+    h "Seek -5" %{{mpc seek "-5"}}
+    l "Seek +5" %{{mpc seek "+5"}}
+    n "Next song" %{{mpc next}}
+    p "Prev song" %{{mpc prev}}
+    o "Open mpc" +close %{{st -e ncmpcpp}}
+    y "Playlist" +close %{{st -e ncmpcpp playlist}}
+}
+```
+
+The `+write` flag is useful for scripting purposes. In the
+same way that `dmenu` and co print selections to stdout,
+this turns `wk` into a prompt for users to choose from some
+list of options with less typing.
+
+##### Inheritance 
+
+Inheritance relating to hooks and flags given to prefixes is
+fairly simple. A hook or flag given to a prefix is inherited
+by any chord within the prefix. Nested prefixes do not
+inherit the hooks and flags given to their parent. 
+
+```
+a "+Prefix" +write 
+{
+    w "Write it!" %{{I get written!}}
+    n "+Nested Prefix"
     {
-        d "A useful description" %{{echo "It takes three keys to reach me!"}}
+        e "Run it!" %{{echo "I get run!"}}
     }
 }
 ```
 
-This is all pretty standard when it comes to key chords, but
-`wks` files can get a bit different. Let's start with hooks
-and flags.
+In the above example, the key chord `a w` causes `I get
+written!` to be printed to stdout. The key chord `a n e`
+runs the command `echo "I get run!"`.
 
-### Hooks
+To force a nested prefix to inherit from it's parent the
+`+inherit` flag may be given. Additionally, if the prefix
+only wishes to inherit certain hooks or flags additional
+flags may be given to ignore unwanted behavior.
 
-One new concept that `wks` files offer for key chords is the
-use of hooks and flags. A hook is a command that can be run
-before or after a key chords command. In a `wks` file they
-go between the description and the key chord command, like
-this:
+### Preprocessor Macros 
 
-```
-h "Hooks galore!" ^before %{{echo "I run first!"}} ^after %{{echo "I run third!"}}
-    %{{echo "I run second!"}}
-```
-
-In the above example when the key chord `h` is used, `wk`
-will run the before hook, the command, and then the after
-hook for the chord. By default these are all run
-asynchronously to prevent a hook or command from interfering
-with `wk` in the case where the command may not complete.
-
-For a full overview see the [hooks](man/wks.5.org#hook)
-section of the man page.
-
-### Flags
-
-While hooks add commands to key chords, flags change the
-behavior of `wk`. In a `wks` file they also go between the
-description and the command. Hooks and flags have the same
-precedence, meaning they can be given before or after one
-another without issue, so long as they are all between the
-description and command. Here are a few hooks that I use
-most often.
+There are a number of preprocessor macros that can be used
+in `wks` files. These have a number of uses from making
+`wks` files more modular to controlling the look and feel of
+`wk`. 
 
 ```
-n "Next" +keep %{{mpc next}}
-p "Previous" +keep %{{mpc previous}}
-w "Write" +write %{{This doesn't look like a shell command...}} 
+preprocessor_macro -> ':' ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
 ```
 
-The two flags above are the `+keep` and `+write` flags. The
-`+keep` flag keeps `wk` open after the key chord is
-triggered. This is useful when you may want to repeat the
-key chord without having to start from the begining. The
-second flag is the `+write` flag. Normally, everything
-between the `%{{` and `}}` delimiters is run as a shell
-command. However, you may want to simply write this
-information to the console instead. I find this handy for
-scripts as a sort of `dmenu` altrenative. I have some
-[examples](#examples) below that feature the `+write` flag.
+A preproccessor macro begins with the colon character (`:`)
+followed by a specific macro form.
 
-The full list of flags is covered in the
-[man](man/wks.5.org#flag) page.
+The majority of macros correspond to the command-line
+arguments that `wk` supports. When given, these override
+anything given at the command-line. They are here to provide
+a baked in alternative to the command-line versions making
+it easy to simply run the `wks` file and get the desired
+look and feel without having to give the same arguments each
+time. It can also help distingush the purpose of the file
+if it is intended to be used as part of a script by making
+the `wk` popup window different from the builtin settings.
 
-### Hooks and Flags with Prefixes
+#### String Macros 
 
-Hooks and flags can also be given to prefixes. To give a
-hook or flag to a prefix, simply add it after the
-description and before the opening brace `{` like this:
+String macros require a string argument.
 
 ```
-m "+Music" +keep 
+string_macro -> ( 'include'
+                | 'fg-color'
+                | 'bg-color'
+                | 'bd-color'
+                | 'shell'
+                | 'font' ) '"' ( '\\"' | [^"] )* '"' ) ;
+```
+
+Many of the macros here work the same as their command-line
+counter parts. Simply use `:MACRO "ARGUMENT"` to  make use
+of any string macro. 
+
+##### The Include Macro
+
+Out of the string macros, the `include` macro is not present
+as a command-line argument to `wk`. This is because this
+macro has more to do with `wks` files than the look and feel
+of `wk`.
+
+The `include` macro works similarly to the `#include` macro
+found in C/C++. It allows users to bring other `wks` files
+into a single file. **Note**, self includes and recursive
+includes are not permitted and will cause an error.
+
+Here is an example of the `include` macro:
+
+```
+# File main.wks
+---------------
+# Browser prefix
+b "+Browser" { :include "browser_key_chords.wks" }
+# Emacs prefix
+e "+Emacs" ^before %{{xdotool set_desktop 1}} { :include "emacs_key_chords.wks" }
+# mpc prefix
+m "+Music" +keep { :include "music_key_chords.wks" }
+
+# File browser_key_chords.wks
+-----------------------------
+[
+    (b "Brave")
+    (c "Chrome")
+    (f "Firefox")
+] "null" %{{%(desc,,)}} 
+
+# Mullvad-exclude prefix
+m "+Mullvad Exclude"
 {
-    n "Next" %{{mpc next}}
-    p "Previous" %{{mpc previous}}
+    [
+        (b "Brave")
+        (c "Chrome")
+        (f "Firefox")
+    ] "null" %{{mullvad-exclude %(desc_)}}
 }
+
+# File emacs_key_chords.wks
+---------------------------
+b "Open blank" %{{emacsclient -c -a ""}}
+p "+Projects"
+{
+    w "wk" %{{emacs "~/Projects/wk"}}
+}
+
+# File music_key_chords.wks
+-------------------------
+c "Clear mpc" %{{mpc clear}}
+d "Display song" %{{songinfo}}
+h "Seek -5s" %{{mpc seek "-5"}}
+l "Seek +5s" %{{mpc seek "+5"}}
+n "Next song" %{{mpc next}}
+p "Prev song" %{{mpc prev}}
+o "Open mpc" +close %{{st -e ncmpcpp}}
 ```
 
-When a hook or flag is given to a prefix it propagates to
-all chords within the block. If the block contains any
-prefixes, the hooks and flags will not propagate to these by
-default. This is a shallow inheritance that can be
-overridden with the `+inherit` flag for prefixes that wish
-to propagate their parent's hooks and flags to the next
-block. 
-
-See [inheritance](man/wks.5.org#inheritance) for more
-information. 
-
-### Comments and Special Symbols
-
-Comments are normal part of most configuration files. `wks`
-supports comments with the `#` character. After the `#` the
-rest of the line will be treated as a comment until the end
-of the line. The only caveat to this is that `#` symbols
-inside descriptions and commands are not interpreted as
-comments. Everywhere else they are interpreted as the start
-of a comment. To use the `#` symbol as a trigger key, simply
-add a `\` before the `#`. The same can be done for any of
-the special characters: `[]{}#":^+()`. 
-
-### Key Syntax 
-
-Keys, or trigger keys, are a pretty important part of key
-chords. In a `wks` file any utf8 character can be
-interpreted as a key. The only exceptions are the special
-characters: `[]{}#":^+()`. To use these as a key simply add
-a `\` infront of the character. 
-
-#### Special keys
-
-While many keys are simple keys you would normally type, not
-all are like this. Thankfully, `wks` supports the following
-special keys in the corresponding forms:
-
-| Key            | Representation in `wks` |
-|----------------|-------------------------|
-| Left arrow     | Left                    |
-| Right arrow    | Right                   |
-| Up arrow       | Up                      |
-| Down arrow     | Down                    |
-| Tab            | TAB                     |
-| Space          | SPC                     |
-| Enter/Return   | RET                     |
-| Delete         | DEL                     |
-| Esc            | ESC                     |
-| Home           | Home                    |
-| Page up        | PgUp                    |
-| Page down      | PgDown                  |
-| End            | End                     |
-| Begin          | Begin                   |
-| F[1-35]        | F[1-35]                 |
-| Volume Down    | VolDown                 |
-| Mute Vol       | VolMute                 |
-| Volume Up      | VolUp                   |
-| Play Audio     | Play                    |
-| Stop Audio     | Stop                    |
-| Audio Previous | Prev                    |
-| Audio Next     | Next                    |
-
-Regular keys are parsed without concern for whitespace, but
-special keys do require some whitespace after the final
-character to be properly parsed.
-
-#### Modifiers 
-
-Many people use modifiers with trigger keys. These are
-supported in `wks` files via `C-`, `A-`, `H-`, and `S-`
-which correspond to `Control`, `Alt`, `Hyper` or `Super`,
-and `Shift`. Multiple modifiers can be given to a trigger
-key like so:
-
-```
-C-A-H-A "That's a lot of keys" %{{echo "Was it worth it?"}}
-```
-
-The above key chord is triggered when a user presses
-`Control + Alt + Hyper + Shift + a`. The notable point about
-modifiers is that the `S-` modifier is only considered by
-`wk` when given to a special key. Aside from those keys
-users should use the shifted version of their trigger key as
-shown here. I'm open to changing this behavior in the future.
-
-### Chord Arrays and Interpolations 
-
-#### Chord Arrays
-
-Some chords only vary slightly one from another. To make
-these chords easier to express, `wks` files support chord
-arrays.
-
-```
-[arstgmnei] "Tag %(index+1)" %{{dwmc %(index)}}
-```
-
-The above is equivelent to the following:
-
-```
-a "Tag 1" %{{dwmc 0}}
-r "Tag 2" %{{dwmc 1}}
-s "Tag 3" %{{dwmc 2}}
-t "Tag 4" %{{dwmc 3}}
-g "Tag 5" %{{dwmc 4}}
-m "Tag 6" %{{dwmc 5}}
-n "Tag 7" %{{dwmc 6}}
-e "Tag 8" %{{dwmc 7}}
-i "Tag 9" %{{dwmc 8}}
-```
-
-#### Interpolations 
-
-Chord arrays often go hand in hand with another `wks`
-feature, interpolations. Interpolations may be given in
-descriptions and commands to make use of meta information
-about the chord itself. An interpolation begins with `%(`
-and ends with `)`. Only recognized identifiers should go
-inbetween these delimiters. For a full list of supported
-identifiers please see the [man](man/wks.5.org#IDENTIFIER)
-page.
-
-The above example demonstrated the `%(index)` and
-`%(index+1)` interpolations. These correspond to the 0 and 1
-based index of each chord respectively. In this example the
-only chords are the ones shown, but every chord in a block
-has an index, not just those in a chord array. 
-
-You may have noticed that the equivelent example is not
-sorted. The default behavior for `wk` is to not sort the key
-chords in `wks` files in order to not conflict with user
-expectations about the value of `%(index[+1])`
-interpolations. Had sorting been used the above example
-would have been equivelent to this: 
-
-```
-a "Tag 1" %{{dwmc 0}}
-e "Tag 2" %{{dwmc 1}}
-g "Tag 3" %{{dwmc 2}}
-i "Tag 4" %{{dwmc 3}}
-m "Tag 5" %{{dwmc 4}}
-n "Tag 6" %{{dwmc 5}}
-r "Tag 7" %{{dwmc 6}}
-s "Tag 8" %{{dwmc 7}}
-t "Tag 9" %{{dwmc 8}}
-```
-
-For a better understanding see the
-[sorting](man/wks.5.org#sorting) section of the man page.
+This allows users to create key chords in a more modular
+manner. This can be beneficial when you may want to reuse a
+`wks` file in a different context than your main key chords.
 
 ### Full documentation
 
