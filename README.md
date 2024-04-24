@@ -14,7 +14,7 @@ Inspired by
 
 `wk` offers users a portable, scriptable, and highly
 customizable interface for their key chord mappings through
-a number sources. Key chords can be built into the binary
+a number of sources. Key chords can be built into the binary
 via the [key_chords.def.h](config/key_chords.def.h) header, read
 from a [wks file](#wks-Files), or read from stdin with the
 same `wks` syntax.
@@ -62,7 +62,7 @@ only display on one screen.
 # Usage
 
 ``` sh
-# Display builtin key chords.
+# Display built-in key chords.
 wk 
 
 # Display menu at the top of the screen.
