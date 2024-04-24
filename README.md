@@ -96,10 +96,10 @@ options:
     -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.
     -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.
     -w, --window-width INT     Set window width to INT.
-    -g, --window-gap INT       Set window gap between top/bottom of screen to INT.
+    -g, --window-gap INT       Set window gap between top/bottom of the screen to INT.
                                Set to '-1' for a gap equal to 1/10th of the screen height.
     --border-width INT         Set border width to INT.
-    --border-radius NUM        Set border radius to NUM.
+    --border-radius NUM        Set border-radius to NUM.
     --wpadding INT             Set left and right padding around hint text to INT.
     --hpadding INT             Set up and down padding around hint text to INT.
     --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').
@@ -114,7 +114,7 @@ run `man 1 wk` for more info on each option.
 
 # Configuration 
 
-`wk` can be configured at the command line as show in the
+`wk` can be configured at the command line as shown in the
 above help message, or your configuration can be built into
 the binary by changing the settings in
 [config.def.h](config/config.def.h). 
@@ -122,19 +122,19 @@ the binary by changing the settings in
 # wks Files
 
 Which-Key source (`wks`) files are the driving force behind
-`wk`. The syntax is novel, but provides a flexible means to
+`wk`. The syntax is novel but provides a flexible means to
 manage and express key chords. Below is an introduction to
 the `wks` syntax to get users up and running. For a deep
-dive see the [man](man/wks.5.org) page.
+dive, see the [man](man/wks.5.org) page.
 
 ## Comments
 
 In `wks` files, comments can be added using the `#`
-character. When a `#` is encountered it signifies the start
+character. When a `#` is encountered, it signifies the start
 of a comment. The comment extends from the `#` character
 until the end of the line. It's important to note that the
 `#` character is treated as a literal character within
-descriptions and commands, and does not indicate the start
+descriptions and commands and does not indicate the start
 of a comment in those contexts.
 
 ## Key Chords
@@ -145,12 +145,12 @@ key_chord -> ( chord | prefix | chord_array ) ;
 
 The `key_chord` is the main building block of a `wks` file.
 This can be either a `chord`, `prefix`, or a `chord_array`.
-The chord is the most basic example of a key chord, and
+The chord is the most basic example of a key chord and
 serves as a good entry point for this discussion.
 
 ### Chords 
 
-A chord is key chord that results in some `wk` performing
+A chord is a key chord that results in `wk` performing
 some action, like executing a command, when the trigger key
 is pressed. The formal grammar looks like this:
 
@@ -159,8 +159,8 @@ chord -> key description keyword* command ;
 ```
 
 All chords must have a `key`, `description`, and a
-`command`. Zero or more `keyword`s may be given, these will
-be addressed later. For now let's breakdown the required
+`command`. Zero or more `keyword`s may be given. These will
+be addressed later. For now, let's break down the required
 parts of the chord.
 
 #### Keys
@@ -182,8 +182,8 @@ escaped character with special meaning, any non-whitespace,
 printable utf8 character, or a `special_key`. 
 
 The characters `\`, `[`, `]`, `{`, `}`, `#`, `"`, `:`, `^`,
-`+`, `(`, and `)` have special meaning in `wks` files. To
-use any of these as a key simply preced them with a
+`+`, `(`, and `)` have special meanings in `wks` files. To
+use any of these as a key, simply precede them with a
 backslash `\`.
 
 All other non-whitespace, printable utf8 characters prior to
@@ -269,11 +269,11 @@ expected because the key will never match when the user
 presses `Shift+a`. 
 
 I am open to changing it so that `S-a` and `A` match the
-same `Shift+a` keypress but I have yet to find a fitting
+same `Shift+a` keypress, but I have yet to find a fitting
 solution. The ones I can think of either involve depending
 on some utf8 library, writing the code by hand, or
-permitting this syntax for ascii but not other character
-sets. Each has it's own drawback, and I find the current
+permitting this syntax for ASCII but not other character
+sets. Each has its own drawback, and I find the current
 solution to be intuitive in practice.
 
 #### Descriptions 
@@ -289,7 +289,7 @@ A description starts with a double quote (`"`), followed by
 zero or more escaped double quotes, non-double quote
 characters, or an interpolation and ends with a double
 quote. Aside from interpolations, a description looks like
-your typical string many programming languages. 
+your typical string in many programming languages. 
 
 #### Commands 
 
@@ -301,14 +301,14 @@ command -> '%{{' ( . | interpolation )* '}}' ;
 ```
 
 A command begins with the `%{{` delimiter and ends with the
-`}}` delimiter. Everything in-between is taken as part of
+`}}` delimiter. Everything in between is taken as part of
 the command for the key chord. There is no need to do
 anything special here, just provide your shell command as
 you would at the command line. 
 
 #### Basic Chord Example 
 
-Having learned a large portion of the syntax so far we can
+Having learned a large portion of the syntax so far, we can
 create our first chord using `wks` syntax.
 
 ```
@@ -321,7 +321,9 @@ prefix.
 
 ### Prefixes
 
-A prefix has the following syntax:
+A prefix is a special type of key chord that acts as a 
+container for other key chords. It represents an incomplete 
+key combination that does not trigger a command on its own.
 
 ```
 prefix -> key description keyword* '{' ( key_chord )+ '}' ;
@@ -330,18 +332,16 @@ prefix -> key description keyword* '{' ( key_chord )+ '}' ;
 A prefix has many of the same components as a chord. It
 begins with a key, followed by a description, zero or more
 keywords and then a block of one or more key chords
-sourounded by an opening and closing brace, `{`, and `}`
-respectively.
+surrounded by an opening and closing brace (`{`, and `}`).
 
-Note that a key chord may be a prefix, a chord, or a chord
-array, meaning many prefixes can be nested one inside
-another. It should also be noted that a prefix has no
-command compared to a chord.
+**Note** that a key chord may be a prefix, a chord, or a 
+chord array, meaning many prefixes can be nested one 
+inside another.
 
 Here is a simple example of a prefix:
 
 ```
-m "+mpc"
+m "+Music"
 {
     n "Next" %{{mpc next}}
     p "Prev" %{{mpc prev}}
@@ -353,7 +353,7 @@ m "+mpc"
 Chords and prefixes are standard fare in the realm of key
 chords, so what the heck is a chord array? Well, mostly
 syntactic sugar so you do not have to repeat yourself when
-it comes to chords that are very simlar but only differ in
+it comes to chords that are very similar but only differ in
 slightly different ways.
 
 ```
@@ -364,8 +364,9 @@ To use a chord array begin with an open bracket (`[`)
 followed by one or more keys or chord expressions. The array
 portion ends with a closing bracket (`]`) followed by the
 standard chord components, a description, zero or more
-keywords, and a command. I think an example will make things
-more clear.
+keywords, and a command. 
+
+I think an example will make things clear:
 
 ```
 # Chord array version
@@ -384,10 +385,10 @@ i "Switch workspace 9" %{{xdotool set_desktop 8}}
 ```
 
 As you can see, chord arrays can cut down on the need to
-repeat common information accross chords. However, this
+repeat common information across chords. However, this
 would not be useful if the resulting chords were exactly the
 same. Thankfully, interpolations make it easy for the
-resulting chords differ without interfering with the common
+resulting chords to differ without interfering with the common
 elements. 
 
 Interpolations are covered in full detail later, but the
@@ -397,9 +398,9 @@ about a chord into descriptions and commands.
 #### Chord Expressions
 
 Chord arrays can be very simple with each chord being only
-slightly different one from another. However, it may make
+slightly different from one another. However, it may make
 sense to include chords that mostly fit into the chord array
-with some more distinct differences. For this situation
+with some more distinct differences. For this situation,
 chord expressions may be the answer.
 
 ```
@@ -409,11 +410,12 @@ chord_expression -> '(' key description keyword* command? ')' ;
 A chord expression is only valid within a chord array, and
 it is essentially a chord wrapped in parentheses with some
 added flexibility. Normally, a chord requires at least a
-key, a description, and a command. A chord expression on the
-other hand requires only a key and a description. Any other
-information will be filled in by the sourounding chord
-array. Here is an example of a chord expression within a
-chord array:
+key, a description, and a command. A chord expression, on the
+other hand, requires only a key and a description. Any other
+information will be filled in by the surrounding chord
+array. 
+
+Here is an example of a chord expression within a chord array:
 
 ```
 # With chord arrays and chord expressions
@@ -443,11 +445,11 @@ interpolation -> '%(' identifier ')' ;
 ```
 
 The basic syntax for an interpolation begins with a `%(`
-delimiter followed by an identifier and a closing
-parentheses (`)`). Note that interpolations can only be used
+delimiter followed by an identifier and closing
+parenthesis (`)`). **Note** that interpolations can only be used
 in descriptions and commands.
 
-The basic idea of an interpolation is to provide users with
+The basic idea of interpolation is to provide users with
 easy access to metadata about a chord. The following
 identifiers are recognized in an interpolation along with
 their corresponding metadata.
@@ -457,7 +459,7 @@ their corresponding metadata.
 | `key`      | The key portion of the chord.                                                   |
 | `index`    | The base 0 index of the chord in the current scope (prefixes begin new scopes). |
 | `index+1`  | The base 1 index of the chord in the current scope (prefixes begin new scopes). |
-| `desc`     | The description of the current chord. May not be given with the description.    |
+| `desc`     | The description of the current chord. May not be given within the description.  |
 | `desc^`    | The description of the current chord with the first character capitalized.      |
 | `desc^^`   | The description of the current chord with all characters capitalized.           |
 | `desc,`    | The description of the current chord with the first character downcased.        |
@@ -495,9 +497,10 @@ A hook begins with the caret character (`^`), followed by
 the type of hook, and finally the command the hook will run.
 
 The hook type has to do with the order the command will be
-run. The `before` hooks runs before the chord's command, and
-the `after` hooks run after the chord's command. The
-`sync-*` hooks relate to how `wk` runs the commands. By
+run. The `before` hooks run before the chord's command, and
+the `after` hooks run after the chord's command. 
+
+The `sync-*` hooks relate to how `wk` runs the commands. By
 default, all commands are run asynchronously to prevent a
 command from blocking `wk`. However, if the hook must
 complete before `wk` can proceed you can use the `sync-*`
@@ -510,7 +513,7 @@ of their keyboard.
 
 Users can certainly chain commands together the same way one
 would chain commands in a regular shell, but hooks help to
-reduce repition. They also make more sense in the context of
+reduce repetition. They also make more sense in the context of
 prefixes.
 
 ```
@@ -529,13 +532,13 @@ e "+Emacs"
 }
 ```
 
-As you can see, this helps to cut down on repition, but it
-also helps me enforce a workflow rule without the need to
+As you can see, this helps to cut down on repetition, but it
+also helps enforce a workflow rule without the need to
 setup desktop environment rules and such.
 
 This example also hints at the idea of inheritance as the
 hook was given to a prefix and not to individual chords.
-This topic is coverd after introducing flags as these also
+This topic is covered after introducing flags as these also
 factor into the discussion.
 
 #### Flags
@@ -565,14 +568,14 @@ flag itself. Here is how each flag changes the behavior of
 |----------------|-------------------------------------------------------------------------------------------------------------------------------|
 | `keep`         | Instead of closing after `wk` finds a matching chord, it keeps the `wk` menu open.                                            |
 | `close`        | Forces the `wk` window to close. Useful when `+keep` was given to a surrounding prefix.                                       |
-| `inherit`      | Causes the prefix to inherit flags and hooks from it's parent. Has no effect when given to a chord.                           |
+| `inherit`      | Causes the prefix to inherit flags and hooks from its parent. Has no effect when given to a chord.                            |
 | `ignore`       | Ignore all hooks and flags from the surrounding prefix. Has no effect when given to a prefix.                                 |
 | `unhook`       | Ignore all hooks from the surrounding prefix.                                                                                 |
 | `deflag`       | Ignore all flags from the surrounding prefix.                                                                                 |
 | `no-before`    | Ignore `before` and `sync-before` hooks from the surrounding prefix.                                                          |
 | `no-after`     | Ignore `after` and `sync-after` hooks from the surrounding prefix.                                                            |
 | `write`        | Write commands to stdout rather than executing them.                                                                          |
-| `execute`      | Execute command rather than writting them to stdout. Useful when `+write` was given to a surrounding prefix.                  |
+| `execute`      | Execute the command rather than writing them to stdout. Useful when `+write` was given to a surrounding prefix.               |
 | `sync-command` | Execute the command in a blocking fashion. See the note in [hooks](#hooks) regarding potential issues with blocking commands. |
 
 Each flag has a time and a place but I find `+keep`, and
@@ -613,7 +616,7 @@ a "+Prefix" +write
     w "Write it!" %{{I get written!}}
     n "+Nested Prefix"
     {
-        e "Run it!" %{{echo "I get run!"}}
+        r "Run it!" %{{echo "I get run!"}}
     }
 }
 ```
@@ -622,8 +625,8 @@ In the above example, the key chord `a w` causes `I get
 written!` to be printed to stdout. The key chord `a n e`
 runs the command `echo "I get run!"`.
 
-To force a nested prefix to inherit from it's parent the
-`+inherit` flag may be given. Additionally, if the prefix
+To force a nested prefix to inherit from its parent the
+`+inherit` flag must be given. Additionally, if the prefix
 only wishes to inherit certain hooks or flags additional
 flags may be given to ignore unwanted behavior.
 
@@ -642,16 +645,16 @@ preprocessor_macro -> ':' ( string_macro
                           | number_macro ) ;
 ```
 
-A preproccessor macro begins with the colon character (`:`)
+A preprocessor macro begins with the colon character (`:`)
 followed by a specific macro form.
 
 The majority of macros correspond to the command-line
 arguments that `wk` supports. When given, these override
 anything given at the command-line. They are here to provide
-a baked in alternative to the command-line versions making
+a baked-in alternative to the command-line versions making
 it easy to simply run the `wks` file and get the desired
 look and feel without having to give the same arguments each
-time. It can also help distingush the purpose of the file
+time. It can also help distinguish the purpose of the key chords
 if it is intended to be used as part of a script by making
 the `wk` popup window different from the builtin settings.
 
@@ -669,8 +672,8 @@ string_macro -> ( 'include'
 ```
 
 Many of the macros here work the same as their command-line
-counter parts. Simply use `:MACRO "ARGUMENT"` to  make use
-of any string macro. 
+counterparts. Simply use `:MACRO "ARGUMENT"` to  make use
+of any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
 
 #### The Include Macro
 
@@ -681,8 +684,13 @@ of `wk`.
 
 The `include` macro works similarly to the `#include` macro
 found in C/C++. It allows users to bring other `wks` files
-into a single file. **Note**, self includes and recursive
-includes are not permitted and will cause an error.
+into a single file. 
+
+**Note**, self includes and recursive includes are not 
+permitted and will cause an error.
+
+**Note**, the same file may be included multiple times. This
+is not an error, and may even be desirable for some users.
 
 Here is an example of the `include` macro:
 
@@ -723,7 +731,7 @@ p "+Projects"
 }
 
 # File music_key_chords.wks
--------------------------
+---------------------------
 c "Clear mpc" %{{mpc clear}}
 d "Display song" %{{songinfo}}
 h "Seek -5s" %{{mpc seek "-5"}}
@@ -736,6 +744,31 @@ o "Open mpc" +close %{{st -e ncmpcpp}}
 This allows users to create key chords in a more modular
 manner. This can be beneficial when you may want to reuse a
 `wks` file in a different context than your main key chords.
+
+**Note**, while the `#include` macro in C/C++ has restrictions 
+on where it can go in a file, the`:include` macro in a `wks` file
+may go literally anywhere. In the above example, this was given in
+the middle of a prefix without error. 
+
+You can even do silly things like this:
+
+```
+# File part_one.wks
+-------------------
+A "silly :include "part_two.wks"
+
+# File part_two.wks
+-------------------
+example" %{{echo "You wouldn't do this right??"}}
+
+# Resulting wks file
+--------------------
+A "silly example" %{{echo "You wouldn't do this right??"}}
+```
+
+As for file resolution, it's pretty simple. A relative path 
+is assumed to be in the same directory as the file being executed, 
+and absolute paths are just that, absolute.
 
 ## Full documentation
 
