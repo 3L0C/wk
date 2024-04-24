@@ -466,7 +466,6 @@ compileChord(Compiler* compiler)
     compileMods(compiler, &chord->key.mods);
     compileKey(compiler, chord);
     collectDescriptionTokens(compiler, &chord->description);
-    /* Don't compile hint until the end of scope */
     compileHooksAndFlags(compiler, chord);
 
     /* Prefix */
@@ -896,28 +895,6 @@ compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t in
     disownString(&result);
 }
 
-static void
-compileHint(Compiler* compiler, KeyChord* keyChord)
-{
-    assert(compiler), assert(keyChord);
-    if (compiler->panicMode) return;
-
-    String result = {0};
-    initString(&result);
-    Modifiers* mods = &keyChord->key.mods;
-    if (mods->ctrl) appendToString(&result, "C-", 2);
-    if (mods->alt) appendToString(&result, "A-", 2);
-    if (mods->hyper) appendToString(&result, "H-", 2);
-    if (mods->shift) appendToString(&result, "S-", 2);
-    if (keyChord->key.repr) appendToString(&result, keyChord->key.repr, keyChord->key.len);
-    if (compiler->delimiter) appendToString(&result, compiler->delimiter, compiler->delimiterLen);
-    if (keyChord->description) appendToString(
-        &result, keyChord->description, strlen(keyChord->description)
-    );
-    keyChord->hint = result.string;
-    disownString(&result);
-}
-
 static KeyChord*
 compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
 {
@@ -944,8 +921,6 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
         compileKeyFromToken(&pseudo->keyToken, &chord->key);
         /* Description */
         compileStringFromTokens(&pseudo->description, chord, &chord->description, i);
-        /* Hint */
-        compileHint(compiler, chord);
         /* Hooks */
         compileStringFromTokens(&pseudo->before, chord, &chord->before, i);
         compileStringFromTokens(&pseudo->after, chord, &chord->after, i);

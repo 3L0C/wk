@@ -296,13 +296,13 @@ handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable*
     case TOKEN_FOREGROUND_PREFIX_COLOR:
     {
         setMenuColor(menu, arg.string, MENU_COLOR_PREFIX);
-        menu->garbage.foregroundPrefixDescColor = arg.string;
+        menu->garbage.foregroundPrefixColor = arg.string;
         break;
     }
     case TOKEN_FOREGROUND_CHORD_COLOR:
     {
         setMenuColor(menu, arg.string, MENU_COLOR_CHORD);
-        menu->garbage.foregroundPrefixDescColor = arg.string;
+        menu->garbage.foregroundChordColor = arg.string;
         break;
     }
     case TOKEN_BACKGROUND_COLOR:

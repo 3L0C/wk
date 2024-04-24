@@ -41,7 +41,6 @@ writeChordsHeader(void)
         " *     key, key_len\n"
         " * ),\n"
         " * description,\n"
-        " * hint,\n"
         " * command\n"
         " * before\n"
         " * after\n"
@@ -177,7 +176,6 @@ writeChord(const KeyChord* keyChord, int indent)
     printf("KEY_CHORD_STATE_NOT_NULL, ");
     writeChordKey(&keyChord->key, indent);
     writeEscStringWithIndent(keyChord->description, indent);
-    writeEscString(keyChord->hint);
 
     /* command */
     writeEscStringWithIndentAndNewline(keyChord->command, indent);

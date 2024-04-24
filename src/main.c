@@ -29,7 +29,6 @@ freeKeyChords(KeyChord* keyChords)
     {
         free(keyChords[i].key.repr);
         free(keyChords[i].description);
-        free(keyChords[i].hint);
         free(keyChords[i].command);
         free(keyChords[i].before);
         free(keyChords[i].after);

@@ -62,7 +62,7 @@
     {                                           \
         KEY_CHORD_STATE_IS_NULL,                \
         MAKE_NULL_KEY,                          \
-        NULL, NULL,                             \
+        NULL,                                   \
         NULL,                                   \
         NULL,                                   \
         NULL,                                   \
@@ -186,7 +186,6 @@ typedef struct KeyChord
     KeyChordState state;
     Key key;
     char* description;
-    char* hint;
     char* command;
     char* before;
     char* after;

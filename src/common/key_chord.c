@@ -123,7 +123,6 @@ copyKeyChord(const KeyChord* from, KeyChord* to)
     to->state = from->state;
     copyKey(&from->key, &to->key);
     to->description = from->description;
-    to->hint = from->hint;
     to->command = from->command;
     to->before = from->before;
     to->after = from->after;
@@ -219,7 +218,6 @@ initKeyChord(KeyChord* keyChord)
     keyChord->state = KEY_CHORD_STATE_NOT_NULL;
     initKey(&keyChord->key);
     keyChord->description = NULL;
-    keyChord->hint = NULL;
     keyChord->command = NULL;
     keyChord->before = NULL;
     keyChord->after = NULL;
@@ -339,7 +337,6 @@ makeNullKeyChord(KeyChord* keyChord)
     keyChord->state = KEY_CHORD_STATE_IS_NULL;
     initKey(&keyChord->key);
     keyChord->description = NULL;
-    keyChord->hint = NULL;
     keyChord->command = NULL;
     keyChord->before = NULL;
     keyChord->after = NULL;

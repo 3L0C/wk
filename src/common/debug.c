@@ -332,7 +332,6 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
 
     disassembleKeyWithoutHeader(&keyChord->key, indent);
     debugMsgWithIndent(indent, "| Description:       \"%s\"", keyChord->description);
-    debugMsgWithIndent(indent, "| Hint:              '%s'", keyChord->hint);
     debugMsgWithIndent(indent, "| Command:           %{{ %s }}", keyChord->command);
     debugMsgWithIndent(indent, "| Before:            %{{ %s }}", keyChord->before);
     debugMsgWithIndent(indent, "| After:             %{{ %s }}", keyChord->after);
