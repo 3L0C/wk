@@ -8,7 +8,7 @@ Inspired by
 [dmenu](https://tools.suckless.org/dmenu/), and 
 [bemenu](https://github.com/Cloudef/bemenu). 
 
-![wk.png](./wk (Which-Key).png)
+![wk.png](./wk-which-key.png)
 
 # Introduction
 
