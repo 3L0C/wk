@@ -6,7 +6,7 @@
 /* Delimiter when displaying chords. */
 static const char* delimiter = " -> ";
 /* Max number of columns to use. */
-static const uint32_t maxCols = 4;
+static const uint32_t maxCols = 5;
 /* Window width. Set to '-1' for 1/2 the width of your screen. */
 static const int32_t windowWidth = -1;
 /* Window gap between top/bottom of screen. Set to '-1' for a gap of 1/10th of the screen height. */

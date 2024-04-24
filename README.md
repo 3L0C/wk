@@ -90,7 +90,7 @@ options:
     -t, --top                  Position window at top of screen.
     -b, --bottom               Position window at bottom of screen.
     -s, --script               Read script from stdin to use as key chords.
-    -S, --sort                 Sort key chords read from --key-chords, or --script.
+    -S, --sort                 Sort key chords read from --key-chords, --script, or --transpile.
     -m, --max-columns INT      Set maximum columns to INT.
     -p, --press KEY(s)         Press KEY(s) before dispalying window.
     -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.
@@ -101,7 +101,7 @@ options:
     --border-width INT         Set border width to INT.
     --border-radius NUM        Set border-radius to NUM.
     --wpadding INT             Set left and right padding around hint text to INT.
-    --hpadding INT             Set up and down padding around hint text to INT.
+    --hpadding INT             Set top and bottom padding around hint text to INT.
     --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').
     --bg COLOR                 Set window background to COLOR (e.g., '#F1CD39').
     --bd COLOR                 Set window border to COLOR (e.g., '#F1CD39').
