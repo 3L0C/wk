@@ -1,4 +1,4 @@
-:window-width 550
+:menu-width 550
 :font "monospace, 30"
 [
     (w "which")

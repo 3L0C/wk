@@ -1,7 +1,7 @@
 :include "upper_and_lower_example.wks"
 :shell "/bin/zsh"
 :font "Sans, 14"
-:bg-color "#123456"
+:bg "#123456"
 :top a "hello!" +write %{{%(desc) %(key)}}
 :window-gap 5
 :border-width 1
