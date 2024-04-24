@@ -8,9 +8,9 @@ Inspired by
 [dmenu](https://tools.suckless.org/dmenu/), and 
 [bemenu](https://github.com/Cloudef/bemenu). 
 
-![wk.png](./wk.png)
+![wk.png](./wk (Which-Key).png)
 
-## Introduction
+# Introduction
 
 `wk` offers users a portable, scriptable, and highly
 customizable interface for their key chord mappings through
@@ -19,7 +19,7 @@ via the [key_chords.def.h](config/key_chords.def.h) header, read
 from a [wks file](#wks-Files), or read from stdin with the
 same `wks` syntax.
 
-## Building 
+# Building 
 
 ``` sh
 # Make wk for X11 and Wayland
@@ -35,7 +35,7 @@ make wayland
 make clean && make && sudo make install
 ```
 
-## Dependencies
+# Dependencies
 
 - C compiler 
 
@@ -59,7 +59,7 @@ compositors. For those not on a `wlroots`-based compositor,
 does work based on my testing, but the popup menu seems to
 only display on one screen.
 
-## Usage
+# Usage
 
 ``` sh
 # Display builtin key chords.
@@ -112,14 +112,14 @@ options:
 run `man 1 wk` for more info on each option.
 ```
 
-## Configuration 
+# Configuration 
 
 `wk` can be configured at the command line as show in the
 above help message, or your configuration can be built into
 the binary by changing the settings in
 [config.def.h](config/config.def.h). 
 
-## wks Files
+# wks Files
 
 Which-Key source (`wks`) files are the driving force behind
 `wk`. The syntax is novel, but provides a flexible means to
@@ -127,7 +127,7 @@ manage and express key chords. Below is an introduction to
 the `wks` syntax to get users up and running. For a deep
 dive see the [man](man/wks.5.org) page.
 
-### Comments
+## Comments
 
 In `wks` files, comments can be added using the `#`
 character. When a `#` is encountered it signifies the start
@@ -137,7 +137,7 @@ until the end of the line. It's important to note that the
 descriptions and commands, and does not indicate the start
 of a comment in those contexts.
 
-### A Key Chord
+## Key Chords
 
 ```
 key_chord -> ( chord | prefix | chord_array ) ;
@@ -148,7 +148,7 @@ This can be either a `chord`, `prefix`, or a `chord_array`.
 The chord is the most basic example of a key chord, and
 serves as a good entry point for this discussion.
 
-#### Chords 
+### Chords 
 
 A chord is key chord that results in some `wk` performing
 some action, like executing a command, when the trigger key
@@ -163,7 +163,7 @@ All chords must have a `key`, `description`, and a
 be addressed later. For now let's breakdown the required
 parts of the chord.
 
-##### Keys
+#### Keys
 
 A key, or trigger key, represents the specific keypress or
 key combination that triggers a corresponding action or
@@ -191,7 +191,7 @@ a description will be interpreted as a key. Those that are
 whitespace or non-printable fall into the `special_key`
 category.
 
-##### Special Keys
+#### Special Keys
 
 Special keys like `tab`, `escape`, `spacebar`, and `F1` can
 still be used as trigger keys in `wks` files with the
@@ -233,7 +233,7 @@ If you have any additional special keys that you would like
 `wks` files to support, please open an issue or a pull
 request.
 
-##### Modifiers
+#### Modifiers
 
 As mentioned above, zero or more modifiers can be given in a
 key. The following modifiers are recognized with the
@@ -276,7 +276,7 @@ permitting this syntax for ascii but not other character
 sets. Each has it's own drawback, and I find the current
 solution to be intuitive in practice.
 
-##### Descriptions 
+#### Descriptions 
 
 Descriptions provide a hint about the purpose of the chord
 or prefix. 
@@ -291,7 +291,7 @@ characters, or an interpolation and ends with a double
 quote. Aside from interpolations, a description looks like
 your typical string many programming languages. 
 
-##### Commands 
+#### Commands 
 
 Commands are the actions executed upon completing a key
 chord sequence. 
@@ -306,7 +306,7 @@ the command for the key chord. There is no need to do
 anything special here, just provide your shell command as
 you would at the command line. 
 
-##### Basic Chord Example 
+#### Basic Chord Example 
 
 Having learned a large portion of the syntax so far we can
 create our first chord using `wks` syntax.
@@ -319,7 +319,7 @@ A lot of explanation to do something simple, but this will
 set us up for success in the long run. Next is the humble
 prefix.
 
-#### Prefixes
+### Prefixes
 
 A prefix has the following syntax:
 
@@ -348,7 +348,7 @@ m "+mpc"
 }
 ```
 
-#### Chord Arrays 
+### Chord Arrays 
 
 Chords and prefixes are standard fare in the realm of key
 chords, so what the heck is a chord array? Well, mostly
@@ -394,7 +394,7 @@ Interpolations are covered in full detail later, but the
 main idea is they provide a means of inserting metadata
 about a chord into descriptions and commands. 
 
-##### Chord Expressions
+#### Chord Expressions
 
 Chord arrays can be very simple with each chord being only
 slightly different one from another. However, it may make
@@ -433,7 +433,7 @@ Admittedly, chord expressions may not be that useful but
 they were easy to implement so they are here for those who
 want to use them.
 
-#### Interpolations
+### Interpolations
 
 I have used interpolations in the last few examples without
 any explanation. Let's fix that.
@@ -466,7 +466,7 @@ their corresponding metadata.
 There are only a few identifiers that can be interpolated,
 but even this small set makes `wk` more scriptable.
 
-#### Keywords 
+### Keywords 
 
 So far keywords have been glossed over, but they are very
 handy.
@@ -479,7 +479,7 @@ A keyword is either a hook or a flag. Both have equal
 precedence, meaning they can be mixed up wherever they are
 permitted.
 
-##### Hooks
+#### Hooks
 
 Hooks provide means of adding additional commands to a chord
 or prefix. 
@@ -538,7 +538,7 @@ hook was given to a prefix and not to individual chords.
 This topic is coverd after introducing flags as these also
 factor into the discussion.
 
-##### Flags
+#### Flags
 
 Flags are similar to command-line flags in that they change
 the behavior of `wk`. 
@@ -600,7 +600,7 @@ same way that `dmenu` and co print selections to stdout,
 this turns `wk` into a prompt for users to choose from some
 list of options with less typing.
 
-##### Inheritance 
+#### Inheritance 
 
 Inheritance relating to hooks and flags given to prefixes is
 fairly simple. A hook or flag given to a prefix is inherited
@@ -627,7 +627,7 @@ To force a nested prefix to inherit from it's parent the
 only wishes to inherit certain hooks or flags additional
 flags may be given to ignore unwanted behavior.
 
-### Preprocessor Macros 
+## Preprocessor Macros 
 
 There are a number of preprocessor macros that can be used
 in `wks` files. These have a number of uses from making
@@ -655,7 +655,7 @@ time. It can also help distingush the purpose of the file
 if it is intended to be used as part of a script by making
 the `wk` popup window different from the builtin settings.
 
-#### String Macros 
+### String Macros 
 
 String macros require a string argument.
 
@@ -672,7 +672,7 @@ Many of the macros here work the same as their command-line
 counter parts. Simply use `:MACRO "ARGUMENT"` to  make use
 of any string macro. 
 
-##### The Include Macro
+#### The Include Macro
 
 Out of the string macros, the `include` macro is not present
 as a command-line argument to `wk`. This is because this
@@ -737,7 +737,7 @@ This allows users to create key chords in a more modular
 manner. This can be beneficial when you may want to reuse a
 `wks` file in a different context than your main key chords.
 
-### Full documentation
+## Full documentation
 
 The above is useful as quick and dirty introduction to the
 `wks` syntax. For complete details, see [man](man/wks.5.org)
@@ -753,7 +753,7 @@ provides syntax highlighting, and proper indentation in
 `wks` files.  I'm no elisp wizard, if you have any way to
 make that package better, please reach out.
 
-## Acknowledgments 
+# Acknowledgments 
 
 This project would not be where it is without
 [dmenu](https://tools.suckless.org/dmenu/), and
@@ -768,7 +768,7 @@ runtime has been lightly addapted for use with `wk`. All
 credit goes to the people who work on that project for the
 code there. 
 
-## Contributing
+# Contributing
 
 Contributions are welcome! If you find any issues or have
 suggestions for improvements, please open an issue or submit

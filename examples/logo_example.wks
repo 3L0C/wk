@@ -1,3 +1,6 @@
-:window-width 80
+:window-width 550
 :font "monospace, 30"
-[wk] "" %{{%(key)}}
+[
+    (w "which")
+    (k "key")
+] "(null)" +write %{{%(key)}}

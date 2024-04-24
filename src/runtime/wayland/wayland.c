@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <bits/time.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -10,11 +9,7 @@
 #include <sys/timerfd.h>
 #include <sysexits.h>
 #include <unistd.h>
-#include <wayland-client-core.h>
-#include <wayland-client-protocol.h>
-#include <wayland-util.h>
-#include <xkbcommon/xkbcommon-compat.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
+#include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
 
 /* common includes */
