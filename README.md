@@ -1,3 +1,5 @@
+![wk.png](./wk-which-key.png)
+
 wk
 ========
 
@@ -7,8 +9,6 @@ Inspired by
 [emacs-which-key](https://github.com/justbur/emacs-which-key), 
 [dmenu](https://tools.suckless.org/dmenu/), and 
 [bemenu](https://github.com/Cloudef/bemenu). 
-
-![wk.png](./wk-which-key.png)
 
 # Introduction
 
