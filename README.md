@@ -15,13 +15,13 @@ Inspired by
 `wk` offers users a portable, scriptable, and highly
 customizable interface for their key chord mappings through
 a number of sources. Key chords can be built into the binary
-via the [key_chords.def.h](config/key_chords.def.h) header, read
-from a [wks file](#wks-Files), or read from stdin with the
-same `wks` syntax.
+via the [key_chords.def.h](config/key_chords.def.h) header,
+read from a [wks file](#wks-Files), or read from stdin with
+the same `wks` syntax.
 
 # Building 
 
-``` sh
+``` 
 # Make wk for X11 and Wayland
 make 
 
@@ -61,7 +61,7 @@ only display on one screen.
 
 # Usage
 
-``` sh
+``` 
 # Display built-in key chords.
 wk 
 
@@ -134,8 +134,8 @@ character. When a `#` is encountered, it signifies the start
 of a comment. The comment extends from the `#` character
 until the end of the line. It's important to note that the
 `#` character is treated as a literal character within
-descriptions and commands and does not indicate the start
-of a comment in those contexts.
+descriptions and commands and does not indicate the start of
+a comment in those contexts.
 
 ## Key Chords
 
@@ -150,9 +150,9 @@ serves as a good entry point for this discussion.
 
 ### Chords 
 
-A chord is a key chord that results in `wk` performing
-some action, like executing a command, when the trigger key
-is pressed. The formal grammar looks like this:
+A chord is a key chord that results in `wk` performing some
+action, like executing a command, when the trigger key is
+pressed. The formal grammar looks like this:
 
 ```
 chord -> key description keyword* command ;
@@ -321,8 +321,8 @@ prefix.
 
 ### Prefixes
 
-A prefix is a special type of key chord that acts as a 
-container for other key chords. It represents an incomplete 
+A prefix is a special type of key chord that acts as a
+container for other key chords. It represents an incomplete
 key combination that does not trigger a command on its own.
 
 ```
@@ -334,9 +334,9 @@ begins with a key, followed by a description, zero or more
 keywords and then a block of one or more key chords
 surrounded by an opening and closing brace (`{`, and `}`).
 
-**Note** that a key chord may be a prefix, a chord, or a 
-chord array, meaning many prefixes can be nested one 
-inside another.
+**Note** that a key chord may be a prefix, a chord, or a
+chord array, meaning many prefixes can be nested one  inside
+another.
 
 Here is a simple example of a prefix:
 
@@ -385,10 +385,10 @@ i "Switch workspace 9" %{{xdotool set_desktop 8}}
 ```
 
 As you can see, chord arrays can cut down on the need to
-repeat common information across chords. However, this
-would not be useful if the resulting chords were exactly the
-same. Thankfully, interpolations make it easy for the
-resulting chords to differ without interfering with the common
+repeat common information across chords. However, this would
+not be useful if the resulting chords were exactly the same.
+Thankfully, interpolations make it easy for the resulting
+chords to differ without interfering with the common
 elements. 
 
 Interpolations are covered in full detail later, but the
@@ -410,9 +410,9 @@ chord_expression -> '(' key description keyword* command? ')' ;
 A chord expression is only valid within a chord array, and
 it is essentially a chord wrapped in parentheses with some
 added flexibility. Normally, a chord requires at least a
-key, a description, and a command. A chord expression, on the
-other hand, requires only a key and a description. Any other
-information will be filled in by the surrounding chord
+key, a description, and a command. A chord expression, on
+the other hand, requires only a key and a description. Any
+other information will be filled in by the surrounding chord
 array. 
 
 Here is an example of a chord expression within a chord array:
@@ -445,9 +445,9 @@ interpolation -> '%(' identifier ')' ;
 ```
 
 The basic syntax for an interpolation begins with a `%(`
-delimiter followed by an identifier and closing
-parenthesis (`)`). **Note** that interpolations can only be used
-in descriptions and commands.
+delimiter followed by an identifier and closing parenthesis
+(`)`). **Note** that interpolations can only be used in
+descriptions and commands.
 
 The basic idea of interpolation is to provide users with
 easy access to metadata about a chord. The following
@@ -513,8 +513,8 @@ of their keyboard.
 
 Users can certainly chain commands together the same way one
 would chain commands in a regular shell, but hooks help to
-reduce repetition. They also make more sense in the context of
-prefixes.
+reduce repetition. They also make more sense in the context
+of prefixes.
 
 ```
 # With hooked prefix
@@ -533,8 +533,8 @@ e "+Emacs"
 ```
 
 As you can see, this helps to cut down on repetition, but it
-also helps enforce a workflow rule without the need to
-setup desktop environment rules and such.
+also helps enforce a workflow rule without the need to setup
+desktop environment rules and such.
 
 This example also hints at the idea of inheritance as the
 hook was given to a prefix and not to individual chords.
@@ -654,9 +654,10 @@ anything given at the command-line. They are here to provide
 a baked-in alternative to the command-line versions making
 it easy to simply run the `wks` file and get the desired
 look and feel without having to give the same arguments each
-time. It can also help distinguish the purpose of the key chords
-if it is intended to be used as part of a script by making
-the `wk` popup window different from the builtin settings.
+time. It can also help distinguish the purpose of the key
+chords if it is intended to be used as part of a script by
+making the `wk` popup window different from the builtin
+settings.
 
 ### String Macros 
 
@@ -668,12 +669,12 @@ string_macro -> ( 'include'
                 | 'bg-color'
                 | 'bd-color'
                 | 'shell'
-                | 'font' ) '"' ( '\\"' | [^"] )* '"' ) ;
+                | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
 ```
 
 Many of the macros here work the same as their command-line
-counterparts. Simply use `:MACRO "ARGUMENT"` to  make use
-of any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
+counterparts. Simply use `:MACRO "ARGUMENT"` to  make use of
+any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
 
 #### The Include Macro
 
@@ -686,7 +687,7 @@ The `include` macro works similarly to the `#include` macro
 found in C/C++. It allows users to bring other `wks` files
 into a single file. 
 
-**Note**, self includes and recursive includes are not 
+**Note**, self includes and recursive includes are not
 permitted and will cause an error.
 
 **Note**, the same file may be included multiple times. This
@@ -701,7 +702,7 @@ Here is an example of the `include` macro:
 b "+Browser" { :include "browser_key_chords.wks" }
 # Emacs prefix
 e "+Emacs" ^before %{{xdotool set_desktop 1}} { :include "emacs_key_chords.wks" }
-# mpc prefix
+# Music prefix
 m "+Music" +keep { :include "music_key_chords.wks" }
 
 # File browser_key_chords.wks
@@ -745,10 +746,11 @@ This allows users to create key chords in a more modular
 manner. This can be beneficial when you may want to reuse a
 `wks` file in a different context than your main key chords.
 
-**Note**, while the `#include` macro in C/C++ has restrictions 
-on where it can go in a file, the`:include` macro in a `wks` file
-may go literally anywhere. In the above example, this was given in
-the middle of a prefix without error. 
+**Note**, while the `#include` macro in C/C++ has
+restrictions  on where it can go in a file, the`:include`
+macro in a `wks` file may go literally anywhere. In the
+above example, this was given in the middle of a prefix
+without error. 
 
 You can even do silly things like this:
 
@@ -766,9 +768,9 @@ example" %{{echo "You wouldn't do this right??"}}
 A "silly example" %{{echo "You wouldn't do this right??"}}
 ```
 
-As for file resolution, it's pretty simple. A relative path 
-is assumed to be in the same directory as the file being executed, 
-and absolute paths are just that, absolute.
+As for file resolution, it's pretty simple. A relative path
+is assumed to be in the same directory as the file being
+executed,  and absolute paths are just that, absolute.
 
 ## Full documentation
 

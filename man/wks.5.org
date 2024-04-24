@@ -316,7 +316,7 @@ string_macro       -> ( 'include'
                       | 'bg-color'
                       | 'bd-color'
                       | 'shell'
-                      | 'font' ) '"' ( '\\"' | [^"] )* '"' ) ;
+                      | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
 
 switch_macro       -> ( 'debug'
                       | 'sort'
