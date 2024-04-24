@@ -12,7 +12,19 @@ typedef void (*CleanupFP)(void* xp);
 
 typedef enum
 {
-    MENU_COLOR_FOREGROUND,
+    FOREGROUND_COLOR_KEY,
+    FOREGROUND_COLOR_DELIMITER,
+    FOREGROUND_COLOR_PREFIX,
+    FOREGROUND_COLOR_CHORD,
+    FOREGROUND_COLOR_LAST,
+} ForegroundColor;
+
+typedef enum
+{
+    MENU_COLOR_KEY,
+    MENU_COLOR_DELIMITER,
+    MENU_COLOR_PREFIX,
+    MENU_COLOR_CHORD,
     MENU_COLOR_BACKGROUND,
     MENU_COLOR_BORDER,
     MENU_COLOR_LAST
@@ -37,16 +49,16 @@ typedef enum
 
 typedef enum
 {
-    MENU_WIN_POS_BOTTOM,
-    MENU_WIN_POS_TOP
-} MenuWindowPosition;
+    MENU_POS_BOTTOM,
+    MENU_POS_TOP
+} MenuPosition;
 
 typedef struct
 {
     const char* delimiter;
     uint32_t maxCols;
-    int32_t  windowWidth;
-    int32_t  windowGap;
+    int32_t  menuWidth;
+    int32_t  menuGap;
     uint32_t wpadding;
     uint32_t hpadding;
     uint32_t cellHeight;
@@ -54,7 +66,7 @@ typedef struct
     uint32_t cols;
     uint32_t width;
     uint32_t height;
-    MenuWindowPosition position;
+    MenuPosition position;
     uint32_t borderWidth;
     double borderRadius;
     MenuHexColor colors[MENU_COLOR_LAST];
@@ -78,7 +90,10 @@ typedef struct
     {
         char* shell;
         char* font;
-        char* foregroundColor;
+        char* foregroundKeyColor;
+        char* foregroundDelimiterColor;
+        char* foregroundPrefixColor;
+        char* foregroundChordColor;
         char* backgroundColor;
         char* borderColor;
     } garbage;
@@ -88,6 +103,7 @@ typedef struct
 
 void countMenuKeyChords(Menu* menu);
 int displayMenu(Menu* menu);
+void freeMenuGarbage(Menu* menu);
 MenuStatus handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant);
 void initMenu(Menu* menu, KeyChord* keyChords);
 void parseArgs(Menu* menu, int* argc, char*** argv);

@@ -12,7 +12,10 @@ typedef struct
 
 typedef struct
 {
-    CairoColor fg;
+    CairoColor fgKey;
+    CairoColor fgDelimiter;
+    CairoColor fgPrefix;
+    CairoColor fgChord;
     CairoColor bg;
     CairoColor bd;
     const char* font;

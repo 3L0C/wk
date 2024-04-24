@@ -182,9 +182,36 @@ disassembleHexColors(const MenuHexColor* colors)
         /* TODO refactor */
         switch (i)
         {
-        case MENU_COLOR_FOREGROUND: debugMsg(true, "|------- Foreground color -------"); break;
-        case MENU_COLOR_BACKGROUND: debugMsg(true, "|------- Background color -------"); break;
-        case MENU_COLOR_BORDER:     debugMsg(true, "|--------- Border color ---------"); break;
+        case MENU_COLOR_KEY:
+        {
+            debugMsg(true, "|----- Foreground Key Color -----");
+            break;
+        }
+        case MENU_COLOR_DELIMITER:
+        {
+            debugMsg(true, "|---- Foreground Delim Color ----");
+            break;
+        }
+        case MENU_COLOR_PREFIX:
+        {
+            debugMsg(true, "|--- Foreground Prefix Color ----");
+            break;
+        }
+        case MENU_COLOR_CHORD:
+        {
+            debugMsg(true, "|--- Foreground Chord Color -----");
+            break;
+        }
+        case MENU_COLOR_BACKGROUND:
+        {
+            debugMsg(true, "|------- Background color -------");
+            break;
+        }
+        case MENU_COLOR_BORDER:
+        {
+            debugMsg(true, "|--------- Border color ---------");
+            break;
+        }
         default: errorMsg("| Got unexpected color index: '%d'.", i); return;
         }
 
@@ -373,8 +400,8 @@ disassembleMenu(const Menu* menu)
     debugMsg(true, "|");
     debugMsgWithIndent(0, "| Delimiter:         '%s'",  menu->delimiter);
     debugMsgWithIndent(0, "| Max columns:       %04u",  menu->maxCols);
-    debugMsgWithIndent(0, "| Window width:      %04i",  menu->windowWidth);
-    debugMsgWithIndent(0, "| Window gap:        %04i",  menu->windowGap);
+    debugMsgWithIndent(0, "| Window width:      %04i",  menu->menuWidth);
+    debugMsgWithIndent(0, "| Window gap:        %04i",  menu->menuGap);
     debugMsgWithIndent(0, "| Width padding:     %04u",  menu->wpadding);
     debugMsgWithIndent(0, "| Height padding:    %04u",  menu->hpadding);
     debugMsgWithIndent(0, "| Cell height:       %04u",  menu->cellHeight);
@@ -383,7 +410,7 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| Width:             %04u",  menu->width);
     debugMsgWithIndent(0, "| Height:            %04u",  menu->height);
     debugMsgWithIndent(0, "| Window position:   %s",
-        (menu->position == MENU_WIN_POS_BOTTOM ? "BOTTOM" : "TOP")
+        (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP")
     );
     debugMsgWithIndent(0, "| Border width:      %04u",  menu->borderWidth);
     debugMsgWithIndent(0, "|");

@@ -116,11 +116,29 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
 {
     assert(paint), assert(colors);
 
-    /* foreground */
-    paint->fg.r = (float)colors[MENU_COLOR_FOREGROUND].r / 255.0f;
-    paint->fg.g = (float)colors[MENU_COLOR_FOREGROUND].g / 255.0f;
-    paint->fg.b = (float)colors[MENU_COLOR_FOREGROUND].b / 255.0f;
-    paint->fg.a = (float)colors[MENU_COLOR_FOREGROUND].a / 255.0f;
+    /* foreground - key */
+    paint->fgKey.r = (float)colors[MENU_COLOR_KEY].r / 255.0f;
+    paint->fgKey.g = (float)colors[MENU_COLOR_KEY].g / 255.0f;
+    paint->fgKey.b = (float)colors[MENU_COLOR_KEY].b / 255.0f;
+    paint->fgKey.a = (float)colors[MENU_COLOR_KEY].a / 255.0f;
+
+    /* foreground - delimiter */
+    paint->fgDelimiter.r = (float)colors[MENU_COLOR_DELIMITER].r / 255.0f;
+    paint->fgDelimiter.g = (float)colors[MENU_COLOR_DELIMITER].g / 255.0f;
+    paint->fgDelimiter.b = (float)colors[MENU_COLOR_DELIMITER].b / 255.0f;
+    paint->fgDelimiter.a = (float)colors[MENU_COLOR_DELIMITER].a / 255.0f;
+
+    /* foreground - prefix */
+    paint->fgPrefix.r = (float)colors[MENU_COLOR_PREFIX].r / 255.0f;
+    paint->fgPrefix.g = (float)colors[MENU_COLOR_PREFIX].g / 255.0f;
+    paint->fgPrefix.b = (float)colors[MENU_COLOR_PREFIX].b / 255.0f;
+    paint->fgPrefix.a = (float)colors[MENU_COLOR_PREFIX].a / 255.0f;
+
+    /* foreground - chord */
+    paint->fgChord.r = (float)colors[MENU_COLOR_CHORD].r / 255.0f;
+    paint->fgChord.g = (float)colors[MENU_COLOR_CHORD].g / 255.0f;
+    paint->fgChord.b = (float)colors[MENU_COLOR_CHORD].b / 255.0f;
+    paint->fgChord.a = (float)colors[MENU_COLOR_CHORD].a / 255.0f;
 
     /* background */
     paint->bg.r = (float)colors[MENU_COLOR_BACKGROUND].r / 255.0f;
@@ -151,7 +169,10 @@ setSourceRgba(MenuColor type)
 
     switch (type)
     {
-    case MENU_COLOR_FOREGROUND: color = &cairo->paint->fg; break;
+    case MENU_COLOR_KEY: color = &cairo->paint->fgKey; break;
+    case MENU_COLOR_DELIMITER: color = &cairo->paint->fgDelimiter; break;
+    case MENU_COLOR_PREFIX: color = &cairo->paint->fgPrefix; break;
+    case MENU_COLOR_CHORD: color = &cairo->paint->fgChord; break;
     case MENU_COLOR_BACKGROUND: color = &cairo->paint->bg; break;
     case MENU_COLOR_BORDER: color = &cairo->paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;
@@ -224,9 +245,10 @@ drawBorder()
 }
 
 static void
-drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cellw)
+drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw)
 {
     assert(layout), assert(text);
+    if ((uint32_t)ellipsisWidth > cellw) return;
 
     size_t len = strlen(text);
     int textw;
@@ -278,19 +300,71 @@ drawTruncatedHintText(PangoLayout* layout, const char* text, uint32_t cellw)
     pango_layout_set_text(layout, buffer, -1);
 }
 
-static void
-drawHintText(PangoLayout* layout, const char* text, uint32_t cellw)
+static bool
+drawText(PangoLayout* layout, const char* text, uint32_t* cellw, uint32_t* x, uint32_t* y)
 {
-    assert(layout), assert(text);
+    assert(layout), assert(text), assert(cellw), assert(x), assert(y);
+    if (*cellw == 0) return false;
 
     int w, h;
     pango_layout_set_text(layout, text, -1);
     pango_layout_get_pixel_size(layout, &w, &h);
 
-    if ((uint32_t)w > cellw)
+    if ((uint32_t)w > *cellw)
     {
-        drawTruncatedHintText(layout, text, cellw);
+        drawTruncatedText(layout, text, *cellw);
+        *cellw = 0;
+        goto end;
     }
+    else
+    {
+        *cellw -= w;
+    }
+
+end:
+    cairo_move_to(cairo->cr, *x, *y);
+    pango_cairo_show_layout(cairo->cr, layout);
+    *x += w;
+    return *cellw != 0;
+}
+
+static bool
+drawKeyText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
+{
+    assert(layout), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(MENU_COLOR_KEY)) return false;
+
+    return drawText(layout, mainMenu->keyChords[idx].key.repr, cellw, x, y);
+}
+
+static bool
+drawDelimiterText(PangoLayout* layout, uint32_t* cellw, uint32_t* x, uint32_t* y)
+{
+    assert(layout), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(MENU_COLOR_DELIMITER)) return false;
+
+    return drawText(layout, mainMenu->delimiter, cellw, x, y);
+}
+
+static bool
+drawDescriptionText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
+{
+    assert(layout), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(
+            mainMenu->keyChords[idx].keyChords ? MENU_COLOR_PREFIX : MENU_COLOR_CHORD
+        )) return false;
+
+    return drawText(layout, mainMenu->keyChords[idx].description, cellw, x, y);
+}
+
+static void
+drawHintText(PangoLayout* layout, uint32_t idx, uint32_t cellw, uint32_t x, uint32_t y)
+{
+    assert(layout);
+
+    if (!drawKeyText(layout, idx, &cellw, &x, &y)) return;
+    if (!drawDelimiterText(layout, &cellw, &x, &y)) return;
+    if (!drawDescriptionText(layout, idx, &cellw, &x, &y)) return;
 }
 
 static bool
@@ -300,7 +374,7 @@ drawGrid()
 
     if (mainMenu->borderWidth * 2 >= width)
     {
-        errorMsg("Border is larger than window width.");
+        errorMsg("Border is larger than menu width.");
         goto end;
     }
 
@@ -320,7 +394,7 @@ drawGrid()
     pango_layout_set_font_description(layout, fontDesc);
     pango_font_description_free(fontDesc);
 
-    if (!setSourceRgba(MENU_COLOR_FOREGROUND)) goto fail;
+    if (!setSourceRgba(MENU_COLOR_KEY)) goto fail;
 
     if (mainMenu->debug)
     {
@@ -354,9 +428,10 @@ drawGrid()
         for (uint32_t j = 0; j < rows && idx < count; j++, idx++)
         {
             uint32_t y = starty + (j * cellHeight) + hpadding;
-            drawHintText(layout, mainMenu->keyChords[idx].hint, cellWidth - (wpadding * 2));
-            cairo_move_to(cairo->cr, x, y);
-            pango_cairo_show_layout(cairo->cr, layout);
+            drawHintText(layout, idx, cellWidth - (wpadding * 2), x, y);
+            /* cairo_move_to(cairo->cr, x, y); */
+            /* drawHintText(layout, mainMenu->keyChords[idx].hint, cellWidth - (wpadding * 2)); */
+            /* pango_cairo_show_layout(cairo->cr, layout); */
         }
     }
 

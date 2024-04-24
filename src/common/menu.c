@@ -57,6 +57,19 @@ displayMenu(Menu* menu)
     return EX_SOFTWARE;
 }
 
+void
+freeMenuGarbage(Menu* menu)
+{
+    if (menu->garbage.shell) free(menu->garbage.shell);
+    if (menu->garbage.font) free(menu->garbage.font);
+    if (menu->garbage.foregroundKeyColor) free(menu->garbage.foregroundKeyColor);
+    if (menu->garbage.foregroundDelimiterColor) free(menu->garbage.foregroundDelimiterColor);
+    if (menu->garbage.foregroundPrefixColor) free(menu->garbage.foregroundPrefixColor);
+    if (menu->garbage.foregroundChordColor) free(menu->garbage.foregroundChordColor);
+    if (menu->garbage.backgroundColor) free(menu->garbage.backgroundColor);
+    if (menu->garbage.borderColor) free(menu->garbage.borderColor);
+}
+
 static MenuStatus
 handlePrefix(Menu* menu, const KeyChord* keyChord)
 {
@@ -161,11 +174,21 @@ initColors(MenuHexColor* hexColors)
     assert(hexColors);
 
     static const char* defaultColors[MENU_COLOR_LAST] = {
-        "#DCD7BA", "#181616", "#7FB4CA"
+        "#DCD7BA", /* Key color */
+        "#525259", /* Delimiter color */
+        "#AF9FC9", /* Prefix color */
+        "#DCD7BA", /* Chord color */
+        "#181616", /* Background */
+        "#7FB4CA"  /* Border */
     };
 
     const char* colors[MENU_COLOR_LAST] = {
-        foreground, background, border
+        foreground[FOREGROUND_COLOR_KEY],
+        foreground[FOREGROUND_COLOR_DELIMITER],
+        foreground[FOREGROUND_COLOR_PREFIX],
+        foreground[FOREGROUND_COLOR_CHORD],
+        background,
+        border
     };
     for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
@@ -175,7 +198,10 @@ initColors(MenuHexColor* hexColors)
             warnMsg("Invalid color string '%s':", colors[i]);
             switch (i)
             {
-            case MENU_COLOR_FOREGROUND: colorType = "foreground"; break;
+            case MENU_COLOR_KEY: colorType = "key"; break;
+            case MENU_COLOR_DELIMITER: colorType = "delimiter"; break;
+            case MENU_COLOR_PREFIX: colorType = "prefix"; break;
+            case MENU_COLOR_CHORD: colorType = "chord"; break;
             case MENU_COLOR_BACKGROUND: colorType = "background"; break;
             case MENU_COLOR_BORDER: colorType = "border"; break;
             default: colorType = "UNKNOWN"; break;
@@ -196,24 +222,28 @@ usage(void)
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
         "    -d, --debug                Print debug information.\n"
-        "    -t, --top                  Position window at top of screen.\n"
-        "    -b, --bottom               Position window at bottom of screen.\n"
+        "    -t, --top                  Position menu at top of screen.\n"
+        "    -b, --bottom               Position menu at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as key chords.\n"
         "    -S, --sort                 Sort key chords read from --key-chords, --script, or --transpile.\n"
         "    -m, --max-columns INT      Set maximum columns to INT.\n"
-        "    -p, --press KEY(s)         Press KEY(s) before dispalying window.\n"
+        "    -p, --press KEY(s)         Press KEY(s) before dispalying menu.\n"
         "    -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.\n"
         "    -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.\n"
-        "    -w, --window-width INT     Set window width to INT.\n"
-        "    -g, --window-gap INT       Set window gap between top/bottom of screen to INT.\n"
+        "    -w, --menu-width INT       Set menu width to INT.\n"
+        "    -g, --menu-gap INT         Set menu gap between top/bottom of screen to INT.\n"
         "                               Set to '-1' for a gap equal to 1/10th of the screen height.\n"
         "    --border-width INT         Set border width to INT.\n"
         "    --border-radius NUM        Set border radius to NUM.\n"
         "    --wpadding INT             Set left and right padding around hint text to INT.\n"
         "    --hpadding INT             Set top and bottom padding around hint text to INT.\n"
-        "    --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').\n"
-        "    --bg COLOR                 Set window background to COLOR (e.g., '#F1CD39').\n"
-        "    --bd COLOR                 Set window border to COLOR (e.g., '#F1CD39').\n"
+        "    --fg COLOR                 Set all menu foreground text to COLOR (e.g., '#F1CD39').\n"
+        "    --fg-key COLOR             Set menu foreground key to COLOR (e.g., '#F1CD39').\n"
+        "    --fg-delimiter COLOR       Set menu foreground delimiter to COLOR (e.g., '#F1CD39').\n"
+        "    --fg-prefix COLOR          Set menu foreground prefix description to COLOR (e.g., '#F1CD39').\n"
+        "    --fg-chord COLOR           Set menu foreground chord description to COLOR (e.g., '#F1CD39').\n"
+        "    --bg COLOR                 Set menu background to COLOR (e.g., '#F1CD39').\n"
+        "    --bd COLOR                 Set menu border to COLOR (e.g., '#F1CD39').\n"
         "    --shell STRING             Set shell to STRING (e.g., '/bin/sh').\n"
         "    --font STRING              Set font to STRING. Should be a valid Pango font description\n"
         "                               (e.g., 'monospace, M+ 1c, ..., 16').\n"
@@ -270,17 +300,21 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         { "press",          required_argument,  0, 'p' },
         { "transpile",      required_argument,  0, 'T' },
         { "key-chords",     required_argument,  0, 'k' },
-        { "window-width",   required_argument,  0, 'w' },
-        { "window-gap",     required_argument,  0, 'g' },
+        { "menu-width",     required_argument,  0, 'w' },
+        { "menu-gap",       required_argument,  0, 'g' },
         { "border-width",   required_argument,  0, 0x090 },
         { "border-radius",  required_argument,  0, 0x091 },
         { "wpadding",       required_argument,  0, 0x092 },
         { "hpadding",       required_argument,  0, 0x093 },
         { "fg",             required_argument,  0, 0x094 },
-        { "bg",             required_argument,  0, 0x095 },
-        { "bd",             required_argument,  0, 0x096 },
-        { "shell",          required_argument,  0, 0x097 },
-        { "font",           required_argument,  0, 0x098 },
+        { "fg-key",         required_argument,  0, 0x095 },
+        { "fg-delimiter",   required_argument,  0, 0x096 },
+        { "fg-prefix",      required_argument,  0, 0x097 },
+        { "fg-chord",       required_argument,  0, 0x098 },
+        { "bg",             required_argument,  0, 0x099 },
+        { "bd",             required_argument,  0, 0x100 },
+        { "shell",          required_argument,  0, 0x101 },
+        { "font",           required_argument,  0, 0x102 },
         { 0, 0, 0, 0 }
     };
 
@@ -299,8 +333,8 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         case 'h': usage(); exit(EXIT_FAILURE);
         case 'v': puts("wk v"VERSION); exit(EXIT_SUCCESS);
         case 'd': menu->debug = true; break;
-        case 't': menu->position = MENU_WIN_POS_TOP; break;
-        case 'b': menu->position = MENU_WIN_POS_BOTTOM; break;
+        case 't': menu->position = MENU_POS_TOP; break;
+        case 'b': menu->position = MENU_POS_BOTTOM; break;
         case 's': menu->client.tryScript = true; break;
         case 'S': menu->sort = true; break;
         /* requires argument */
@@ -325,10 +359,10 @@ parseArgs(Menu* menu, int* argc, char*** argv)
             if (!getInt(&n))
             {
                 warnMsg("Could not convert '%s' into a integer.", optarg);
-                warnMsg("Using default value for window-width: %u.", menu->windowWidth);
+                warnMsg("Using default value for menu-width: %u.", menu->menuWidth);
                 break;
             }
-            menu->windowWidth = n;
+            menu->menuWidth = n;
             break;
         }
         case 'g':
@@ -337,12 +371,13 @@ parseArgs(Menu* menu, int* argc, char*** argv)
             if (!getInt(&n))
             {
                 warnMsg("Could not convert '%s' into a integer.", optarg);
-                warnMsg("Using default value for window-gap: %u.", menu->windowGap);
+                warnMsg("Using default value for menu-gap: %u.", menu->menuGap);
                 break;
             }
-            menu->windowGap = n;
+            menu->menuGap = n;
             break;
         }
+        /* border-width */
         case 0x090:
         {
             int n = 0;
@@ -355,6 +390,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
             menu->borderWidth = (uint32_t)n;
             break;
         }
+        /* border-radius */
         case 0x091:
         {
             double n = 0.0;
@@ -367,6 +403,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
             menu->borderRadius = n;
             break;
         }
+        /* wpadding */
         case 0x092:
         {
             int n = 0;
@@ -379,6 +416,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
             menu->wpadding = (uint32_t)n;
             break;
         }
+        /* hpadding */
         case 0x093:
         {
             int n = 0;
@@ -391,11 +429,31 @@ parseArgs(Menu* menu, int* argc, char*** argv)
             menu->hpadding = (uint32_t)n;
             break;
         }
-        case 0x094: setMenuColor(menu, optarg, MENU_COLOR_FOREGROUND); break;
-        case 0x095: setMenuColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
-        case 0x096: setMenuColor(menu, optarg, MENU_COLOR_BORDER); break;
-        case 0x097: menu->shell = optarg; break;
-        case 0x098: menu->font = optarg; break;
+        /* fg */
+        case 0x094:
+        {
+            setMenuColor(menu, optarg, MENU_COLOR_KEY);
+            setMenuColor(menu, optarg, MENU_COLOR_DELIMITER);
+            setMenuColor(menu, optarg, MENU_COLOR_PREFIX);
+            setMenuColor(menu, optarg, MENU_COLOR_CHORD);
+            break;
+        }
+        /* fg-key */
+        case 0x095: setMenuColor(menu, optarg, MENU_COLOR_KEY); break;
+        /* fg-delimiter */
+        case 0x096: setMenuColor(menu, optarg, MENU_COLOR_DELIMITER); break;
+        /* fg-prefix */
+        case 0x097: setMenuColor(menu, optarg, MENU_COLOR_PREFIX); break;
+        /* fg-chord */
+        case 0x098: setMenuColor(menu, optarg, MENU_COLOR_CHORD); break;
+        /* bg */
+        case 0x099: setMenuColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
+        /* bd */
+        case 0x100: setMenuColor(menu, optarg, MENU_COLOR_BORDER); break;
+        /* shell */
+        case 0x101: menu->shell = optarg; break;
+        /* font */
+        case 0x102: menu->font = optarg; break;
         /* Errors */
         case '?':
             usage();
@@ -430,8 +488,8 @@ initMenu(Menu* menu, KeyChord* keyChords)
 
     menu->delimiter = delimiter;
     menu->maxCols = maxCols;
-    menu->windowWidth = windowWidth;
-    menu->windowGap = windowGap;
+    menu->menuWidth = menuWidth;
+    menu->menuGap = menuGap;
     menu->wpadding = widthPadding;
     menu->hpadding = heightPadding;
     menu->cellHeight = 0;
@@ -439,7 +497,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->cols = 0;
     menu->width = 0;
     menu->height = 0;
-    menu->position = (windowPosition ? MENU_WIN_POS_TOP : MENU_WIN_POS_BOTTOM);
+    menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
     menu->borderWidth = borderWidth;
     menu->borderRadius = borderRadius;
     initColors(menu->colors);
@@ -458,7 +516,10 @@ initMenu(Menu* menu, KeyChord* keyChords)
     initString(&menu->client.script);
     menu->garbage.shell = NULL;
     menu->garbage.font = NULL;
-    menu->garbage.foregroundColor = NULL;
+    menu->garbage.foregroundKeyColor = NULL;
+    menu->garbage.foregroundDelimiterColor = NULL;
+    menu->garbage.foregroundPrefixColor = NULL;
+    menu->garbage.foregroundChordColor = NULL;
     menu->garbage.backgroundColor = NULL;
     menu->garbage.borderColor = NULL;
     menu->cleanupfp = NULL;
@@ -492,6 +553,7 @@ spawnSync(const char* shell, const char* cmd)
     }
     execvp(exec[0], exec);
     errorMsg("Failed to spawn command: '%s -c %s'.", shell, cmd);
+
 fail:
     free(exec[0]);
     free(exec[2]);

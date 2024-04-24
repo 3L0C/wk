@@ -275,8 +275,34 @@ handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable*
     {
     case TOKEN_FOREGROUND_COLOR:
     {
-        setMenuColor(menu, arg.string, MENU_COLOR_FOREGROUND);
-        menu->garbage.foregroundColor = arg.string;
+        setMenuColor(menu, arg.string, MENU_COLOR_KEY);
+        setMenuColor(menu, arg.string, MENU_COLOR_DELIMITER);
+        setMenuColor(menu, arg.string, MENU_COLOR_PREFIX);
+        menu->garbage.foregroundKeyColor = arg.string;
+        break;
+    }
+    case TOKEN_FOREGROUND_KEY_COLOR:
+    {
+        setMenuColor(menu, arg.string, MENU_COLOR_KEY);
+        menu->garbage.foregroundKeyColor = arg.string;
+        break;
+    }
+    case TOKEN_FOREGROUND_DELIMITER_COLOR:
+    {
+        setMenuColor(menu, arg.string, MENU_COLOR_DELIMITER);
+        menu->garbage.foregroundDelimiterColor= arg.string;
+        break;
+    }
+    case TOKEN_FOREGROUND_PREFIX_COLOR:
+    {
+        setMenuColor(menu, arg.string, MENU_COLOR_PREFIX);
+        menu->garbage.foregroundPrefixDescColor = arg.string;
+        break;
+    }
+    case TOKEN_FOREGROUND_CHORD_COLOR:
+    {
+        setMenuColor(menu, arg.string, MENU_COLOR_CHORD);
+        menu->garbage.foregroundPrefixDescColor = arg.string;
         break;
     }
     case TOKEN_BACKGROUND_COLOR:
@@ -366,8 +392,8 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
 
     switch (token->type)
     {
-    case TOKEN_WINDOW_WIDTH: menu->windowWidth = value; return;
-    case TOKEN_WINDOW_GAP: menu->windowGap = value; return;
+    case TOKEN_MENU_WIDTH: menu->menuWidth = value; return;
+    case TOKEN_MENU_GAP: menu->menuGap = value; return;
     default:
     {
         errorMsg(
@@ -470,12 +496,12 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
         /* Switches with no args. */
         case TOKEN_DEBUG: menu->debug = true; break;
         case TOKEN_SORT: menu->sort = true; break;
-        case TOKEN_TOP: menu->position = MENU_WIN_POS_TOP; break;
-        case TOKEN_BOTTOM: menu->position = MENU_WIN_POS_BOTTOM; break;
+        case TOKEN_TOP: menu->position = MENU_POS_TOP; break;
+        case TOKEN_BOTTOM: menu->position = MENU_POS_BOTTOM; break;
 
         /* Switches with signed integer args. */
-        case TOKEN_WINDOW_WIDTH:    /* FALLTHROUGH */
-        case TOKEN_WINDOW_GAP: handleMacroWithInt32Arg(&scanner, menu, &token); break;
+        case TOKEN_MENU_WIDTH:    /* FALLTHROUGH */
+        case TOKEN_MENU_GAP: handleMacroWithInt32Arg(&scanner, menu, &token); break;
 
         /* Switches with unsigned integer args. */
         case TOKEN_MAX_COLUMNS:   /* FALLTHROUGH */

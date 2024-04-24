@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+/* menu include */
+#include "src/common/menu.h"
+
 /* Delimiter when displaying chords. */
 static const char* delimiter = " -> ";
 /* Max number of columns to use. */
@@ -22,7 +25,12 @@ static const uint32_t borderWidth = 4;
 /* Window border radius. 0 means no curve */
 static const double borderRadius = 0;
 /* Window foreground color */
-static const char* foreground = "#DCD7BA";
+static const char* foreground[FOREGROUND_COLOR_LAST] = {
+    "#DCD7BA", /* Key color */
+    "#525259", /* Delimiter color */
+    "#AF9FC9", /* Prefix color */
+    "#DCD7BA", /* Chord color */
+};
 /* Window background color */
 static const char* background = "#181616";
 /* Window border color */

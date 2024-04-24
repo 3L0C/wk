@@ -248,11 +248,11 @@ static const struct wl_callback_listener callbackListener = {
 };
 
 static uint32_t
-getAlignAnchor(MenuWindowPosition position)
+getAlignAnchor(MenuPosition position)
 {
     uint32_t anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
 
-    if (position == MENU_WIN_POS_BOTTOM)
+    if (position == MENU_POS_BOTTOM)
     {
         anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
     }
@@ -291,7 +291,7 @@ resizeWinWidth(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    int32_t windowWidth = menu->windowWidth;
+    int32_t windowWidth = menu->menuWidth;
     uint32_t outputWidth = window->maxWidth;
 
     if (windowWidth < 0)
@@ -332,7 +332,7 @@ resizeWinGap(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    int32_t windowGap = menu->windowGap;
+    int32_t windowGap = menu->menuGap;
     uint32_t outputHeight = window->maxHeight;
 
     if (windowGap < 0)
@@ -374,7 +374,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
         window->layerSurface, window->width * window->scale, window->height * window->scale
     );
     zwlr_layer_surface_v1_set_anchor(window->layerSurface, window->alignAnchor);
-    if (window->position == MENU_WIN_POS_BOTTOM)
+    if (window->position == MENU_POS_BOTTOM)
     {
         zwlr_layer_surface_v1_set_margin(
             window->layerSurface, 0, 0, window->windowGap * window->scale, 0

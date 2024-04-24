@@ -38,16 +38,6 @@ freeKeyChords(KeyChord* keyChords)
     free(keyChords);
 }
 
-static void
-freeMenuGarbage(Menu* menu)
-{
-    if (menu->garbage.shell) free(menu->garbage.shell);
-    if (menu->garbage.font) free(menu->garbage.font);
-    if (menu->garbage.foregroundColor) free(menu->garbage.foregroundColor);
-    if (menu->garbage.backgroundColor) free(menu->garbage.backgroundColor);
-    if (menu->garbage.borderColor) free(menu->garbage.borderColor);
-}
-
 static char*
 preprocessSource(Menu* menu, const char* source, const char* filepath)
 {

@@ -226,22 +226,37 @@ getTokenLiteral(const TokenType type)
     case TOKEN_RIGHT_PAREN: return "TOKEN_RIGHT_PAREN";
 
     /* preprocessor macros */
+
+    /* string macros */
     case TOKEN_INCLUDE: return "TOKEN_INCLUDE";
-    case TOKEN_DEBUG: return "TOKEN_DEBUG";
-    case TOKEN_TOP: return "TOKEN_TOP";
-    case TOKEN_BOTTOM: return "TOKEN_BOTTOM";
-    case TOKEN_MAX_COLUMNS: return "TOKEN_MAX_COLUMNS";
-    case TOKEN_WINDOW_WIDTH: return "TOKEN_WINDOW_WIDTH";
-    case TOKEN_WINDOW_GAP: return "TOKEN_WINDOW_GAP";
-    case TOKEN_BORDER_WIDTH: return "TOKEN_BORDER_WIDTH";
-    case TOKEN_BORDER_RADIUS: return "TOKEN_BORDER_RADIUS";
-    case TOKEN_WIDTH_PADDING: return "TOKEN_WIDTH_PADDING";
-    case TOKEN_HEIGHT_PADDING: return "TOKEN_HEIGHT_PADDING";
     case TOKEN_FOREGROUND_COLOR: return "TOKEN_FOREGROUND_COLOR";
+    case TOKEN_FOREGROUND_KEY_COLOR: return "TOKEN_FOREGROUND_KEY_COLOR";
+    case TOKEN_FOREGROUND_DELIMITER_COLOR: return "TOKEN_FOREGROUND_DELIMITER_COLOR";
+    case TOKEN_FOREGROUND_PREFIX_COLOR: return "TOKEN_FOREGROUND_PREFIX_COLOR";
+    case TOKEN_FOREGROUND_CHORD_COLOR: return "TOKEN_FOREGROUND_CHORD_COLOR";
     case TOKEN_BACKGROUND_COLOR: return "TOKEN_BACKGROUND_COLOR";
     case TOKEN_BORDER_COLOR: return "TOKEN_BORDER_COLOR";
     case TOKEN_SHELL: return "TOKEN_SHELL";
     case TOKEN_FONT: return "TOKEN_FONT";
+
+    /* switch macros */
+    case TOKEN_DEBUG: return "TOKEN_DEBUG";
+    case TOKEN_SORT: return "TOKEN_SORT";
+    case TOKEN_TOP: return "TOKEN_TOP";
+    case TOKEN_BOTTOM: return "TOKEN_BOTTOM";
+
+    /* [-]digit macros */
+    case TOKEN_MENU_WIDTH: return "TOKEN_MENU_WIDTH";
+    case TOKEN_MENU_GAP: return "TOKEN_MENU_GAP";
+
+    /* digit macros */
+    case TOKEN_MAX_COLUMNS: return "TOKEN_MAX_COLUMNS";
+    case TOKEN_BORDER_WIDTH: return "TOKEN_BORDER_WIDTH";
+    case TOKEN_WIDTH_PADDING: return "TOKEN_WIDTH_PADDING";
+    case TOKEN_HEIGHT_PADDING: return "TOKEN_HEIGHT_PADDING";
+
+    /* number macros */
+    case TOKEN_BORDER_RADIUS: return "TOKEN_BORDER_RADIUS";
 
     /* identifiers */
     case TOKEN_THIS_KEY: return "TOKEN_THIS_KEY";
@@ -299,8 +314,9 @@ getTokenLiteral(const TokenType type)
     case TOKEN_ERROR: return "TOKEN_ERROR";
     case TOKEN_EOF: return "TOKEN_EOF";
     case TOKEN_EMPTY: return "TOKEN_EMPTY";
-    default: return "TOKEN_UNKNOWN";
     }
+
+    return "TOKEN_UNKNOWN";
 }
 
 void

@@ -42,7 +42,7 @@ typedef struct
     int32_t scale;
     uint32_t displayed;
     struct wl_list link;
-    MenuWindowPosition position;
+    MenuPosition position;
     uint32_t alignAnchor;
     bool renderPending;
     bool (*render)(Cairo* cairo, Menu* menu);

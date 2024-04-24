@@ -134,7 +134,7 @@ getThrowawaySurface(X11Window* window)
 }
 
 static bool
-desiriedPos(Menu* menu, MenuWindowPosition pos)
+desiriedPos(Menu* menu, MenuPosition pos)
 {
     assert(menu);
 
@@ -146,7 +146,7 @@ resizeWinWidth(X11Window* window, Menu* menu)
 {
     assert(menu), assert(window);
 
-    int32_t windowWidth = menu->windowWidth;
+    int32_t windowWidth = menu->menuWidth;
     struct display* root = &window->root;
     if (windowWidth < 0)
     {
@@ -173,7 +173,7 @@ resizeWinHeight(X11Window* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    int32_t windowGap = menu->windowGap;
+    int32_t windowGap = menu->menuGap;
     struct display* root = &window->root;
     window->maxHeight = root->h;
 
@@ -200,7 +200,7 @@ resizeWinHeight(X11Window* window, Menu* menu)
         window->height = root->h;
     }
 
-    if (desiriedPos(menu, MENU_WIN_POS_BOTTOM))
+    if (desiriedPos(menu, MENU_POS_BOTTOM))
     {
         window->y = root->h - window->height - window->y + root->y;
     }
