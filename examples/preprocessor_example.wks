@@ -3,5 +3,5 @@
 :font "Sans, 14"
 :bg "#123456"
 :top a "hello!" +write %{{%(desc) %(key)}}
-:window-gap 5
+:menu-gap 5
 :border-width 1

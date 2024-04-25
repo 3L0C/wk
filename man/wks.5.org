@@ -312,9 +312,13 @@ preprocessor_macro -> ':' ( string_macro
                           | number_macro ) ;
 
 string_macro       -> ( 'include'
-                      | 'fg-color'
-                      | 'bg-color'
-                      | 'bd-color'
+                      | 'fg'
+                      | 'fg-key'
+                      | 'fg-delimiter'
+                      | 'fg-prefix'
+                      | 'fg-chord'
+                      | 'bg'
+                      | 'bd'
                       | 'shell'
                       | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
 
@@ -323,8 +327,8 @@ switch_macro       -> ( 'debug'
                       | 'top'
                       | 'bottom' );
 
-integer_macro      -> ( 'window-width'
-                      | 'window-gap' ) '-'? [0-9]+ ;
+integer_macro      -> ( 'menu-width'
+                      | 'menu-gap' ) '-'? [0-9]+ ;
 
 unsigned_macro     -> ( 'max-columns'
                       | 'border-width'

@@ -319,8 +319,8 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         if (isKeyword(scanner, 1, 5, "ottom")) result = TOKEN_BOTTOM;
         else if (isKeyword(scanner, 1, 11, "order-width")) result = TOKEN_BORDER_WIDTH;
         else if (isKeyword(scanner, 1, 12, "order-radius")) result = TOKEN_BORDER_RADIUS;
-        else if (isKeyword(scanner, 1, 7, "g-color")) result = TOKEN_BACKGROUND_COLOR;
-        else if (isKeyword(scanner, 1, 7, "d-color")) result = TOKEN_BORDER_COLOR;
+        else if (isKeyword(scanner, 1, 1, "g")) result = TOKEN_BACKGROUND_COLOR;
+        else if (isKeyword(scanner, 1, 1, "d")) result = TOKEN_BORDER_COLOR;
         break;
     }
     case 'm':
