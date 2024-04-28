@@ -35,15 +35,16 @@ typedef enum
     TOKEN_TOP,
     TOKEN_BOTTOM,
 
-    /* [-]digit macros */
+    /* [-]integer macros */
     TOKEN_MENU_WIDTH,
     TOKEN_MENU_GAP,
 
-    /* digit macros */
+    /* integer macros */
     TOKEN_MAX_COLUMNS,
     TOKEN_BORDER_WIDTH,
     TOKEN_WIDTH_PADDING,
     TOKEN_HEIGHT_PADDING,
+    TOKEN_MENU_DELAY,
 
     /* number macros */
     TOKEN_BORDER_RADIUS,

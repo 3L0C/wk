@@ -253,6 +253,8 @@ usage(void)
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
         "    -d, --debug                Print debug information.\n"
+        "    -D, --delay INT            Delay the popup window by INT milliseconds from startup/last\n"
+        "                               keypress (e.g., 1000 = 1 second).\n"
         "    -t, --top                  Position menu at top of screen.\n"
         "    -b, --bottom               Position menu at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as key chords.\n"
@@ -327,6 +329,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         { "script",         no_argument,        0, 's' },
         { "sort",           no_argument,        0, 'S' },
         /*                  required argument           */
+        { "delay",          required_argument,  0, 'D' },
         { "max-columns",    required_argument,  0, 'm' },
         { "press",          required_argument,  0, 'p' },
         { "transpile",      required_argument,  0, 'T' },
@@ -355,7 +358,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
     while (true)
     {
 
-        opt = getopt_long(*argc, *argv, ":hvdtbsSm:p:T:c:w:g:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvdtbsSD:m:p:T:c:w:g:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
@@ -369,6 +372,18 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         case 's': menu->client.tryScript = true; break;
         case 'S': menu->sort = true; break;
         /* requires argument */
+        case 'D':
+        {
+            int n = 0;
+            if (!getInt(&n))
+            {
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value of delay: %u.", menu->delay);
+                break;
+            }
+            menu->delay = (uint32_t)n;
+            break;
+        }
         case 'm':
         {
             int n = 0;

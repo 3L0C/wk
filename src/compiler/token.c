@@ -245,15 +245,16 @@ getTokenLiteral(const TokenType type)
     case TOKEN_TOP: return "TOKEN_TOP";
     case TOKEN_BOTTOM: return "TOKEN_BOTTOM";
 
-    /* [-]digit macros */
+    /* [-]integer macros */
     case TOKEN_MENU_WIDTH: return "TOKEN_MENU_WIDTH";
     case TOKEN_MENU_GAP: return "TOKEN_MENU_GAP";
 
-    /* digit macros */
+    /* integer macros */
     case TOKEN_MAX_COLUMNS: return "TOKEN_MAX_COLUMNS";
     case TOKEN_BORDER_WIDTH: return "TOKEN_BORDER_WIDTH";
     case TOKEN_WIDTH_PADDING: return "TOKEN_WIDTH_PADDING";
     case TOKEN_HEIGHT_PADDING: return "TOKEN_HEIGHT_PADDING";
+    case TOKEN_MENU_DELAY: return "TOKEN_MENU_DELAY";
 
     /* number macros */
     case TOKEN_BORDER_RADIUS: return "TOKEN_BORDER_RADIUS";

@@ -311,7 +311,12 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (peekStart(scanner))
     {
-    case 'd': if (isKeyword(scanner, 1, 4, "ebug")) result = TOKEN_DEBUG; break;
+    case 'd':
+    {
+        if (isKeyword(scanner, 1, 4, "ebug")) result = TOKEN_DEBUG;
+        else if (isKeyword(scanner, 1, 4, "elay")) result = TOKEN_MENU_DELAY;
+        break;
+    }
     case 'i': if (isKeyword(scanner, 1, 6, "nclude")) result = TOKEN_INCLUDE; break;
     case 't': if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP; break;
     case 'b':
