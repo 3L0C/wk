@@ -184,7 +184,7 @@ runScript(Menu* menu)
     if (!tryStdin(menu)) return EX_IOERR;
     String* source = &menu->client.script;
 
-    result = runSource(menu, source->string, "[SCRIPT]");
+    result = runSource(menu, source->string, ".");
 
     freeString(source);
     return result;
