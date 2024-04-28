@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sysexits.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifdef WK_X11_BACKEND
@@ -41,6 +42,8 @@ int
 displayMenu(Menu* menu)
 {
     assert(menu);
+
+    menuResetTimers(menu);
 
 #ifdef WK_WAYLAND_BACKEND
     if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
@@ -147,6 +150,39 @@ handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
     }
 
     return MENU_STATUS_EXIT_SOFTWARE;
+}
+
+bool
+menuIsDelayed(Menu* menu)
+{
+    assert(menu);
+
+    static struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    long elapsed_ms = (
+        ((now.tv_sec - menu->timer.check->tv_sec) * 1000) +
+        ((now.tv_nsec - menu->timer.check->tv_nsec) / 1000000)
+    );
+
+    return elapsed_ms < menu->delay.check;
+}
+
+void
+menuResetTimer(struct timespec* timer)
+{
+    assert(timer);
+
+    clock_gettime(CLOCK_MONOTONIC, timer);
+}
+
+void
+menuResetTimers(Menu* menu)
+{
+    assert(menu);
+
+    menuResetTimer(&menu->timer.one);
+    menuResetTimer(&menu->timer.two);
 }
 
 static bool
@@ -522,6 +558,12 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->garbage.foregroundChordColor = NULL;
     menu->garbage.backgroundColor = NULL;
     menu->garbage.borderColor = NULL;
+    menu->delay.one = delayOne;
+    menu->delay.two = delayTwo;
+    menu->delay.check = delayOne;
+    clock_gettime(CLOCK_MONOTONIC, &menu->timer.one);
+    clock_gettime(CLOCK_MONOTONIC, &menu->timer.two);
+    menu->timer.check = &menu->timer.one;
     menu->cleanupfp = NULL;
     menu->xp = NULL;
 }
