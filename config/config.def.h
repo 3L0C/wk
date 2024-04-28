@@ -8,6 +8,10 @@
 
 /* Delimiter when displaying chords. */
 static const char* delimiter = " -> ";
+/* Delay between last keypress and first time displaying the menu. Value in milliseconds. */
+static uint32_t delayOne = 1000;
+/* Delay between last keypress and subsequent instances displaying the menu. Value in milliseconds. */
+static uint32_t delayTwo = 500;
 /* Max number of columns to use. */
 static const uint32_t maxCols = 5;
 /* Window width. Set to '-1' for 1/2 the width of your screen. */
