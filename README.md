@@ -90,6 +90,8 @@ options:
     -h, --help                 Display help message and exit.
     -v, --version              Display version number and exit.
     -d, --debug                Print debug information.
+    -D, --delay INT            Delay the popup window by INT milliseconds from startup/last
+                               keypress (e.g., 1000 = 1 second).
     -t, --top                  Position menu at top of screen.
     -b, --bottom               Position menu at bottom of screen.
     -s, --script               Read script from stdin to use as key chords.
@@ -819,7 +821,8 @@ the macro.
 unsigned_macro -> ( 'max-columns'
                   | 'border-width'
                   | 'width-padding'
-                  | 'height-padding' ) [0-9]+ ;
+                  | 'height-padding' 
+                  | 'delay' ) [0-9]+ ;
 ```
 
 All the unsigned macros correspond to their cli flags for

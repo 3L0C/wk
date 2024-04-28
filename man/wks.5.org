@@ -265,9 +265,11 @@ key                -> modifier* ( '\\'[\\\[\]{}#":^+()]
                                 | [^\s\[\]{}#":^+()]
                                 | special_key ) ;
 
-special_key        -> ( 'Left' | 'Right' | 'Up'     | 'Down'
-                      | 'TAB'  | 'SPC'   | 'RET'    | 'DEL'  | 'ESC'
-                      | 'Home' | 'PgUp'  | 'PgDown' | 'End'  | 'Begin' ) ;
+special_key        -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
+                      | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
+                      | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
+                      | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
+                      | 'Prev'    | 'Next'    | 'F'[1-35] ) ;
 
 modifier           -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
 
@@ -333,7 +335,8 @@ integer_macro      -> ( 'menu-width'
 unsigned_macro     -> ( 'max-columns'
                       | 'border-width'
                       | 'width-padding'
-                      | 'height-padding' ) [0-9]+ ;
+                      | 'height-padding'
+                      | 'delay' ) [0-9]+ ;
 
 number_macro       -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
 #+end_example
@@ -426,9 +429,11 @@ The /special keys/ cover (mostly) non-printable keys that can be used as a /key/
 The following are recognized /special key​/ forms:
 
 #+begin_quote
-/Left/,  /Right/,  /Up/,      /Down/,
-/TAB/,   /SPC/,    /RET/,     /DEL/,       /ESC/,
-/Home/,  /PgUp/,   /PgDown/,  /End/, and   /Begin/
+/Left/,     /Right/,    /Up/,      /Down/,
+/TAB/,      /SPC/,      /RET/,     /DEL/,   /ESC/,
+/Home/,     /PgUp/,     /PgDown/,  /End/,   /Begin/,
+/VolDown/,  /VolMute/,  /VolUp/,   /Play/,  /Stop/,
+/Prev/,     /Next/, and /F/[1-35]
 #+end_quote
 
 *NOTE* that several of the /special keys/ are technically

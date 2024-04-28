@@ -126,7 +126,7 @@ a \[dq]A prefix with a hook and flag\[dq] \[ha]before %{{echo \[dq]I am /almost/
 }
 .EE
 .PP
-For a more formal understanding, see \f[B]INHERITENCE\f[R] below.
+For a more formal understanding, see \f[B]INHERITANCE\f[R] below.
 .SS THE INCLUDE PREPROCESSOR MACRO
 Here is a simple example of the \f[I]:include\f[R] \f[B]PREPROCESSOR
 MACRO\f[R]:
@@ -246,25 +246,27 @@ If anything is not behaving as you expect, please see \f[B]CONTACT\f[R]
 below to reach out.
 .IP
 .EX
-key_chord          -> prefix
-                    | chord
-                    | chord_array ;
-
-prefix             -> key description keyword* \[aq]{\[aq] ( key_chord )* \[aq]}\[aq] ;
+key_chord          -> ( chord
+                      | prefix
+                      | chord_array ) ;
 
 chord              -> key description keyword* command ;
 
+prefix             -> key description keyword* \[aq]{\[aq] ( key_chord )+ \[aq]}\[aq] ;
+
 chord_array        -> \[aq][\[aq] ( key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
 
-chord_expression   -> \[aq](\[aq] chord \[aq])\[aq] ;
+chord_expression   -> \[aq](\[aq] key description keyword* command? \[aq])\[aq] ;
 
 key                -> modifier* ( \[aq]\[rs]\[rs]\[aq][\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:\[ha]+()]
                                 | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:\[ha]+()]
                                 | special_key ) ;
 
-special_key        -> ( \[aq]Left\[aq] | \[aq]Right\[aq] | \[aq]Up\[aq]     | \[aq]Down\[aq]
-                      | \[aq]TAB\[aq]  | \[aq]SPC\[aq]   | \[aq]RET\[aq]    | \[aq]DEL\[aq]  | \[aq]ESC\[aq]
-                      | \[aq]Home\[aq] | \[aq]PgUp\[aq]  | \[aq]PgDown\[aq] | \[aq]End\[aq]  | \[aq]Begin\[aq] ) ;
+special_key        -> ( \[aq]Left\[aq]    | \[aq]Right\[aq]   | \[aq]Up\[aq]     | \[aq]Down\[aq]
+                      | \[aq]TAB\[aq]     | \[aq]SPC\[aq]     | \[aq]RET\[aq]    | \[aq]DEL\[aq]  | \[aq]ESC\[aq]
+                      | \[aq]Home\[aq]    | \[aq]PgUp\[aq]    | \[aq]PgDown\[aq] | \[aq]End\[aq]  | \[aq]Begin\[aq]
+                      | \[aq]VolDown\[aq] | \[aq]VolMute\[aq] | \[aq]VolUp\[aq]  | \[aq]Play\[aq] | \[aq]Stop\[aq]
+                      | \[aq]Prev\[aq]    | \[aq]Next\[aq]    | \[aq]F\[aq][1-35] ) ;
 
 modifier           -> ( \[aq]C\[aq] | \[aq]H\[aq] | \[aq]M\[aq] | \[aq]S\[aq] ) \[aq]-\[aq] ;
 
@@ -309,27 +311,31 @@ preprocessor_macro -> \[aq]:\[aq] ( string_macro
                           | number_macro ) ;
 
 string_macro       -> ( \[aq]include\[aq]
-                      | \[aq]fg-color\[aq]
-                      | \[aq]bg-color\[aq]
-                      | \[aq]bd-color\[aq]
+                      | \[aq]fg\[aq]
+                      | \[aq]fg-key\[aq]
+                      | \[aq]fg-delimiter\[aq]
+                      | \[aq]fg-prefix\[aq]
+                      | \[aq]fg-chord\[aq]
+                      | \[aq]bg\[aq]
+                      | \[aq]bd\[aq]
                       | \[aq]shell\[aq]
-                      | \[aq]font\[aq] ) \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] )* \[aq]\[dq]\[aq] ) ;
+                      | \[aq]font\[aq] ) \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] )* \[aq]\[dq]\[aq] ;
 
 switch_macro       -> ( \[aq]debug\[aq]
                       | \[aq]sort\[aq]
                       | \[aq]top\[aq]
                       | \[aq]bottom\[aq] );
 
-
-integer_macro      -> ( \[aq]window-width\[aq]
-                      | \[aq]window-gap\[aq] ) \[aq]-\[aq]? [0-9]+ ;
+integer_macro      -> ( \[aq]menu-width\[aq]
+                      | \[aq]menu-gap\[aq] ) \[aq]-\[aq]? [0-9]+ ;
 
 unsigned_macro     -> ( \[aq]max-columns\[aq]
                       | \[aq]border-width\[aq]
                       | \[aq]width-padding\[aq]
-                      | \[aq]height-padding\[aq] ) [0-9]+ ;
+                      | \[aq]height-padding\[aq]
+                      | \[aq]delay\[aq] ) [0-9]+ ;
 
-number_macro       -> ( \[aq]border-radius\[aq] ) [0-9]+ ( \[aq].\[aq] [0-9]* )? ;
+number_macro       -> ( \[aq]border-radius\[aq] ) \[aq]-\[aq]? [0-9]+ ( \[aq].\[aq] [0-9]* )? ;
 .EE
 .SS KEY CHORD
 A \f[I]key chord\f[R] is the top-level construct in the grammar and
@@ -446,7 +452,9 @@ The following are recognized /special key​/ forms:
 \f[I]Left\f[R], \f[I]Right\f[R], \f[I]Up\f[R], \f[I]Down\f[R],
 \f[I]TAB\f[R], \f[I]SPC\f[R], \f[I]RET\f[R], \f[I]DEL\f[R],
 \f[I]ESC\f[R], \f[I]Home\f[R], \f[I]PgUp\f[R], \f[I]PgDown\f[R],
-\f[I]End\f[R], and \f[I]Begin\f[R]
+\f[I]End\f[R], \f[I]Begin\f[R], \f[I]VolDown\f[R], \f[I]VolMute\f[R],
+\f[I]VolUp\f[R], \f[I]Play\f[R], \f[I]Stop\f[R], \f[I]Prev\f[R],
+\f[I]Next\f[R], and \f[I]F\f[R][1-35]
 .RE
 .PP
 \f[B]NOTE\f[R] that several of the \f[I]special keys\f[R] are
@@ -620,7 +628,7 @@ See the \f[B]COMMAND\f[R] section for best practices regarding blocking
 \f[I]commands\f[R].
 .RE
 .PP
-See \f[B]INHERITENCE\f[R] for an explanation of how \f[I]hooks\f[R] work
+See \f[B]INHERITANCE\f[R] for an explanation of how \f[I]hooks\f[R] work
 when given to a \f[I]prefix\f[R].
 .PP
 See \f[B]EXAMPLES\f[R] for a demonstration on \f[I]hooks\f[R].
@@ -706,7 +714,7 @@ See \f[B]COMMAND\f[R] above to understand the pitfalls of blocking
 \f[I]commands\f[R] in \f[B]wk\f[R].
 .RE
 .PP
-See \f[B]INHERITENCE\f[R] for an explanation of how \f[I]flags\f[R] work
+See \f[B]INHERITANCE\f[R] for an explanation of how \f[I]flags\f[R] work
 when given to a \f[I]prefix\f[R].
 .PP
 See \f[B]EXAMPLES\f[R] for a demonstration on \f[I]hooks\f[R].
@@ -744,5 +752,7 @@ then itself become invalid.
 One bad apple and all that.
 See \f[B]EXAMPLES\f[R] for a demonstration.
 .RE
+.SH NOTES
+.SS INHERITANCE
 .SH AUTHORS
 3L0C.
