@@ -3,7 +3,7 @@
 wk
 ========
 
-`wk` - which-key via X11 and Wayland. 
+`wk` - Which-Key via X11 and Wayland. 
 Displays available key chords in a popup window. 
 Inspired by 
 [emacs-which-key](https://github.com/justbur/emacs-which-key), 
@@ -79,6 +79,9 @@ wk --press 'C-c x'
 # formated `key_chords.def.h` header to stdout. 
 wk --transpile my_key_chords.wks
 
+# Read script from stdin 
+printf '%s\n' 'a "Chord" %{{echo "Hello, world!"}}' | wk --script
+
 # Everything else
 wk --help 
 usage: wk [options]
@@ -87,24 +90,28 @@ options:
     -h, --help                 Display help message and exit.
     -v, --version              Display version number and exit.
     -d, --debug                Print debug information.
-    -t, --top                  Position window at top of screen.
-    -b, --bottom               Position window at bottom of screen.
+    -t, --top                  Position menu at top of screen.
+    -b, --bottom               Position menu at bottom of screen.
     -s, --script               Read script from stdin to use as key chords.
     -S, --sort                 Sort key chords read from --key-chords, --script, or --transpile.
     -m, --max-columns INT      Set maximum columns to INT.
-    -p, --press KEY(s)         Press KEY(s) before dispalying window.
+    -p, --press KEY(s)         Press KEY(s) before dispalying menu.
     -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.
     -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.
-    -w, --window-width INT     Set window width to INT.
-    -g, --window-gap INT       Set window gap between top/bottom of the screen to INT.
+    -w, --menu-width INT       Set menu width to INT.
+    -g, --menu-gap INT         Set menu gap between top/bottom of screen to INT.
                                Set to '-1' for a gap equal to 1/10th of the screen height.
     --border-width INT         Set border width to INT.
-    --border-radius NUM        Set border-radius to NUM.
+    --border-radius NUM        Set border radius to NUM.
     --wpadding INT             Set left and right padding around hint text to INT.
     --hpadding INT             Set top and bottom padding around hint text to INT.
-    --fg COLOR                 Set window foreground to COLOR (e.g., '#F1CD39').
-    --bg COLOR                 Set window background to COLOR (e.g., '#F1CD39').
-    --bd COLOR                 Set window border to COLOR (e.g., '#F1CD39').
+    --fg COLOR                 Set all menu foreground text to COLOR (e.g., '#F1CD39').
+    --fg-key COLOR             Set menu foreground key to COLOR (e.g., '#F1CD39').
+    --fg-delimiter COLOR       Set menu foreground delimiter to COLOR (e.g., '#F1CD39').
+    --fg-prefix COLOR          Set menu foreground prefix description to COLOR (e.g., '#F1CD39').
+    --fg-chord COLOR           Set menu foreground chord description to COLOR (e.g., '#F1CD39').
+    --bg COLOR                 Set menu background to COLOR (e.g., '#F1CD39').
+    --bd COLOR                 Set menu border to COLOR (e.g., '#F1CD39').
     --shell STRING             Set shell to STRING (e.g., '/bin/sh').
     --font STRING              Set font to STRING. Should be a valid Pango font description
                                (e.g., 'monospace, M+ 1c, ..., 16').
@@ -123,19 +130,17 @@ the binary by changing the settings in
 
 Which-Key source (`wks`) files are the driving force behind
 `wk`. The syntax is novel but provides a flexible means to
-manage and express key chords. Below is an introduction to
-the `wks` syntax to get users up and running. For a deep
-dive, see the [man](man/wks.5.org) page.
+manage and express key chords.
 
 ## Comments
 
-In `wks` files, comments can be added using the `#`
-character. When a `#` is encountered, it signifies the start
-of a comment. The comment extends from the `#` character
-until the end of the line. It's important to note that the
-`#` character is treated as a literal character within
-descriptions and commands and does not indicate the start of
-a comment in those contexts.
+In `wks` files, comments can be added using the pound
+character (`#`). When a pound character is encountered, it
+signifies the start  of a comment. The comment extends from
+the pound character until the end of the line. It's
+important to note that the pound character is treated as a
+literal character within descriptions and commands and does
+not indicate the start of a comment in those contexts.
 
 ## Key Chords
 
@@ -152,16 +157,16 @@ serves as a good entry point for this discussion.
 
 A chord is a key chord that results in `wk` performing some
 action, like executing a command, when the trigger key is
-pressed. The formal grammar looks like this:
+pressed. 
 
 ```
 chord -> key description keyword* command ;
 ```
 
 All chords must have a `key`, `description`, and a
-`command`. Zero or more `keyword`s may be given. These will
-be addressed later. For now, let's break down the required
-parts of the chord.
+`command`. Zero or more `keyword`s may be given between the
+description and command. These will be addressed later. For
+now, let's break down the required parts of the chord.
 
 #### Keys
 
@@ -169,7 +174,7 @@ A key, or trigger key, represents the specific keypress or
 key combination that triggers a corresponding action or
 command. In a `wks` file, it is the written representation
 of the physical key(s) pressed by the user on their
-keyboard. The grammar looks like this:
+keyboard. 
 
 ```
 key -> modifier* ( '\\'[\\\[\]{}#":^+()] 
@@ -183,8 +188,8 @@ printable utf8 character, or a `special_key`.
 
 The characters `\`, `[`, `]`, `{`, `}`, `#`, `"`, `:`, `^`,
 `+`, `(`, and `)` have special meanings in `wks` files. To
-use any of these as a key, simply precede them with a
-backslash `\`.
+use any of these as a trigger key, simply precede them with
+a backslash `\`.
 
 All other non-whitespace, printable utf8 characters prior to
 a description will be interpreted as a key. Those that are
@@ -194,33 +199,33 @@ category.
 #### Special Keys
 
 Special keys like `tab`, `escape`, `spacebar`, and `F1` can
-still be used as trigger keys in `wks` files with the
-following special forms:
+still be used as trigger keys in `wks` files via their
+special forms.
 
-| Special Key    | Representation in `wks` |
-|----------------|-------------------------|
-| Left arrow     | `Left`                  |
-| Right arrow    | `Right`                 |
-| Up arrow       | `Up`                    |
-| Down arrow     | `Down`                  |
-| Tab            | `TAB`                   |
-| Space          | `SPC`                   |
-| Enter/Return   | `RET`                   |
-| Delete         | `DEL`                   |
-| Esc            | `ESC`                   |
-| Home           | `Home`                  |
-| Page up        | `PgUp`                  |
-| Page down      | `PgDown`                |
-| End            | `End`                   |
-| Begin          | `Begin`                 |
-| F[1-35]        | `F[1-35]`               |
-| Volume Down    | `VolDown`               |
-| Mute Vol       | `VolMute`               |
-| Volume Up      | `VolUp`                 |
-| Play Audio     | `Play`                  |
-| Stop Audio     | `Stop`                  |
-| Audio Previous | `Prev`                  |
-| Audio Next     | `Next`                  |
+| Special Key    | `wks` form |
+|----------------|------------|
+| Left arrow     | `Left`     |
+| Right arrow    | `Right`    |
+| Up arrow       | `Up`       |
+| Down arrow     | `Down`     |
+| Tab            | `TAB`      |
+| Space          | `SPC`      |
+| Enter/Return   | `RET`      |
+| Delete         | `DEL`      |
+| Esc            | `ESC`      |
+| Home           | `Home`     |
+| Page up        | `PgUp`     |
+| Page down      | `PgDown`   |
+| End            | `End`      |
+| Begin          | `Begin`    |
+| F[1-35]        | `F[1-35]`  |
+| Volume Down    | `VolDown`  |
+| Mute Vol       | `VolMute`  |
+| Volume Up      | `VolUp`    |
+| Play Audio     | `Play`     |
+| Stop Audio     | `Stop`     |
+| Audio Previous | `Prev`     |
+| Audio Next     | `Next`     |
 
 In `wks` files, whitespace is generally not significant
 around individual parts of the syntax, with one notable
@@ -236,21 +241,21 @@ request.
 #### Modifiers
 
 As mentioned above, zero or more modifiers can be given in a
-key. The following modifiers are recognized with the
-corresponding forms in a `wks` file: 
+key. Modifiers can be used in `wks` files via their special
+forms. 
 
-| Modifier    | Representation in `wks` |
-|-------------|-------------------------|
-| Control     | `C-`                    |
-| Alt         | `M-`                    |
-| Hyper/Super | `H-`                    |
-| Shift       | `S-`                    |
+| Modifier    | `wks` form |
+|-------------|------------|
+| Control     | `C-`       |
+| Alt         | `M-`       |
+| Hyper/Super | `H-`       |
+| Shift       | `S-`       |
 
 Modifiers act as one would expect. To match the keypress
 `Control+c` use the form `C-c` in your `wks` file.
 
 Among the modifiers, the Shift modifier (`S-`) has a unique
-behavior when used with non-special key characters. Due to
+behavior when used with standard utf8 key characters. Due to
 the way keys are interpreted, the `S-` modifier is not
 always necessary for these characters. To determine whether
 `S-` is required, it is recommended to test the character in
@@ -446,7 +451,9 @@ interpolation -> '%(' identifier ')' ;
 
 The basic syntax for an interpolation begins with a `%(`
 delimiter followed by an identifier and closing parenthesis
-(`)`). **Note** that interpolations can only be used in
+(`)`). 
+
+**Note** that interpolations can only be used in
 descriptions and commands.
 
 The basic idea of interpolation is to provide users with
@@ -594,7 +601,7 @@ m "+Music" +keep
     n "Next song" %{{mpc next}}
     p "Prev song" %{{mpc prev}}
     o "Open mpc" +close %{{st -e ncmpcpp}}
-    y "Playlist" +close %{{st -e ncmpcpp playlist}}
+    y "Playlist" +close %{{st -e ncmpcpp --screen playlist}}
 }
 ```
 
@@ -605,10 +612,10 @@ list of options with less typing.
 
 #### Inheritance 
 
-Inheritance relating to hooks and flags given to prefixes is
-fairly simple. A hook or flag given to a prefix is inherited
-by any chord within the prefix. Nested prefixes do not
-inherit the hooks and flags given to their parent. 
+Inheritance relates to hooks and flags given to prefixes.
+The idea is fairly simple. A hook or flag given to a prefix
+is inherited by any chord within the prefix. Nested prefixes
+do not inherit the hooks and flags given to their parent. 
 
 ```
 a "+Prefix" +write 
@@ -622,7 +629,7 @@ a "+Prefix" +write
 ```
 
 In the above example, the key chord `a w` causes `I get
-written!` to be printed to stdout. The key chord `a n e`
+written!` to be printed to stdout. The key chord `a n r`
 runs the command `echo "I get run!"`.
 
 To force a nested prefix to inherit from its parent the
@@ -678,12 +685,12 @@ any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
 
 #### The Include Macro
 
-Out of the string macros, the `include` macro is not present
+Out of the string macros, the `:include` macro is not present
 as a command-line argument to `wk`. This is because this
 macro has more to do with `wks` files than the look and feel
 of `wk`.
 
-The `include` macro works similarly to the `#include` macro
+The `:include` macro works similarly to the `#include` macro
 found in C/C++. It allows users to bring other `wks` files
 into a single file. 
 
@@ -772,21 +779,84 @@ As for file resolution, it's pretty simple. A relative path
 is assumed to be in the same directory as the file being
 executed,  and absolute paths are just that, absolute.
 
+### Switch Macros 
+
+Switch macros are the simplest of the bunch. They are
+essentially an on switch for the corresponding menu
+settings.
+
+```
+switch_macro -> ( 'debug'
+                | 'sort'
+                | 'top'
+                | 'bottom' );
+```
+
+All the switch macros correspond to their cli flags for
+`wk`. See the help message or the [man](man/wk.1.org) page
+for more info. 
+
+### Integer Macros 
+
+The integer macros require a positive or negative integer
+argument to the macro.
+
+```
+integer_macro -> ( 'menu-width'
+                 | 'menu-gap' ) '-'? [0-9]+ ;
+```
+
+All the integer macros correspond to their cli flags for
+`wk`. See the help message or the [man](man/wk.1.org) page
+for more info. 
+
+### Unsigned Macros 
+
+The unsigned macros require a positive integer argument to
+the macro. 
+
+```
+unsigned_macro -> ( 'max-columns'
+                  | 'border-width'
+                  | 'width-padding'
+                  | 'height-padding' ) [0-9]+ ;
+```
+
+All the unsigned macros correspond to their cli flags for
+`wk`. See the help message or the [man](man/wk.1.org) page
+for more info. 
+
+### Number Macros 
+
+The number macros require a positive number argument to
+the macro. 
+
+```
+number_macro -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
+```
+
+All the number macros correspond to their cli flags for
+`wk`. See the help message or the [man](man/wk.1.org) page
+for more info. 
+
 ## Full documentation
 
-The above is useful as quick and dirty introduction to the
-`wks` syntax. For complete details, see [man](man/wks.5.org)
-page here in this repo, or through `man 5 wks` if you have
-installed `wk`. 
+The above should serve as a solid introduction to `wks` file
+syntax. The [man](man/wks.5.org) page for `wks` files
+contains the same information. When `wk` is installed,
+simply run `man 5 wks` to get refrence examples and a full
+break down of `wks` syntax.
 
 Additionally, there are several example files included in
-the examples section for testing and understanding. 
+the [`examples`](examples) section for testing and
+understanding. 
+
+## `wks-mode` Emacs Package
 
 There is also a [wks-mode](https://github.com/3L0C/wks-mode)
-package for emacs that is a work in progress but currently
-provides syntax highlighting, and proper indentation in
-`wks` files.  I'm no elisp wizard, if you have any way to
-make that package better, please reach out.
+package for Emacs provides syntax highlighting, and proper
+indentation in `wks` files. I'm no elisp wizard, if you have
+any way to make that package better, please reach out.
 
 # Acknowledgments 
 

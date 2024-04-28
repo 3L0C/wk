@@ -335,7 +335,7 @@ unsigned_macro     -> ( 'max-columns'
                       | 'width-padding'
                       | 'height-padding' ) [0-9]+ ;
 
-number_macro       -> ( 'border-radius' ) [0-9]+ ( '.' [0-9]* )? ;
+number_macro       -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
 #+end_example
 
 ** KEY CHORD
