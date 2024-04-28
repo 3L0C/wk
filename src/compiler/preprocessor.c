@@ -258,8 +258,8 @@ handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable*
     if (result.type != TOKEN_DESCRIPTION)
     {
         errorAtToken(
-            &result, scanner->filepath,
-            "Expect string argument to '%.*s' macro. Got '%.*s'.",
+            token, scanner->filepath,
+            "Expect string argument to macro. Got '%.*s'.",
             token->length, token->start,
             result.length, result.start
         );
@@ -367,8 +367,8 @@ handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
 
 fail:
     errorAtToken(
-        &result, scanner->filepath,
-        "Expect double after '%.*s' switch. Got '%.*s'.",
+        token, scanner->filepath,
+        "Expect double argument to macro. Got '%.*s'.",
         token->length, token->start,
         result.length, result.start
     );
@@ -406,8 +406,8 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
 
 fail:
     errorAtToken(
-        &result, scanner->filepath,
-        "Expect integer after '%.*s' switch. Got '%.*s'.",
+        token, scanner->filepath,
+        "Expect integer argument to macro. Got '%.*s'.",
         token->length, token->start,
         result.length, result.start
     );
@@ -449,8 +449,8 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
 
 fail:
     errorAtToken(
-        &result, scanner->filepath,
-        "Expect unsigned integer after '%.*s' switch. Got '%.*s'.",
+        token, scanner->filepath,
+        "Expect unsigned integer argument to macro. Got '%.*s'.",
         token->length, token->start,
         result.length, result.start
     );
