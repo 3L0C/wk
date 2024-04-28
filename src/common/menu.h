@@ -98,18 +98,8 @@ typedef struct
         char* backgroundColor;
         char* borderColor;
     } garbage;
-    struct
-    {
-        uint32_t one;
-        uint32_t two;
-        uint32_t check;
-    } delay;
-    struct
-    {
-        struct timespec one;
-        struct timespec two;
-        struct timespec* check;
-    } timer;
+    uint32_t delay;
+    struct timespec timer;
     CleanupFP cleanupfp;
     void* xp;
 } Menu;
@@ -120,8 +110,7 @@ void freeMenuGarbage(Menu* menu);
 MenuStatus handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant);
 void initMenu(Menu* menu, KeyChord* keyChords);
 bool menuIsDelayed(Menu* menu);
-void menuResetTimer(struct timespec* timer);
-void menuResetTimers(Menu* menu);
+void menuResetTimer(Menu* menu);
 void parseArgs(Menu* menu, int* argc, char*** argv);
 void setMenuColor(Menu* menu, const char* color, MenuColor colorType);
 MenuStatus spawn(const Menu* menu, const char* cmd, bool async);

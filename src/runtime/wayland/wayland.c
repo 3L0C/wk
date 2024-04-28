@@ -126,36 +126,6 @@ renderWindowsIfPending(Menu* menu, Wayland* wayland)
     wl_display_flush(wayland->display);
 }
 
-static bool
-waitForEvents(Wayland* wayland)
-{
-    assert(wayland);
-
-    wl_display_dispatch_pending(wayland->display);
-
-    if (wl_display_flush(wayland->display) < 0 && errno != EAGAIN) return false;
-
-    struct epoll_event ep[16];
-    uint32_t num = epoll_wait(efd, ep, 16, -1);
-    for (uint32_t i = 0; i < num; i++)
-    {
-        if (ep[i].data.ptr == &wayland->fds.display)
-        {
-            if (ep[i].events & EPOLLERR || ep[i].events & EPOLLHUP ||
-                ((ep[i].events & EPOLLIN) && wl_display_dispatch(wayland->display) < 0))
-            {
-                return false;
-            }
-        }
-        else if (ep[i].data.ptr == &wayland->fds.repeat)
-        {
-            waylandRepeat(wayland);
-        }
-    }
-
-    return true;
-}
-
 static void
 scheduleWindowsRenderIfDirty(Menu* menu, Wayland* wayland)
 {
@@ -175,12 +145,46 @@ scheduleWindowsRenderIfDirty(Menu* menu, Wayland* wayland)
 }
 
 static bool
+checkEvents(Wayland* wayland, int wait)
+{
+    assert(wayland);
+
+    wl_display_dispatch_pending(wayland->display);
+
+    if (wl_display_flush(wayland->display) < 0 && errno != EAGAIN) return false;
+
+    struct epoll_event ep[16];
+    int num = epoll_wait(efd, ep, 16, wait);
+    if (num < 0) return false;
+
+    for (int i = 0; i < num; i++)
+    {
+        if (ep[i].data.ptr == &wayland->fds.display)
+        {
+            if (ep[i].events & EPOLLERR || ep[i].events & EPOLLHUP ||
+                ((ep[i].events & EPOLLIN) && wl_display_dispatch(wayland->display) < 0))
+            {
+                return false;
+            }
+        }
+        else if (ep[i].data.ptr == &wayland->fds.repeat)
+        {
+            waylandRepeat(wayland);
+        }
+    }
+
+    if (wait == 0) usleep(1000);
+
+    return true;
+}
+
+static bool
 render(Menu* menu, Wayland* wayland)
 {
     assert(menu), assert(wayland);
 
     scheduleWindowsRenderIfDirty(menu, wayland);
-    if (!waitForEvents(wayland)) return false;
+    if (!checkEvents(wayland, menuIsDelayed(menu) ? 0 : -1)) return false;
     renderWindowsIfPending(menu, wayland);
 
     return true;
@@ -378,7 +382,10 @@ pollKey(Menu* menu, Wayland* wayland)
 
     if (mods & MOD_SHIFT) shiftIsSignificant = isShiftSignificant(wayland, buffer, len);
 
-    switch (getKeyType(wayland, &key, mods, keysym, buffer, len))
+    KeyType type = getKeyType(wayland, &key, mods, keysym, buffer, len);
+    if (type != KEY_TYPE_IS_STRICTLY_MOD) menuResetTimer(menu);
+
+    switch (type)
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
@@ -540,7 +547,7 @@ grabKeyboard(Wayland* wayland, bool grab)
 }
 
 static bool
-recreateWindows(Menu* props, Wayland* wayland)
+recreateWindows(Menu* menu, Wayland* wayland)
 {
     assert(wayland);
 
@@ -548,7 +555,7 @@ recreateWindows(Menu* props, Wayland* wayland)
     WaylandWindow* window = calloc(1, sizeof(WaylandWindow));
     wl_list_init(&window->surfaceOutputs);
     window->wayland = wayland;
-    window->position = props->position;
+    window->position = menu->position;
 
     /* TODO this should not be necessary, but Sway 1.8.1 does not trigger event
      * surface.enter before we actually need to render the first frame.
@@ -572,7 +579,7 @@ recreateWindows(Menu* props, Wayland* wayland)
     if (output) wlOutput = output->output;
 
     if (!windowCreate(
-            window, wayland->display, wayland->shm, wlOutput, wayland->layerShell, surface, props
+            window, wayland->display, wayland->shm, wlOutput, wayland->layerShell, surface, menu
         )) goto fail;
 
     window->render = cairoPaint;

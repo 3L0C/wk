@@ -655,7 +655,10 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
 
     if (state & ShiftMask) shiftIsSignificant = isShiftSignificant(window, keyEvent, buffer, len);
 
-    switch (getKeyType(window, &key, keyEvent, keysym, buffer, len))
+    KeyType type = getKeyType(window, &key, keyEvent, keysym, buffer, len);
+    if (type != KEY_TYPE_IS_STRICTLY_MOD) menuResetTimer(menu);
+
+    switch (type)
     {
     case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
     case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
@@ -674,8 +677,18 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
 
     XEvent ev;
 
-    while (!XNextEvent(window->display, &ev))
+    while (true)
     {
+        render(window, menu);
+
+        if (menuIsDelayed(menu) && XPending(window->display) == 0)
+        {
+            usleep(1000);
+            continue;
+        }
+
+        XNextEvent(window->display, &ev);
+
         if (XFilterEvent(&ev, window->drawable)) continue;
 
         switch (ev.type)

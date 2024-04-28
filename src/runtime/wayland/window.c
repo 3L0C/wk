@@ -415,7 +415,7 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
     wl_surface_attach(window->surface, buffer->buffer, 0, 0);
     wl_surface_commit(window->surface);
     buffer->busy = true;
-    window->renderPending = false;
+    window->renderPending = menuIsDelayed(menu);
 
     return true;
 }

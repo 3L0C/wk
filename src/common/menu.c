@@ -43,7 +43,7 @@ displayMenu(Menu* menu)
 {
     assert(menu);
 
-    menuResetTimers(menu);
+    menuResetTimer(menu);
 
 #ifdef WK_WAYLAND_BACKEND
     if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
@@ -156,33 +156,28 @@ bool
 menuIsDelayed(Menu* menu)
 {
     assert(menu);
+    if (!menu->delay) return false;
 
     static struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    long elapsed_ms = (
-        ((now.tv_sec - menu->timer.check->tv_sec) * 1000) +
-        ((now.tv_nsec - menu->timer.check->tv_nsec) / 1000000)
+    long elapsedTime = (
+        ((now.tv_sec - menu->timer.tv_sec) * 1000) +
+        ((now.tv_nsec - menu->timer.tv_nsec) / 1000000)
     );
 
-    return elapsed_ms < menu->delay.check;
+    bool result = elapsedTime < menu->delay;
+    if (!result) menu->delay = 0;
+
+    return result;
 }
 
 void
-menuResetTimer(struct timespec* timer)
-{
-    assert(timer);
-
-    clock_gettime(CLOCK_MONOTONIC, timer);
-}
-
-void
-menuResetTimers(Menu* menu)
+menuResetTimer(Menu* menu)
 {
     assert(menu);
 
-    menuResetTimer(&menu->timer.one);
-    menuResetTimer(&menu->timer.two);
+    if (menuIsDelayed(menu)) clock_gettime(CLOCK_MONOTONIC, &menu->timer);
 }
 
 static bool
@@ -558,12 +553,8 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->garbage.foregroundChordColor = NULL;
     menu->garbage.backgroundColor = NULL;
     menu->garbage.borderColor = NULL;
-    menu->delay.one = delayOne;
-    menu->delay.two = delayTwo;
-    menu->delay.check = delayOne;
-    clock_gettime(CLOCK_MONOTONIC, &menu->timer.one);
-    clock_gettime(CLOCK_MONOTONIC, &menu->timer.two);
-    menu->timer.check = &menu->timer.one;
+    menu->delay = delay;
+    clock_gettime(CLOCK_MONOTONIC, &menu->timer);
     menu->cleanupfp = NULL;
     menu->xp = NULL;
 }

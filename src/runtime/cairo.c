@@ -449,7 +449,6 @@ cairoPaint(Cairo* cr, Menu* menu)
 {
     assert(cr), assert(menu);
 
-    /* Don't display anything until delay expires. */
     if (menuIsDelayed(menu)) return true;
 
     cairo = cr;
