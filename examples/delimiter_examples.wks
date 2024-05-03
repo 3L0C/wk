@@ -1,0 +1,9 @@
+# Commands with opening and closing delimiters
+a "{{" %{{echo "hello, world"}}
+b "((" %((echo "hello, world"))
+c "[[" %[[echo "hello, world"]]
+
+# Valid alternatives
+d "||" %||echo "hello, world"||
+e "%%" %%%echo "hello, world"%%
+f "zz" %zzecho "hello, world"zz
