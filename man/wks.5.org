@@ -731,20 +731,21 @@ any string macro, (e.g. *:shell "/usr/bin/env zsh"*).
 
 ** INCLUDE MACRO
 
-Out of the string macros, the /:include/ macro is not present
-as a command-line argument to *wk*​(1). This is because this
-macro has more to do with /wks/ files than the look and feel
-of *wk*​(1).
-
-The /:include/ macro works similarly to the /#include/ macro
-found in C/C++. It allows users to bring other /wks/ files
-into a single file.
-
-*NOTE*, self includes and recursive includes are not
-permitted and will cause an error.
-
-*NOTE*, the same file may be included multiple times. This
-is not an error, and may even be desirable for some users.
+Out of the string macros, the /:include/ macro is not
+present as a command-line argument to *wk*​(1). This is
+because this macro has more to do with /wks/ files than the
+look and feel of *wk*​(1). The /:include/ macro works
+similarly to the /#include/ macro found in C/C++. It allows
+users to bring other /wks/ files into a single file. *NOTE*,
+self includes and recursive includes are not permitted and
+will cause an error. *NOTE*, the same file may be included
+multiple times. This is not an error, and may even be
+desirable for some users. *NOTE*, while the /#include/ macro
+in C/C++ has restrictions on where it can go in a file, the
+/:include/ macro in a /wks/ file may go literally anywhere.
+As for file resolution, it's pretty simple. A relative path
+is assumed to be in the same directory as the file being
+processed, and absolute paths are just that, absolute.
 
 See *EXAMPLES* for a full demonstration of the /:include/
 macro.
@@ -922,11 +923,6 @@ This allows users to create key chords in a more modular
 manner. This can be beneficial when you may want to reuse a
 /wks/ file in a different context than your main key chords.
 
-*NOTE*, while the /#include/ macro in C/C++ has restrictions
-on where it can go in a file, the /:include/ macro in a
-/wks/ file may go literally anywhere. In the above example,
-this was given in the middle of a prefix without error.
-
 You can even do silly things like this:
 
 #+begin_example
@@ -942,10 +938,6 @@ example" %{{echo "You wouldn't do this right??"}}
 --------------------
 A "silly example" %{{echo "You wouldn't do this right??"}}
 #+end_example
-
-As for file resolution, it's pretty simple. A relative path
-is assumed to be in the same directory as the file being
-executed,  and absolute paths are just that, absolute.
 
 * NOTES
 

@@ -779,16 +779,19 @@ Out of the string macros, the \f[I]:include\f[R] macro is not present as
 a command-line argument to \f[B]wk\f[R]​(1).
 This is because this macro has more to do with \f[I]wks\f[R] files than
 the look and feel of \f[B]wk\f[R]​(1).
-.PP
 The \f[I]:include\f[R] macro works similarly to the \f[I]#include\f[R]
 macro found in C/C++.
 It allows users to bring other \f[I]wks\f[R] files into a single file.
-.PP
 \f[B]NOTE\f[R], self includes and recursive includes are not permitted
 and will cause an error.
-.PP
 \f[B]NOTE\f[R], the same file may be included multiple times.
 This is not an error, and may even be desirable for some users.
+\f[B]NOTE\f[R], while the \f[I]#include\f[R] macro in C/C++ has
+restrictions on where it can go in a file, the \f[I]:include\f[R] macro
+in a \f[I]wks\f[R] file may go literally anywhere.
+As for file resolution, it\[aq]s pretty simple.
+A relative path is assumed to be in the same directory as the file being
+processed, and absolute paths are just that, absolute.
 .PP
 See \f[B]EXAMPLES\f[R] for a full demonstration of the
 \f[I]:include\f[R] macro.
@@ -945,12 +948,6 @@ This allows users to create key chords in a more modular manner.
 This can be beneficial when you may want to reuse a \f[I]wks\f[R] file
 in a different context than your main key chords.
 .PP
-\f[B]NOTE\f[R], while the \f[I]#include\f[R] macro in C/C++ has
-restrictions on where it can go in a file, the \f[I]:include\f[R] macro
-in a \f[I]wks\f[R] file may go literally anywhere.
-In the above example, this was given in the middle of a prefix without
-error.
-.PP
 You can even do silly things like this:
 .IP
 .EX
@@ -966,10 +963,6 @@ example\[dq] %{{echo \[dq]You wouldn\[aq]t do this right??\[dq]}}
 --------------------
 A \[dq]silly example\[dq] %{{echo \[dq]You wouldn\[aq]t do this right??\[dq]}}
 .EE
-.PP
-As for file resolution, it\[aq]s pretty simple.
-A relative path is assumed to be in the same directory as the file being
-executed, and absolute paths are just that, absolute.
 .SH NOTES
 .SS INHERITANCE
 Inheritance relates to hooks and flags given to prefixes.
