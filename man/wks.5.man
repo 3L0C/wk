@@ -40,7 +40,11 @@ description        -> \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]]
 
 command            -> \[aq]%\[aq] delimiter ( . | interpolation )* delimiter ;
 
-delimiter          -> .{2} ;
+delimiter          -> ( open_delim | close_delim | (.)\[rs]1 ) ;
+
+open_delim         -> ( \[aq]{{\[aq] | \[aq]((\[aq] | \[aq][[\[aq] ) ;
+
+close_delim        -> ( \[aq]}}\[aq] | \[aq]))\[aq] | \[aq]]]\[aq] ) ;
 
 interpolation      -> \[aq]%(\[aq] identifier \[aq])\[aq] ;
 
@@ -360,13 +364,13 @@ A \f[I]description\f[R] starts with a double quote (\f[I]\[dq]\f[R]),
 followed by zero or more of the following:
 .RS
 .TP
-\f[I]\[rs]\[dq]\f[R]
+\f[B]\[rs]\[dq]\f[R]
 Escaped double quotes.
 .TP
-\f[I][\[ha]\[dq]]\f[R]
+\f[B][\[ha]\[dq]]\f[R]
 Any non-double quote character.
 .TP
-\f[I]interpolation\f[R]
+\f[B]interpolation\f[R]
 An interpolation.
 .RE
 .PP
@@ -411,7 +415,8 @@ A \f[I]delimiter\f[R] may be one of the following:
 The opening and closing delimiters are special delimiters that that have
 an inverse match.
 If an opening delimiter is given then the corresponding closing
-delimiter is required to end the command.
+delimiter is required to end the command (e.g., \f[I]{{\f[R] matches
+\f[I]}}\f[R] and so forth).
 .TP
 \f[B](.)\[rs]1\f[R]
 Any \f[B]ASCII\f[R] character given twice.
@@ -434,9 +439,8 @@ Here are some examples of different delimiters for the same command.
 %((echo \[dq]hello, world\[dq]))
 %[[echo \[dq]hello, world\[dq]]]
 
-# Valid alternatives
+# Valid arbitrary delimiters
 %||echo \[dq]hello, world\[dq]||
-%\[rs]\[rs]echo \[dq]hello, world\[dq]\[rs]\[rs]
 %%%echo \[dq]hello, world\[dq]%%
 %zzecho \[dq]hello, world\[dq]zz
 .EE

@@ -356,7 +356,7 @@ A /delimiter/ may be one of the following:
   The opening and closing delimiters are special delimiters
   that that have an inverse match. If an opening delimiter
   is given then the corresponding closing delimiter is
-  required to end the command. (e.g., /{{/ matches /}}/ and
+  required to end the command (e.g., /{{/ matches /}}/ and
   so forth).
 
 - *(.)\1* ::
