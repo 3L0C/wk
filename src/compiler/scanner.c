@@ -503,14 +503,8 @@ scanCommand(Scanner* scanner, Token* token, char delim, bool allowInterpolation)
             return;
         }
 
-        if (c == '%')
+        if (allowInterpolation && c == '%' && peekNext(scanner) == '(')
         {
-            /* Don't check interpolation if not desired. */
-            if (!allowInterpolation) continue;;
-
-            /* Not an interpolation, keep going. */
-            if (peekNext(scanner) != '(') continue;;
-
             /* Get the interpolation type, if any. */
             scanner->interpType = getInterpolationType(scanner);
 
@@ -538,7 +532,7 @@ scanCommand(Scanner* scanner, Token* token, char delim, bool allowInterpolation)
     }
 
     scanner->state = SCANNER_STATE_NORMAL;
-    return errorToken(scanner, token, "Expected '}}' but got end of file");
+    return errorToken(scanner, token, "Expected delimiter after command but got end of file");
 }
 
 static TokenType
