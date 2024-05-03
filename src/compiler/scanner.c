@@ -473,33 +473,43 @@ scanDescription(Scanner* scanner, Token* token, bool allowInterpolation)
 }
 
 static void
-scanCommand(Scanner* scanner, Token* token, bool allowInterpolation)
+scanCommand(Scanner* scanner, Token* token, char delim, bool allowInterpolation)
 {
     assert(scanner), assert(token);
 
+    static char delimiter = '\0';
+
+    if (delim != '\0')
+    {
+        switch (delim)
+        {
+        case '{': delimiter = '}'; break;
+        case '(': delimiter = ')'; break;
+        case '[': delimiter = ']'; break;
+        default: delimiter = delim; break;
+        }
+    }
+
     while (!isAtEnd(scanner))
     {
-        switch (peek(scanner))
+        char c = peek(scanner);
+
+        if (c == delimiter && peekNext(scanner) == delimiter)
         {
-        case '}':
-        {
-            if (peekNext(scanner) == '}')
-            {
-                makeToken(scanner, token, TOKEN_COMMAND);
-                consumeScanner(scanner, '}');
-                consumeScanner(scanner, '}');
-                scanner->state = SCANNER_STATE_NORMAL;
-                return;
-            }
-            break;
+            makeToken(scanner, token, TOKEN_COMMAND);
+            consumeScanner(scanner, delimiter);
+            consumeScanner(scanner, delimiter);
+            scanner->state = SCANNER_STATE_NORMAL;
+            return;
         }
-        case '%':
+
+        if (c == '%')
         {
             /* Don't check interpolation if not desired. */
-            if (!allowInterpolation) break;
+            if (!allowInterpolation) continue;;
 
             /* Not an interpolation, keep going. */
-            if (peekNext(scanner) != '(') break;
+            if (peekNext(scanner) != '(') continue;;
 
             /* Get the interpolation type, if any. */
             scanner->interpType = getInterpolationType(scanner);
@@ -522,9 +532,8 @@ scanCommand(Scanner* scanner, Token* token, bool allowInterpolation)
             }
             }
             scanner->interpType = TOKEN_EMPTY;
-            break;
         }
-        }
+
         advanceScanner(scanner);
     }
 
@@ -676,7 +685,7 @@ scanTokenForCompiler(Scanner* scanner, Token* token)
 
     switch (scanner->state)
     {
-    case SCANNER_STATE_COMMAND: return scanCommand(scanner, token, true);
+    case SCANNER_STATE_COMMAND: return scanCommand(scanner, token, '\0', true);
     case SCANNER_STATE_DESCRIPTION: return scanDescription(scanner, token, true);
     case SCANNER_STATE_INTERPOLATION: return scanInterpolation(scanner, token);
     default: break;
@@ -710,20 +719,19 @@ scanTokenForCompiler(Scanner* scanner, Token* token)
     }
     case '%':
     {
-        if (peek(scanner) != '{')
-        {
-            return scanKey(scanner, token, c);
-        }
-        else if (matchScanner(scanner, '{') && !matchScanner(scanner, '{'))
+        char delim = peek(scanner);
+
+        if (matchScanner(scanner, delim) && !matchScanner(scanner, delim))
         {
             return errorToken(
-                scanner, token, "Expected '{' after '%{'. '{' must be escaped if it is meant to be a key."
+                scanner, token,
+                "Expected delimiter after '%'."
             );
         }
 
         scanner->state = SCANNER_STATE_COMMAND;
         makeScannerCurrent(scanner);
-        return scanCommand(scanner, token, true);
+        return scanCommand(scanner, token, delim, true);
     }
     case '\\': makeScannerCurrent(scanner); return scanKey(scanner, token, advanceScanner(scanner));
 
