@@ -150,8 +150,8 @@ not indicate the start of a comment in those contexts.
 key_chord -> ( chord | prefix | chord_array ) ;
 ```
 
-The `key_chord` is the main building block of a `wks` file.
-This can be either a `chord`, `prefix`, or a `chord_array`.
+The key chord is the main building block of a `wks` file.
+This can be either a chord, prefix, or a chord array.
 The chord is the most basic example of a key chord and
 serves as a good entry point for this discussion.
 
@@ -162,41 +162,46 @@ action, like executing a command, when the trigger key is
 pressed. 
 
 ```
-chord -> key description keyword* command ;
+chord -> trigger_key description keyword* command ;
 ```
 
-All chords must have a `key`, `description`, and a
-`command`. Zero or more `keyword`s may be given between the
+All chords must have a trigger key, description, and a
+command. Zero or more keywords may be given between the
 description and command. These will be addressed later. For
 now, let's break down the required parts of the chord.
 
-#### Keys
+#### Trigger Keys
 
-A key, or trigger key, represents the specific keypress or
-key combination that triggers a corresponding action or
-command. In a `wks` file, it is the written representation
-of the physical key(s) pressed by the user on their
-keyboard. 
+A trigger key represents the specific keypress or key
+combination that triggers a corresponding action or command.
+In a `wks` file, it is the written representation of the
+physical key(s) pressed by the user on their keyboard. 
 
 ```
-key -> modifier* ( '\\'[\\\[\]{}#":^+()] 
-                 | [^\s\[\]{}#":^+()] 
-                 | special_key ) ;
+trigger_key -> modifier* ( normal_key | special_key ) ;
 ```
 
-A key is then zero or more `modifiers` followed by an
-escaped character with special meaning, any non-whitespace,
-printable utf8 character, or a `special_key`. 
+A trigger key is then zero or more modifiers followed by a
+normal key or a special key. 
+
+#### Normal Keys
+
+A normal key is any printable, non-whitespace, utf8
+character.
+
+```
+normal_key -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
+```
 
 The characters `\`, `[`, `]`, `{`, `}`, `#`, `"`, `:`, `^`,
 `+`, `(`, and `)` have special meanings in `wks` files. To
-use any of these as a trigger key, simply precede them with
-a backslash `\`.
+use any of these as a normal key, simply precede them with
+a backslash (`\`).
 
 All other non-whitespace, printable utf8 characters prior to
-a description will be interpreted as a key. Those that are
-whitespace or non-printable fall into the `special_key`
-category.
+a description will be interpreted as a normal key. Those
+that are whitespace or non-printable fall into the special
+key category.
 
 #### Special Keys
 
@@ -232,7 +237,7 @@ special forms.
 In `wks` files, whitespace is generally not significant
 around individual parts of the syntax, with one notable
 exception: special keys. When using special keys, it is
-recommended to include whitespace between the end of the
+required to include whitespace between the end of the
 special key and the start of the next item in the `wks`
 file.
 
@@ -243,8 +248,8 @@ request.
 #### Modifiers
 
 As mentioned above, zero or more modifiers can be given in a
-key. Modifiers can be used in `wks` files via their special
-forms. 
+trigger key. Modifiers can be used in `wks` files via their
+special forms. 
 
 | Modifier    | `wks` form |
 |-------------|------------|
@@ -258,11 +263,10 @@ Modifiers act as one would expect. To match the keypress
 
 Among the modifiers, the Shift modifier (`S-`) has a unique
 behavior when used with standard utf8 key characters. Due to
-the way keys are interpreted, the `S-` modifier is not
-always necessary for these characters. To determine whether
-`S-` is required, it is recommended to test the character in
-a `wks` file by typing it with and without the Shift key
-pressed.
+the way normal keys are interpreted, the `S-` modifier is
+not always necessary. To determine whether `S-` is required,
+it is recommended to test the character in a `wks` file by
+typing it with and without the Shift key pressed.
 
 If the character is non-whitespace, printable, and the
 shifted and unshifted versions produce different output,
@@ -304,14 +308,59 @@ Commands are the actions executed upon completing a key
 chord sequence. 
 
 ```
-command -> '%{{' ( . | interpolation )* '}}' ;
+command -> '%' delimiter ( . | interpolation )* delimiter ;
 ```
 
-A command begins with the `%{{` delimiter and ends with the
-`}}` delimiter. Everything in between is taken as part of
-the command for the key chord. There is no need to do
-anything special here, just provide your shell command as
-you would at the command line. 
+A command begins with the percent character (`%`) followed
+by a delimiter. After the delimiter zero or more
+characters, or interpolations may be given. A command is
+ended with the same delimiter that followed the percent
+character.
+
+Because the delimiter is user defined, there should be no
+misinterpretation of anything between the delimiters. This
+means any command given at the command-line should be right
+at home in between the delimiters.
+
+#### Delimiters
+
+A delimiter acts as a start and stop marker for a command in
+a `wks` file.
+
+```
+delimiter   -> ( open_delim | close_delim | .{2} )  ;
+open_delim  -> ( '{{' | '((' | '[[' ) ;
+close_delim -> ( '}}' | '))' | ']]' ) ;
+```
+
+The delimiter from one command to the next may be completely
+different. This puts the burden on the user to ensure their
+delimiter is compatible with the content of the command. The
+only restriction is that the delimiter is one **ASCII**
+character repeated exactly twice. **Note** this excludes any
+null bytes (`\0`) as these are used to determine the end of
+a `wks` file.
+
+Here are some examples of different delimiters for the same
+command.
+
+```
+# The traditional example
+%{{echo "hello, world"}}
+
+# Valid alternatives
+%||echo "hello, world"||
+%((echo "hello, world"))
+%\\echo "hello, world"\\
+%%%echo "hello, world"%%
+%zzecho "hello, world"zz
+```
+
+Inspired by [sed](https://www.gnu.org/software/sed/), this
+should keep `wks` syntax compatible with shell commands,
+almost indefinitely.  It also makes it possible to nest a
+`wks` script within a `wks` command if you want to get
+really weird.
 
 #### Basic Chord Example 
 
@@ -333,12 +382,12 @@ container for other key chords. It represents an incomplete
 key combination that does not trigger a command on its own.
 
 ```
-prefix -> key description keyword* '{' ( key_chord )+ '}' ;
+prefix -> trigger_key description keyword* '{' ( key_chord )+ '}' ;
 ```
 
 A prefix has many of the same components as a chord. It
-begins with a key, followed by a description, zero or more
-keywords and then a block of one or more key chords
+begins with a trigger key, followed by a description, zero
+or more keywords and then a block of one or more key chords
 surrounded by an opening and closing brace (`{`, and `}`).
 
 **Note** that a key chord may be a prefix, a chord, or a
@@ -364,14 +413,14 @@ it comes to chords that are very similar but only differ in
 slightly different ways.
 
 ```
-chord_array -> '[' ( key | chord_expression )+ ']' description keyword* command ;
+chord_array -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
 ```
 
 To use a chord array begin with an open bracket (`[`)
-followed by one or more keys or chord expressions. The array
-portion ends with a closing bracket (`]`) followed by the
-standard chord components, a description, zero or more
-keywords, and a command. 
+followed by one or more trigger keys or
+chord expressions. The array portion ends with a closing
+bracket (`]`) followed by the standard chord components, a
+description, zero or more keywords, and a command. 
 
 I think an example will make things clear:
 
@@ -411,16 +460,16 @@ with some more distinct differences. For this situation,
 chord expressions may be the answer.
 
 ```
-chord_expression -> '(' key description keyword* command? ')' ;
+chord_expression -> '(' trigger_key description keyword* command? ')' ;
 ```
 
 A chord expression is only valid within a chord array, and
 it is essentially a chord wrapped in parentheses with some
 added flexibility. Normally, a chord requires at least a
-key, a description, and a command. A chord expression, on
-the other hand, requires only a key and a description. Any
-other information will be filled in by the surrounding chord
-array. 
+trigger key, a description, and a command. A chord
+expression, on the other hand, requires only a key and a
+description. Any other information will be filled in by the
+surrounding chord array. 
 
 Here is an example of a chord expression within a chord array:
 

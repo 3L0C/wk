@@ -2,280 +2,53 @@
 #+author: 3L0C
 
 * NAME
+
 wks - A which-key source file used by the *wk*​(1) program.
 
 * DESCRIPTION
-*wk* can generate /key chords/ using *wks* syntax instead of
-relying on precompiled /key chords/.
 
-* EXAMPLES
-** BASIC WKS FILE
-A basic *wks* file with some explanation regarding
-*COMMENTS*, *CHORDS*, *PREFIXES*, *DESCRIPTIONS*, *KEYS*,
-and *COMMANDS*:
-
-#+begin_example
-# This is a comment
-    # This is also a comment
-
-# This is a chord.
-# The trigger key is 'a'.
-# The description is "A chord".
-# The command is 'echo "Hello, World"'.
-a "A chord" %{{echo "Hello, world!"}}
-
-# This is a prefix.
-# The trigger key is 'Control + a'
-C-a "A prefix"
-{
-    # This is a chord that can only be accessed after triggering the parent prefix.
-    b "A chord" %{{echo "Hello from inside prefix 'C-a'"}}
-
-    # Prefixes can nest additional prefixes arbitrarily deep
-    c "Another prefix"
-    {
-        d "Done" %{{echo "You've reached the end!"}}
-    }
-}
-#+end_example
-
-** CHORD ARRAYS AND INTERPOLATION
-The *CHORD ARRAY* and *INTERPOLATION* are more interesting
-*wks* features:
-
-#+begin_example
-[abcdC-e] "Chord number: %(index+1)" %{{echo "Pressed key: '%(key)'"}}
-#+end_example
-
-The above is equivelent to the following:
-
-#+begin_example
-a   "Chord number: 1" %{{echo "Pressed key: 'a'"}}
-b   "Chord number: 2" %{{echo "Pressed key: 'b'"}}
-c   "Chord number: 3" %{{echo "Pressed key: 'c'"}}
-d   "Chord number: 4" %{{echo "Pressed key: 'd'"}}
-C-e "Chord number: 5" %{{echo "Pressed key: 'C-e'"}}
-#+end_example
-
-** CHORD ARRAYS AND CHORD EXPRESSIONS
-The *CHORD ARRAY* also supports *CHORD EXPRESSIONS*:
-
-#+begin_example
-[
-   abc
-   (d "A different description" %{{echo "A different command"}})
-   (C-e "An exciting description")
-] "A default description" %{{echo "A default command"}}
-#+end_example
-
-The above is equivelent to the following:
-
-#+begin_example
-a   "A default description"   %{{echo "A default command"}}
-b   "A default description"   %{{echo "A default command"}}
-c   "A default description"   %{{echo "A default command"}}
-d   "A different description" %{{echo "A different command"}}
-C-e "An exciting description" %{{echo "A default command"}}
-#+end_example
-
-** HOOKS AND FLAGS IN CHORDS
-*HOOKS* and *FLAGS* are very flexible:
-
-#+begin_example
-a "A hook"
-  ^before %{{echo "I run first!"}}
-  ^after %{{echo "I run last!"}}
-    %{{echo "I run in the middle!"}}
-
-b "A hook and flag"
-  ^before %{{echo "I run first!"}}  +keep
-    %{{echo "I stay open thanks to '+keep'"}}
-
-c "I'm equivelent to 'b'"
-  +keep ^before %{{echo "I run first!"}}
-    %{{echo "I stay open thanks to '+keep'"}}
-#+end_example
-
-This should make two things clear:
-- *1*. :: That /hooks/ and /flags/ are of equal precedence.
-- *2*. :: That /hooks/ and /flags/ go inbetween the
-  /description/ and the /command/.
-
-** HOOKS AND FLAGS IN PREFIXES
-A /hooks/ and /flags/ work differently when given to a
-/prefix/ compared to a /chord/, /chord array/, or /chord
-expression/:
-
-#+begin_example
-a "A prefix with a hook and flag" ^before %{{echo "I am /almost/ always run first!"}} +keep
-{
-    b "An obedient chord"
-        %{{echo "I inherit /hooks/ and /flags/ from my parent prefix!"}}
-    c "A selective chord" +no-before
-        %{{echo "I ignore /before/ and /sync-before/ /hooks/!"}}
-    d "A defiant chord" +ignore
-        %{{echo "I ignore everything my parent prefix tries to force on me!!"}}
-    e "A wanting child prefix" +inherit
-    {
-        f "Hooray!"
-            %{{echo "My parent prefix is passing on my grandparent's /hooks/ and /flags/!"}}
-    }
-    g "An indifferent child prefix"
-    {
-        h "Hmm..."
-           %{{echo "I don't seem to have inherited any /hooks/ or /flags/ from my grandparent."}}
-    }
-}
-#+end_example
-
-For a more formal understanding, see *INHERITANCE* below.
-
-** THE INCLUDE PREPROCESSOR MACRO
-Here is a simple example of the /:include/ *PREPROCESSOR
-MACRO*:
-
-#+begin_example
-# File main.wks
----------------
-:include "top_level_chords.wks"
-:include "top_level_prefixes.wks"
-
-# File top_level_chords.wks
----------------------------
-a "A chord" %{{echo "Hello!"}}
-
-# File top_level_prefixes.wks
------------------------------
-b "A prefix"
-{
-    c "A chord" %{{echo "Where am I??"}}
-}
-#+end_example
-
-When processed, the /main.wks/ file will produce a *wks*
-file equivelent to this:
-
-#+begin_example
-a "A chord" %{{echo "Hello!"}}
-b "A prefix"
-{
-    c "A chord" %{{echo "Where am I??"}}
-}
-#+end_example
-
-The /:include/ macro is more flexible than the *C*
-equivelent though, allowing for silly things like this:
-
-#+begin_example
-# File first_half.wks
----------------------
-a "The first half :include "second_half.wks"
-
-# File second_half.wks
-----------------------
-and the second half" %{{echo "A match made in heaven."}}
-#+end_example
-
-Both /first_half.wks/ and /second_half.wks/ are invalid
-*wks* files on their own. But, if /first_half.wks/ is passed
-to *wk* it will produce a valid *wks* file equivelent to the
-one below:
-
-#+begin_example
-a "The first half and the second half" %{{echo "A match made in heaven."}}
-#+end_example
-
-While the above example is a bit silly, this flexibility
-allows *wks* to become extremely modular. Take this snippet
-of my personal configuration for example:
-
-#+begin_example
-# File main.wks
----------------
-# Browser prefix
-b "+Browser" { :include "browser_key_chords.wks" }
-# Emacs prefix
-e "+Emacs" ^before %{{dwmc viewex 1}} { :include "emacs_key_chords.wks" }
-# mpc prefix
-m "+mpc" +keep { :include "mpc_key_chords.wks" }
-
-# File browser_key_chords.wks
------------------------------
-[
-    (b "Brave")
-    (c "Chrome")
-    (f "Firefox")
-] "null" %{{%(desc,)}} # downcase the description and use as the command
-
-# Mullvad-exclude prefix
-m "+Mullvad Exclude"
-{
-    [
-        (b "Brave")
-        (c "Chrome")
-        (f "Firefox")
-    ] "null" %{{mullvad-exclude %(desc_)}}
-}
-
-# File emacs_key_chords.wks
----------------------------
-b "Open blank" %{{emacsclient -c -a ""}}
-p "+Projects"
-{
-    w "wk" %{{emacs "~/Projects/wk"}}
-}
-
-# File mpc_key_chords.wks
--------------------------
-c "Clear mpc" %{{mpc clear}}
-d "Display song" %{{songinfo}}
-h "Seek -5s" %{{mpc seek "-5"}}
-l "Seek +5s" %{{mpc seek "+5"}}
-n "Next song" %{{mpc next}}
-p "Prev song" %{{mpc prev}}
-o "Open mpc" +ignore %{{term -e ncmpcpp}}
-#+end_example
-
-Each of the above files is perfectly valid on their own,
-meaning they can exist in as part of /main.wks/, or I can
-use only the relevant file when calling *wk* from a script.
-Additionally, I can /:include/ files multiple times in cases
-where I would be repeating myself.
+*wk*'s configuration files use the *wks* syntax to generate
+key chords.
 
 * GRAMMAR RULES
+
 The following are /ideally/ the formal grammar rules for
 *wks*. I have tried to note where behavior differs from the
 expectation. If anything is not behaving as you expect,
 please see *CONTACT* below to reach out.
 
 #+begin_example
-key_chord          -> ( chord
-                      | prefix
-                      | chord_array ) ;
+key_chord          -> ( chord | prefix | chord_array ) ;
 
-chord              -> key description keyword* command ;
+chord              -> trigger_key description keyword* command ;
 
-prefix             -> key description keyword* '{' ( key_chord )+ '}' ;
+prefix             -> trigger_key description keyword* '{' ( key_chord )+ '}' ;
 
-chord_array        -> '[' ( key | chord_expression )+ ']' description keyword* command ;
+chord_array        -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
 
-chord_expression   -> '(' key description keyword* command? ')' ;
+chord_expression   -> '(' trigger_key description keyword* command? ')' ;
 
-key                -> modifier* ( '\\'[\\\[\]{}#":^+()]
-                                | [^\s\[\]{}#":^+()]
-                                | special_key ) ;
+trigger_key        -> modifier* ( normal_key | special_key ) ;
+
+normal_key         -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
 
 special_key        -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
                       | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
                       | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
                       | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
-                      | 'Prev'    | 'Next'    | 'F'[1-35] ) ;
+                      | 'Prev'    | 'Next'    | 'F'[1-35] ) \s+ ;
 
 modifier           -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
 
 description        -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
 
-command            -> '%{{' ( . | interpolation )* '}}' ;
+command            -> '%' delimiter ( . | interpolation )* delimiter ;
+
+delimiter          -> ( open_delim | close_delim | (.)\1 ) ;
+
+open_delim         -> ( '{{' | '((' | '[[' ) ;
+
+close_delim        -> ( '}}' | '))' | ']]' ) ;
 
 interpolation      -> '%(' identifier ')' ;
 
@@ -341,67 +114,65 @@ unsigned_macro     -> ( 'max-columns'
 number_macro       -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
 #+end_example
 
-** KEY CHORD
-A /key chord/ is the top-level construct in the grammar
-and represents a complete key chord definition. It can be
-either a /prefix/, a /chord/, or a /chord array/.
+*NOTE* in /wks/ files, comments can be added using the pound
+character (/#/). When a pound character is encountered, it
+signifies the start  of a comment. The comment extends from
+the pound character until the end of the line. It's
+important to note that the pound character is treated as a
+literal character within /descriptions/ and /commands/ and
+does not indicate the start of a comment in those contexts.
 
-** PREFIX
-A /prefix/ is a type of /key chord/ that acts as a container
-for other key chords. It consists of a /key/, a
-/description/, zero or more /keywords/, and a block of /key
-chords/ enclosed in curly braces *{}*. The /key/ triggers
-the /prefix/, and the inner /key chords/ become accessible
-once the /prefix/ is activated.
+** KEY CHORD
+
+A /key chord/ is the top-level construct in the grammar
+and represents a complete key chord definition.
+
+#+begin_example
+key_chord -> ( chord | prefix | chord_array ) ;
+#+end_example
+
+It can be either a /prefix/, a /chord/, or a /chord array/.
 
 ** CHORD
-A /chord/ is a basic /key chord/ that represents a single
-action or /command/. It consists of a /key/, a
-/description/, zero or more /keywords/, and a /command/.
-When the specified /key/ is triggered, the associated
-/command/ is executed.
 
-** CHORD ARRAY
-A /chord array/ is a compact way to define multiple key
-chords with similar properties. It starts with an opening
-square bracket *[*, followed by one or more /keys/ or
-/chord expressions/, and ends with a closing square bracket *]*.
-After the closing bracket, it includes a /description/,
-zero or more /keywords/, and a /command/. Each /key/
-within the /chord array/ represents a separate /chord/
-that shares the same /description/, /keywords/, and
-/command/. A /chord array/ will not produce a /prefix/
-array. During parsing, an error will be thrown if no command
-is supplied, just the same as a /chord/.
+A /chord/ is a /key chord/ that results in *wk* performing
+some action, like executing a command, when the trigger key
+is pressed.
 
-See *CHORD EXPRESSION* below for a description of the behavior of
-/chord expressions/ within a /chord array/.
+#+begin_example
+chord -> trigger_key description keyword* command ;
+#+end_example
 
-** CHORD EXPRESSION
-A /chord expression/ is a construct that is only valid
-within a /chord array/. A /chord expression/ begins with an
-opening parentheses *(*, followed by a /key/ and
-/description/. After the /description/, zero or more
-/keywords/ and a /command/ may be given, just as one would
-expect in a standard /chord/. However, a /chord
-expression/ does not require anything more than the /key/
-and /description/. This means it is possible to give a
-/key/, /description/, and a /flag/ but no /hooks/ or
-/command/ and vice versa. That is because anything missing
-from the /chord expression/ will be filled in by the
-surrounding /chord array/. In any case, the /chord
-expression/ must be terminated by a closing parentheses *)*,
-to be valid.
+All chords must have a /trigger key/, /description/, and a
+/command/. Zero or more /keywords/ may be given between the
+/description/ and /command/.
 
-** KEY
-A /key/ represents the trigger or activator for a /key
-chord/. It consists of zero or more /modifiers/ followed
-by either a single printable /UTF-8/ character, or a
-/special key/. Certain characters have special meaning and
-they cannot be used unless escaped.
+** TRIGGER KEY
 
-All of the following characters must be preceded by a
-backslash *\*, to be interpreted as a /key/:
+A /trigger key/ represents the specific keypress or key
+combination that triggers a corresponding action or command.
+In a /wks/ file, it is the written representation of the
+physical key(s) pressed by the user on their keyboard.
+
+#+begin_example
+trigger_key -> modifier* ( normal_key | special_key ) ;
+#+end_example
+
+A /trigger key/ is then zero or more /modifiers/ followed by
+a /normal key/ or a /special key/.
+
+** NORMAL KEY
+
+A /normal key/ is any printable, non-whitespace, utf8
+character.
+
+#+begin_example
+normal_key -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
+#+end_example
+
+Certain characters have special meanings in /wks/ files. To
+use these characters as a normal key, simply precede them
+with a backslash (/\/).
 
 #+begin_quote
 - *[* :: Begins a /chord array/.
@@ -417,42 +188,75 @@ backslash *\*, to be interpreted as a /key/:
 - *)* :: Ends a /chord expression/.
 #+end_quote
 
-While the above are required to be escaped to be interpreted
-as a /key/, it is not an error to escape any /UTF-8/
-character meant to be a /key/. The caveat is that the
-character meant to be a /key/ needs to be printable and not
-a predefined /special key/ as defined below.
+All other non-whitespace, printable utf8 characters prior to
+a description will be interpreted as a normal key. Those
+that are whitespace or non-printable fall into the special
+key category.
 
 ** SPECIAL KEY
-The /special keys/ cover (mostly) non-printable keys that can be used as a /key/.
 
-The following are recognized /special key​/ forms:
+Special keys like /tab/, /escape/, /spacebar/, and /F1/ can
+still be used as trigger keys in /wks/ files via their
+special forms.
+
+#+begin_example
+special_key -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
+               | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
+               | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
+               | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
+               | 'Prev'    | 'Next'    | 'F'[1-35] ) \s+ ;
+#+end_example
+
+Each form should indicate the special key it represents but
+here is a chart to make things explicit.
 
 #+begin_quote
-/Left/,     /Right/,    /Up/,      /Down/,
-/TAB/,      /SPC/,      /RET/,     /DEL/,   /ESC/,
-/Home/,     /PgUp/,     /PgDown/,  /End/,   /Begin/,
-/VolDown/,  /VolMute/,  /VolUp/,   /Play/,  /Stop/,
-/Prev/,     /Next/, and /F/[1-35]
+- *Left* :: Left arrow
+- *Right* :: Right arrow
+- *Up* :: Up arrow
+- *Down* :: Down arrow
+- *TAB* :: Tab
+- *SPC* :: Space
+- *RET* :: Enter/Return
+- *DEL* :: Delete
+- *ESC* :: Esc
+- *Home* :: Home
+- *PgUp* :: Page up
+- *PgDown* :: Page down
+- *End* :: End
+- *Begin* :: Begin
+- *F[1-35]* :: Function keys 1 through 35.
+- *VolDown* :: Volume Down
+- *VolMute* :: Mute Vol
+- *VolUp* :: Volume Up
+- *Play* :: Play Audio
+- *Stop* :: Stop Audio
+- *Prev* :: Audio Previous
+- *Next* :: Audio Next
 #+end_quote
 
-*NOTE* that several of the /special keys/ are technically
-printable, and will be recognized as a regular /key/ if
-escaped with a backslash *\*. You may escape a normal
-*space* for use in your /key chords/, but when you hit
-*space* it will be recognized as a /special key/ and will
-fail to match the *space* /key/ in your /key chords/.
+In /wks/ files, whitespace is generally not significant
+around individual parts of the syntax, with one notable
+exception: /special keys/. When using /special keys/, it is
+required to include whitespace between the end of the
+special key and the start of the next item in the /wks/
+file.
 
-In short, please use the special forms listed above to
-ensure the corresponding keypress events trigger the desired
-/key chord/.
+If you have any additional special keys that you would like
+/wks/ files to support, please open an issue or a pull
+request.
 
 ** MODIFIER
-A /modifier/ is a prefix that can be added before any other
-/modifier/, /key/, or /special key/ to specify the matching
-keypress.  It consists of a single letter (*C*, *H*, *M*, or
-*S*) followed by a hyphen *-*.  The modifiers represent the
-following:
+
+As mentioned above, zero or more /modifiers/ can be given in
+a /trigger key/.
+
+#+begin_example
+modifier -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+#+end_example
+
+Modifiers can be used in /wks/ files via their special
+forms.
 
 #+begin_quote
 - *C-* :: /Control/ key
@@ -461,59 +265,275 @@ following:
 - *S-* :: /Shift/ key
 #+end_quote
 
-*NOTE* that a /modifier/ can be given more than once
-according to the grammar, but there is no practical benefit
-to this. Additionally, the *S-* (/Shift/) /modifier/ will be
-ignored for all non /special keys/. You can define a /key/
-like *S-x*, but when you press *Shift+x*, *wk* will only
-match the /key/ defined as *X*.
+Modifiers act as one would expect. To match the keypress
+/Control+c/ use the form /C-c/ in your /wks/ file.
+
+Among the modifiers, the Shift modifier (/S-/) has a unique
+behavior when used with /normal keys/. Due to the way normal
+keys are interpreted, the /S-/ modifier is not always
+necessary. To determine whether /S-/ is required, it is
+recommended to test the character in a /wks/ file by typing
+it with and without the Shift key pressed.
+
+If the character is non-whitespace, printable, and the
+shifted and unshifted versions produce different output,
+then the /S-/ modifier is not needed. For instance, pressing
+the /a/ key with the Shift key held down produces an
+uppercase /A/. This test demonstrates that the key's output
+changes based on the Shift key state.
+
+In such cases, using /S-a/ in a /wks/ file would not work as
+expected because the key will never match when the user
+presses /Shift+a/.
+
+I am open to changing it so that /S-a/ and /A/ match the
+same /Shift+a/ keypress, but I have yet to find a fitting
+solution. The ones I can think of either involve depending
+on some utf8 library, writing the code by hand, or
+permitting this syntax for ASCII but not other character
+sets. Each has its own drawback, and I find the current
+solution to be intuitive in practice.
 
 ** DESCRIPTION
-A /description/ provides a human-readable explanation or
-label for a /key chord/. It is enclosed in double quotes
-*"*. If a double quote needs to be included within the
-/description/, it must be escaped with a backslash.
 
-An /interpolation/ may be used with a /description/ as well.
-See *INTERPOLATION* below for a full explanation.
+A /description/ provide a hint about the purpose of the
+/chord/ or /prefix/.
+
+#+begin_example
+description -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+#+end_example
+
+A /description/ starts with a double quote (/"/), followed by
+zero or more of the following:
+
+#+begin_quote
+- *\"* :: Escaped double quotes.
+- *[^"]* :: Any non-double quote character.
+- *interpolation* :: An interpolation.
+#+end_quote
+
+A /description/ ends with a double quote. Aside from
+/interpolations/, a /description/ looks like your typical
+string in many programming languages.
 
 ** COMMAND
-A /command/ represents the action or functionality triggered
-by a /chord/. It is enclosed in *%{{* and *}}* delimiters.
-The content within the delimiters can be any valid shell
-/command/ just as you would supply it at the command-line.
 
-An /interpolation/ may be used with a /command/. See
-*INTERPOLATION* below for a full explanation.
+A /command/ is some action to be executed upon completing a
+/key chord/ sequence.
 
-*NOTE* any /command/ given to the /sync-before/, or
-/sync-after/ /hooks/ will be run in a blocking manner.
-Additionally, if the /sync-command/ /flag/ is given, the the
-current /chord/'s /command/ becomes blocking. Depending on
-the /command/ *wk* may never regain control. This is a
-serious concern as *wk* only releases the keyboard after it
-has completed or encountered an  error.  This could leave
-the user with an unresponsive keyboard until they restart
-their system. Think carefully before using a /command/ in a
-blocking fashion.
+#+begin_example
+command -> '%' delimiter ( . | interpolation )* delimiter ;
+#+end_example
+
+A /command/ begins with the percent character (/%/) followed
+by a /delimiter/. After the /delimiter/ zero or more
+characters, or /interpolations/ may be given. A /command/ is
+ended with the same delimiter that followed the percent
+character.
+
+Because the /delimiter/ is user defined, there should be no
+misinterpretation of anything between the delimiters. This
+means any command given at the command-line should be right
+at home in between the delimiters.
+
+** DELIMITER
+
+A /delimiter/ acts as a start and stop marker for a
+/command/ in a /wks/ file.
+
+#+begin_example
+delimiter   -> ( open_delim | close_delim | (.)\1 )  ;
+
+open_delim  -> ( '{{' | '((' | '[[' ) ;
+
+close_delim -> ( '}}' | '))' | ']]' ) ;
+#+end_example
+
+A /delimiter/ may be one of the following:
+
+#+begin_quote
+- *open_delim* or *close_delim* ::
+  The opening and closing delimiters are special delimiters
+  that that have an inverse match. If an opening delimiter
+  is given then the corresponding closing delimiter is
+  required to end the command. (e.g., /{{/ matches /}}/ and
+  so forth).
+
+- *(.)\1* ::
+  Any *ASCII* character given twice. *NOTE* this excludes
+  null bytes (/\0/) as these will indicate the end of a
+  /wks/ file or script. When an arbitrary delimiter is given
+  the same character is expected to be repeated to indicate
+  the end of a command.
+#+end_quote
+
+The /delimiter/ from one /command/ to the next may be
+completely different. This puts the burden on the user to
+ensure their /delimiter/ is compatible with the content of
+the command.
+
+Here are some examples of different delimiters for the same
+command.
+
+#+begin_example
+# Commands with opening and closing delimiters
+%{{echo "hello, world"}}
+%((echo "hello, world"))
+%[[echo "hello, world"]]
+
+# Valid arbitrary delimiters
+%||echo "hello, world"||
+%%%echo "hello, world"%%
+%zzecho "hello, world"zz
+#+end_example
+
+Inspired by *sed*​(1), this should keep /wks/ syntax
+compatible with shell commands, almost indefinitely.  It
+also makes it possible to nest a /wks/ script within a /wks/
+command if you want to get really weird.
+
+** PREFIX
+
+A /prefix/ is a special type of /key chord/ that acts as a
+container for other /key chords/. It represents an
+incomplete key combination that does not trigger a /command/
+on its own.
+
+#+begin_example
+prefix -> trigger_key description keyword* '{' ( key_chord )+ '}' ;
+#+end_example
+
+A /prefix/ has many of the same components as a /chord/. It
+begins with a /trigger key/, followed by a /description/,
+zero or more /keywords/ and then a block of one or more /key
+chords/ surrounded by an opening and closing brace (/{/, and
+/}/).
+
+*Note* that a key chord may be a /prefix/, a /chord/, or a
+/chord array/, meaning many prefixes can be nested one
+inside another.
+
+Here is a simple example of a prefix:
+
+#+begin_example
+m "+Music"
+{
+    n "Next" %{{mpc next}}
+    p "Prev" %{{mpc prev}}
+}
+#+end_example
+
+** CHORD ARRAY
+
+/Chords/ and /prefixes/ are standard fare in the realm of
+key chords, so what the heck is a /chord array/? Well,
+mostly syntactic sugar so you do not have to repeat yourself
+when it comes to /chords/ that are very similar but only
+differ in slightly different ways.
+
+#+begin_example
+chord_array -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
+#+end_example
+
+To use a /chord array/ begin with an open bracket (/[/)
+followed by one or more /trigger keys/ or /chord
+expressions/.  The array portion ends with a closing bracket
+(/]/) followed by the standard chord components, a
+description, zero or more keywords, and a command.
+
+I think an example will make things clear:
+
+#+begin_example
+# Chord array version
+[arstgmnei] "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+
+# Individual chords and no interpolation
+a "Switch workspace 1" %{{xdotool set_desktop 0}}
+r "Switch workspace 2" %{{xdotool set_desktop 1}}
+s "Switch workspace 3" %{{xdotool set_desktop 2}}
+t "Switch workspace 4" %{{xdotool set_desktop 3}}
+g "Switch workspace 5" %{{xdotool set_desktop 4}}
+m "Switch workspace 6" %{{xdotool set_desktop 5}}
+n "Switch workspace 7" %{{xdotool set_desktop 6}}
+e "Switch workspace 8" %{{xdotool set_desktop 7}}
+i "Switch workspace 9" %{{xdotool set_desktop 8}}
+#+end_example
+
+As you can see, /chord arrays/ can cut down on the need to
+repeat common information across /chords/. However, this
+would not be useful if the resulting /chords/ were exactly the
+same.  Thankfully, /interpolations/ make it easy for the
+resulting /chords/ to differ without interfering with the
+common elements.
+
+Interpolations are covered in full detail later, but the
+main idea is they provide a means of inserting metadata
+about a /chord/ into /descriptions/ and /commands/.
+
+** CHORD EXPRESSION
+
+Chord arrays can be very simple with each /chord/ being only
+slightly different from one another. However, it may make
+sense to include chords that mostly fit into the /chord
+array/ with some more distinct differences. For this
+situation, /chord expressions/ may be the answer.
+
+#+begin_example
+chord_expression -> '(' trigger_key description keyword* command? ')' ;
+#+end_example
+
+A /chord expression/ is only valid within a /chord array/,
+and it is essentially a /chord/ wrapped in parentheses with
+some added flexibility. Normally, a /chord/ requires at
+least a /trigger key/, a /description/, and a /command/. A
+/chord expression/, on the other hand, requires only a
+/trigger key/ and a /description/. Any other information
+will be filled in by the surrounding /chord array/.
+
+Here is an example of a chord expression within a /chord array/:
+
+#+begin_example
+# With chord arrays and chord expressions
+[
+    (b "Brave")
+    (c "Mullvad Chrome" %{{mullvad-exclude chrome ~/startpage.html}})
+    x
+] "XDG-OPEN" %{{%(desc,,) ~/startpage.html}}
+
+# With chords and no interpolation
+b "Brave" %{{brave ~/startpage.html}}
+c "Mullvad Chrome" %{{mullvad-exclude chrome ~/startpage.html}}
+x "XDG-OPEN" %{{xdg-open ~/startpage.html}}
+#+end_example
+
+Admittedly, /chord expressions/ may not be that useful but
+they were easy to implement so they are here for those who
+want to use them.
 
 ** INTERPOLATION
-An /interpolation/ works the same way in *wks* as it does in
-many programming languages. An /interpolation/ may be given
-within a /description/ or a /command/, except where
-otherwise noted. An /interpolation/ begins with the *%(*
-delimiter and ends with a closing parentheses *)*. Within
-these delimiters, a single identifier must be given.
+
+An /interpolation/ is a means of accessing some metadata of
+the current /chord/ from within a /description/ or a
+/command/.
+
+#+begin_example
+interpolation -> '%(' identifier ')' ;
+#+end_example
+
+The basic syntax for an /interpolation/ begins with a /%(/
+delimiter followed by an /identifier/ and closing parenthesis
+(/)/).
 
 ** IDENTIFIER
+
 The following identifiers are valid within an /interpolation/:
 
 #+begin_quote
 - *key* ::
-  The /key/ /identifier/ corresponds to the /key/ of the
-  current /chord/. This makes the most sense to use within a
-  /chord array/ or for a /chord/ that may change frequently
-  or is not know ahead of time.
+  The /key/ /identifier/ corresponds to the /trigger key/ of
+  the current /chord/. This makes the most sense to use
+  within a /chord array/ or for a /chord/ that may change
+  frequently or is not know ahead of time.
 
 - *index* ::
   The /index/ /identifier/ corresponds to the 0 base index of
@@ -525,182 +545,433 @@ The following identifiers are valid within an /interpolation/:
   of the current /chord/ or /prefix/ within the current
   scope. *NOTE* a /prefix/ starts a new scope.
 
-- *desc* and *description* ::
-  The /desc/ and /description/ /identifiers/ correspond to the
-  /description/ of the current /chord/ or /prefix/. Neither
-  /identifier/ may not be given within a /description/. An
-  error will be thrown in the case where this is attempted.
+- *desc* ::
+  The /desc/ /identifier/ correspond to the /description/ of
+  the current /chord/ or /prefix/. The /desc/ /identifier/
+  may not be given within a /description/. An error will be
+  thrown in the case where this is attempted.
+
+- *desc^* ::
+  The /description/ of the current /chord/ with the *first*
+  character capitalized.
+
+- *desc^^* ::
+  The /description/ of the current /chord/ with the *all*
+  characters capitalized.
+
+- *desc,* ::
+  The /description/ of the current /chord/ with the *first*
+  character downcased.
+
+- *desc,,* ::
+  The /description/ of the current /chord/ with the *all*
+  characters downcased.
 #+end_quote
 
 ** KEYWORD
+
 A /keyword/ is an optional instruction to modify the
-behavior of a /chord/ or /prefix/. The /keywords/ include
-*HOOKS*, *FLAGS*, and *PREPROCESSOR COMMANDS*. See below for
-details.
+behavior of a /chord/ or /prefix/.
+
+#+begin_example
+keyword -> ( hook | flag ) ;
+#+end_example
+
+A /keyword/ is either a /hook/ or a /flag/. Both have equal
+precedence, meaning they can be mixed up wherever they are
+permitted.
 
 ** HOOK
-A /hook/ is a convenient way to add a /command/ to a
-/chord/. A /hook/ may be given after a /description/
-starting with a caret *^*, followed by a /hook/ and a
-/command/. If multiple of the same /hooks/ are given to a
-/key chord/ the final instance will overshadow the others.
-The /hook/ /command/ is executed in accordance with the
-specification for the type of /hook/.
 
-The following are valid /hooks/:
+Hooks provide means of adding additional commands to a chord
+or prefix.
 
-#+begin_quote
-- *before* /command/ ::
-  The /command/ given to the /before/ /hook/ is executed
-  before the current /chord/'s /command/, as the name
-  implies. The /before/ /command/ is run asynchronously,
-  meaning the /chord/'s /command/ may complete before the
-  /before/ /command/ has completed execution. If you need
-  the /chord/'s /command/ to be run in sync with the
-  /before/ /command/, consider if there is some other way to
-  achieve this before using the /sync-before/ /hook/.
+#+begin_example
+hook -> '^' ( 'before'
+            | 'after'
+            | 'sync-before'
+            | 'sync-after' ) command ;
+#+end_example
 
-- *after* /command/ ::
-  The /command/ given to the /after/ /hook/ is executed
-  after the current /chord/'s /command/, as the name
-  implies. The /after/ /command/ is run asynchronously,
-  meaning *wk* will not wait for the command to complete
-  before resuming execution. I *wk* should wait until the
-  /after/ /command/ completes you can use the /sync-after/
-  /hook/. Just be certain you understand the pitfalls this
-  introduces before you use that /hook/.
+A /hook/ begins with the caret character (/^/), followed by
+the type of /hook/, and finally the command the /hook/ will
+run.
 
-- *sync-before* /command/ ::
-  The /command/ given to the /sync-before/ /hook/ is
-  executed before the current /chord/'s /command/, as the
-  name implies. Additionally, it is run in a blocking
-  fashion, meaning *wk* will not resume control until after
-  the command completes or is terminated. See the *COMMAND*
-  section for best practices regarding blocking /commands/.
+The /hook/ type has to do with the order the command will be
+run. The /before/ hooks run before the chord's command, and
+the /after/ hooks run after the chord's command.
 
-- *sync-after* /command/ ::
-  The /command/ given to the /sync-after/ /hook/ is
-  executed after the current /chord/'s /command/, as the
-  name implies. Additionally, it is run in a blocking
-  fashion, meaning *wk* will not resume control until after
-  the command completes or is terminated. See the *COMMAND*
-  section for best practices regarding blocking /commands/.
-#+end_quote
+The /sync-/ hooks relate to how *wk* runs the commands. By
+default, all commands are run asynchronously to prevent a
+command from blocking *wk*. However, if the hook must
+complete before *wk* can proceed you can use the /sync-*/
+variant to enforce this behavior.
 
-See *INHERITANCE* for an explanation of how /hooks/ work
-when given to a /prefix/.
+*NOTE* that a blocking command may prevent *wk* from ever
+resuming execution. In the event that this happens, users
+may need to restart their system entirely to regain control
+of their keyboard.
 
-See *EXAMPLES* for a demonstration on /hooks/.
+See *EXAMPLES* for further discussion about hooks.
 
 ** FLAG
-A /flag/ is a convenient way to modify the behavior of a
-/key chord/. A /flag/ may be passed after a /description/
-begining with the plus character *+*. After the *+*, a
-/flag/ name is specified.
 
-The following are /flag/ names and how they affect the
-behavior of *wk*:
+Flags are similar to command-line flags in that they change
+the behavior of *wk*.
+
+#+begin_example
+flag -> '+' ( 'keep'
+            | 'close'
+            | 'inherit'
+            | 'ignore'
+            | 'unhook'
+            | 'deflag'
+            | 'no-before'
+            | 'no-after'
+            | 'write'
+            | 'execute'
+            | 'sync-command' ) ;
+#+end_example
+
+Flags begin with a plus character (/+/), followed by the
+flag itself. Here is how each flag changes the behavior of
+*wk*:
 
 #+begin_quote
-- *keep* ::
-  Normally, after executing a /chord/, *wk* will close. By
-  supplying the /keep/ flag, *wk* will persist after the the
-  /key chord/ is trigger. This enables you to trigger
-  additional /key chords/ until a triggered /key chord/ does
-  not supply the /keep/ /flag/ or no /key chords/ match the
-  keypress event.
+- /keep/ ::
+  Instead of closing after `wk` finds a matching chord, it
+  keeps the `wk` menu open.
 
-- *close* ::
-  The /close/ /flag/ is the default behavior for any
-  /chord/. However, a /chord/ may inherit the /keep/ /flag/
-  from a surrounding /prefix/. When this new behavior is
-  undesired specifying the /close/ /flag/ will restore the
-  default behavior and end the *wk* program after the
-  /chord/ is triggerd.
+- /close/ ::
+  Forces the `wk` window to close. Useful when `+keep` was
+  given to a surrounding prefix.
 
-- *inherit* ::
-  The /inherit/ /flag/ is only relevant to a child /prefix/
-  that wants to /inherit/ /flags/ and /hooks/ from its
-  parent /prefix/. Inheritance is not the norm, hence this
-  /flag/ must be given explicitly.
+- /inherit/ ::
+  Causes the prefix to inherit flags and hooks from its
+  parent. Has no effect when given to a chord.
 
-- *unhook* ::
-  The /unhook/ /flag/ causes a child /key chord/ to ignore
-  all /flags/ and /hooks/ present in the parent /prefix/.
-  Additional /hooks/ and /flags/ may be given to the child
-  /key chord/ will work as expected.
+- /ignore/ ::
+  Ignore all hooks and flags from the surrounding prefix.
+  Has no effect when given to a prefix.
 
-- *no-before* ::
-  The /no-before/ /flag/ prevents a child /key chord/ from
-  inheriting a /before/ or /sync-before/ /hook/ present in
-  the parent /prefix/. Any /before/ or /sync-before/ /hooks/
-  given to the child /key chord/ will take precedence over
-  those that may be inherited from a parent /prefix/. In
-  this case, the /no-before/ /flag/ is redundant as the
-  parent /hooks/ are overshadowed.
+- /unhook/ ::
+  Ignore all hooks from the surrounding prefix.
 
-- *no-after* ::
-  The /no-after/ /flag/ prevents a child /key chord/ from
-  inheriting an /after/ or /sync-after/ /hook/ present in
-  the parent /prefix/. Any /after/ or /sync-after/ /hooks/
-  given to the child /key chord/ will take precedence over
-  those that may be inherited from a parent /prefix/. In
-  this case, the /no-after/ /flag/ is redundant as the
-  parent /hooks/ are overshadowed.
+- /deflag/ ::
+  Ignore all flags from the surrounding prefix.
 
-- *write* ::
-  By default, *wk* will execute a /chord/'s /command/ as
-  though it were a shell command. When the /write/ /flag/ is
-  passed, the /command/ of the affected /chord/ is simply
-  written to the standard output. See *EXAMPLES* bleow if
-  the effect is unclear.
+- /no-before/ ::
+  Ignore `before` and `sync-before` hooks from the
+  surrounding prefix.
 
-- *sync-command* ::
-  By default, *wk* will execute a /chord/'s /command/
-  asynchronously. This means *wk* will continue execution
-  despite the state of the /command/. If, for some reason, a
-  /chord/'s /command/ should block *wk* from continuing
-  until the /command/ ends, then you can supply the
-  /sync-command/ /flag/. See *COMMAND* above to understand
-  the pitfalls of blocking /commands/ in *wk*.
+- /no-after/ ::
+  Ignore `after` and `sync-after` hooks from the surrounding
+  prefix.
+
+- /write/ ::
+  Write commands to stdout rather than executing them.
+
+- /execute/ ::
+  Execute the command rather than writing them to stdout.
+  Useful when `+write` was given to a surrounding prefix.
+
+- /sync-command/ ::
+  Execute the command in a blocking fashion. See the note in
+  *HOOK* regarding potential issues with blocking
+  commands.
 #+end_quote
 
-See *INHERITANCE* for an explanation of how /flags/ work
-when given to a /prefix/.
-
-See *EXAMPLES* for a demonstration on /hooks/.
+See *EXAMPLES* for further discussion about flags.
 
 ** PREPROCESSOR MACROS
-A /preprocessor macro/ begins with a colon *:*, followed by
-a supported macro.
 
-The following are the supported /preprocessor macros/ and
-their affects on *wks* files.
+There are a number of preprocessor macros that can be used
+in /wks/ files. These have a number of uses from making
+/wks/ files more modular to controlling the look and feel of
+*wk*​(1).
 
-#+begin_quote
-- *include* "/FILEPATH/" ::
-  The /include/ /preprocessor macro/ acts in much the same
-  way as the *C* macro by the same name. When the
-  preprocessor spots an /include/ macro it will replace it
-  with the contents of the given /file/. The /filepath/ may
-  be a relative or absolute /path/ to some *wks* /file/. If
-  the /filepath/ is relative it is assumed to be relative to
-  the /filepath/ of the current *wks* /file/ being
-  processed.  Absolute /filepaths/ are just that and not
-  very interesting. One thing to note is that the /included/
-  /file/ will be immediately loaded and then scanned by the
-  preprocessor before the rest of the original file is
-  scanned. This macro enables *wks* files to be quite
-  modular as it can be given *anywhere* inside a *wks* file.
-  This enables users to /include/ a *wks* file that is not
-  valid when parsed on its own, but in the context of the
-  /including/ *wks* file, it becomes valid. The opposite is
-  also true. A perfectly valid *wks* file that /includes/ an
-  invalid *wks* file in such a way that it does not become
-  valid, will then itself become invalid. One bad apple and
-  all that. See *EXAMPLES* for a demonstration.
-#+end_quote
+#+begin_example
+preprocessor_macro -> ':' ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+#+end_example
 
+A preprocessor macro begins with the colon character (/:/)
+followed by a specific macro form.
+
+The majority of macros correspond to the command-line
+arguments that *wk*​(1) supports. When given, these override
+anything given at the command-line. They are here to provide
+a baked-in alternative to the command-line versions making
+it easy to simply run the /wks/ file and get the desired
+look and feel without having to give the same arguments each
+time. It can also help distinguish the purpose of the key
+chords if it is intended to be used as part of a script by
+making the *wk*​(1) popup window different from the builtin
+settings.
+
+** STRING MACROS
+
+String macros require a string argument.
+
+#+begin_example
+string_macro -> ( 'include'
+                | 'fg-color'
+                | 'bg-color'
+                | 'bd-color'
+                | 'shell'
+                | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
+#+end_example
+
+Many of the macros here work the same as their command-line
+counterparts. Simply use *:MACRO "ARGUMENT"* to  make use of
+any string macro, (e.g. *:shell "/usr/bin/env zsh"*).
+
+** INCLUDE MACRO
+
+Out of the string macros, the /:include/ macro is not present
+as a command-line argument to *wk*​(1). This is because this
+macro has more to do with /wks/ files than the look and feel
+of *wk*​(1).
+
+The /:include/ macro works similarly to the /#include/ macro
+found in C/C++. It allows users to bring other /wks/ files
+into a single file.
+
+*NOTE*, self includes and recursive includes are not
+permitted and will cause an error.
+
+*NOTE*, the same file may be included multiple times. This
+is not an error, and may even be desirable for some users.
+
+See *EXAMPLES* for a full demonstration of the /:include/
+macro.
+
+** SWITCH MACROS
+
+Switch macros are the simplest of the bunch. They are
+essentially an on switch for the corresponding menu
+settings.
+
+#+begin_example
+switch_macro -> ( 'debug'
+                | 'sort'
+                | 'top'
+                | 'bottom' );
+#+end_example
+
+All the switch macros correspond to their cli flags for
+*wk*​(1).
+
+** INTEGER MACROS
+
+The integer macros require a positive or negative integer
+argument to the macro.
+
+#+begin_example
+integer_macro -> ( 'menu-width'
+                 | 'menu-gap' ) '-'? [0-9]+ ;
+#+end_example
+
+All the integer macros correspond to their cli flags for
+*wk*​(1).
+
+** UNSIGNED MACROS
+
+The unsigned macros require a positive integer argument to
+the macro.
+
+#+begin_example
+unsigned_macro -> ( 'max-columns'
+                  | 'border-width'
+                  | 'width-padding'
+                  | 'height-padding'
+                  | 'delay' ) [0-9]+ ;
+#+end_example
+
+All the unsigned macros correspond to their cli flags for
+*wk*​(1).
+
+** NUMBER MACROS
+
+The number macros require a positive number argument to
+the macro.
+
+#+begin_example
+number_macro -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
+#+end_example
+
+All the number macros correspond to their cli flags for
+*wk*​(1).
+
+* EXAMPLES
+
+** HOOKS
+
+Users can certainly chain commands together the same way one
+would chain commands in a regular shell, but hooks help to
+reduce repetition. They also make more sense in the context
+of prefixes.
+
+#+begin_example
+# With hooked prefix
+e "+Emacs" ^before %{{xdotool set_desktop 1}}
+{
+    o "Open" %{{emacsclient -c -a ""}}
+    r "Roam" %{{emacsclient -c -a "" ~/20240101080032-startpage.org}}
+}
+
+# Without hooks
+e "+Emacs"
+{
+    o "Open" %{{xdotool set_desktop 1 ; emacsclient -c -a ""}}
+    r "Roam" %{{xdotool set_desktop 1 ; emacsclient -c -a "" ~/20240101080032-startpage.org}}
+}
+#+end_example
+
+As you can see, this helps to cut down on repetition, but it
+also helps enforce a workflow rule without the need to setup
+desktop environment rules and such.
+
+This example also hints at the idea of inheritance as the
+hook was given to a prefix and not to individual chords.
+This topic is covered after introducing flags as these also
+factor into the discussion.
+
+** FLAGS
+
+Each flag has a time and a place but I find /+keep/, and
+/+write/ to be the most useful out of the bunch.
+
+The /+keep/ flag can turn /wk/ into a hydra of sorts. I use
+this to control music playback on my system like this:
+
+#+begin_example
+m "+Music" +keep
+{
+    c "Clear mpc" %{{mpc clear}}
+    d "Display Song" %{{songinfo}}
+    h "Seek -5" %{{mpc seek "-5"}}
+    l "Seek +5" %{{mpc seek "+5"}}
+    n "Next song" %{{mpc next}}
+    p "Prev song" %{{mpc prev}}
+    o "Open mpc" +close %{{st -e ncmpcpp}}
+    y "Playlist" +close %{{st -e ncmpcpp --screen playlist}}
+}
+#+end_example
+
+The /+write/ flag is useful for scripting purposes. In the
+same way that *dmenu*​(1) and co print selections to stdout,
+this turns *wk*​(1) into a prompt for users to choose from
+some list of options with less typing.
+
+** THE INCLUDE MACRO
+
+Here is an example of the /:include/ macro:
+
+#+begin_example
+# File main.wks
+---------------
+# Browser prefix
+b "+Browser" { :include "browser_key_chords.wks" }
+# Emacs prefix
+e "+Emacs" ^before %{{xdotool set_desktop 1}} { :include "emacs_key_chords.wks" }
+# Music prefix
+m "+Music" +keep { :include "music_key_chords.wks" }
+
+# File browser_key_chords.wks
+-----------------------------
+[
+    (b "Brave")
+    (c "Chrome")
+    (f "Firefox")
+] "null" %{{%(desc,,)}}
+
+# Mullvad-exclude prefix
+m "+Mullvad Exclude"
+{
+    [
+        (b "Brave")
+        (c "Chrome")
+        (f "Firefox")
+    ] "null" %{{mullvad-exclude %(desc_)}}
+}
+
+# File emacs_key_chords.wks
+---------------------------
+b "Open blank" %{{emacsclient -c -a ""}}
+p "+Projects"
+{
+    w "wk" %{{emacs "~/Projects/wk"}}
+}
+
+# File music_key_chords.wks
+---------------------------
+c "Clear mpc" %{{mpc clear}}
+d "Display song" %{{songinfo}}
+h "Seek -5s" %{{mpc seek "-5"}}
+l "Seek +5s" %{{mpc seek "+5"}}
+n "Next song" %{{mpc next}}
+p "Prev song" %{{mpc prev}}
+o "Open mpc" +close %{{st -e ncmpcpp}}
+#+end_example
+
+This allows users to create key chords in a more modular
+manner. This can be beneficial when you may want to reuse a
+/wks/ file in a different context than your main key chords.
+
+*NOTE*, while the /#include/ macro in C/C++ has restrictions
+on where it can go in a file, the /:include/ macro in a
+/wks/ file may go literally anywhere. In the above example,
+this was given in the middle of a prefix without error.
+
+You can even do silly things like this:
+
+#+begin_example
+# File part_one.wks
+-------------------
+A "silly :include "part_two.wks"
+
+# File part_two.wks
+-------------------
+example" %{{echo "You wouldn't do this right??"}}
+
+# Resulting wks file
+--------------------
+A "silly example" %{{echo "You wouldn't do this right??"}}
+#+end_example
+
+As for file resolution, it's pretty simple. A relative path
+is assumed to be in the same directory as the file being
+executed,  and absolute paths are just that, absolute.
 
 * NOTES
+
 ** INHERITANCE
+
+Inheritance relates to hooks and flags given to prefixes.
+The idea is fairly simple. A hook or flag given to a prefix
+is inherited by any chord within the prefix. Nested prefixes
+do not inherit the hooks and flags given to their parent.
+
+#+begin_example
+a "+Prefix" +write
+{
+    w "Write it!" %{{I get written!}}
+    n "+Nested Prefix"
+    {
+        r "Run it!" %{{echo "I get run!"}}
+    }
+}
+#+end_example
+
+In the above example, the key chord *a w* causes *I get
+written!* to be printed to stdout. The key chord *a n r*
+runs the command *echo "I get run!"*.
+
+To force a nested prefix to inherit from its parent the
+/+inherit/ flag must be given. Additionally, if the prefix
+only wishes to inherit certain hooks or flags additional
+flags may be given to ignore unwanted behavior.

@@ -4,240 +4,8 @@
 .SH NAME
 wks - A which-key source file used by the \f[B]wk\f[R]​(1) program.
 .SH DESCRIPTION
-\f[B]wk\f[R] can generate \f[I]key chords\f[R] using \f[B]wks\f[R]
-syntax instead of relying on precompiled \f[I]key chords\f[R].
-.SH EXAMPLES
-.SS BASIC WKS FILE
-A basic \f[B]wks\f[R] file with some explanation regarding
-\f[B]COMMENTS\f[R], \f[B]CHORDS\f[R], \f[B]PREFIXES\f[R],
-\f[B]DESCRIPTIONS\f[R], \f[B]KEYS\f[R], and \f[B]COMMANDS\f[R]:
-.IP
-.EX
-# This is a comment
-    # This is also a comment
-
-# This is a chord.
-# The trigger key is \[aq]a\[aq].
-# The description is \[dq]A chord\[dq].
-# The command is \[aq]echo \[dq]Hello, World\[dq]\[aq].
-a \[dq]A chord\[dq] %{{echo \[dq]Hello, world!\[dq]}}
-
-# This is a prefix.
-# The trigger key is \[aq]Control + a\[aq]
-C-a \[dq]A prefix\[dq]
-{
-    # This is a chord that can only be accessed after triggering the parent prefix.
-    b \[dq]A chord\[dq] %{{echo \[dq]Hello from inside prefix \[aq]C-a\[aq]\[dq]}}
-
-    # Prefixes can nest additional prefixes arbitrarily deep
-    c \[dq]Another prefix\[dq]
-    {
-        d \[dq]Done\[dq] %{{echo \[dq]You\[aq]ve reached the end!\[dq]}}
-    }
-}
-.EE
-.SS CHORD ARRAYS AND INTERPOLATION
-The \f[B]CHORD ARRAY\f[R] and \f[B]INTERPOLATION\f[R] are more
-interesting \f[B]wks\f[R] features:
-.IP
-.EX
-[abcdC-e] \[dq]Chord number: %(index+1)\[dq] %{{echo \[dq]Pressed key: \[aq]%(key)\[aq]\[dq]}}
-.EE
-.PP
-The above is equivelent to the following:
-.IP
-.EX
-a   \[dq]Chord number: 1\[dq] %{{echo \[dq]Pressed key: \[aq]a\[aq]\[dq]}}
-b   \[dq]Chord number: 2\[dq] %{{echo \[dq]Pressed key: \[aq]b\[aq]\[dq]}}
-c   \[dq]Chord number: 3\[dq] %{{echo \[dq]Pressed key: \[aq]c\[aq]\[dq]}}
-d   \[dq]Chord number: 4\[dq] %{{echo \[dq]Pressed key: \[aq]d\[aq]\[dq]}}
-C-e \[dq]Chord number: 5\[dq] %{{echo \[dq]Pressed key: \[aq]C-e\[aq]\[dq]}}
-.EE
-.SS CHORD ARRAYS AND CHORD EXPRESSIONS
-The \f[B]CHORD ARRAY\f[R] also supports \f[B]CHORD EXPRESSIONS\f[R]:
-.IP
-.EX
-[
-   abc
-   (d \[dq]A different description\[dq] %{{echo \[dq]A different command\[dq]}})
-   (C-e \[dq]An exciting description\[dq])
-] \[dq]A default description\[dq] %{{echo \[dq]A default command\[dq]}}
-.EE
-.PP
-The above is equivelent to the following:
-.IP
-.EX
-a   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
-b   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
-c   \[dq]A default description\[dq]   %{{echo \[dq]A default command\[dq]}}
-d   \[dq]A different description\[dq] %{{echo \[dq]A different command\[dq]}}
-C-e \[dq]An exciting description\[dq] %{{echo \[dq]A default command\[dq]}}
-.EE
-.SS HOOKS AND FLAGS IN CHORDS
-\f[B]HOOKS\f[R] and \f[B]FLAGS\f[R] are very flexible:
-.IP
-.EX
-a \[dq]A hook\[dq]
-  \[ha]before %{{echo \[dq]I run first!\[dq]}}
-  \[ha]after %{{echo \[dq]I run last!\[dq]}}
-    %{{echo \[dq]I run in the middle!\[dq]}}
-
-b \[dq]A hook and flag\[dq]
-  \[ha]before %{{echo \[dq]I run first!\[dq]}}  +keep
-    %{{echo \[dq]I stay open thanks to \[aq]+keep\[aq]\[dq]}}
-
-c \[dq]I\[aq]m equivelent to \[aq]b\[aq]\[dq]
-  +keep \[ha]before %{{echo \[dq]I run first!\[dq]}}
-    %{{echo \[dq]I stay open thanks to \[aq]+keep\[aq]\[dq]}}
-.EE
-.PP
-This should make two things clear:
-.TP
-\f[B]1\f[R].
-That \f[I]hooks\f[R] and \f[I]flags\f[R] are of equal precedence.
-.TP
-\f[B]2\f[R].
-That \f[I]hooks\f[R] and \f[I]flags\f[R] go inbetween the
-\f[I]description\f[R] and the \f[I]command\f[R].
-.SS HOOKS AND FLAGS IN PREFIXES
-A \f[I]hooks\f[R] and \f[I]flags\f[R] work differently when given to a
-\f[I]prefix\f[R] compared to a \f[I]chord\f[R], \f[I]chord array\f[R],
-or \f[I]chord expression\f[R]:
-.IP
-.EX
-a \[dq]A prefix with a hook and flag\[dq] \[ha]before %{{echo \[dq]I am /almost/ always run first!\[dq]}} +keep
-{
-    b \[dq]An obedient chord\[dq]
-        %{{echo \[dq]I inherit /hooks/ and /flags/ from my parent prefix!\[dq]}}
-    c \[dq]A selective chord\[dq] +no-before
-        %{{echo \[dq]I ignore /before/ and /sync-before/ /hooks/!\[dq]}}
-    d \[dq]A defiant chord\[dq] +ignore
-        %{{echo \[dq]I ignore everything my parent prefix tries to force on me!!\[dq]}}
-    e \[dq]A wanting child prefix\[dq] +inherit
-    {
-        f \[dq]Hooray!\[dq]
-            %{{echo \[dq]My parent prefix is passing on my grandparent\[aq]s /hooks/ and /flags/!\[dq]}}
-    }
-    g \[dq]An indifferent child prefix\[dq]
-    {
-        h \[dq]Hmm...\[dq]
-           %{{echo \[dq]I don\[aq]t seem to have inherited any /hooks/ or /flags/ from my grandparent.\[dq]}}
-    }
-}
-.EE
-.PP
-For a more formal understanding, see \f[B]INHERITANCE\f[R] below.
-.SS THE INCLUDE PREPROCESSOR MACRO
-Here is a simple example of the \f[I]:include\f[R] \f[B]PREPROCESSOR
-MACRO\f[R]:
-.IP
-.EX
-# File main.wks
----------------
-:include \[dq]top_level_chords.wks\[dq]
-:include \[dq]top_level_prefixes.wks\[dq]
-
-# File top_level_chords.wks
----------------------------
-a \[dq]A chord\[dq] %{{echo \[dq]Hello!\[dq]}}
-
-# File top_level_prefixes.wks
------------------------------
-b \[dq]A prefix\[dq]
-{
-    c \[dq]A chord\[dq] %{{echo \[dq]Where am I??\[dq]}}
-}
-.EE
-.PP
-When processed, the \f[I]main.wks\f[R] file will produce a \f[B]wks\f[R]
-file equivelent to this:
-.IP
-.EX
-a \[dq]A chord\[dq] %{{echo \[dq]Hello!\[dq]}}
-b \[dq]A prefix\[dq]
-{
-    c \[dq]A chord\[dq] %{{echo \[dq]Where am I??\[dq]}}
-}
-.EE
-.PP
-The \f[I]:include\f[R] macro is more flexible than the \f[B]C\f[R]
-equivelent though, allowing for silly things like this:
-.IP
-.EX
-# File first_half.wks
----------------------
-a \[dq]The first half :include \[dq]second_half.wks\[dq]
-
-# File second_half.wks
-----------------------
-and the second half\[dq] %{{echo \[dq]A match made in heaven.\[dq]}}
-.EE
-.PP
-Both \f[I]first~half~.wks\f[R] and \f[I]second~half~.wks\f[R] are
-invalid \f[B]wks\f[R] files on their own.
-But, if \f[I]first~half~.wks\f[R] is passed to \f[B]wk\f[R] it will
-produce a valid \f[B]wks\f[R] file equivelent to the one below:
-.IP
-.EX
-a \[dq]The first half and the second half\[dq] %{{echo \[dq]A match made in heaven.\[dq]}}
-.EE
-.PP
-While the above example is a bit silly, this flexibility allows
-\f[B]wks\f[R] to become extremely modular.
-Take this snippet of my personal configuration for example:
-.IP
-.EX
-# File main.wks
----------------
-# Browser prefix
-b \[dq]+Browser\[dq] { :include \[dq]browser_key_chords.wks\[dq] }
-# Emacs prefix
-e \[dq]+Emacs\[dq] \[ha]before %{{dwmc viewex 1}} { :include \[dq]emacs_key_chords.wks\[dq] }
-# mpc prefix
-m \[dq]+mpc\[dq] +keep { :include \[dq]mpc_key_chords.wks\[dq] }
-
-# File browser_key_chords.wks
------------------------------
-[
-    (b \[dq]Brave\[dq])
-    (c \[dq]Chrome\[dq])
-    (f \[dq]Firefox\[dq])
-] \[dq]null\[dq] %{{%(desc,)}} # downcase the description and use as the command
-
-# Mullvad-exclude prefix
-m \[dq]+Mullvad Exclude\[dq]
-{
-    [
-        (b \[dq]Brave\[dq])
-        (c \[dq]Chrome\[dq])
-        (f \[dq]Firefox\[dq])
-    ] \[dq]null\[dq] %{{mullvad-exclude %(desc_)}}
-}
-
-# File emacs_key_chords.wks
----------------------------
-b \[dq]Open blank\[dq] %{{emacsclient -c -a \[dq]\[dq]}}
-p \[dq]+Projects\[dq]
-{
-    w \[dq]wk\[dq] %{{emacs \[dq]\[ti]/Projects/wk\[dq]}}
-}
-
-# File mpc_key_chords.wks
--------------------------
-c \[dq]Clear mpc\[dq] %{{mpc clear}}
-d \[dq]Display song\[dq] %{{songinfo}}
-h \[dq]Seek -5s\[dq] %{{mpc seek \[dq]-5\[dq]}}
-l \[dq]Seek +5s\[dq] %{{mpc seek \[dq]+5\[dq]}}
-n \[dq]Next song\[dq] %{{mpc next}}
-p \[dq]Prev song\[dq] %{{mpc prev}}
-o \[dq]Open mpc\[dq] +ignore %{{term -e ncmpcpp}}
-.EE
-.PP
-Each of the above files is perfectly valid on their own, meaning they
-can exist in as part of \f[I]main.wks\f[R], or I can use only the
-relevant file when calling \f[B]wk\f[R] from a script.
-Additionally, I can \f[I]:include\f[R] files multiple times in cases
-where I would be repeating myself.
+\f[B]wk\f[R]\[aq]s configuration files use the \f[B]wks\f[R] syntax to
+generate key chords.
 .SH GRAMMAR RULES
 The following are \f[I]ideally\f[R] the formal grammar rules for
 \f[B]wks\f[R].
@@ -246,33 +14,33 @@ If anything is not behaving as you expect, please see \f[B]CONTACT\f[R]
 below to reach out.
 .IP
 .EX
-key_chord          -> ( chord
-                      | prefix
-                      | chord_array ) ;
+key_chord          -> ( chord | prefix | chord_array ) ;
 
-chord              -> key description keyword* command ;
+chord              -> trigger_key description keyword* command ;
 
-prefix             -> key description keyword* \[aq]{\[aq] ( key_chord )+ \[aq]}\[aq] ;
+prefix             -> trigger_key description keyword* \[aq]{\[aq] ( key_chord )+ \[aq]}\[aq] ;
 
-chord_array        -> \[aq][\[aq] ( key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
+chord_array        -> \[aq][\[aq] ( trigger_key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
 
-chord_expression   -> \[aq](\[aq] key description keyword* command? \[aq])\[aq] ;
+chord_expression   -> \[aq](\[aq] trigger_key description keyword* command? \[aq])\[aq] ;
 
-key                -> modifier* ( \[aq]\[rs]\[rs]\[aq][\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:\[ha]+()]
-                                | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:\[ha]+()]
-                                | special_key ) ;
+trigger_key        -> modifier* ( normal_key | special_key ) ;
+
+normal_key         -> ( \[aq]\[rs]\[rs]\[aq] [\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:\[ha]+()] | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:\[ha]+()] ) ;
 
 special_key        -> ( \[aq]Left\[aq]    | \[aq]Right\[aq]   | \[aq]Up\[aq]     | \[aq]Down\[aq]
                       | \[aq]TAB\[aq]     | \[aq]SPC\[aq]     | \[aq]RET\[aq]    | \[aq]DEL\[aq]  | \[aq]ESC\[aq]
                       | \[aq]Home\[aq]    | \[aq]PgUp\[aq]    | \[aq]PgDown\[aq] | \[aq]End\[aq]  | \[aq]Begin\[aq]
                       | \[aq]VolDown\[aq] | \[aq]VolMute\[aq] | \[aq]VolUp\[aq]  | \[aq]Play\[aq] | \[aq]Stop\[aq]
-                      | \[aq]Prev\[aq]    | \[aq]Next\[aq]    | \[aq]F\[aq][1-35] ) ;
+                      | \[aq]Prev\[aq]    | \[aq]Next\[aq]    | \[aq]F\[aq][1-35] ) \[rs]s+ ;
 
 modifier           -> ( \[aq]C\[aq] | \[aq]H\[aq] | \[aq]M\[aq] | \[aq]S\[aq] ) \[aq]-\[aq] ;
 
 description        -> \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] | interpolation )* \[aq]\[dq]\[aq] ;
 
-command            -> \[aq]%{{\[aq] ( . | interpolation )* \[aq]}}\[aq] ;
+command            -> \[aq]%\[aq] delimiter ( . | interpolation )* delimiter ;
+
+delimiter          -> .{2} ;
 
 interpolation      -> \[aq]%(\[aq] identifier \[aq])\[aq] ;
 
@@ -337,70 +105,60 @@ unsigned_macro     -> ( \[aq]max-columns\[aq]
 
 number_macro       -> ( \[aq]border-radius\[aq] ) \[aq]-\[aq]? [0-9]+ ( \[aq].\[aq] [0-9]* )? ;
 .EE
+.PP
+\f[B]NOTE\f[R] in \f[I]wks\f[R] files, comments can be added using the
+pound character (\f[I]#\f[R]).
+When a pound character is encountered, it signifies the start of a
+comment.
+The comment extends from the pound character until the end of the line.
+It\[aq]s important to note that the pound character is treated as a
+literal character within \f[I]descriptions\f[R] and \f[I]commands\f[R]
+and does not indicate the start of a comment in those contexts.
 .SS KEY CHORD
 A \f[I]key chord\f[R] is the top-level construct in the grammar and
 represents a complete key chord definition.
+.IP
+.EX
+key_chord -> ( chord | prefix | chord_array ) ;
+.EE
+.PP
 It can be either a \f[I]prefix\f[R], a \f[I]chord\f[R], or a \f[I]chord
 array\f[R].
-.SS PREFIX
-A \f[I]prefix\f[R] is a type of \f[I]key chord\f[R] that acts as a
-container for other key chords.
-It consists of a \f[I]key\f[R], a \f[I]description\f[R], zero or more
-\f[I]keywords\f[R], and a block of \f[I]key chords\f[R] enclosed in
-curly braces \f[B]{}\f[R].
-The \f[I]key\f[R] triggers the \f[I]prefix\f[R], and the inner \f[I]key
-chords\f[R] become accessible once the \f[I]prefix\f[R] is activated.
 .SS CHORD
-A \f[I]chord\f[R] is a basic \f[I]key chord\f[R] that represents a
-single action or \f[I]command\f[R].
-It consists of a \f[I]key\f[R], a \f[I]description\f[R], zero or more
-\f[I]keywords\f[R], and a \f[I]command\f[R].
-When the specified \f[I]key\f[R] is triggered, the associated
-\f[I]command\f[R] is executed.
-.SS CHORD ARRAY
-A \f[I]chord array\f[R] is a compact way to define multiple key chords
-with similar properties.
-It starts with an opening square bracket \f[B][\f[R], followed by one or
-more \f[I]keys\f[R] or \f[I]chord expressions\f[R], and ends with a
-closing square bracket \f[B]]\f[R].
-After the closing bracket, it includes a \f[I]description\f[R], zero or
-more \f[I]keywords\f[R], and a \f[I]command\f[R].
-Each \f[I]key\f[R] within the \f[I]chord array\f[R] represents a
-separate \f[I]chord\f[R] that shares the same \f[I]description\f[R],
-\f[I]keywords\f[R], and \f[I]command\f[R].
-A \f[I]chord array\f[R] will not produce a \f[I]prefix\f[R] array.
-During parsing, an error will be thrown if no command is supplied, just
-the same as a \f[I]chord\f[R].
+A \f[I]chord\f[R] is a \f[I]key chord\f[R] that results in \f[B]wk\f[R]
+performing some action, like executing a command, when the trigger key
+is pressed.
+.IP
+.EX
+chord -> trigger_key description keyword* command ;
+.EE
 .PP
-See \f[B]CHORD EXPRESSION\f[R] below for a description of the behavior
-of \f[I]chord expressions\f[R] within a \f[I]chord array\f[R].
-.SS CHORD EXPRESSION
-A \f[I]chord expression\f[R] is a construct that is only valid within a
-\f[I]chord array\f[R].
-A \f[I]chord expression\f[R] begins with an opening parentheses
-\f[B](\f[R], followed by a \f[I]key\f[R] and \f[I]description\f[R].
-After the \f[I]description\f[R], zero or more \f[I]keywords\f[R] and a
-\f[I]command\f[R] may be given, just as one would expect in a standard
-\f[I]chord\f[R].
-However, a \f[I]chord expression\f[R] does not require anything more
-than the \f[I]key\f[R] and \f[I]description\f[R].
-This means it is possible to give a \f[I]key\f[R],
-\f[I]description\f[R], and a \f[I]flag\f[R] but no \f[I]hooks\f[R] or
-\f[I]command\f[R] and vice versa.
-That is because anything missing from the \f[I]chord expression\f[R]
-will be filled in by the surrounding \f[I]chord array\f[R].
-In any case, the \f[I]chord expression\f[R] must be terminated by a
-closing parentheses \f[B])\f[R], to be valid.
-.SS KEY
-A \f[I]key\f[R] represents the trigger or activator for a \f[I]key
-chord\f[R].
-It consists of zero or more \f[I]modifiers\f[R] followed by either a
-single printable \f[I]UTF-8\f[R] character, or a \f[I]special key\f[R].
-Certain characters have special meaning and they cannot be used unless
-escaped.
+All chords must have a \f[I]trigger key\f[R], \f[I]description\f[R], and
+a \f[I]command\f[R].
+Zero or more \f[I]keywords\f[R] may be given between the
+\f[I]description\f[R] and \f[I]command\f[R].
+.SS TRIGGER KEY
+A \f[I]trigger key\f[R] represents the specific keypress or key
+combination that triggers a corresponding action or command.
+In a \f[I]wks\f[R] file, it is the written representation of the
+physical key(s) pressed by the user on their keyboard.
+.IP
+.EX
+trigger_key -> modifier* ( normal_key | special_key ) ;
+.EE
 .PP
-All of the following characters must be preceded by a backslash
-\f[B]\[rs]\f[R], to be interpreted as a \f[I]key\f[R]:
+A \f[I]trigger key\f[R] is then zero or more \f[I]modifiers\f[R]
+followed by a \f[I]normal key\f[R] or a \f[I]special key\f[R].
+.SS NORMAL KEY
+A \f[I]normal key\f[R] is any printable, non-whitespace, utf8 character.
+.IP
+.EX
+normal_key -> ( \[aq]\[rs]\[rs]\[aq] [\[rs]\[rs]\[rs][\[rs]]{}#\[dq]:\[ha]+()] | [\[ha]\[rs]s\[rs][\[rs]]{}#\[dq]:\[ha]+()] ) ;
+.EE
+.PP
+Certain characters have special meanings in \f[I]wks\f[R] files.
+To use these characters as a normal key, simply precede them with a
+backslash (\f[I]\[rs]\f[R]).
 .RS
 .TP
 \f[B][\f[R]
@@ -437,43 +195,112 @@ Begins a \f[I]chord expression\f[R].
 Ends a \f[I]chord expression\f[R].
 .RE
 .PP
-While the above are required to be escaped to be interpreted as a
-\f[I]key\f[R], it is not an error to escape any \f[I]UTF-8\f[R]
-character meant to be a \f[I]key\f[R].
-The caveat is that the character meant to be a \f[I]key\f[R] needs to be
-printable and not a predefined \f[I]special key\f[R] as defined below.
+All other non-whitespace, printable utf8 characters prior to a
+description will be interpreted as a normal key.
+Those that are whitespace or non-printable fall into the special key
+category.
 .SS SPECIAL KEY
-The \f[I]special keys\f[R] cover (mostly) non-printable keys that can be
-used as a \f[I]key\f[R].
+Special keys like \f[I]tab\f[R], \f[I]escape\f[R], \f[I]spacebar\f[R],
+and \f[I]F1\f[R] can still be used as trigger keys in \f[I]wks\f[R]
+files via their special forms.
+.IP
+.EX
+special_key -> ( \[aq]Left\[aq]    | \[aq]Right\[aq]   | \[aq]Up\[aq]     | \[aq]Down\[aq]
+               | \[aq]TAB\[aq]     | \[aq]SPC\[aq]     | \[aq]RET\[aq]    | \[aq]DEL\[aq]  | \[aq]ESC\[aq]
+               | \[aq]Home\[aq]    | \[aq]PgUp\[aq]    | \[aq]PgDown\[aq] | \[aq]End\[aq]  | \[aq]Begin\[aq]
+               | \[aq]VolDown\[aq] | \[aq]VolMute\[aq] | \[aq]VolUp\[aq]  | \[aq]Play\[aq] | \[aq]Stop\[aq]
+               | \[aq]Prev\[aq]    | \[aq]Next\[aq]    | \[aq]F\[aq][1-35] ) \[rs]s+ ;
+.EE
 .PP
-The following are recognized /special key​/ forms:
+Each form should indicate the special key it represents but here is a
+chart to make things explicit.
 .RS
-.PP
-\f[I]Left\f[R], \f[I]Right\f[R], \f[I]Up\f[R], \f[I]Down\f[R],
-\f[I]TAB\f[R], \f[I]SPC\f[R], \f[I]RET\f[R], \f[I]DEL\f[R],
-\f[I]ESC\f[R], \f[I]Home\f[R], \f[I]PgUp\f[R], \f[I]PgDown\f[R],
-\f[I]End\f[R], \f[I]Begin\f[R], \f[I]VolDown\f[R], \f[I]VolMute\f[R],
-\f[I]VolUp\f[R], \f[I]Play\f[R], \f[I]Stop\f[R], \f[I]Prev\f[R],
-\f[I]Next\f[R], and \f[I]F\f[R][1-35]
+.TP
+\f[B]Left\f[R]
+Left arrow
+.TP
+\f[B]Right\f[R]
+Right arrow
+.TP
+\f[B]Up\f[R]
+Up arrow
+.TP
+\f[B]Down\f[R]
+Down arrow
+.TP
+\f[B]TAB\f[R]
+Tab
+.TP
+\f[B]SPC\f[R]
+Space
+.TP
+\f[B]RET\f[R]
+Enter/Return
+.TP
+\f[B]DEL\f[R]
+Delete
+.TP
+\f[B]ESC\f[R]
+Esc
+.TP
+\f[B]Home\f[R]
+Home
+.TP
+\f[B]PgUp\f[R]
+Page up
+.TP
+\f[B]PgDown\f[R]
+Page down
+.TP
+\f[B]End\f[R]
+End
+.TP
+\f[B]Begin\f[R]
+Begin
+.TP
+\f[B]F[1-35]\f[R]
+Function keys 1 through 35.
+.TP
+\f[B]VolDown\f[R]
+Volume Down
+.TP
+\f[B]VolMute\f[R]
+Mute Vol
+.TP
+\f[B]VolUp\f[R]
+Volume Up
+.TP
+\f[B]Play\f[R]
+Play Audio
+.TP
+\f[B]Stop\f[R]
+Stop Audio
+.TP
+\f[B]Prev\f[R]
+Audio Previous
+.TP
+\f[B]Next\f[R]
+Audio Next
 .RE
 .PP
-\f[B]NOTE\f[R] that several of the \f[I]special keys\f[R] are
-technically printable, and will be recognized as a regular \f[I]key\f[R]
-if escaped with a backslash \f[B]\[rs]\f[R].
-You may escape a normal \f[B]space\f[R] for use in your \f[I]key
-chords\f[R], but when you hit \f[B]space\f[R] it will be recognized as a
-\f[I]special key\f[R] and will fail to match the \f[B]space\f[R]
-\f[I]key\f[R] in your \f[I]key chords\f[R].
+In \f[I]wks\f[R] files, whitespace is generally not significant around
+individual parts of the syntax, with one notable exception: \f[I]special
+keys\f[R].
+When using \f[I]special keys\f[R], it is required to include whitespace
+between the end of the special key and the start of the next item in the
+\f[I]wks\f[R] file.
 .PP
-In short, please use the special forms listed above to ensure the
-corresponding keypress events trigger the desired \f[I]key chord\f[R].
+If you have any additional special keys that you would like
+\f[I]wks\f[R] files to support, please open an issue or a pull request.
 .SS MODIFIER
-A \f[I]modifier\f[R] is a prefix that can be added before any other
-\f[I]modifier\f[R], \f[I]key\f[R], or \f[I]special key\f[R] to specify
-the matching keypress.
-It consists of a single letter (\f[B]C\f[R], \f[B]H\f[R], \f[B]M\f[R],
-or \f[B]S\f[R]) followed by a hyphen \f[B]-\f[R].
-The modifiers represent the following:
+As mentioned above, zero or more \f[I]modifiers\f[R] can be given in a
+\f[I]trigger key\f[R].
+.IP
+.EX
+modifier -> ( \[aq]C\[aq] | \[aq]H\[aq] | \[aq]M\[aq] | \[aq]S\[aq] ) \[aq]-\[aq] ;
+.EE
+.PP
+Modifiers can be used in \f[I]wks\f[R] files via their special forms.
 .RS
 .TP
 \f[B]C-\f[R]
@@ -489,60 +316,268 @@ The modifiers represent the following:
 \f[I]Shift\f[R] key
 .RE
 .PP
-\f[B]NOTE\f[R] that a \f[I]modifier\f[R] can be given more than once
-according to the grammar, but there is no practical benefit to this.
-Additionally, the \f[B]S-\f[R] (\f[I]Shift\f[R]) \f[I]modifier\f[R] will
-be ignored for all non \f[I]special keys\f[R].
-You can define a \f[I]key\f[R] like \f[B]S-x\f[R], but when you press
-\f[B]Shift+x\f[R], \f[B]wk\f[R] will only match the \f[I]key\f[R]
-defined as \f[B]X\f[R].
+Modifiers act as one would expect.
+To match the keypress \f[I]Control+c\f[R] use the form \f[I]C-c\f[R] in
+your \f[I]wks\f[R] file.
+.PP
+Among the modifiers, the Shift modifier (\f[I]S-\f[R]) has a unique
+behavior when used with \f[I]normal keys\f[R].
+Due to the way normal keys are interpreted, the \f[I]S-\f[R] modifier is
+not always necessary.
+To determine whether \f[I]S-\f[R] is required, it is recommended to test
+the character in a \f[I]wks\f[R] file by typing it with and without the
+Shift key pressed.
+.PP
+If the character is non-whitespace, printable, and the shifted and
+unshifted versions produce different output, then the \f[I]S-\f[R]
+modifier is not needed.
+For instance, pressing the \f[I]a\f[R] key with the Shift key held down
+produces an uppercase \f[I]A\f[R].
+This test demonstrates that the key\[aq]s output changes based on the
+Shift key state.
+.PP
+In such cases, using \f[I]S-a\f[R] in a \f[I]wks\f[R] file would not
+work as expected because the key will never match when the user presses
+\f[I]Shift+a\f[R].
+.PP
+I am open to changing it so that \f[I]S-a\f[R] and \f[I]A\f[R] match the
+same \f[I]Shift+a\f[R] keypress, but I have yet to find a fitting
+solution.
+The ones I can think of either involve depending on some utf8 library,
+writing the code by hand, or permitting this syntax for ASCII but not
+other character sets.
+Each has its own drawback, and I find the current solution to be
+intuitive in practice.
 .SS DESCRIPTION
-A \f[I]description\f[R] provides a human-readable explanation or label
-for a \f[I]key chord\f[R].
-It is enclosed in double quotes \f[B]\[dq]\f[R].
-If a double quote needs to be included within the \f[I]description\f[R],
-it must be escaped with a backslash.
+A \f[I]description\f[R] provide a hint about the purpose of the
+\f[I]chord\f[R] or \f[I]prefix\f[R].
+.IP
+.EX
+description -> \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] | interpolation )* \[aq]\[dq]\[aq] ;
+.EE
 .PP
-An \f[I]interpolation\f[R] may be used with a \f[I]description\f[R] as
-well.
-See \f[B]INTERPOLATION\f[R] below for a full explanation.
+A \f[I]description\f[R] starts with a double quote (\f[I]\[dq]\f[R]),
+followed by zero or more of the following:
+.RS
+.TP
+\f[I]\[rs]\[dq]\f[R]
+Escaped double quotes.
+.TP
+\f[I][\[ha]\[dq]]\f[R]
+Any non-double quote character.
+.TP
+\f[I]interpolation\f[R]
+An interpolation.
+.RE
+.PP
+A \f[I]description\f[R] ends with a double quote.
+Aside from \f[I]interpolations\f[R], a \f[I]description\f[R] looks like
+your typical string in many programming languages.
 .SS COMMAND
-A \f[I]command\f[R] represents the action or functionality triggered by
-a \f[I]chord\f[R].
-It is enclosed in \f[B]%{{\f[R] and \f[B]}}\f[R] delimiters.
-The content within the delimiters can be any valid shell
-\f[I]command\f[R] just as you would supply it at the command-line.
+A \f[I]command\f[R] is some action to be executed upon completing a
+\f[I]key chord\f[R] sequence.
+.IP
+.EX
+command -> \[aq]%\[aq] delimiter ( . | interpolation )* delimiter ;
+.EE
 .PP
-An \f[I]interpolation\f[R] may be used with a \f[I]command\f[R].
-See \f[B]INTERPOLATION\f[R] below for a full explanation.
+A \f[I]command\f[R] begins with the percent character (\f[I]%\f[R])
+followed by a \f[I]delimiter\f[R].
+After the \f[I]delimiter\f[R] zero or more characters, or
+\f[I]interpolations\f[R] may be given.
+A \f[I]command\f[R] is ended with the same delimiter that followed the
+percent character.
 .PP
-\f[B]NOTE\f[R] any \f[I]command\f[R] given to the \f[I]sync-before\f[R],
-or \f[I]sync-after\f[R] \f[I]hooks\f[R] will be run in a blocking
-manner.
-Additionally, if the \f[I]sync-command\f[R] \f[I]flag\f[R] is given, the
-the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R] becomes blocking.
-Depending on the \f[I]command\f[R] \f[B]wk\f[R] may never regain
-control.
-This is a serious concern as \f[B]wk\f[R] only releases the keyboard
-after it has completed or encountered an error.
-This could leave the user with an unresponsive keyboard until they
-restart their system.
-Think carefully before using a \f[I]command\f[R] in a blocking fashion.
+Because the \f[I]delimiter\f[R] is user defined, there should be no
+misinterpretation of anything between the delimiters.
+This means any command given at the command-line should be right at home
+in between the delimiters.
+.SS DELIMITER
+A \f[I]delimiter\f[R] acts as a start and stop marker for a
+\f[I]command\f[R] in a \f[I]wks\f[R] file.
+.IP
+.EX
+delimiter   -> ( open_delim | close_delim | (.)\[rs]1 )  ;
+
+open_delim  -> ( \[aq]{{\[aq] | \[aq]((\[aq] | \[aq][[\[aq] ) ;
+
+close_delim -> ( \[aq]}}\[aq] | \[aq]))\[aq] | \[aq]]]\[aq] ) ;
+.EE
+.PP
+A \f[I]delimiter\f[R] may be one of the following:
+.RS
+.TP
+\f[B]open~delim~\f[R] or \f[B]close~delim~\f[R]
+The opening and closing delimiters are special delimiters that that have
+an inverse match.
+If an opening delimiter is given then the corresponding closing
+delimiter is required to end the command.
+.TP
+\f[B](.)\[rs]1\f[R]
+Any \f[B]ASCII\f[R] character given twice.
+\f[B]NOTE\f[R] this excludes null bytes (\f[I]\[rs]0\f[R]) as these will
+indicate the end of a \f[I]wks\f[R] file or script.
+When an arbitrary delimiter is given the same character is expected to
+be repeated to indicate the end of a command.
+.RE
+.PP
+The \f[I]delimiter\f[R] from one \f[I]command\f[R] to the next may be
+completely different.
+This puts the burden on the user to ensure their \f[I]delimiter\f[R] is
+compatible with the content of the command.
+.PP
+Here are some examples of different delimiters for the same command.
+.IP
+.EX
+# Commands with opening and closing delimiters
+%{{echo \[dq]hello, world\[dq]}}
+%((echo \[dq]hello, world\[dq]))
+%[[echo \[dq]hello, world\[dq]]]
+
+# Valid alternatives
+%||echo \[dq]hello, world\[dq]||
+%\[rs]\[rs]echo \[dq]hello, world\[dq]\[rs]\[rs]
+%%%echo \[dq]hello, world\[dq]%%
+%zzecho \[dq]hello, world\[dq]zz
+.EE
+.PP
+Inspired by \f[B]sed\f[R]​(1), this should keep \f[I]wks\f[R] syntax
+compatible with shell commands, almost indefinitely.
+It also makes it possible to nest a \f[I]wks\f[R] script within a
+\f[I]wks\f[R] command if you want to get really weird.
+.SS PREFIX
+A \f[I]prefix\f[R] is a special type of \f[I]key chord\f[R] that acts as
+a container for other \f[I]key chords\f[R].
+It represents an incomplete key combination that does not trigger a
+\f[I]command\f[R] on its own.
+.IP
+.EX
+prefix -> trigger_key description keyword* \[aq]{\[aq] ( key_chord )+ \[aq]}\[aq] ;
+.EE
+.PP
+A \f[I]prefix\f[R] has many of the same components as a \f[I]chord\f[R].
+It begins with a \f[I]trigger key\f[R], followed by a
+\f[I]description\f[R], zero or more \f[I]keywords\f[R] and then a block
+of one or more \f[I]key chords\f[R] surrounded by an opening and closing
+brace (\f[I]{\f[R], and \f[I]}\f[R]).
+.PP
+\f[B]Note\f[R] that a key chord may be a \f[I]prefix\f[R], a
+\f[I]chord\f[R], or a \f[I]chord array\f[R], meaning many prefixes can
+be nested one inside another.
+.PP
+Here is a simple example of a prefix:
+.IP
+.EX
+m \[dq]+Music\[dq]
+{
+    n \[dq]Next\[dq] %{{mpc next}}
+    p \[dq]Prev\[dq] %{{mpc prev}}
+}
+.EE
+.SS CHORD ARRAY
+\f[I]Chords\f[R] and \f[I]prefixes\f[R] are standard fare in the realm
+of key chords, so what the heck is a \f[I]chord array\f[R]?
+Well, mostly syntactic sugar so you do not have to repeat yourself when
+it comes to \f[I]chords\f[R] that are very similar but only differ in
+slightly different ways.
+.IP
+.EX
+chord_array -> \[aq][\[aq] ( trigger_key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
+.EE
+.PP
+To use a \f[I]chord array\f[R] begin with an open bracket (\f[I][\f[R])
+followed by one or more \f[I]trigger keys\f[R] or \f[I]chord
+expressions\f[R].
+The array portion ends with a closing bracket (\f[I]]\f[R]) followed by
+the standard chord components, a description, zero or more keywords, and
+a command.
+.PP
+I think an example will make things clear:
+.IP
+.EX
+# Chord array version
+[arstgmnei] \[dq]Switch workspace %(index+1)\[dq] %{{xdotool set_desktop %(index)}}
+
+# Individual chords and no interpolation
+a \[dq]Switch workspace 1\[dq] %{{xdotool set_desktop 0}}
+r \[dq]Switch workspace 2\[dq] %{{xdotool set_desktop 1}}
+s \[dq]Switch workspace 3\[dq] %{{xdotool set_desktop 2}}
+t \[dq]Switch workspace 4\[dq] %{{xdotool set_desktop 3}}
+g \[dq]Switch workspace 5\[dq] %{{xdotool set_desktop 4}}
+m \[dq]Switch workspace 6\[dq] %{{xdotool set_desktop 5}}
+n \[dq]Switch workspace 7\[dq] %{{xdotool set_desktop 6}}
+e \[dq]Switch workspace 8\[dq] %{{xdotool set_desktop 7}}
+i \[dq]Switch workspace 9\[dq] %{{xdotool set_desktop 8}}
+.EE
+.PP
+As you can see, \f[I]chord arrays\f[R] can cut down on the need to
+repeat common information across \f[I]chords\f[R].
+However, this would not be useful if the resulting \f[I]chords\f[R] were
+exactly the same.
+Thankfully, \f[I]interpolations\f[R] make it easy for the resulting
+\f[I]chords\f[R] to differ without interfering with the common elements.
+.PP
+Interpolations are covered in full detail later, but the main idea is
+they provide a means of inserting metadata about a \f[I]chord\f[R] into
+\f[I]descriptions\f[R] and \f[I]commands\f[R].
+.SS CHORD EXPRESSION
+Chord arrays can be very simple with each \f[I]chord\f[R] being only
+slightly different from one another.
+However, it may make sense to include chords that mostly fit into the
+\f[I]chord array\f[R] with some more distinct differences.
+For this situation, \f[I]chord expressions\f[R] may be the answer.
+.IP
+.EX
+chord_expression -> \[aq](\[aq] trigger_key description keyword* command? \[aq])\[aq] ;
+.EE
+.PP
+A \f[I]chord expression\f[R] is only valid within a \f[I]chord
+array\f[R], and it is essentially a \f[I]chord\f[R] wrapped in
+parentheses with some added flexibility.
+Normally, a \f[I]chord\f[R] requires at least a \f[I]trigger key\f[R], a
+\f[I]description\f[R], and a \f[I]command\f[R].
+A \f[I]chord expression\f[R], on the other hand, requires only a
+\f[I]trigger key\f[R] and a \f[I]description\f[R].
+Any other information will be filled in by the surrounding \f[I]chord
+array\f[R].
+.PP
+Here is an example of a chord expression within a \f[I]chord array\f[R]:
+.IP
+.EX
+# With chord arrays and chord expressions
+[
+    (b \[dq]Brave\[dq])
+    (c \[dq]Mullvad Chrome\[dq] %{{mullvad-exclude chrome \[ti]/startpage.html}})
+    x
+] \[dq]XDG-OPEN\[dq] %{{%(desc,,) \[ti]/startpage.html}}
+
+# With chords and no interpolation
+b \[dq]Brave\[dq] %{{brave \[ti]/startpage.html}}
+c \[dq]Mullvad Chrome\[dq] %{{mullvad-exclude chrome \[ti]/startpage.html}}
+x \[dq]XDG-OPEN\[dq] %{{xdg-open \[ti]/startpage.html}}
+.EE
+.PP
+Admittedly, \f[I]chord expressions\f[R] may not be that useful but they
+were easy to implement so they are here for those who want to use them.
 .SS INTERPOLATION
-An \f[I]interpolation\f[R] works the same way in \f[B]wks\f[R] as it
-does in many programming languages.
-An \f[I]interpolation\f[R] may be given within a \f[I]description\f[R]
-or a \f[I]command\f[R], except where otherwise noted.
-An \f[I]interpolation\f[R] begins with the \f[B]%(\f[R] delimiter and
-ends with a closing parentheses \f[B])\f[R].
-Within these delimiters, a single identifier must be given.
+An \f[I]interpolation\f[R] is a means of accessing some metadata of the
+current \f[I]chord\f[R] from within a \f[I]description\f[R] or a
+\f[I]command\f[R].
+.IP
+.EX
+interpolation -> \[aq]%(\[aq] identifier \[aq])\[aq] ;
+.EE
+.PP
+The basic syntax for an \f[I]interpolation\f[R] begins with a
+\f[I]%(\f[R] delimiter followed by an \f[I]identifier\f[R] and closing
+parenthesis (\f[I])\f[R]).
 .SS IDENTIFIER
 The following identifiers are valid within an \f[I]interpolation\f[R]:
 .RS
 .TP
 \f[B]key\f[R]
-The \f[I]key\f[R] \f[I]identifier\f[R] corresponds to the \f[I]key\f[R]
-of the current \f[I]chord\f[R].
+The \f[I]key\f[R] \f[I]identifier\f[R] corresponds to the \f[I]trigger
+key\f[R] of the current \f[I]chord\f[R].
 This makes the most sense to use within a \f[I]chord array\f[R] or for a
 \f[I]chord\f[R] that may change frequently or is not know ahead of time.
 .TP
@@ -558,201 +593,407 @@ index of the current \f[I]chord\f[R] or \f[I]prefix\f[R] within the
 current scope.
 \f[B]NOTE\f[R] a \f[I]prefix\f[R] starts a new scope.
 .TP
-\f[B]desc\f[R] and \f[B]description\f[R]
-The \f[I]desc\f[R] and \f[I]description\f[R] \f[I]identifiers\f[R]
-correspond to the \f[I]description\f[R] of the current \f[I]chord\f[R]
-or \f[I]prefix\f[R].
-Neither \f[I]identifier\f[R] may not be given within a
+\f[B]desc\f[R]
+The \f[I]desc\f[R] \f[I]identifier\f[R] correspond to the
+\f[I]description\f[R] of the current \f[I]chord\f[R] or
+\f[I]prefix\f[R].
+The \f[I]desc\f[R] \f[I]identifier\f[R] may not be given within a
 \f[I]description\f[R].
 An error will be thrown in the case where this is attempted.
+.TP
+*desc^*^
+The \f[I]description\f[R] of the current \f[I]chord\f[R] with the
+\f[B]first\f[R] character capitalized.
+.TP
+*desc\[ha]^*^
+The \f[I]description\f[R] of the current \f[I]chord\f[R] with the
+\f[B]all\f[R] characters capitalized.
+.TP
+\f[B]desc,\f[R]
+The \f[I]description\f[R] of the current \f[I]chord\f[R] with the
+\f[B]first\f[R] character downcased.
+.TP
+\f[B]desc,,\f[R]
+The \f[I]description\f[R] of the current \f[I]chord\f[R] with the
+\f[B]all\f[R] characters downcased.
 .RE
 .SS KEYWORD
 A \f[I]keyword\f[R] is an optional instruction to modify the behavior of
 a \f[I]chord\f[R] or \f[I]prefix\f[R].
-The \f[I]keywords\f[R] include \f[B]HOOKS\f[R], \f[B]FLAGS\f[R], and
-\f[B]PREPROCESSOR COMMANDS\f[R].
-See below for details.
+.IP
+.EX
+keyword -> ( hook | flag ) ;
+.EE
+.PP
+A \f[I]keyword\f[R] is either a \f[I]hook\f[R] or a \f[I]flag\f[R].
+Both have equal precedence, meaning they can be mixed up wherever they
+are permitted.
 .SS HOOK
-A \f[I]hook\f[R] is a convenient way to add a \f[I]command\f[R] to a
-\f[I]chord\f[R].
-A \f[I]hook\f[R] may be given after a \f[I]description\f[R] starting
-with a caret *^*^, followed by a \f[I]hook\f[R] and a \f[I]command\f[R].
-If multiple of the same \f[I]hooks\f[R] are given to a \f[I]key
-chord\f[R] the final instance will overshadow the others.
-The \f[I]hook\f[R] \f[I]command\f[R] is executed in accordance with the
-specification for the type of \f[I]hook\f[R].
+Hooks provide means of adding additional commands to a chord or prefix.
+.IP
+.EX
+hook -> \[aq]\[ha]\[aq] ( \[aq]before\[aq]
+            | \[aq]after\[aq]
+            | \[aq]sync-before\[aq]
+            | \[aq]sync-after\[aq] ) command ;
+.EE
 .PP
-The following are valid \f[I]hooks\f[R]:
-.RS
-.TP
-\f[B]before\f[R] \f[I]command\f[R]
-The \f[I]command\f[R] given to the \f[I]before\f[R] \f[I]hook\f[R] is
-executed before the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R], as
-the name implies.
-The \f[I]before\f[R] \f[I]command\f[R] is run asynchronously, meaning
-the \f[I]chord\f[R]\[aq]s \f[I]command\f[R] may complete before the
-\f[I]before\f[R] \f[I]command\f[R] has completed execution.
-If you need the \f[I]chord\f[R]\[aq]s \f[I]command\f[R] to be run in
-sync with the \f[I]before\f[R] \f[I]command\f[R], consider if there is
-some other way to achieve this before using the \f[I]sync-before\f[R]
-\f[I]hook\f[R].
-.TP
-\f[B]after\f[R] \f[I]command\f[R]
-The \f[I]command\f[R] given to the \f[I]after\f[R] \f[I]hook\f[R] is
-executed after the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R], as
-the name implies.
-The \f[I]after\f[R] \f[I]command\f[R] is run asynchronously, meaning
-\f[B]wk\f[R] will not wait for the command to complete before resuming
-execution.
-I \f[B]wk\f[R] should wait until the \f[I]after\f[R] \f[I]command\f[R]
-completes you can use the \f[I]sync-after\f[R] \f[I]hook\f[R].
-Just be certain you understand the pitfalls this introduces before you
-use that \f[I]hook\f[R].
-.TP
-\f[B]sync-before\f[R] \f[I]command\f[R]
-The \f[I]command\f[R] given to the \f[I]sync-before\f[R] \f[I]hook\f[R]
-is executed before the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R],
-as the name implies.
-Additionally, it is run in a blocking fashion, meaning \f[B]wk\f[R] will
-not resume control until after the command completes or is terminated.
-See the \f[B]COMMAND\f[R] section for best practices regarding blocking
-\f[I]commands\f[R].
-.TP
-\f[B]sync-after\f[R] \f[I]command\f[R]
-The \f[I]command\f[R] given to the \f[I]sync-after\f[R] \f[I]hook\f[R]
-is executed after the current \f[I]chord\f[R]\[aq]s \f[I]command\f[R],
-as the name implies.
-Additionally, it is run in a blocking fashion, meaning \f[B]wk\f[R] will
-not resume control until after the command completes or is terminated.
-See the \f[B]COMMAND\f[R] section for best practices regarding blocking
-\f[I]commands\f[R].
-.RE
+A \f[I]hook\f[R] begins with the caret character (\f[I]\[ha]\f[R]),
+followed by the type of \f[I]hook\f[R], and finally the command the
+\f[I]hook\f[R] will run.
 .PP
-See \f[B]INHERITANCE\f[R] for an explanation of how \f[I]hooks\f[R] work
-when given to a \f[I]prefix\f[R].
+The \f[I]hook\f[R] type has to do with the order the command will be
+run.
+The \f[I]before\f[R] hooks run before the chord\[aq]s command, and the
+\f[I]after\f[R] hooks run after the chord\[aq]s command.
 .PP
-See \f[B]EXAMPLES\f[R] for a demonstration on \f[I]hooks\f[R].
+The \f[I]sync-\f[R] hooks relate to how \f[B]wk\f[R] runs the commands.
+By default, all commands are run asynchronously to prevent a command
+from blocking \f[B]wk\f[R].
+However, if the hook must complete before \f[B]wk\f[R] can proceed you
+can use the \f[I]sync-*\f[R] variant to enforce this behavior.
+.PP
+\f[B]NOTE\f[R] that a blocking command may prevent \f[B]wk\f[R] from
+ever resuming execution.
+In the event that this happens, users may need to restart their system
+entirely to regain control of their keyboard.
+.PP
+See \f[B]EXAMPLES\f[R] for further discussion about hooks.
 .SS FLAG
-A \f[I]flag\f[R] is a convenient way to modify the behavior of a
-\f[I]key chord\f[R].
-A \f[I]flag\f[R] may be passed after a \f[I]description\f[R] begining
-with the plus character \f[B]+\f[R].
-After the \f[B]+\f[R], a \f[I]flag\f[R] name is specified.
+Flags are similar to command-line flags in that they change the behavior
+of \f[B]wk\f[R].
+.IP
+.EX
+flag -> \[aq]+\[aq] ( \[aq]keep\[aq]
+            | \[aq]close\[aq]
+            | \[aq]inherit\[aq]
+            | \[aq]ignore\[aq]
+            | \[aq]unhook\[aq]
+            | \[aq]deflag\[aq]
+            | \[aq]no-before\[aq]
+            | \[aq]no-after\[aq]
+            | \[aq]write\[aq]
+            | \[aq]execute\[aq]
+            | \[aq]sync-command\[aq] ) ;
+.EE
 .PP
-The following are \f[I]flag\f[R] names and how they affect the behavior
-of \f[B]wk\f[R]:
+Flags begin with a plus character (\f[I]+\f[R]), followed by the flag
+itself.
+Here is how each flag changes the behavior of \f[B]wk\f[R]:
 .RS
 .TP
-\f[B]keep\f[R]
-Normally, after executing a \f[I]chord\f[R], \f[B]wk\f[R] will close.
-By supplying the \f[I]keep\f[R] flag, \f[B]wk\f[R] will persist after
-the the \f[I]key chord\f[R] is trigger.
-This enables you to trigger additional \f[I]key chords\f[R] until a
-triggered \f[I]key chord\f[R] does not supply the \f[I]keep\f[R]
-\f[I]flag\f[R] or no \f[I]key chords\f[R] match the keypress event.
+\f[I]keep\f[R]
+Instead of closing after \[ga]wk\[ga] finds a matching chord, it keeps
+the \[ga]wk\[ga] menu open.
 .TP
-\f[B]close\f[R]
-The \f[I]close\f[R] \f[I]flag\f[R] is the default behavior for any
-\f[I]chord\f[R].
-However, a \f[I]chord\f[R] may inherit the \f[I]keep\f[R] \f[I]flag\f[R]
-from a surrounding \f[I]prefix\f[R].
-When this new behavior is undesired specifying the \f[I]close\f[R]
-\f[I]flag\f[R] will restore the default behavior and end the
-\f[B]wk\f[R] program after the \f[I]chord\f[R] is triggerd.
+\f[I]close\f[R]
+Forces the \[ga]wk\[ga] window to close.
+Useful when \[ga]+keep\[ga] was given to a surrounding prefix.
 .TP
-\f[B]inherit\f[R]
-The \f[I]inherit\f[R] \f[I]flag\f[R] is only relevant to a child
-\f[I]prefix\f[R] that wants to \f[I]inherit\f[R] \f[I]flags\f[R] and
-\f[I]hooks\f[R] from its parent \f[I]prefix\f[R].
-Inheritance is not the norm, hence this \f[I]flag\f[R] must be given
-explicitly.
+\f[I]inherit\f[R]
+Causes the prefix to inherit flags and hooks from its parent.
+Has no effect when given to a chord.
 .TP
-\f[B]unhook\f[R]
-The \f[I]unhook\f[R] \f[I]flag\f[R] causes a child \f[I]key chord\f[R]
-to ignore all \f[I]flags\f[R] and \f[I]hooks\f[R] present in the parent
-\f[I]prefix\f[R].
-Additional \f[I]hooks\f[R] and \f[I]flags\f[R] may be given to the child
-\f[I]key chord\f[R] will work as expected.
+\f[I]ignore\f[R]
+Ignore all hooks and flags from the surrounding prefix.
+Has no effect when given to a prefix.
 .TP
-\f[B]no-before\f[R]
-The \f[I]no-before\f[R] \f[I]flag\f[R] prevents a child \f[I]key
-chord\f[R] from inheriting a \f[I]before\f[R] or \f[I]sync-before\f[R]
-\f[I]hook\f[R] present in the parent \f[I]prefix\f[R].
-Any \f[I]before\f[R] or \f[I]sync-before\f[R] \f[I]hooks\f[R] given to
-the child \f[I]key chord\f[R] will take precedence over those that may
-be inherited from a parent \f[I]prefix\f[R].
-In this case, the \f[I]no-before\f[R] \f[I]flag\f[R] is redundant as the
-parent \f[I]hooks\f[R] are overshadowed.
+\f[I]unhook\f[R]
+Ignore all hooks from the surrounding prefix.
 .TP
-\f[B]no-after\f[R]
-The \f[I]no-after\f[R] \f[I]flag\f[R] prevents a child \f[I]key
-chord\f[R] from inheriting an \f[I]after\f[R] or \f[I]sync-after\f[R]
-\f[I]hook\f[R] present in the parent \f[I]prefix\f[R].
-Any \f[I]after\f[R] or \f[I]sync-after\f[R] \f[I]hooks\f[R] given to the
-child \f[I]key chord\f[R] will take precedence over those that may be
-inherited from a parent \f[I]prefix\f[R].
-In this case, the \f[I]no-after\f[R] \f[I]flag\f[R] is redundant as the
-parent \f[I]hooks\f[R] are overshadowed.
+\f[I]deflag\f[R]
+Ignore all flags from the surrounding prefix.
 .TP
-\f[B]write\f[R]
-By default, \f[B]wk\f[R] will execute a \f[I]chord\f[R]\[aq]s
-\f[I]command\f[R] as though it were a shell command.
-When the \f[I]write\f[R] \f[I]flag\f[R] is passed, the \f[I]command\f[R]
-of the affected \f[I]chord\f[R] is simply written to the standard
-output.
-See \f[B]EXAMPLES\f[R] bleow if the effect is unclear.
+\f[I]no-before\f[R]
+Ignore \[ga]before\[ga] and \[ga]sync-before\[ga] hooks from the
+surrounding prefix.
 .TP
-\f[B]sync-command\f[R]
-By default, \f[B]wk\f[R] will execute a \f[I]chord\f[R]\[aq]s
-\f[I]command\f[R] asynchronously.
-This means \f[B]wk\f[R] will continue execution despite the state of the
-\f[I]command\f[R].
-If, for some reason, a \f[I]chord\f[R]\[aq]s \f[I]command\f[R] should
-block \f[B]wk\f[R] from continuing until the \f[I]command\f[R] ends,
-then you can supply the \f[I]sync-command\f[R] \f[I]flag\f[R].
-See \f[B]COMMAND\f[R] above to understand the pitfalls of blocking
-\f[I]commands\f[R] in \f[B]wk\f[R].
+\f[I]no-after\f[R]
+Ignore \[ga]after\[ga] and \[ga]sync-after\[ga] hooks from the
+surrounding prefix.
+.TP
+\f[I]write\f[R]
+Write commands to stdout rather than executing them.
+.TP
+\f[I]execute\f[R]
+Execute the command rather than writing them to stdout.
+Useful when \[ga]+write\[ga] was given to a surrounding prefix.
+.TP
+\f[I]sync-command\f[R]
+Execute the command in a blocking fashion.
+See the note in \f[B]HOOK\f[R] regarding potential issues with blocking
+commands.
 .RE
 .PP
-See \f[B]INHERITANCE\f[R] for an explanation of how \f[I]flags\f[R] work
-when given to a \f[I]prefix\f[R].
-.PP
-See \f[B]EXAMPLES\f[R] for a demonstration on \f[I]hooks\f[R].
+See \f[B]EXAMPLES\f[R] for further discussion about flags.
 .SS PREPROCESSOR MACROS
-A \f[I]preprocessor macro\f[R] begins with a colon \f[B]:\f[R], followed
-by a supported macro.
+There are a number of preprocessor macros that can be used in
+\f[I]wks\f[R] files.
+These have a number of uses from making \f[I]wks\f[R] files more modular
+to controlling the look and feel of \f[B]wk\f[R]​(1).
+.IP
+.EX
+preprocessor_macro -> \[aq]:\[aq] ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+.EE
 .PP
-The following are the supported \f[I]preprocessor macros\f[R] and their
-affects on \f[B]wks\f[R] files.
-.RS
-.TP
-\f[B]include\f[R] \[dq]\f[I]FILEPATH\f[R]\[dq]
-The \f[I]include\f[R] \f[I]preprocessor macro\f[R] acts in much the same
-way as the \f[B]C\f[R] macro by the same name.
-When the preprocessor spots an \f[I]include\f[R] macro it will replace
-it with the contents of the given \f[I]file\f[R].
-The \f[I]filepath\f[R] may be a relative or absolute \f[I]path\f[R] to
-some \f[B]wks\f[R] \f[I]file\f[R].
-If the \f[I]filepath\f[R] is relative it is assumed to be relative to
-the \f[I]filepath\f[R] of the current \f[B]wks\f[R] \f[I]file\f[R] being
-processed.
-Absolute \f[I]filepaths\f[R] are just that and not very interesting.
-One thing to note is that the \f[I]included\f[R] \f[I]file\f[R] will be
-immediately loaded and then scanned by the preprocessor before the rest
-of the original file is scanned.
-This macro enables \f[B]wks\f[R] files to be quite modular as it can be
-given \f[B]anywhere\f[R] inside a \f[B]wks\f[R] file.
-This enables users to \f[I]include\f[R] a \f[B]wks\f[R] file that is not
-valid when parsed on its own, but in the context of the
-\f[I]including\f[R] \f[B]wks\f[R] file, it becomes valid.
-The opposite is also true.
-A perfectly valid \f[B]wks\f[R] file that \f[I]includes\f[R] an invalid
-\f[B]wks\f[R] file in such a way that it does not become valid, will
-then itself become invalid.
-One bad apple and all that.
-See \f[B]EXAMPLES\f[R] for a demonstration.
-.RE
+A preprocessor macro begins with the colon character (\f[I]:\f[R])
+followed by a specific macro form.
+.PP
+The majority of macros correspond to the command-line arguments that
+\f[B]wk\f[R]​(1) supports.
+When given, these override anything given at the command-line.
+They are here to provide a baked-in alternative to the command-line
+versions making it easy to simply run the \f[I]wks\f[R] file and get the
+desired look and feel without having to give the same arguments each
+time.
+It can also help distinguish the purpose of the key chords if it is
+intended to be used as part of a script by making the \f[B]wk\f[R]​(1)
+popup window different from the builtin settings.
+.SS STRING MACROS
+String macros require a string argument.
+.IP
+.EX
+string_macro -> ( \[aq]include\[aq]
+                | \[aq]fg-color\[aq]
+                | \[aq]bg-color\[aq]
+                | \[aq]bd-color\[aq]
+                | \[aq]shell\[aq]
+                | \[aq]font\[aq] ) \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]] )* \[aq]\[dq]\[aq] ;
+.EE
+.PP
+Many of the macros here work the same as their command-line
+counterparts.
+Simply use \f[B]:MACRO \[dq]ARGUMENT\[dq]\f[R] to make use of any string
+macro, (e.g.
+\f[B]:shell \[dq]/usr/bin/env zsh\[dq]\f[R]).
+.SS INCLUDE MACRO
+Out of the string macros, the \f[I]:include\f[R] macro is not present as
+a command-line argument to \f[B]wk\f[R]​(1).
+This is because this macro has more to do with \f[I]wks\f[R] files than
+the look and feel of \f[B]wk\f[R]​(1).
+.PP
+The \f[I]:include\f[R] macro works similarly to the \f[I]#include\f[R]
+macro found in C/C++.
+It allows users to bring other \f[I]wks\f[R] files into a single file.
+.PP
+\f[B]NOTE\f[R], self includes and recursive includes are not permitted
+and will cause an error.
+.PP
+\f[B]NOTE\f[R], the same file may be included multiple times.
+This is not an error, and may even be desirable for some users.
+.PP
+See \f[B]EXAMPLES\f[R] for a full demonstration of the
+\f[I]:include\f[R] macro.
+.SS SWITCH MACROS
+Switch macros are the simplest of the bunch.
+They are essentially an on switch for the corresponding menu settings.
+.IP
+.EX
+switch_macro -> ( \[aq]debug\[aq]
+                | \[aq]sort\[aq]
+                | \[aq]top\[aq]
+                | \[aq]bottom\[aq] );
+.EE
+.PP
+All the switch macros correspond to their cli flags for \f[B]wk\f[R]​(1).
+.SS INTEGER MACROS
+The integer macros require a positive or negative integer argument to
+the macro.
+.IP
+.EX
+integer_macro -> ( \[aq]menu-width\[aq]
+                 | \[aq]menu-gap\[aq] ) \[aq]-\[aq]? [0-9]+ ;
+.EE
+.PP
+All the integer macros correspond to their cli flags for
+\f[B]wk\f[R]​(1).
+.SS UNSIGNED MACROS
+The unsigned macros require a positive integer argument to the macro.
+.IP
+.EX
+unsigned_macro -> ( \[aq]max-columns\[aq]
+                  | \[aq]border-width\[aq]
+                  | \[aq]width-padding\[aq]
+                  | \[aq]height-padding\[aq]
+                  | \[aq]delay\[aq] ) [0-9]+ ;
+.EE
+.PP
+All the unsigned macros correspond to their cli flags for
+\f[B]wk\f[R]​(1).
+.SS NUMBER MACROS
+The number macros require a positive number argument to the macro.
+.IP
+.EX
+number_macro -> ( \[aq]border-radius\[aq] ) \[aq]-\[aq]? [0-9]+ ( \[aq].\[aq] [0-9]* )? ;
+.EE
+.PP
+All the number macros correspond to their cli flags for \f[B]wk\f[R]​(1).
+.SH EXAMPLES
+.SS HOOKS
+Users can certainly chain commands together the same way one would chain
+commands in a regular shell, but hooks help to reduce repetition.
+They also make more sense in the context of prefixes.
+.IP
+.EX
+# With hooked prefix
+e \[dq]+Emacs\[dq] \[ha]before %{{xdotool set_desktop 1}}
+{
+    o \[dq]Open\[dq] %{{emacsclient -c -a \[dq]\[dq]}}
+    r \[dq]Roam\[dq] %{{emacsclient -c -a \[dq]\[dq] \[ti]/20240101080032-startpage.org}}
+}
+
+# Without hooks
+e \[dq]+Emacs\[dq]
+{
+    o \[dq]Open\[dq] %{{xdotool set_desktop 1 ; emacsclient -c -a \[dq]\[dq]}}
+    r \[dq]Roam\[dq] %{{xdotool set_desktop 1 ; emacsclient -c -a \[dq]\[dq] \[ti]/20240101080032-startpage.org}}
+}
+.EE
+.PP
+As you can see, this helps to cut down on repetition, but it also helps
+enforce a workflow rule without the need to setup desktop environment
+rules and such.
+.PP
+This example also hints at the idea of inheritance as the hook was given
+to a prefix and not to individual chords.
+This topic is covered after introducing flags as these also factor into
+the discussion.
+.SS FLAGS
+Each flag has a time and a place but I find \f[I]+keep\f[R], and
+\f[I]+write\f[R] to be the most useful out of the bunch.
+.PP
+The \f[I]+keep\f[R] flag can turn \f[I]wk\f[R] into a hydra of sorts.
+I use this to control music playback on my system like this:
+.IP
+.EX
+m \[dq]+Music\[dq] +keep
+{
+    c \[dq]Clear mpc\[dq] %{{mpc clear}}
+    d \[dq]Display Song\[dq] %{{songinfo}}
+    h \[dq]Seek -5\[dq] %{{mpc seek \[dq]-5\[dq]}}
+    l \[dq]Seek +5\[dq] %{{mpc seek \[dq]+5\[dq]}}
+    n \[dq]Next song\[dq] %{{mpc next}}
+    p \[dq]Prev song\[dq] %{{mpc prev}}
+    o \[dq]Open mpc\[dq] +close %{{st -e ncmpcpp}}
+    y \[dq]Playlist\[dq] +close %{{st -e ncmpcpp --screen playlist}}
+}
+.EE
+.PP
+The \f[I]+write\f[R] flag is useful for scripting purposes.
+In the same way that \f[B]dmenu\f[R]​(1) and co print selections to
+stdout, this turns \f[B]wk\f[R]​(1) into a prompt for users to choose
+from some list of options with less typing.
+.SS THE INCLUDE MACRO
+Here is an example of the \f[I]:include\f[R] macro:
+.IP
+.EX
+# File main.wks
+---------------
+# Browser prefix
+b \[dq]+Browser\[dq] { :include \[dq]browser_key_chords.wks\[dq] }
+# Emacs prefix
+e \[dq]+Emacs\[dq] \[ha]before %{{xdotool set_desktop 1}} { :include \[dq]emacs_key_chords.wks\[dq] }
+# Music prefix
+m \[dq]+Music\[dq] +keep { :include \[dq]music_key_chords.wks\[dq] }
+
+# File browser_key_chords.wks
+-----------------------------
+[
+    (b \[dq]Brave\[dq])
+    (c \[dq]Chrome\[dq])
+    (f \[dq]Firefox\[dq])
+] \[dq]null\[dq] %{{%(desc,,)}}
+
+# Mullvad-exclude prefix
+m \[dq]+Mullvad Exclude\[dq]
+{
+    [
+        (b \[dq]Brave\[dq])
+        (c \[dq]Chrome\[dq])
+        (f \[dq]Firefox\[dq])
+    ] \[dq]null\[dq] %{{mullvad-exclude %(desc_)}}
+}
+
+# File emacs_key_chords.wks
+---------------------------
+b \[dq]Open blank\[dq] %{{emacsclient -c -a \[dq]\[dq]}}
+p \[dq]+Projects\[dq]
+{
+    w \[dq]wk\[dq] %{{emacs \[dq]\[ti]/Projects/wk\[dq]}}
+}
+
+# File music_key_chords.wks
+---------------------------
+c \[dq]Clear mpc\[dq] %{{mpc clear}}
+d \[dq]Display song\[dq] %{{songinfo}}
+h \[dq]Seek -5s\[dq] %{{mpc seek \[dq]-5\[dq]}}
+l \[dq]Seek +5s\[dq] %{{mpc seek \[dq]+5\[dq]}}
+n \[dq]Next song\[dq] %{{mpc next}}
+p \[dq]Prev song\[dq] %{{mpc prev}}
+o \[dq]Open mpc\[dq] +close %{{st -e ncmpcpp}}
+.EE
+.PP
+This allows users to create key chords in a more modular manner.
+This can be beneficial when you may want to reuse a \f[I]wks\f[R] file
+in a different context than your main key chords.
+.PP
+\f[B]NOTE\f[R], while the \f[I]#include\f[R] macro in C/C++ has
+restrictions on where it can go in a file, the \f[I]:include\f[R] macro
+in a \f[I]wks\f[R] file may go literally anywhere.
+In the above example, this was given in the middle of a prefix without
+error.
+.PP
+You can even do silly things like this:
+.IP
+.EX
+# File part_one.wks
+-------------------
+A \[dq]silly :include \[dq]part_two.wks\[dq]
+
+# File part_two.wks
+-------------------
+example\[dq] %{{echo \[dq]You wouldn\[aq]t do this right??\[dq]}}
+
+# Resulting wks file
+--------------------
+A \[dq]silly example\[dq] %{{echo \[dq]You wouldn\[aq]t do this right??\[dq]}}
+.EE
+.PP
+As for file resolution, it\[aq]s pretty simple.
+A relative path is assumed to be in the same directory as the file being
+executed, and absolute paths are just that, absolute.
 .SH NOTES
 .SS INHERITANCE
+Inheritance relates to hooks and flags given to prefixes.
+The idea is fairly simple.
+A hook or flag given to a prefix is inherited by any chord within the
+prefix.
+Nested prefixes do not inherit the hooks and flags given to their
+parent.
+.IP
+.EX
+a \[dq]+Prefix\[dq] +write
+{
+    w \[dq]Write it!\[dq] %{{I get written!}}
+    n \[dq]+Nested Prefix\[dq]
+    {
+        r \[dq]Run it!\[dq] %{{echo \[dq]I get run!\[dq]}}
+    }
+}
+.EE
+.PP
+In the above example, the key chord \f[B]a w\f[R] causes \f[B]I get
+written!\f[R] to be printed to stdout.
+The key chord \f[B]a n r\f[R] runs the command \f[B]echo \[dq]I get
+run!\[dq]\f[R].
+.PP
+To force a nested prefix to inherit from its parent the
+\f[I]+inherit\f[R] flag must be given.
+Additionally, if the prefix only wishes to inherit certain hooks or
+flags additional flags may be given to ignore unwanted behavior.
 .SH AUTHORS
 3L0C.
