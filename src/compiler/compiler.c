@@ -427,6 +427,7 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
     case TOKEN_CLOSE: chord->flags.close = true; return true;
     case TOKEN_INHERIT: chord->flags.inherit = true; return true;
     case TOKEN_IGNORE: chord->flags.ignore = true; return true;
+    case TOKEN_IGNORE_SORT: chord->flags.ignoreSort = true; return true;
     case TOKEN_UNHOOK: chord->flags.unhook = true; return true;
     case TOKEN_DEFLAG: chord->flags.deflag = true; return true;
     case TOKEN_NO_BEFORE: chord->flags.nobefore = true; return true;
@@ -671,14 +672,23 @@ compareKeyChords(const void* a, const void* b)
 {
     assert(a), assert(b);
 
+    if (((PseudoChord*)a)->flags.ignoreSort) return 0;
+    if (((PseudoChord*)b)->flags.ignoreSort) return 0;
+
     const Key* keyA = &((PseudoChord*)a)->key;
     const Key* keyB = &((PseudoChord*)b)->key;
+    const Token* tokenA = &((PseudoChord*)a)->keyToken;
+    const Token* tokenB = &((PseudoChord*)b)->keyToken;
 
-    bool hasModsA = hasActiveModifier(&keyA->mods);
-    bool hasModsB = hasActiveModifier(&keyB->mods);
 
-    if (hasModsA == hasModsB) return strcmp(keyA->repr, keyB->repr);
-    if (hasModsA) return 1;
+    bool aHasMods = hasActiveModifier(&keyA->mods);
+    bool bHasMods = hasActiveModifier(&keyB->mods);
+
+    if (aHasMods == bHasMods) return strncmp(
+        tokenA->start, tokenB->start,
+        (tokenA->length < tokenB->length) ? tokenA->length : tokenB->length
+    );
+    if (aHasMods) return 1;
     return -1;
 }
 

@@ -12,7 +12,6 @@
  *     key, key_len
  * ),
  * description,
- * hint,
  * command
  * before
  * after
@@ -26,13 +25,13 @@ KeyChord builtinKeyChords[] = KEY_CHORDS(
             SPECIAL_KEY_NONE,
             "a", 1
         ),
-        "A chord", "a -> A chord", 
+        "A chord",
         "echo \"Hello, world!\"", 
         NULL, 
         NULL, 
         MAKE_FLAGS(
             false, false, false, false, false, false, false,
-            false, false, false, false, false, false
+            false, false, false, false, false, false, false
         ), NULL
     },
     {
@@ -42,13 +41,13 @@ KeyChord builtinKeyChords[] = KEY_CHORDS(
             SPECIAL_KEY_NONE,
             "a", 1
         ),
-        "A prefix", "C-a -> A prefix", 
+        "A prefix",
         NULL, 
         NULL, 
         NULL, 
         MAKE_FLAGS(
             false, false, false, false, false, false, false,
-            false, false, false, false, false, false
+            false, false, false, false, false, false, false
         ), 
         PREFIX(
             {
@@ -58,13 +57,13 @@ KeyChord builtinKeyChords[] = KEY_CHORDS(
                     SPECIAL_KEY_NONE,
                     "b", 1
                 ),
-                "A chord", "b -> A chord", 
+                "A chord",
                 "echo \"Hello from inside prefix 'C-a'\"", 
                 NULL, 
                 NULL, 
                 MAKE_FLAGS(
                     false, false, false, false, false, false, false,
-                    false, false, false, false, false, false
+                    false, false, false, false, false, false, false
                 ), NULL
             },
             {
@@ -74,13 +73,13 @@ KeyChord builtinKeyChords[] = KEY_CHORDS(
                     SPECIAL_KEY_NONE,
                     "c", 1
                 ),
-                "Another prefix", "c -> Another prefix", 
+                "Another prefix",
                 NULL, 
                 NULL, 
                 NULL, 
                 MAKE_FLAGS(
                     false, false, false, false, false, false, false,
-                    false, false, false, false, false, false
+                    false, false, false, false, false, false, false
                 ), 
                 PREFIX(
                     {
@@ -90,13 +89,13 @@ KeyChord builtinKeyChords[] = KEY_CHORDS(
                             SPECIAL_KEY_NONE,
                             "d", 1
                         ),
-                        "Done", "d -> Done", 
+                        "Done",
                         "echo \"You've reached the end!\"", 
                         NULL, 
-                        NULL, 
+                        NULL,
                         MAKE_FLAGS(
                             false, false, false, false, false, false, false,
-                            false, false, false, false, false, false
+                            false, false, false, false, false, false, false
                         ), NULL
                     }
                 )

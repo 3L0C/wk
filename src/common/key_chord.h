@@ -18,11 +18,19 @@
 
 /* flag macros */
 #define MAKE_FLAGS(                     \
-    _keep, _close, _inherit, _ignore,   \
-    _unhook, _deflag,                   \
-    _nobefore, _noafter,                \
-    _write, _execute,                   \
-    _syncCommand, _syncBefore,          \
+    _keep,                              \
+    _close,                             \
+    _inherit,                           \
+    _ignore,                            \
+    _ignoreSort,                        \
+    _unhook,                            \
+    _deflag,                            \
+    _nobefore,                          \
+    _noafter,                           \
+    _write,                             \
+    _execute,                           \
+    _syncCommand,                       \
+    _syncBefore,                        \
     _syncAfter                          \
 )                                       \
     (ChordFlags){                       \
@@ -30,6 +38,7 @@
         .close = (_close),              \
         .inherit = (_inherit),          \
         .ignore = (_ignore),            \
+        .ignoreSort = (_ignoreSort),    \
         .unhook = (_unhook),            \
         .deflag = (_deflag),            \
         .nobefore = (_nobefore),        \
@@ -162,6 +171,7 @@ typedef struct
     bool close:1;
     bool inherit:1;
     bool ignore:1;
+    bool ignoreSort:1;
     bool unhook:1;
     bool deflag:1;
     bool nobefore:1;

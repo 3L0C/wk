@@ -150,12 +150,13 @@ writeChordFlags(const ChordFlags* flags, int indent)
         (flags->close ? "true" : "false"),
         (flags->inherit ? "true" : "false"),
         (flags->ignore ? "true" : "false"),
+        (flags->ignoreSort ? "true" : "false"),
         (flags->unhook ? "true" : "false"),
-        (flags->deflag ? "true" : "false"),
-        (flags->nobefore ? "true" : "false")
+        (flags->deflag ? "true" : "false")
     );
     writeIndent(indent);
-    printf("    %-5s, %-5s, %-5s, %-5s, %-5s, %-5s\n",
+    printf("    %-5s, %-5s, %-5s, %-5s, %-5s, %-5s, %-5s\n",
+        (flags->nobefore ? "true" : "false"),
         (flags->noafter ? "true" : "false"),
         (flags->write ? "true" : "false"),
         (flags->execute ? "true" : "false"),

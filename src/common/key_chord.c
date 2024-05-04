@@ -82,6 +82,7 @@ copyChordFlags(const ChordFlags* from, ChordFlags* to)
     to->close = from->close;
     to->inherit = from->inherit;
     to->ignore = from->ignore;
+    to->ignoreSort = from->ignoreSort;
     to->unhook = from->unhook;
     to->deflag = from->deflag;
     to->nobefore = from->nobefore;
@@ -141,6 +142,7 @@ countChordFlags(const ChordFlags* flags)
     if (flags->close) result++;
     if (flags->inherit) result++;
     if (flags->ignore) result++;
+    if (flags->ignoreSort) result++;
     if (flags->unhook) result++;
     if (flags->deflag) result++;
     if (flags->nobefore) result++;
@@ -234,6 +236,7 @@ initChordFlags(ChordFlags* flags)
     flags->close = false;
     flags->inherit = false;
     flags->ignore = false;
+    flags->ignoreSort = false;
     flags->unhook = false;
     flags->deflag = false;
     flags->nobefore = false;
@@ -272,6 +275,7 @@ hasDefaultChordFlags(const ChordFlags* flags)
         flags->close ||
         flags->inherit ||
         flags->ignore ||
+        flags->ignoreSort ||
         flags->unhook ||
         flags->deflag ||
         flags->nobefore ||

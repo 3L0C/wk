@@ -280,6 +280,7 @@ scanFlag(Scanner* scanner, Token* token)
     {
         if (isKeyword(scanner, 1, 6, "nherit")) result = TOKEN_INHERIT;
         else if (isKeyword(scanner, 1, 5, "gnore")) result = TOKEN_IGNORE;
+        else if (isKeyword(scanner, 1, 10, "gnore-sort")) result = TOKEN_IGNORE_SORT;
         break;
     }
     case 'n':

@@ -280,6 +280,7 @@ getTokenLiteral(const TokenType type)
     case TOKEN_CLOSE: return "TOKEN_CLOSE";
     case TOKEN_INHERIT: return "TOKEN_INHERIT";
     case TOKEN_IGNORE: return "TOKEN_IGNORE";
+    case TOKEN_IGNORE_SORT: return "TOKEN_IGNORE_SORT";
     case TOKEN_UNHOOK: return "TOKEN_UNHOOK";
     case TOKEN_DEFLAG: return "TOKEN_DEFLAG";
     case TOKEN_NO_BEFORE: return "TOKEN_NO_BEFORE";
