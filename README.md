@@ -90,33 +90,42 @@ options:
     -h, --help                 Display help message and exit.
     -v, --version              Display version number and exit.
     -d, --debug                Print debug information.
-    -D, --delay INT            Delay the popup window by INT milliseconds from startup/last
-                               keypress (e.g., 1000 = 1 second).
+    -D, --delay INT            Delay the popup menu by INT milliseconds from
+                               startup/last keypress (default 1000 ms).
     -t, --top                  Position menu at top of screen.
     -b, --bottom               Position menu at bottom of screen.
     -s, --script               Read script from stdin to use as key chords.
-    -S, --sort                 Sort key chords read from --key-chords, --script, or --transpile.
-    -m, --max-columns INT      Set maximum columns to INT.
+    -S, --sort                 Sort key chords read from --key-chords, --script,
+                               or --transpile.
+    -m, --max-columns INT      Set the maximum menu columns to INT (defualt 5).
     -p, --press KEY(s)         Press KEY(s) before dispalying menu.
-    -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and print to stdout.
-    -k, --key-chords FILE      Use FILE for key chords rather than those precompiled.
-    -w, --menu-width INT       Set menu width to INT.
+    -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and
+                               print to stdout.
+    -k, --key-chords FILE      Use FILE for key chords rather than those
+                               precompiled.
+    -w, --menu-width INT       Set menu width to INT. Set to '-1' for a width
+                               equal to 1/2 of the screen width (default -1)
     -g, --menu-gap INT         Set menu gap between top/bottom of screen to INT.
-                               Set to '-1' for a gap equal to 1/10th of the screen height.
-    --border-width INT         Set border width to INT.
-    --border-radius NUM        Set border radius to NUM.
-    --wpadding INT             Set left and right padding around hint text to INT.
-    --hpadding INT             Set top and bottom padding around hint text to INT.
-    --fg COLOR                 Set all menu foreground text to COLOR (e.g., '#F1CD39').
-    --fg-key COLOR             Set menu foreground key to COLOR (e.g., '#F1CD39').
-    --fg-delimiter COLOR       Set menu foreground delimiter to COLOR (e.g., '#F1CD39').
-    --fg-prefix COLOR          Set menu foreground prefix description to COLOR (e.g., '#F1CD39').
-    --fg-chord COLOR           Set menu foreground chord description to COLOR (e.g., '#F1CD39').
-    --bg COLOR                 Set menu background to COLOR (e.g., '#F1CD39').
-    --bd COLOR                 Set menu border to COLOR (e.g., '#F1CD39').
-    --shell STRING             Set shell to STRING (e.g., '/bin/sh').
-    --font STRING              Set font to STRING. Should be a valid Pango font description
-                               (e.g., 'monospace, M+ 1c, ..., 16').
+                               Set to '-1' for a gap equal to 1/10th of the
+                               screen height (default -1).
+    --border-width INT         Set border width to INT (default 4).
+    --border-radius NUM        Set border radius to NUM degrees. 0 means no curve
+                               (default 0).
+    --wpadding INT             Set left and right padding around hint text to
+                               INT (default 6).
+    --hpadding INT             Set top and bottom padding around hint text to
+                               INT (default 2).
+    --fg COLOR                 Set all menu foreground text to COLOR where color
+                               is some hex string i.e. '#F1CD39' (default unset).
+    --fg-key COLOR             Set foreground key to COLOR (default '#DCD7BA').
+    --fg-delimiter COLOR       Set foreground delimiter to COLOR (default '#525259').
+    --fg-prefix COLOR          Set foreground prefix to COLOR (default '#AF9FC9').
+    --fg-chord COLOR           Set foreground chord to COLOR (default '#DCD7BA').
+    --bg COLOR                 Set background to COLOR (default '#181616').
+    --bd COLOR                 Set border to COLOR (default '#7FB4CA').
+    --shell STRING             Set shell to STRING (default '/bin/sh').
+    --font STRING              Set font to STRING. Should be a valid Pango font
+                               description (default 'monospace, 14').
 
 run `man 1 wk` for more info on each option.
 ```
