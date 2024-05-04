@@ -1,5 +1,5 @@
 #+title: WK(1)
-#+author: 3L0C
+#+author: 3L0C <dotbox at mailbox.org>
 
 * NAME
 
@@ -13,71 +13,107 @@ wk - Which-Key via X11 and Wayland, inspired by *dmenu* and
 * DESCRIPTION
 
 *wk* provides visual feedback when executing user defined
-key-chords.
+key chords via a popup menu. The key chords may be
+precompiled into *wk* for users who maintain their own copy
+of *wk*. For users looking for a more dynamic experience,
+*wk* can read key chords from a *wks*​(5) file or script.
 
 * OPTIONS
 
 - *-h, --help* ::
-        Print help message and exit.
+  Display help message and exit.
 
 - *-v, --version* ::
-        Display version number and exit.
+  Display version number and exit.
 
 - *-d, --debug* ::
-        Print debug information.
+  Print debug information during execution.
+
+- *-D, --delay* /INT/ ::
+  Delay the popup menu by /INT/ milliseconds from startup or
+  last keypress (default 1000 ms).
 
 - *-t, --top* ::
-        Position window at top of screen.
+  Position menu at top of screen.
 
 - *-b, --bottom* ::
-        Position window at bottom of screen.
+  Position menu at bottom of screen.
 
 - *-s, --script* ::
-        Read script from stdin to use as chords.
+  Read *wks* script from stdin to use as key chords.
 
-- *-m, --max-columns* _NUM_ ::
-        Set maximum columns to NUM.
+- *-S, --sort* ::
+  Sort key chords read from *--key-chords, --script, or --transpile*.
 
-- *-p, --press* _KEY(s)_ ::
-        Press KEY(s) before dispalying window.
+- *-m, --max-columns* /INT/ ::
+  Set the maximum menu columns to /INT/ (default 5).
 
-- *-T, --transpile* _FILE_ ::
-        Transpile FILE to valid 'chords.h' syntax and print to stdout.
+- *-p, --press* /KEY(s)/ ::
+  Press /KEY(s)/ before dispalying menu. See *TRIGGER KEY*
+  in the *wks* man page for more info.
 
-- *-c, --chords* _FILE_ ::
-        Use FILE for chords rather than those in 'chords.h'.
+- *-T, --transpile* /FILE/ ::
+  Transpile /FILE/ to valid 'key_chords.h' syntax and print to stdout.
 
-- *-w, --width* _NUM_ ::
-        Set window width to NUM.
+- *-k, --key-chords* /FILE/ ::
+  Use /FILE/ for key chords rather than those precompiled.
 
-- *-g, --gap* _NUM_ ::
-        Set window gap between top/bottom of screen. Set to
-        '-1' for a gap 1/10th the size of your screen height.
+- *-w, --menu-width* /INT/ ::
+  Set menu width to /INT/. Set to '-1' for a width equal to
+  1/2 of the screen width (default -1).
+
+- *-g, --menu-gap* /INT/ ::
+  Set menu gap between top/bottom of screen to /INT/. Set to
+  '-1' for a gap equal to 1/10th of the screen height
+  (default -1).
  
-- *--border-width* _NUM_ ::
-        Set border width to NUM.
+- *--border-width* /INT/ ::
+  Set border width to /INT/ (default 4).
 
-- *--wpadding* _NUM_ ::
-        Set left and right padding around hint text to NUM.
+- *--border-radius* /NUM/ ::
+  Set border radius to /NUM/ degrees. 0 means no curve
+  (default 0).
 
-- *--hpadding* _NUM_ ::
-        Set up and down padding around hint text to NUM.
+- *--wpadding* /INT/ ::
+  Set left and right padding around hint text to /INT/
+  (default 6).
 
-- *--fg* _COLOR_ ::
-        Set window foreground to COLOR (e.g., '#F1CD39').
+- *--hpadding* /INT/ ::
+  Set up and down padding around hint text to /INT/.
+  (default 2)
 
-- *--bg* _COLOR_ ::
-        Set window background to COLOR (e.g., '#F1CD39').
+- *--fg* /COLOR/ ::
+  Set all menu foreground text to /COLOR/ where color is
+  some hex string i.e. '#F1CD39' (default unset).
 
-- *--bd* _COLOR_ ::
-        Set window border to COLOR (e.g., '#F1CD39').
+- *--fg-key* /COLOR/ ::
+  Set foreground key to COLOR (default '#DCD7BA').
 
-- *--shell* _STRING_ ::
-        Set shell to _STRING_ (e.g., '/bin/sh').
+- *--fg-delimiter* /COLOR/ ::
+  Set foreground delimiter to COLOR (default '#525259').
 
-- *--font* _FONT STRING_ ::
-        Set font to _FONT STRING_. Should be a valid Pango
-        font description (e.g., 'monospace, M+ 1c, ..., 16').
+- *--fg-prefix* /COLOR/ ::
+  Set foreground prefix to COLOR (default '#AF9FC9').
+
+- *--fg-chord* /COLOR/ ::
+  Set foreground chord to COLOR (default '#DCD7BA').
+
+- *--bg* /COLOR/ ::
+  Set background to COLOR (default '#181616').
+
+- *--bd* /COLOR/ ::
+  Set border to COLOR (default '#7FB4CA').
+
+- *--shell* /STRING/ ::
+  Set shell to STRING (default '/bin/sh').
+
+- *--font* /STRING/ ::
+  Set font to STRING. Should be a valid Pango font
+  description (default 'monospace, 14').
+
+* BUG REPORTS
+If you find a bug in *wk*, please report it at
+https://github.com/3L0C/wk.
 
 * SEE ALSO
 *wks*​(5)

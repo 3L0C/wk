@@ -68,6 +68,7 @@ flag               -> \[aq]+\[aq] ( \[aq]keep\[aq]
                           | \[aq]close\[aq]
                           | \[aq]inherit\[aq]
                           | \[aq]ignore\[aq]
+                          | \[aq]ignore-sort\[aq]
                           | \[aq]unhook\[aq]
                           | \[aq]deflag\[aq]
                           | \[aq]no-before\[aq]
@@ -672,6 +673,7 @@ flag -> \[aq]+\[aq] ( \[aq]keep\[aq]
             | \[aq]close\[aq]
             | \[aq]inherit\[aq]
             | \[aq]ignore\[aq]
+            | \[aq]ignore-sort\[aq]
             | \[aq]unhook\[aq]
             | \[aq]deflag\[aq]
             | \[aq]no-before\[aq]
@@ -701,6 +703,10 @@ Has no effect when given to a chord.
 \f[I]ignore\f[R]
 Ignore all hooks and flags from the surrounding prefix.
 Has no effect when given to a prefix.
+.TP
+\f[I]ignore-sort\f[R]
+Chord is ignored during sorting leaving it in it in the same position it
+was parsed in.
 .TP
 \f[I]unhook\f[R]
 Ignore all hooks from the surrounding prefix.
@@ -992,5 +998,56 @@ To force a nested prefix to inherit from its parent the
 \f[I]+inherit\f[R] flag must be given.
 Additionally, if the prefix only wishes to inherit certain hooks or
 flags additional flags may be given to ignore unwanted behavior.
+.SS SORTING
+Key chords will be sorted when processing a \f[I]wks\f[R] file if the
+\f[B]\[en]sort\f[R] flag is passed to \f[B]wk\f[R].
+This has knock-on effects with index interpolations (often for chord
+arrays).
+A \f[I]wks\f[R] file like this will produce different results sorted vs
+unsorted (the default).
+.IP
+.EX
+# Base file
+[neio] \[dq]Switch %(index+1)\[dq] %{{xdotool set_desktop %(index)}}
+b \[dq]Second?\[dq] +write %{{%(index)}}
+a \[dq]First?\[dq] +write %{{%(index)}}
+
+# Unsorted result
+n \[dq]Switch 1\[dq] %{{xdotool set_desktop 0}}
+e \[dq]Switch 2\[dq] %{{xdotool set_desktop 1}}
+i \[dq]Switch 3\[dq] %{{xdotool set_desktop 2}}
+o \[dq]Switch 4\[dq] %{{xdotool set_desktop 3}}
+b \[dq]Second?\[dq] +write %{{4}}
+a \[dq]First?\[dq] +write %{{5}}
+
+# Sorted result
+a \[dq]First?\[dq] +write %{{0}}
+b \[dq]Second?\[dq] +write %{{1}}
+e \[dq]Switch 3\[dq] %{{xdotool set_desktop 2}}
+i \[dq]Switch 4\[dq] %{{xdotool set_desktop 3}}
+n \[dq]Switch 5\[dq] %{{xdotool set_desktop 4}}
+o \[dq]Switch 6\[dq] %{{xdotool set_desktop 5}}
+.EE
+.PP
+To avoid this you can add the \f[I]+ignore-sort\f[R] flag to any key
+chord to ensure the value of the index interpolations.
+.IP
+.EX
+# Base file
+[neio] \[dq]Switch %(index+1)\[dq] +ignore-sort %{{xdotool set_desktop %(index)}}
+b \[dq]Second?\[dq] +write %{{%(index)}}
+a \[dq]First?\[dq] +write %{{%(index)}}
+
+# Sorted with \[ga]+ignore-sort\[ga] result
+e \[dq]Switch 1\[dq] %{{xdotool set_desktop 0}}
+i \[dq]Switch 2\[dq] %{{xdotool set_desktop 1}}
+n \[dq]Switch 3\[dq] %{{xdotool set_desktop 2}}
+o \[dq]Switch 4\[dq] %{{xdotool set_desktop 3}}
+a \[dq]First?\[dq] +write %{{4}}
+b \[dq]Second?\[dq] +write %{{5}}
+.EE
+.SS BUG REPORTS
+Please see \f[B]wk\f[R]​(1) \f[B]BUG REPORTS\f[R] for info on reporting
+bugs.
 .SH AUTHORS
-3L0C.
+3L0C <dotbox at mailbox.org>.

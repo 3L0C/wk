@@ -609,6 +609,7 @@ flag -> '+' ( 'keep'
             | 'close'
             | 'inherit'
             | 'ignore'
+            | 'ignore-sort'
             | 'unhook'
             | 'deflag'
             | 'no-before'
@@ -628,6 +629,7 @@ flag itself. Here is how each flag changes the behavior of
 | `close`        | Forces the `wk` window to close. Useful when `+keep` was given to a surrounding prefix.                                       |
 | `inherit`      | Causes the prefix to inherit flags and hooks from its parent. Has no effect when given to a chord.                            |
 | `ignore`       | Ignore all hooks and flags from the surrounding prefix. Has no effect when given to a prefix.                                 |
+| `ignore-sort`  | Chord is ignored during sorting leaving it in it in the same position it was parsed in.                                       |
 | `unhook`       | Ignore all hooks from the surrounding prefix.                                                                                 |
 | `deflag`       | Ignore all flags from the surrounding prefix.                                                                                 |
 | `no-before`    | Ignore `before` and `sync-before` hooks from the surrounding prefix.                                                          |
@@ -687,6 +689,56 @@ To force a nested prefix to inherit from its parent the
 `+inherit` flag must be given. Additionally, if the prefix
 only wishes to inherit certain hooks or flags additional
 flags may be given to ignore unwanted behavior.
+
+#### Sorting
+
+Key chords will be sorted when processing a `wks` file if
+the `--sort` flag is passed to `wk`. This has knock-on
+effects with index interpolations (often for chord arrays).
+A `wks` file like this will produce different results sorted
+vs unsorted (the default).
+
+
+```
+# Base file
+[neio] "Switch %(index+1)" %{{xdotool set_desktop %(index)}}
+b "Second?" +write %{{%(index)}}
+a "First?" +write %{{%(index)}}
+
+# Unsorted result
+n "Switch 1" %{{xdotool set_desktop 0}}
+e "Switch 2" %{{xdotool set_desktop 1}}
+i "Switch 3" %{{xdotool set_desktop 2}}
+o "Switch 4" %{{xdotool set_desktop 3}}
+b "Second?" +write %{{4}}
+a "First?" +write %{{5}}
+
+# Sorted result
+a "First?" +write %{{0}}
+b "Second?" +write %{{1}}
+e "Switch 3" %{{xdotool set_desktop 2}}
+i "Switch 4" %{{xdotool set_desktop 3}}
+n "Switch 5" %{{xdotool set_desktop 4}}
+o "Switch 6" %{{xdotool set_desktop 5}}
+```
+
+To avoid this you can add the `+ignore-sort` flag to any key
+chord to ensure the value of the index interpolations.
+
+```
+# Base file
+[neio] "Switch %(index+1)" +ignore-sort %{{xdotool set_desktop %(index)}}
+b "Second?" +write %{{%(index)}}
+a "First?" +write %{{%(index)}}
+
+# Sorted with `+ignore-sort` result
+e "Switch 1" %{{xdotool set_desktop 0}}
+i "Switch 2" %{{xdotool set_desktop 1}}
+n "Switch 3" %{{xdotool set_desktop 2}}
+o "Switch 4" %{{xdotool set_desktop 3}}
+a "First?" +write %{{4}}
+b "Second?" +write %{{5}}
+```
 
 ## Preprocessor Macros 
 
