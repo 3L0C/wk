@@ -337,7 +337,7 @@ A delimiter acts as a start and stop marker for a command in
 a `wks` file.
 
 ```
-delimiter   -> ( open_delim | close_delim | .{2} )  ;
+delimiter   -> ( open_delim | close_delim | ([^[{(])\1 ) ;
 open_delim  -> ( '{{' | '((' | '[[' ) ;
 close_delim -> ( '}}' | '))' | ']]' ) ;
 ```

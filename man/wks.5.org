@@ -44,7 +44,7 @@ description        -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
 
 command            -> '%' delimiter ( . | interpolation )* delimiter ;
 
-delimiter          -> ( open_delim | close_delim | (.)\1 ) ;
+delimiter          -> ( open_delim | close_delim | ([^[{(])\1 ) ;
 
 open_delim         -> ( '{{' | '((' | '[[' ) ;
 
@@ -343,7 +343,7 @@ A /delimiter/ acts as a start and stop marker for a
 /command/ in a /wks/ file.
 
 #+begin_example
-delimiter   -> ( open_delim | close_delim | (.)\1 )  ;
+delimiter   -> ( open_delim | close_delim | ([^[{(])\1 )  ;
 
 open_delim  -> ( '{{' | '((' | '[[' ) ;
 
@@ -360,12 +360,13 @@ A /delimiter/ may be one of the following:
   required to end the command (e.g., /{{/ matches /}}/ and
   so forth).
 
-- *(.)\1* ::
-  Any *ASCII* character given twice. *NOTE* this excludes
-  null bytes (/\0/) as these will indicate the end of a
-  /wks/ file or script. When an arbitrary delimiter is given
-  the same character is expected to be repeated to indicate
-  the end of a command.
+- *([^[{(])\1* ::
+  Any *ASCII* character that is not any opening bracket
+  (/[/), opening brace (/{/), or any opening parenthesis
+  (/(/), given twice. *NOTE* this excludes null bytes (/\0/)
+  as these will indicate the end of a /wks/ file or script.
+  When an arbitrary delimiter is given the same character is
+  expected to be repeated to indicate the end of a command.
 #+end_quote
 
 The /delimiter/ from one /command/ to the next may be

@@ -40,7 +40,7 @@ description        -> \[aq]\[dq]\[aq] ( \[aq]\[rs]\[rs]\[dq]\[aq] | [\[ha]\[dq]]
 
 command            -> \[aq]%\[aq] delimiter ( . | interpolation )* delimiter ;
 
-delimiter          -> ( open_delim | close_delim | (.)\[rs]1 ) ;
+delimiter          -> ( open_delim | close_delim | ([\[ha][{(])\[rs]1 ) ;
 
 open_delim         -> ( \[aq]{{\[aq] | \[aq]((\[aq] | \[aq][[\[aq] ) ;
 
@@ -402,7 +402,7 @@ A \f[I]delimiter\f[R] acts as a start and stop marker for a
 \f[I]command\f[R] in a \f[I]wks\f[R] file.
 .IP
 .EX
-delimiter   -> ( open_delim | close_delim | (.)\[rs]1 )  ;
+delimiter   -> ( open_delim | close_delim | ([\[ha][{(])\[rs]1 )  ;
 
 open_delim  -> ( \[aq]{{\[aq] | \[aq]((\[aq] | \[aq][[\[aq] ) ;
 
@@ -419,8 +419,10 @@ If an opening delimiter is given then the corresponding closing
 delimiter is required to end the command (e.g., \f[I]{{\f[R] matches
 \f[I]}}\f[R] and so forth).
 .TP
-\f[B](.)\[rs]1\f[R]
-Any \f[B]ASCII\f[R] character given twice.
+\f[B]([\[ha][{(])\[rs]1\f[R]
+Any \f[B]ASCII\f[R] character that is not any opening bracket
+(\f[I][\f[R]), opening brace (\f[I]{\f[R]), or any opening parenthesis
+(\f[I](\f[R]), given twice.
 \f[B]NOTE\f[R] this excludes null bytes (\f[I]\[rs]0\f[R]) as these will
 indicate the end of a \f[I]wks\f[R] file or script.
 When an arbitrary delimiter is given the same character is expected to
