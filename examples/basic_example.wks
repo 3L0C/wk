@@ -9,7 +9,7 @@ a "A chord" %{{echo "Hello, world!"}}
 
 # This is a prefix.
 # The trigger key is 'Control + a'
-C-a "A prefix"
+p "A prefix"
 {
     # This is a chord that can only be accessed after triggering the parent prefix.
     b "A chord" %{{echo "Hello from inside prefix 'C-a'"}}

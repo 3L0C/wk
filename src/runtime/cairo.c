@@ -329,6 +329,21 @@ end:
 }
 
 static bool
+drawModText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
+{
+    assert(layout), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(MENU_COLOR_KEY)) return false;
+
+    Modifiers* mods = &mainMenu->keyChords[idx].key.mods;
+    if (mods->ctrl && !drawText(layout, "C-", cellw, x, y)) return false;
+    if (mods->alt && !drawText(layout, "M-", cellw, x, y)) return false;
+    if (mods->hyper && !drawText(layout, "H-", cellw, x, y)) return false;
+    if (mods->shift && !drawText(layout, "S-", cellw, x, y)) return false;
+
+    return true;
+}
+
+static bool
 drawKeyText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
 {
     assert(layout), assert(cellw), assert(x), assert(y);
@@ -362,6 +377,7 @@ drawHintText(PangoLayout* layout, uint32_t idx, uint32_t cellw, uint32_t x, uint
 {
     assert(layout);
 
+    if (!drawModText(layout, idx, &cellw, &x, &y)) return;
     if (!drawKeyText(layout, idx, &cellw, &x, &y)) return;
     if (!drawDelimiterText(layout, &cellw, &x, &y)) return;
     if (!drawDescriptionText(layout, idx, &cellw, &x, &y)) return;
