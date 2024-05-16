@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -668,6 +669,27 @@ setHooksAndFlags(PseudoChord* parent, PseudoChordArray* children)
 }
 
 static int
+compareKeyRepr(const Token* a, const Token* b, size_t minLength)
+{
+    assert(a), assert(b);
+
+    for (size_t i = 0; i < minLength; i++)
+    {
+        char one = tolower(a->start[i]);
+        char two = tolower(b->start[i]);
+
+        if (one != two) return one - two;
+    }
+
+    if (a->length == b->length)
+    {
+        return islower(*a->start) == islower(*b->start) ? 0 : !islower(*a->start);
+    }
+
+    return a->length - b->length;
+}
+
+static int
 compareKeyChords(const void* a, const void* b)
 {
     assert(a), assert(b);
@@ -684,8 +706,8 @@ compareKeyChords(const void* a, const void* b)
     bool aHasMods = hasActiveModifier(&keyA->mods);
     bool bHasMods = hasActiveModifier(&keyB->mods);
 
-    if (aHasMods == bHasMods) return strncmp(
-        tokenA->start, tokenB->start,
+    if (aHasMods == bHasMods) return compareKeyRepr(
+        tokenA, tokenB,
         (tokenA->length < tokenB->length) ? tokenA->length : tokenB->length
     );
     if (aHasMods) return 1;
