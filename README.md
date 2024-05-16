@@ -42,11 +42,11 @@ make clean && make && sudo make install
 All runtime dependencies below are searched with
 `pkg-config`. 
 
-| Backend | Dependencies                                |
-|---------|---------------------------------------------|
-| Common  | cairo, pango, pangocairo                    |
-| X11     | x11, xinerama                               |
-| Wayland | wayland-client, wayland-protocols xkbcommon |
+| Backend | Dependencies                                                  |
+|---------|---------------------------------------------------------------|
+| Common  | cairo, pango, pangocairo                                      |
+| X11     | x11, xinerama                                                 |
+| Wayland | wayland-client, wayland-protocols, xkbcommon, wlr-layer-shell |
 
 ## About Wayland support
 
