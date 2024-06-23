@@ -392,14 +392,14 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
     }
     case TOKEN_AFTER:
     {
-        consume(compiler, TOKEN_BEFORE, "Expected '^after' hook.");
+        consume(compiler, TOKEN_AFTER, "Expected '^after' hook.");
         return collectCommandTokens(
             compiler, &chord->after, false, "Expected command after '^after' hook."
         );
     }
     case TOKEN_SYNC_BEFORE:
     {
-        consume(compiler, TOKEN_BEFORE, "Expected '^sync-before' hook.");
+        consume(compiler, TOKEN_SYNC_BEFORE, "Expected '^sync-before' hook.");
         chord->flags.syncBefore = true;
         return collectCommandTokens(
             compiler, &chord->before, false, "Expected command after '^sync-before' hook."
@@ -407,7 +407,7 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
     }
     case TOKEN_SYNC_AFTER:
     {
-        consume(compiler, TOKEN_BEFORE, "Expected '^sync-after' hook.");
+        consume(compiler, TOKEN_SYNC_AFTER, "Expected '^sync-after' hook.");
         chord->flags.syncAfter = true;
         return collectCommandTokens(
             compiler, &chord->after, false, "Expected command after '^sync-after' hook."
