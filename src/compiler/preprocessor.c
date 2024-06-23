@@ -199,12 +199,13 @@ handleIncludeMacro(Menu* menu, Scanner* scanner, PieceTable* result, Token* incl
 
     if (isFileInIncludeStack(&stack, includeFilePath))
     {
-        printf(
-            "%s:%u:%u: wk does not support circular includes: ':include \"%.*s\"'.\n",
+        errorMsg(
+            "%s:%u:%u: wk does not support circular includes: ':include \"%.*s\"'.",
             sourcePath, includeFile->line, includeFile->column,
             (int)includeFile->length, includeFile->start
         );
         if (menu->debug) disassembleIncludeStack(&stack);
+        scanner->hadError = true;
         goto fail;
     }
 
