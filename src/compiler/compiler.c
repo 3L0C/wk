@@ -144,13 +144,14 @@ errorAtCurrent(Compiler* compiler, const char* fmt, ...)
     assert(compiler), assert(fmt);
     if (compiler->panicMode) return;
 
-    compiler->panicMode = true;
-    compiler->hadError = true;
-
     va_list ap;
     va_start(ap, fmt);
     errorAt(compiler, &compiler->current, fmt, ap);
     va_end(ap);
+
+    compiler->panicMode = true;
+    compiler->hadError = true;
+
 }
 
 static TokenType
