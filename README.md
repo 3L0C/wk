@@ -19,6 +19,14 @@ via the [key_chords.def.h](config/key_chords.def.h) header,
 read from a [wks file](#wks-Files), or read from stdin with
 the same `wks` syntax.
 
+## Video Demos
+
+As you can tell from the length of this README, there is a
+lot to go over. If you would prefer a video demo, you can
+check out the demo series
+[here](https://youtube.com/playlist?list=PL20SXZFQEeVPi9vtnxYvMmvOfUalXBWMi&feature=shared)
+where I cover `wk` basics and beyond.
+
 # Building 
 
 ``` 
