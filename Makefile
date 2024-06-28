@@ -113,7 +113,7 @@ debug-wayland: wayland
 
 $(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $(TARGET_OBJS)
 	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"
-	@ $(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	@ $(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
 	@ cp $@ $(NAME)
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADERS)
