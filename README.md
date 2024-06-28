@@ -46,8 +46,6 @@ make clean && make && sudo make install
 # Dependencies
 
 - C compiler 
-- GNU make (Makefile relies on 
-[secondary expansion](https://www.gnu.org/software/make/manual/html_node/Secondary-Expansion.html))
 
 All runtime dependencies below are searched with
 `pkg-config`. 

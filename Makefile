@@ -49,13 +49,38 @@ X11_LDFLAGS  += $(shell $(PKG_CONFIG) --libs x11 xinerama)
 WAY_CFLAGS   += -DWK_WAYLAND_BACKEND $(shell $(PKG_CONFIG) --cflags wayland-client xkbcommon)
 WAY_LDFLAGS  += $(shell $(PKG_CONFIG) --libs wayland-client xkbcommon)
 
-# Enable secondary expansion
-.SECONDEXPANSION:
+# Make goals
+ALL_GOALS    := all debug
+X11_GOALS    := x11 debug-x11
+WAY_GOALS    := wayland debug-wayland
+
+# Insert implicit 'all' target
+ifeq (0,$(words $(MAKECMDGOALS)))
+MAKECMDGOALS := all
+endif
+
+# Include relevant objects and flags for ALL_GOALS
+ifneq (0,$(words $(filter $(ALL_GOALS),$(MAKECMDGOALS))))
+TARGET_OBJS  := $(X11_OBJS) $(WAY_OBJS)
+CFLAGS       += $(X11_CFLAGS) $(WAY_CFLAGS)
+LDFLAGS      += $(X11_LDFLAGS) $(WAY_LDFLAGS)
+endif
+
+# Include relevant objects and flags for X11_GOALS
+ifneq (0,$(words $(filter $(X11_GOALS),$(MAKECMDGOALS))))
+TARGET_OBJS  := $(X11_OBJS)
+CFLAGS       += $(X11_CFLAGS)
+LDFLAGS      += $(X11_LDFLAGS)
+endif
+
+# Include relevant objects and flags for WAY_GOALS
+ifneq (0,$(words $(filter $(WAY_GOALS),$(MAKECMDGOALS))))
+TARGET_OBJS  := $(WAY_OBJS)
+CFLAGS       += $(WAY_CFLAGS)
+LDFLAGS      += $(WAY_LDFLAGS)
+endif
 
 # Targets
-all: TARGET_OBJS := $(X11_OBJS) $(WAY_OBJS)
-all: CFLAGS += $(X11_CFLAGS) $(WAY_CFLAGS)
-all: LDFLAGS += $(X11_LDFLAGS) $(WAY_LDFLAGS)
 all: options
 all: $(WAY_FILES)
 all: $(BUILD_DIR)/$(NAME)
@@ -70,17 +95,11 @@ options:
 	@ printf "%-11s = %s\n" "RUN_OBJS" "$(RUN_OBJS)"
 	@ printf "%-11s = %s\n" "TARGET_OBJS" "$(TARGET_OBJS)"
 
-x11: TARGET_OBJS := $(X11_OBJS)
-x11: CFLAGS += $(X11_CFLAGS)
-x11: LDFLAGS += $(X11_LDFLAGS)
 x11: options
 x11: $(BUILD_DIR)/$(NAME)
 
-wayland: TARGET_OBJS := $(WAY_OBJS)
-wayland: CFLAGS += $(WAY_CFLAGS)
-wayland: LDFLAGS += $(WAY_LDFLAGS)
-wayland: $(WAY_FILES)
 wayland: options
+wayland: $(WAY_FILES)
 wayland: $(BUILD_DIR)/$(NAME)
 
 debug: CFLAGS += -ggdb
@@ -92,7 +111,7 @@ debug-x11: x11
 debug-wayland: CFLAGS += -ggdb
 debug-wayland: wayland
 
-$(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $$(TARGET_OBJS)
+$(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $(TARGET_OBJS)
 	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"
 	@ $(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 	@ cp $@ $(NAME)
