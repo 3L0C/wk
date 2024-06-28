@@ -46,6 +46,7 @@ make clean && make && sudo make install
 # Dependencies
 
 - C compiler 
+- sed to cleanup man files
 
 All runtime dependencies below are searched with
 `pkg-config`. 
