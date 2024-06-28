@@ -5,86 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* mod macros */
-#define MAKE_MODS(                      \
-    _ctrl, _alt, _hyper, _shift         \
-)                                       \
-    (Modifiers){                        \
-        .ctrl = (_ctrl),                \
-        .alt = (_alt),                  \
-        .hyper = (_hyper),              \
-        .shift = (_shift),              \
-    }
-
-/* flag macros */
-#define MAKE_FLAGS(                     \
-    _keep,                              \
-    _close,                             \
-    _inherit,                           \
-    _ignore,                            \
-    _ignoreSort,                        \
-    _unhook,                            \
-    _deflag,                            \
-    _nobefore,                          \
-    _noafter,                           \
-    _write,                             \
-    _execute,                           \
-    _syncCommand,                       \
-    _syncBefore,                        \
-    _syncAfter                          \
-)                                       \
-    (ChordFlags){                       \
-        .keep = (_keep),                \
-        .close = (_close),              \
-        .inherit = (_inherit),          \
-        .ignore = (_ignore),            \
-        .ignoreSort = (_ignoreSort),    \
-        .unhook = (_unhook),            \
-        .deflag = (_deflag),            \
-        .nobefore = (_nobefore),        \
-        .noafter = (_noafter),          \
-        .write = (_write),              \
-        .execute = (_execute),          \
-        .syncCommand = (_syncCommand),  \
-        .syncBefore = (_syncBefore),    \
-        .syncAfter = (_syncAfter),      \
-    }
-
-/* key macros */
-#define MAKE_KEY(                       \
-    _ctrl, _alt, _hyper, _shift,        \
-    _special,                           \
-    _key, _len                          \
-)                                       \
-    (Key){                              \
-        MAKE_MODS((_ctrl), (_alt),      \
-                  (_hyper), (_shift)),  \
-        (_special), (_key), (_len)      \
-    }
-
-#define MAKE_NULL_KEY \
-    MAKE_KEY(false, false, false, false, \
-             SPECIAL_KEY_NONE, NULL, 0)
-
-/* chord macros */
-#define NULL_KEY_CHORD                          \
-    {                                           \
-        KEY_CHORD_STATE_IS_NULL,                \
-        MAKE_NULL_KEY,                          \
-        NULL,                                   \
-        NULL,                                   \
-        NULL,                                   \
-        NULL,                                   \
-        (ChordFlags){0}, NULL,                  \
-    }
-
-#define PREFIX(...) (KeyChord[]){ __VA_ARGS__, NULL_KEY_CHORD }
-#define KEY_CHORDS(...) { __VA_ARGS__, NULL_KEY_CHORD }
-
 typedef enum
 {
-    KEY_CHORD_STATE_NOT_NULL,
     KEY_CHORD_STATE_IS_NULL,
+    KEY_CHORD_STATE_NOT_NULL,
 } KeyChordState;
 
 typedef enum

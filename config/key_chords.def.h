@@ -17,91 +17,104 @@
  * after
  * flags, chords
  */
-KeyChord builtinKeyChords[] = KEY_CHORDS(
+KeyChord builtinKeyChords[] = {
     {
-        KEY_CHORD_STATE_NOT_NULL, 
-        MAKE_KEY(
-            false, false, false, false,
-            SPECIAL_KEY_NONE,
-            "a", 1
-        ),
-        "A chord",
-        "echo \"Hello, world!\"", 
-        NULL, 
-        NULL, 
-        MAKE_FLAGS(
+        .state = KEY_CHORD_STATE_NOT_NULL, 
+        .key = {
+            .mods = {
+                .ctrl = false, .alt = false, .hyper = false, .shift = false
+            },
+            .special = SPECIAL_KEY_NONE,
+            .repr = "a", .len = 1
+        },
+        .description = "A chord", 
+        .command = "echo \"Hello, world!\"", 
+        .before = NULL, 
+        .after = NULL, 
+        .flags = {
             false, false, false, false, false, false, false,
             false, false, false, false, false, false, false
-        ), NULL
+        }, .keyChords = NULL
     },
     {
-        KEY_CHORD_STATE_NOT_NULL, 
-        MAKE_KEY(
-            true , false, false, false,
-            SPECIAL_KEY_NONE,
-            "a", 1
-        ),
-        "A prefix",
-        NULL, 
-        NULL, 
-        NULL, 
-        MAKE_FLAGS(
+        .state = KEY_CHORD_STATE_NOT_NULL, 
+        .key = {
+            .mods = {
+                .ctrl = false, .alt = false, .hyper = false, .shift = false
+            },
+            .special = SPECIAL_KEY_NONE,
+            .repr = "p", .len = 1
+        },
+        .description = "A prefix", 
+        .command = NULL, 
+        .before = NULL, 
+        .after = NULL, 
+        .flags = {
             false, false, false, false, false, false, false,
             false, false, false, false, false, false, false
-        ), 
-        PREFIX(
+        }, 
+        .keyChords = (KeyChord[]){
             {
-                KEY_CHORD_STATE_NOT_NULL, 
-                MAKE_KEY(
-                    false, false, false, false,
-                    SPECIAL_KEY_NONE,
-                    "b", 1
-                ),
-                "A chord",
-                "echo \"Hello from inside prefix 'C-a'\"", 
-                NULL, 
-                NULL, 
-                MAKE_FLAGS(
+                .state = KEY_CHORD_STATE_NOT_NULL, 
+                .key = {
+                    .mods = {
+                        .ctrl = false, .alt = false, .hyper = false, .shift = false
+                    },
+                    .special = SPECIAL_KEY_NONE,
+                    .repr = "b", .len = 1
+                },
+                .description = "A chord", 
+                .command = "echo \"Hello from inside prefix 'C-a'\"", 
+                .before = NULL, 
+                .after = NULL, 
+                .flags = {
                     false, false, false, false, false, false, false,
                     false, false, false, false, false, false, false
-                ), NULL
+                }, .keyChords = NULL
             },
             {
-                KEY_CHORD_STATE_NOT_NULL, 
-                MAKE_KEY(
-                    false, false, false, false,
-                    SPECIAL_KEY_NONE,
-                    "c", 1
-                ),
-                "Another prefix",
-                NULL, 
-                NULL, 
-                NULL, 
-                MAKE_FLAGS(
+                .state = KEY_CHORD_STATE_NOT_NULL, 
+                .key = {
+                    .mods = {
+                        .ctrl = false, .alt = false, .hyper = false, .shift = false
+                    },
+                    .special = SPECIAL_KEY_NONE,
+                    .repr = "c", .len = 1
+                },
+                .description = "Another prefix", 
+                .command = NULL, 
+                .before = NULL, 
+                .after = NULL, 
+                .flags = {
                     false, false, false, false, false, false, false,
                     false, false, false, false, false, false, false
-                ), 
-                PREFIX(
+                }, 
+                .keyChords = (KeyChord[]){
                     {
-                        KEY_CHORD_STATE_NOT_NULL, 
-                        MAKE_KEY(
-                            false, false, false, false,
-                            SPECIAL_KEY_NONE,
-                            "d", 1
-                        ),
-                        "Done",
-                        "echo \"You've reached the end!\"", 
-                        NULL, 
-                        NULL,
-                        MAKE_FLAGS(
+                        .state = KEY_CHORD_STATE_NOT_NULL, 
+                        .key = {
+                            .mods = {
+                                .ctrl = false, .alt = false, .hyper = false, .shift = false
+                            },
+                            .special = SPECIAL_KEY_NONE,
+                            .repr = "d", .len = 1
+                        },
+                        .description = "Done", 
+                        .command = "echo \"You've reached the end!\"", 
+                        .before = NULL, 
+                        .after = NULL, 
+                        .flags = {
                             false, false, false, false, false, false, false,
                             false, false, false, false, false, false, false
-                        ), NULL
-                    }
-                )
-            }
-        )
-    }
-);
+                        }, .keyChords = NULL
+                    },
+                    { .state = KEY_CHORD_STATE_IS_NULL }
+                }
+            },
+            { .state = KEY_CHORD_STATE_IS_NULL }
+        }
+    },
+    { .state = KEY_CHORD_STATE_IS_NULL }
+};
 
 #endif /* WK_CONFIG_KEY_CHORDS_H_ */
