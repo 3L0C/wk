@@ -750,9 +750,9 @@ b "Second?" +write %{{%(index)}}
 a "First?" +write %{{%(index)}}
 
 # Sorted with `+ignore-sort` result
+n "Switch 3" %{{xdotool set_desktop 2}}
 e "Switch 1" %{{xdotool set_desktop 0}}
 i "Switch 2" %{{xdotool set_desktop 1}}
-n "Switch 3" %{{xdotool set_desktop 2}}
 o "Switch 4" %{{xdotool set_desktop 3}}
 a "First?" +write %{{4}}
 b "Second?" +write %{{5}}
