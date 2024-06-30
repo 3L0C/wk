@@ -28,6 +28,8 @@ typedef enum
     TOKEN_BORDER_COLOR,
     TOKEN_SHELL,
     TOKEN_FONT,
+    TOKEN_CHORD_ARRAY_KEYS,
+    TOKEN_CHORD_ARRAY_PREFIX,
 
     /* switch macros */
     TOKEN_DEBUG,

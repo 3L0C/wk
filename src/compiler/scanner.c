@@ -354,6 +354,12 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_SORT;
         break;
     }
+    case 'c':
+    {
+        if (isKeyword(scanner, 1, 15, "hord-array-keys")) result = TOKEN_CHORD_ARRAY_KEYS;
+        else if (isKeyword(scanner, 1, 17, "hord-array-prefix")) result = TOKEN_CHORD_ARRAY_PREFIX;
+        break;
+    }
     default: break;
     }
 

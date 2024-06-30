@@ -65,6 +65,8 @@ freeMenuGarbage(Menu* menu)
 {
     if (menu->garbage.shell) free(menu->garbage.shell);
     if (menu->garbage.font) free(menu->garbage.font);
+    if (menu->garbage.chordArrayKeys) free(menu->garbage.chordArrayKeys);
+    if (menu->garbage.chordArrayPrefix) free(menu->garbage.chordArrayPrefix);
     if (menu->garbage.foregroundKeyColor) free(menu->garbage.foregroundKeyColor);
     if (menu->garbage.foregroundDelimiterColor) free(menu->garbage.foregroundDelimiterColor);
     if (menu->garbage.foregroundPrefixColor) free(menu->garbage.foregroundPrefixColor);
@@ -558,6 +560,8 @@ initMenu(Menu* menu, KeyChord* keyChords)
     initColors(menu->colors);
     menu->shell = shell;
     menu->font = font;
+    menu->chordArrayKeys = chordArrayKeys;
+    menu->chordArrayPrefix = chordArrayPrefix;
     menu->keyChords = keyChords;
     menu->keyChordsHead = NULL;
     menu->keyChordCount = 0;
@@ -571,6 +575,8 @@ initMenu(Menu* menu, KeyChord* keyChords)
     initString(&menu->client.script);
     menu->garbage.shell = NULL;
     menu->garbage.font = NULL;
+    menu->garbage.chordArrayKeys = NULL;
+    menu->garbage.chordArrayPrefix = NULL;
     menu->garbage.foregroundKeyColor = NULL;
     menu->garbage.foregroundDelimiterColor = NULL;
     menu->garbage.foregroundPrefixColor = NULL;

@@ -73,6 +73,8 @@ typedef struct
     MenuHexColor colors[MENU_COLOR_LAST];
     const char* shell;
     const char* font;
+    const char* chordArrayKeys;
+    const char* chordArrayPrefix;
     KeyChord* keyChords;
     KeyChord* keyChordsHead;
     uint32_t keyChordCount;
@@ -91,6 +93,8 @@ typedef struct
     {
         char* shell;
         char* font;
+        char* chordArrayKeys;
+        char* chordArrayPrefix;
         char* foregroundKeyColor;
         char* foregroundDelimiterColor;
         char* foregroundPrefixColor;

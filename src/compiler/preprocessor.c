@@ -320,6 +320,16 @@ handleMacroWithStringArg(Menu* menu, Scanner* scanner, Token* token, PieceTable*
     }
     case TOKEN_SHELL: menu->shell = menu->garbage.shell = arg.string; break;
     case TOKEN_FONT: menu->font = menu->garbage.font = arg.string; break;
+    case TOKEN_CHORD_ARRAY_KEYS:
+    {
+        menu->chordArrayKeys = menu->garbage.chordArrayKeys = arg.string;
+        break;
+    }
+    case TOKEN_CHORD_ARRAY_PREFIX:
+    {
+        menu->chordArrayPrefix = menu->garbage.chordArrayPrefix = arg.string;
+        break;
+    }
     case TOKEN_INCLUDE:
     {
         freeString(&arg);
@@ -523,6 +533,8 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
         case TOKEN_BORDER_COLOR:
         case TOKEN_SHELL:
         case TOKEN_FONT:
+        case TOKEN_CHORD_ARRAY_KEYS:
+        case TOKEN_CHORD_ARRAY_PREFIX:
         case TOKEN_INCLUDE: handleMacroWithStringArg(menu, &scanner, &token, &pieceTable); break;
 
         /* Handle error */

@@ -238,6 +238,8 @@ getTokenLiteral(const TokenType type)
     case TOKEN_BORDER_COLOR: return "TOKEN_BORDER_COLOR";
     case TOKEN_SHELL: return "TOKEN_SHELL";
     case TOKEN_FONT: return "TOKEN_FONT";
+    case TOKEN_CHORD_ARRAY_KEYS: return "TOKEN_CHORD_ARRAY_KEYS";
+    case TOKEN_CHORD_ARRAY_PREFIX: return "TOKEN_CHORD_ARRAY_PREFIX";
 
     /* switch macros */
     case TOKEN_DEBUG: return "TOKEN_DEBUG";
