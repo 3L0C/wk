@@ -515,6 +515,10 @@ runPreprocessor(Menu* menu, const char* source, const char* filepath)
 
         /* Switches with string args. */
         case TOKEN_FOREGROUND_COLOR: /* FALLTHROUGH */
+        case TOKEN_FOREGROUND_KEY_COLOR:
+        case TOKEN_FOREGROUND_DELIMITER_COLOR:
+        case TOKEN_FOREGROUND_PREFIX_COLOR:
+        case TOKEN_FOREGROUND_CHORD_COLOR:
         case TOKEN_BACKGROUND_COLOR:
         case TOKEN_BORDER_COLOR:
         case TOKEN_SHELL:
