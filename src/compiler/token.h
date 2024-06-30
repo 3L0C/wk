@@ -14,6 +14,7 @@ typedef enum
     TOKEN_RIGHT_BRACE,
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
+    TOKEN_ELLIPSIS,
 
     /* preprocessor macros */
 
@@ -28,8 +29,7 @@ typedef enum
     TOKEN_BORDER_COLOR,
     TOKEN_SHELL,
     TOKEN_FONT,
-    TOKEN_CHORD_ARRAY_KEYS,
-    TOKEN_CHORD_ARRAY_PREFIX,
+    TOKEN_IMPLICIT_ARRAY_KEYS,
 
     /* switch macros */
     TOKEN_DEBUG,

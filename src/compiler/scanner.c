@@ -318,7 +318,12 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 4, "elay")) result = TOKEN_MENU_DELAY;
         break;
     }
-    case 'i': if (isKeyword(scanner, 1, 6, "nclude")) result = TOKEN_INCLUDE; break;
+    case 'i':
+    {
+        if (isKeyword(scanner, 1, 6, "nclude")) result = TOKEN_INCLUDE;
+        else if (isKeyword(scanner, 1, 18, "mplicit-array-keys")) result = TOKEN_IMPLICIT_ARRAY_KEYS;
+        break;
+    }
     case 't': if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP; break;
     case 'b':
     {
@@ -352,12 +357,6 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     {
         if (isKeyword(scanner, 1, 4, "hell")) result = TOKEN_SHELL;
         else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_SORT;
-        break;
-    }
-    case 'c':
-    {
-        if (isKeyword(scanner, 1, 15, "hord-array-keys")) result = TOKEN_CHORD_ARRAY_KEYS;
-        else if (isKeyword(scanner, 1, 17, "hord-array-prefix")) result = TOKEN_CHORD_ARRAY_PREFIX;
         break;
     }
     default: break;
@@ -706,6 +705,13 @@ scanTokenForCompiler(Scanner* scanner, Token* token)
     case '}': return makeToken(scanner, token, TOKEN_RIGHT_BRACE);
     case '(': return makeToken(scanner, token, TOKEN_LEFT_PAREN);
     case ')': return makeToken(scanner, token, TOKEN_RIGHT_PAREN);
+    case '.':
+    {
+        if (peek(scanner) != '.' || peekNext(scanner) != '.') return scanKey(scanner, token, c);
+        consumeScanner(scanner, '.');
+        consumeScanner(scanner, '.');
+        return makeToken(scanner, token, TOKEN_ELLIPSIS);
+    }
 
     /* Hooks, flags, and preprocessor commands */
     case '^': makeScannerCurrent(scanner); return scanHook(scanner, token);

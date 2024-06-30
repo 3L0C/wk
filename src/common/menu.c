@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <bits/getopt_core.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -65,8 +66,7 @@ freeMenuGarbage(Menu* menu)
 {
     if (menu->garbage.shell) free(menu->garbage.shell);
     if (menu->garbage.font) free(menu->garbage.font);
-    if (menu->garbage.chordArrayKeys) free(menu->garbage.chordArrayKeys);
-    if (menu->garbage.chordArrayPrefix) free(menu->garbage.chordArrayPrefix);
+    if (menu->garbage.implicitArrayKeys) free(menu->garbage.implicitArrayKeys);
     if (menu->garbage.foregroundKeyColor) free(menu->garbage.foregroundKeyColor);
     if (menu->garbage.foregroundDelimiterColor) free(menu->garbage.foregroundDelimiterColor);
     if (menu->garbage.foregroundPrefixColor) free(menu->garbage.foregroundPrefixColor);
@@ -291,6 +291,7 @@ usage(void)
         "    --shell STRING             Set shell to STRING (default '/bin/sh').\n"
         "    --font STRING              Set font to STRING. Should be a valid Pango font\n"
         "                               description (default 'monospace, 14').\n"
+        "    --implicit-keys STRING     Set implicit keys to STRING (default 'asdfghjkl;').\n"
         "\n"
         "run `man 1 wk` for more info on each option.\n",
         stderr
@@ -360,6 +361,7 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         { "bd",             required_argument,  0, 0x100 },
         { "shell",          required_argument,  0, 0x101 },
         { "font",           required_argument,  0, 0x102 },
+        { "implicit-keys",  required_argument,  0, 0x103 },
         { 0, 0, 0, 0 }
     };
 
@@ -511,6 +513,8 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         case 0x101: menu->shell = optarg; break;
         /* font */
         case 0x102: menu->font = optarg; break;
+        /* implicit keys */
+        case 0x103: menu->implicitArrayKeys = optarg; break;
         /* Errors */
         case '?':
             usage();
@@ -560,8 +564,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
     initColors(menu->colors);
     menu->shell = shell;
     menu->font = font;
-    menu->chordArrayKeys = chordArrayKeys;
-    menu->chordArrayPrefix = chordArrayPrefix;
+    menu->implicitArrayKeys = implicitArrayKeys;
     menu->keyChords = keyChords;
     menu->keyChordsHead = NULL;
     menu->keyChordCount = 0;
@@ -575,8 +578,7 @@ initMenu(Menu* menu, KeyChord* keyChords)
     initString(&menu->client.script);
     menu->garbage.shell = NULL;
     menu->garbage.font = NULL;
-    menu->garbage.chordArrayKeys = NULL;
-    menu->garbage.chordArrayPrefix = NULL;
+    menu->garbage.implicitArrayKeys = NULL;
     menu->garbage.foregroundKeyColor = NULL;
     menu->garbage.foregroundDelimiterColor = NULL;
     menu->garbage.foregroundPrefixColor = NULL;

@@ -46,6 +46,7 @@ typedef struct
     PseudoChord chord;
     PseudoChordArray* chordsDest;
     PseudoChordArray chords;
+    PseudoChordArray implicitArrayKeys;
     char* source;
 } Compiler;
 

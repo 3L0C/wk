@@ -106,11 +106,10 @@ freePseudoChordArray(PseudoChordArray* chords)
 }
 
 static PseudoChord*
-writePseudoChordArray(Compiler* compiler, PseudoChord* chord)
+writePseudoChordToPseudoChordArray(PseudoChord* chord, PseudoChordArray* array)
 {
-    assert(compiler), assert(chord);
+    assert(chord), assert(array);
 
-    PseudoChordArray* array = compiler->chordsDest;
     if (array->count == array->capacity)
     {
         size_t oldCapacity = array->capacity;
@@ -121,6 +120,14 @@ writePseudoChordArray(Compiler* compiler, PseudoChord* chord)
     copyPseudoChord(chord, &array->chords[array->count]);
     PseudoChord* result = &array->chords[array->count++];
     return result;
+}
+
+static PseudoChord*
+writePseudoChordToDest(Compiler* compiler, PseudoChord* chord)
+{
+    assert(compiler), assert(chord);
+
+    return writePseudoChordToPseudoChordArray(chord, compiler->chordsDest);
 }
 
 static void
@@ -458,36 +465,6 @@ compileHooksAndFlags(Compiler* compiler, PseudoChord* keyChord)
 }
 
 static void
-compileChord(Compiler* compiler)
-{
-    assert(compiler);
-
-    PseudoChord* chord = &compiler->chord;
-    freePseudoChord(chord);
-    initPseudoChord(chord);
-
-    compileMods(compiler, &chord->key.mods);
-    compileKey(compiler, chord);
-    collectDescriptionTokens(compiler, &chord->description);
-    compileHooksAndFlags(compiler, chord);
-
-    /* Prefix */
-    if (checkCompiler(compiler, TOKEN_LEFT_BRACE)) return;
-
-    collectCommandTokens(compiler, &chord->command, false, "Expected command.");
-
-    /* Check for brace after command */
-    if (checkCompiler(compiler, TOKEN_LEFT_BRACE))
-    {
-        errorAtCurrent(compiler, "Expected end of key chord after command but got '{'.");
-        return;
-    }
-
-    writePseudoChordArray(compiler, chord);
-    freePseudoChord(chord);
-}
-
-static void
 compileMissingKeyChordInfo(
     Compiler* compiler,
     PseudoChord* from,
@@ -503,6 +480,56 @@ compileMissingKeyChordInfo(
     if (!to->before.count && from->before.count) copyTokenArray(&from->before, &to->before);
     if (!to->after.count && from->after.count) copyTokenArray(&from->after, &to->after);
     if (hasDefaultChordFlags(&to->flags)) copyChordFlags(&from->flags, &to->flags);
+}
+
+static void
+compileImplicitChordArray(Compiler* compiler)
+{
+    assert(compiler);
+
+    if (!checkCompiler(compiler, TOKEN_DESCRIPTION) && !checkCompiler(compiler, TOKEN_DESC_INTERP))
+    {
+        errorAtCurrent(compiler, "Expected description, or description expressions after '...'.");
+        return;
+    }
+
+    size_t arrayStart = compilerGetIndex(compiler);
+    PseudoChordArray* keys = &compiler->implicitArrayKeys;
+    PseudoChord mods = {0};
+    copyPseudoChord(&compiler->chord, &mods);
+
+    for (size_t i = 0; i < keys->count; i++)
+    {
+        PseudoChord* key = &keys->chords[i];
+        PseudoChord* chord = &compiler->chord;
+        initPseudoChord(chord);
+        copyPseudoChord(key, chord);
+        if (hasActiveModifier(&mods.key.mods)) copyChordModifiers(&mods.key.mods, &chord->key.mods);
+
+        writePseudoChordToDest(compiler, chord);
+        freePseudoChord(chord);
+    }
+
+    PseudoChord dummy = {0};
+    initPseudoChord(&dummy);
+
+    collectDescriptionTokens(compiler, &dummy.description);
+    compileHooksAndFlags(compiler, &dummy);
+    collectCommandTokens(compiler, &dummy.command, false, "Expected command.");
+
+    /* Write chords in chord array to destination */
+    PseudoChordArray* array = compiler->chordsDest;
+    size_t arrayEnd = array->count;
+    for (size_t i = arrayStart; i < arrayEnd; i++)
+    {
+        PseudoChord* chord = &array->chords[i];
+        compileMissingKeyChordInfo(
+            compiler, &dummy, chord, &dummy.description, &dummy.command, i
+        );
+    }
+
+    freePseudoChord(&dummy);
+    return;
 }
 
 static void
@@ -553,7 +580,7 @@ compileChordArray(Compiler* compiler)
             compileKey(compiler, chord);
         }
 
-        writePseudoChordArray(compiler, chord);
+        writePseudoChordToDest(compiler, chord);
         freePseudoChord(chord);
     }
 
@@ -586,11 +613,42 @@ fail:
 }
 
 static void
+compileChord(Compiler* compiler)
+{
+    assert(compiler);
+
+    PseudoChord* chord = &compiler->chord;
+    freePseudoChord(chord);
+    initPseudoChord(chord);
+
+    compileMods(compiler, &chord->key.mods);
+    if (matchCompiler(compiler, TOKEN_ELLIPSIS)) return compileImplicitChordArray(compiler);
+    compileKey(compiler, chord);
+    collectDescriptionTokens(compiler, &chord->description);
+    compileHooksAndFlags(compiler, chord);
+
+    /* Prefix */
+    if (checkCompiler(compiler, TOKEN_LEFT_BRACE)) return;
+
+    collectCommandTokens(compiler, &chord->command, false, "Expected command.");
+
+    /* Check for brace after command */
+    if (checkCompiler(compiler, TOKEN_LEFT_BRACE))
+    {
+        errorAtCurrent(compiler, "Expected end of key chord after command but got '{'.");
+        return;
+    }
+
+    writePseudoChordToDest(compiler, chord);
+    freePseudoChord(chord);
+}
+
+static void
 compileNullKeyChord(Compiler* compiler)
 {
     assert(compiler);
 
-    writePseudoChordArray(compiler, &compiler->nullPseudoChord);
+    writePseudoChordToDest(compiler, &compiler->nullPseudoChord);
 }
 
 static void
@@ -732,7 +790,7 @@ compilePrefix(Compiler* compiler)
     PseudoChordArray* previousDest = compiler->chordsDest;
 
     /* advance */
-    PseudoChord* parent = writePseudoChordArray(compiler, &compiler->chord);
+    PseudoChord* parent = writePseudoChordToDest(compiler, &compiler->chord);
     freePseudoChord(&compiler->chord);
     PseudoChordArray* children = &parent->chords;
     compiler->chordsDest = children;
@@ -808,7 +866,11 @@ compileKeyChord(Compiler* compiler)
     if (compiler->panicMode) synchronize(compiler);
     if (compilerIsAtEnd(compiler)) return;
 
-    if (matchCompiler(compiler, TOKEN_LEFT_BRACKET))
+    if (matchCompiler(compiler, TOKEN_ELLIPSIS))
+    {
+        compileImplicitChordArray(compiler);
+    }
+    else if (matchCompiler(compiler, TOKEN_LEFT_BRACKET))
     {
         compileChordArray(compiler);
     }
@@ -836,7 +898,7 @@ compileKeyFromToken(Token* token, Key* key)
 }
 
 static void
-compileKeyAndMods(String* result, const Key* key)
+compileStringFromKeyAndMods(String* result, const Key* key)
 {
     assert(result), assert(key);
 
@@ -879,7 +941,7 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
 
     switch (token->type)
     {
-    case TOKEN_THIS_KEY: compileKeyAndMods(result, &to->key); break;
+    case TOKEN_THIS_KEY: compileStringFromKeyAndMods(result, &to->key); break;
     case TOKEN_THIS_DESC:
     {
         if (to->description) appendToString(result, to->description, strlen(to->description));
@@ -974,12 +1036,73 @@ compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
     return *dest;
 }
 
+static bool
+compileImplicitChordArrayKeys(Compiler* compiler, Menu* menu)
+{
+    assert(compiler), assert(menu);
+
+    Scanner scanner = {0};
+    initScanner(&scanner, menu->implicitArrayKeys, ".");
+
+    PseudoChord chord = {0};
+    initPseudoChord(&chord);
+
+    while (!isAtEnd(&scanner))
+    {
+        Token* token = currentToken(compiler);
+        initToken(token);
+
+        scanTokenForCompiler(&scanner, token);
+
+        switch (token->type)
+        {
+        case TOKEN_SPECIAL_KEY: /* FALLTHROUGH */
+        case TOKEN_KEY:
+        {
+            copyToken(token, &chord.keyToken);
+            writePseudoChordToPseudoChordArray(&chord, &compiler->implicitArrayKeys);
+            initPseudoChord(&chord);
+            break;
+        }
+        case TOKEN_MOD_CTRL: /* FALLTHROUGH */
+        case TOKEN_MOD_ALT:
+        case TOKEN_MOD_HYPER:
+        case TOKEN_MOD_SHIFT: addMod(token->type, &chord.key.mods); break;
+        default:
+        {
+            initToken(token);
+            return false;
+        }
+        }
+    }
+
+    initToken(currentToken(compiler));
+    return true;
+}
+
+static void
+freeCompiler(Compiler* compiler)
+{
+    assert(compiler);
+
+    freePseudoChord(&compiler->chord);
+    freePseudoChordArray(&compiler->chords);
+    freePseudoChordArray(&compiler->implicitArrayKeys);
+}
+
 KeyChord*
 compileKeyChords(Compiler* compiler, Menu* menu)
 {
     assert(compiler), assert(menu);
 
     if (compiler->debug) debugPrintScannedTokenHeader();
+
+    if (!compileImplicitChordArrayKeys(compiler, menu))
+    {
+        errorMsg("Could not compile chord array keys: '%s'.", menu->implicitArrayKeys);
+        freeCompiler(compiler);
+        return NULL;
+    }
 
     advanceCompiler(compiler);
     while (!compilerIsAtEnd(compiler))
@@ -992,9 +1115,7 @@ compileKeyChords(Compiler* compiler, Menu* menu)
 
     if (compiler->hadError)
     {
-        debugMsg(menu->debug, "Compiler had error. Returning early.");
-        freePseudoChord(&compiler->chord);
-        freePseudoChordArray(&compiler->chords);
+        freeCompiler(compiler);
         return NULL;
     }
 
@@ -1006,6 +1127,7 @@ compileKeyChords(Compiler* compiler, Menu* menu)
         disassembleKeyChords(menu->keyChordsHead, 0);
     }
 
+    freePseudoChordArray(&compiler->implicitArrayKeys);
     return compiler->hadError ? NULL : menu->keyChords;
 }
 
@@ -1024,6 +1146,7 @@ initCompiler(const Menu* menu, Compiler* compiler, char *source, const char *fil
     makeNullPseudoChord(&compiler->nullPseudoChord);
     initPseudoChord(&compiler->chord);
     initPseudoChordArray(&compiler->chords);
+    initPseudoChordArray(&compiler->implicitArrayKeys);
     compiler->chordsDest = &compiler->chords;
     compiler->source = source;
 }
