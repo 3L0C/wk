@@ -41,5 +41,9 @@ static const char* border = "#7FB4CA";
 static const char* shell = "/bin/sh";
 /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
 static const char* font = "monospace, 14";
+/* Keys to use for chord arrays */
+static const char* chordArrayKeys = "asdfghjkl;";
+/* Prefix for chords in chord arrays that excede the above keys */
+static const char* chordArrayPrefix = ".";
 
 #endif /* WK_CONFIG_CONFIG_H_ */
