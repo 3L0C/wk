@@ -431,43 +431,83 @@ it comes to chords that are very similar but only differ in
 slightly different ways.
 
 ```
-chord_array -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
+chord_array -> ( implicit_array | explicit_array ) ;
 ```
 
-To use a chord array begin with an open bracket (`[`)
-followed by one or more trigger keys or
-chord expressions. The array portion ends with a closing
-bracket (`]`) followed by the standard chord components, a
-description, zero or more keywords, and a command. 
+A chord array comes in two flavors, /implicit/ and
+/explicit/.
+
+### Implicit Arrays
+
+An /implicit array/ is the simplest of the two flavors. It
+utilizes the `implicitArrayKeys` defined in
+[config.def.h](config/config.def.h) to
+generate chords from these trigger keys.
+
+```
+implicit_array -> modifier* '...' description keyword* command ;
+```
+
+An implicit array is then zero or more modifiers, an
+ellipsis (`...`), a description, zero or more keywords, and
+a command. This is practially a chord in terms of its
+form, but in behavior an implicit array generates any
+number of chords from this simple syntax.
+
+As an example, say your implicit array keys are set to `h`,
+`j`, `k`, and `l`, and you have this `wks` file:
+
+```
+... "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+```
+
+This is the equivilant `wks` file without the use of an
+implicit array:
+
+```
+h "Switch workspace 1" %{{xdotool set_desktop 0}}
+j "Switch workspace 2" %{{xdotool set_desktop 1}}
+k "Switch workspace 3" %{{xdotool set_desktop 2}}
+l "Switch workspace 4" %{{xdotool set_desktop 3}}
+```
+
+
+### Explicit Arrays
+
+An /explicit array/ is most useful when the desired chords
+are less homogeneous.
+
+```
+explicit_array -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
+```
+
+To use an explicit array begin with an open bracket (`[`)
+followed by one or more trigger keys or chord expressions.
+The array portion ends with a closing bracket (`]`) followed
+by the standard chord components, a description, zero or
+more keywords, and a command. 
 
 I think an example will make things clear:
 
 ```
 # Chord array version
-[arstgmnei] "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+[asdfghjkl] "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
 
 # Individual chords and no interpolation
 a "Switch workspace 1" %{{xdotool set_desktop 0}}
-r "Switch workspace 2" %{{xdotool set_desktop 1}}
-s "Switch workspace 3" %{{xdotool set_desktop 2}}
-t "Switch workspace 4" %{{xdotool set_desktop 3}}
+s "Switch workspace 2" %{{xdotool set_desktop 1}}
+d "Switch workspace 3" %{{xdotool set_desktop 2}}
+f "Switch workspace 4" %{{xdotool set_desktop 3}}
 g "Switch workspace 5" %{{xdotool set_desktop 4}}
-m "Switch workspace 6" %{{xdotool set_desktop 5}}
-n "Switch workspace 7" %{{xdotool set_desktop 6}}
-e "Switch workspace 8" %{{xdotool set_desktop 7}}
-i "Switch workspace 9" %{{xdotool set_desktop 8}}
+h "Switch workspace 6" %{{xdotool set_desktop 5}}
+j "Switch workspace 7" %{{xdotool set_desktop 6}}
+k "Switch workspace 8" %{{xdotool set_desktop 7}}
+l "Switch workspace 9" %{{xdotool set_desktop 8}}
 ```
 
-As you can see, chord arrays can cut down on the need to
-repeat common information across chords. However, this would
-not be useful if the resulting chords were exactly the same.
-Thankfully, interpolations make it easy for the resulting
-chords to differ without interfering with the common
-elements. 
-
-Interpolations are covered in full detail later, but the
-main idea is they provide a means of inserting metadata
-about a chord into descriptions and commands. 
+In this case, explicit arrays are only slightly different
+than an implicit array. However, explicit arrays support
+chord expressions which make them far more flexible.
 
 #### Chord Expressions
 

@@ -20,7 +20,11 @@ chord              -> trigger_key description keyword* command ;
 
 prefix             -> trigger_key description keyword* \[aq]{\[aq] ( key_chord )+ \[aq]}\[aq] ;
 
-chord_array        -> \[aq][\[aq] ( trigger_key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
+chord_array        -> ( implicit_array | explicit_array ) ;
+
+implicit_array     -> modifier* \[aq]...\[aq] description keyword* command ;
+
+explicit_array     -> \[aq][\[aq] ( trigger_key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
 
 chord_expression   -> \[aq](\[aq] trigger_key description keyword* command? \[aq])\[aq] ;
 
@@ -489,12 +493,55 @@ it comes to \f[I]chords\f[R] that are very similar but only differ in
 slightly different ways.
 .IP
 .EX
-chord_array -> \[aq][\[aq] ( trigger_key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
+chord_array -> ( implicit_array | explicit_array ) ;
 .EE
 .PP
-To use a \f[I]chord array\f[R] begin with an open bracket (\f[I][\f[R])
-followed by one or more \f[I]trigger keys\f[R] or \f[I]chord
-expressions\f[R].
+A \f[I]chord array\f[R] comes in two flavors, \f[I]implicit\f[R] and
+\f[I]explicit\f[R].
+.SS IMPLICIT ARRAY
+An \f[I]implicit array\f[R] is the simplest of the two flavors.
+It utilizes the \f[I]implicitArrayKeys\f[R] variable defined in
+\f[I]config.def.h\f[R] to generate \f[I]chords\f[R] from these
+\f[I]trigger keys\f[R].
+.IP
+.EX
+implicit_array -> modifier* \[aq]...\[aq] description keyword* command ;
+.EE
+.PP
+An \f[I]implicit array\f[R] is then zero or more modifiers, an ellipsis
+(\f[I]\&...\f[R]), a description, zero or more keywords, and a command.
+This is practially a \f[I]chord\f[R] in terms of its form, but in
+behavior an \f[I]implicit array\f[R] generates any number of
+\f[I]chords\f[R] from this simple syntax.
+.PP
+As an example, say your implicit array keys are set to \f[I]h\f[R],
+\f[I]j\f[R], \f[I]k\f[R], and \f[I]l\f[R], and you have this
+\f[I]wks\f[R] file:
+.IP
+.EX
+\&... \[dq]Switch workspace %(index+1)\[dq] %{{xdotool set_desktop %(index)}}
+.EE
+.PP
+This is the equivilant \f[I]wks\f[R] file without the use of an
+\f[I]implicit array\f[R]:
+.IP
+.EX
+h \[dq]Switch workspace 1\[dq] %{{xdotool set_desktop 0}}
+j \[dq]Switch workspace 2\[dq] %{{xdotool set_desktop 1}}
+k \[dq]Switch workspace 3\[dq] %{{xdotool set_desktop 2}}
+l \[dq]Switch workspace 4\[dq] %{{xdotool set_desktop 3}}
+.EE
+.SS EXPLICIT ARRAY
+An \f[I]explicit array\f[R] is most useful when the desired
+\f[I]chords\f[R] are less homogeneous.
+.IP
+.EX
+explicit_array -> \[aq][\[aq] ( trigger_key | chord_expression )+ \[aq]]\[aq] description keyword* command ;
+.EE
+.PP
+To use an \f[I]explicit array\f[R] begin with an open bracket
+(\f[I][\f[R]) followed by one or more \f[I]trigger keys\f[R] or
+\f[I]chord expressions\f[R].
 The array portion ends with a closing bracket (\f[I]]\f[R]) followed by
 the standard chord components, a description, zero or more keywords, and
 a command.
@@ -503,35 +550,29 @@ I think an example will make things clear:
 .IP
 .EX
 # Chord array version
-[arstgmnei] \[dq]Switch workspace %(index+1)\[dq] %{{xdotool set_desktop %(index)}}
+[asdfghjkl] \[dq]Switch workspace %(index+1)\[dq] %{{xdotool set_desktop %(index)}}
 
 # Individual chords and no interpolation
 a \[dq]Switch workspace 1\[dq] %{{xdotool set_desktop 0}}
-r \[dq]Switch workspace 2\[dq] %{{xdotool set_desktop 1}}
-s \[dq]Switch workspace 3\[dq] %{{xdotool set_desktop 2}}
-t \[dq]Switch workspace 4\[dq] %{{xdotool set_desktop 3}}
+s \[dq]Switch workspace 2\[dq] %{{xdotool set_desktop 1}}
+d \[dq]Switch workspace 3\[dq] %{{xdotool set_desktop 2}}
+f \[dq]Switch workspace 4\[dq] %{{xdotool set_desktop 3}}
 g \[dq]Switch workspace 5\[dq] %{{xdotool set_desktop 4}}
-m \[dq]Switch workspace 6\[dq] %{{xdotool set_desktop 5}}
-n \[dq]Switch workspace 7\[dq] %{{xdotool set_desktop 6}}
-e \[dq]Switch workspace 8\[dq] %{{xdotool set_desktop 7}}
-i \[dq]Switch workspace 9\[dq] %{{xdotool set_desktop 8}}
+h \[dq]Switch workspace 6\[dq] %{{xdotool set_desktop 5}}
+j \[dq]Switch workspace 7\[dq] %{{xdotool set_desktop 6}}
+k \[dq]Switch workspace 8\[dq] %{{xdotool set_desktop 7}}
+l \[dq]Switch workspace 9\[dq] %{{xdotool set_desktop 8}}
 .EE
 .PP
-As you can see, \f[I]chord arrays\f[R] can cut down on the need to
-repeat common information across \f[I]chords\f[R].
-However, this would not be useful if the resulting \f[I]chords\f[R] were
-exactly the same.
-Thankfully, \f[I]interpolations\f[R] make it easy for the resulting
-\f[I]chords\f[R] to differ without interfering with the common elements.
-.PP
-Interpolations are covered in full detail later, but the main idea is
-they provide a means of inserting metadata about a \f[I]chord\f[R] into
-\f[I]descriptions\f[R] and \f[I]commands\f[R].
+In this case, \f[I]explicit arrays\f[R] are only slightly different than
+an \f[I]implicit array\f[R].
+However, \f[I]explicit arrays\f[R] support \f[I]chord expressions\f[R]
+which make them far more flexible.
 .SS CHORD EXPRESSION
-Chord arrays can be very simple with each \f[I]chord\f[R] being only
+Explicit arrays can be very simple with each \f[I]chord\f[R] being only
 slightly different from one another.
 However, it may make sense to include chords that mostly fit into the
-\f[I]chord array\f[R] with some more distinct differences.
+\f[I]explicit array\f[R] with some more distinct differences.
 For this situation, \f[I]chord expressions\f[R] may be the answer.
 .IP
 .EX
