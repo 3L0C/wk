@@ -562,6 +562,7 @@ recreateWindows(Menu* menu, Wayland* wayland)
      */
     window->scale = 1;
     window->maxHeight = 640;
+    window->maxWidth = 640;
 
     struct wl_surface* surface = wl_compositor_create_surface(wayland->compositor);
     if (!surface) goto fail;

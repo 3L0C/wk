@@ -1,0 +1,6 @@
+build
+man
+config
+wk
+src/runtime/wayland/wlr-layer-shell-unstable-v1.*
+src/runtime/wayland/xdg-shell.c
