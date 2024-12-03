@@ -305,6 +305,7 @@ drawText(PangoLayout* layout, const char* text, uint32_t* cellw, uint32_t* x, ui
 {
     assert(layout), assert(text), assert(cellw), assert(x), assert(y);
     if (*cellw == 0) return false;
+    if ((uint32_t)ellipsisWidth > *cellw) return false;
 
     int w, h;
     pango_layout_set_text(layout, text, -1);
