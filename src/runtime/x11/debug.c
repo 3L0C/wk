@@ -18,7 +18,7 @@ debugRootDispaly(struct display* root)
 }
 
 void
-debugWindow(X11Window* window)
+disassembleX11Window(X11Window* window)
 {
     debugPrintHeader(" WkX11Window ");
     debugMsgWithIndent(0, "|");
@@ -30,7 +30,7 @@ debugWindow(X11Window* window)
     debugMsgWithIndent(0, "| Window max height: %04u", window->maxHeight);
     debugRootDispaly(&window->root);
     debugMsgWithIndent(0, "|");
-    debugCairoPaint(&window->paint);
+    disassembleCairoPaint(&window->paint);
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
 }

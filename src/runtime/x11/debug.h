@@ -3,6 +3,6 @@
 
 #include "window.h"
 
-void debugWindow(X11Window* window);
+void disassembleX11Window(X11Window* window);
 
 #endif /* WK_X11_DEBUG_H_ */

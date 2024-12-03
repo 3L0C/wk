@@ -370,7 +370,7 @@ initX11(X11* x11, X11Window* window, Menu* menu)
     window->render = cairoPaint;
     initBuffer(window);
     cairoInitPaint(menu, &window->paint);
-    if (menu->debug) debugWindow(window);
+    if (menu->debug) disassembleX11Window(window);
     return true;
 }
 

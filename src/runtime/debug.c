@@ -5,7 +5,7 @@
 #include "debug.h"
 
 void
-debugCairoPaint(const CairoPaint* paint)
+disassembleCairoPaint(const CairoPaint* paint)
 {
     /* FOREGROUND - key*/
     debugMsgWithIndent(0, "|---- Foreground Key Value ----");

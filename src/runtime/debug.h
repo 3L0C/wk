@@ -3,6 +3,6 @@
 
 #include "cairo.h"
 
-void debugCairoPaint(const CairoPaint* paint);
+void disassembleCairoPaint(const CairoPaint* paint);
 
 #endif /* WK_RUNTIME_DEBUG_H_ */
