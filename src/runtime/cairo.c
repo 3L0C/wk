@@ -314,14 +314,12 @@ drawText(PangoLayout* layout, const char* text, uint32_t* cellw, uint32_t* x, ui
     {
         drawTruncatedText(layout, text, *cellw);
         *cellw = 0;
-        goto end;
     }
     else
     {
         *cellw -= w;
     }
 
-end:
     cairo_move_to(cairo->cr, *x, *y);
     pango_cairo_show_layout(cairo->cr, layout);
     *x += w;
@@ -445,9 +443,6 @@ drawGrid()
         {
             uint32_t y = starty + (j * cellHeight) + hpadding;
             drawHintText(layout, idx, cellWidth - (wpadding * 2), x, y);
-            /* cairo_move_to(cairo->cr, x, y); */
-            /* drawHintText(layout, mainMenu->keyChords[idx].hint, cellWidth - (wpadding * 2)); */
-            /* pango_cairo_show_layout(cairo->cr, layout); */
         }
     }
 
