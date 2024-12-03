@@ -21,6 +21,7 @@
 
 /* local includes */
 #include "wayland.h"
+#include "debug.h"
 #include "window.h"
 #include "wlr-layer-shell-unstable-v1.h"
 
@@ -396,6 +397,8 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
     assert(window), assert(menu);
 
     resizeWindow(window, menu);
+
+    if (menu->debug) disassembleWaylandWindow(window);
 
     Buffer* buffer = nextBuffer(window);
     if (!buffer)
