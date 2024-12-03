@@ -408,8 +408,8 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| Cols:              %04u",  menu->cols);
     debugMsgWithIndent(0, "| Width:             %04u",  menu->width);
     debugMsgWithIndent(0, "| Height:            %04u",  menu->height);
-    debugMsgWithIndent(0, "| Max Win Width:     %04u",  menu->maxWinWidth);
-    debugMsgWithIndent(0, "| Max Win Height:    %04u",  menu->maxWinHeight);
+    /* debugMsgWithIndent(0, "| Max Win Width:     %04u",  menu->maxWinWidth); */
+    /* debugMsgWithIndent(0, "| Max Win Height:    %04u",  menu->maxWinHeight); */
     debugMsgWithIndent(0, "| Window position:   %s",
         (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP")
     );
