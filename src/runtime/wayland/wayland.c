@@ -561,7 +561,8 @@ recreateWindows(Menu* menu, Wayland* wayland)
      * surface.enter before we actually need to render the first frame.
      */
     window->scale = 1;
-    window->maxHeight = 640;
+    window->maxHeight = 480;
+    window->maxWidth = 640;
 
     struct wl_surface* surface = wl_compositor_create_surface(wayland->compositor);
     if (!surface) goto fail;
