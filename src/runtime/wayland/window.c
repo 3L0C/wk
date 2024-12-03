@@ -420,6 +420,9 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
     buffer->busy = true;
     window->renderPending = menuIsDelayed(menu);
 
+    menu->maxWinWidth = window->maxWidth;
+    menu->maxWinHeight = window->maxHeight;
+
     return true;
 }
 

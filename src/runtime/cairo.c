@@ -463,6 +463,8 @@ cairoPaint(Cairo* cr, Menu* menu)
 
     if (menuIsDelayed(menu)) return true;
 
+    if (menu->debug) disassembleMenu(menu);
+
     cairo = cr;
     mainMenu = menu;
     width = menu->width;

@@ -67,6 +67,8 @@ typedef struct
     uint32_t cols;
     uint32_t width;
     uint32_t height;
+    uint32_t maxWinWidth;
+    uint32_t maxWinHeight;
     MenuPosition position;
     uint32_t borderWidth;
     double borderRadius;

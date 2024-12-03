@@ -399,8 +399,8 @@ disassembleMenu(const Menu* menu)
     debugMsg(true, "|");
     debugMsgWithIndent(0, "| Delimiter:         '%s'",  menu->delimiter);
     debugMsgWithIndent(0, "| Max columns:       %04u",  menu->maxCols);
-    debugMsgWithIndent(0, "| Window width:      %04i",  menu->menuWidth);
-    debugMsgWithIndent(0, "| Window gap:        %04i",  menu->menuGap);
+    debugMsgWithIndent(0, "| Menu width:        %04i",  menu->menuWidth);
+    debugMsgWithIndent(0, "| Menu gap:          %04i",  menu->menuGap);
     debugMsgWithIndent(0, "| Width padding:     %04u",  menu->wpadding);
     debugMsgWithIndent(0, "| Height padding:    %04u",  menu->hpadding);
     debugMsgWithIndent(0, "| Cell height:       %04u",  menu->cellHeight);
@@ -408,6 +408,8 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| Cols:              %04u",  menu->cols);
     debugMsgWithIndent(0, "| Width:             %04u",  menu->width);
     debugMsgWithIndent(0, "| Height:            %04u",  menu->height);
+    debugMsgWithIndent(0, "| Max Win Width:     %04u",  menu->maxWinWidth);
+    debugMsgWithIndent(0, "| Max Win Height:    %04u",  menu->maxWinHeight);
     debugMsgWithIndent(0, "| Window position:   %s",
         (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP")
     );
