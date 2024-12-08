@@ -1,6 +1,6 @@
 # Package info
 NAME         := wk
-VERSION      := 0.1.2
+VERSION      := 0.1.3
 
 # Tools
 PKG_CONFIG   ?= pkg-config
