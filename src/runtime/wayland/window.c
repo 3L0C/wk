@@ -317,7 +317,6 @@ resizeWinHeight(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    /* Output* output = window->wayland->selectedOutput; */
     uint32_t outputHeight = window->maxHeight;
 
     if (window->height >= outputHeight)
@@ -419,9 +418,6 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
     wl_surface_commit(window->surface);
     buffer->busy = true;
     window->renderPending = menuIsDelayed(menu);
-
-    /* menu->maxWinWidth = window->maxWidth; */
-    /* menu->maxWinHeight = window->maxHeight; */
 
     return true;
 }

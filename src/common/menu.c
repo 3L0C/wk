@@ -559,8 +559,6 @@ initMenu(Menu* menu, KeyChord* keyChords)
     menu->cols = 0;
     menu->width = 0;
     menu->height = 0;
-    /* menu->maxWinWidth = 0; */
-    /* menu->maxWinHeight = 0; */
     menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
     menu->borderWidth = borderWidth;
     menu->borderRadius = borderRadius;
@@ -707,7 +705,6 @@ tryStdin(Menu* menu)
 
     while ((n = getline(&line, &lineLength, stdin)) > 0)
     {
-        /* addLineToScript(client, line, n); */
         appendToString(&menu->client.script, line, n);
     }
     free(line);

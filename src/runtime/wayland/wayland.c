@@ -563,8 +563,6 @@ recreateWindows(Menu* menu, Wayland* wayland)
     window->scale = 1;
     window->maxWidth = 640;
     window->maxHeight = 480;
-    /* window->maxWidth = menu->maxWinWidth != 0 ? menu->maxWinWidth : 640; */
-    /* window->maxHeight = menu->maxWinHeight != 0 ? menu->maxWinHeight : 480; */
 
     struct wl_surface* surface = wl_compositor_create_surface(wayland->compositor);
     if (!surface) goto fail;
@@ -681,7 +679,6 @@ runWayland(Menu* menu)
         switch (status = pollKey(menu, &wayland))
         {
         case MENU_STATUS_RUNNING: break;
-        /* case MENU_STATUS_DAMAGED: recreateWindows(menu, &wayland); break; */
         case MENU_STATUS_DAMAGED: render(menu, &wayland); break;
         case MENU_STATUS_EXIT_OK: result = EX_OK; break;
         case MENU_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
