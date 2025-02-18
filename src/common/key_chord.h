@@ -5,29 +5,58 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum
-{
-    KEY_CHORD_STATE_IS_NULL,
-    KEY_CHORD_STATE_NOT_NULL,
-} KeyChordState;
+/* Common includes */
+#include "array.h"
+#include "common/string.h"
 
-typedef enum
+typedef uint16_t ChordFlag;
+enum
 {
-    KEY_TYPE_IS_STRICTLY_MOD,
-    KEY_TYPE_IS_SPECIAL,
-    KEY_TYPE_IS_NORMAL,
-    KEY_TYPE_IS_UNKNOWN,
-} KeyType;
+    FLAG_NONE         = 0,
+    FLAG_KEEP         = 1 <<  0,
+    FLAG_CLOSE        = 1 <<  1,
+    FLAG_INHERIT      = 1 <<  2,
+    FLAG_IGNORE       = 1 <<  3,
+    FLAG_IGNORE_SORT  = 1 <<  4,
+    FLAG_UNHOOK       = 1 <<  5,
+    FLAG_DEFLAG       = 1 <<  6,
+    FLAG_NO_BEFORE    = 1 <<  7,
+    FLAG_NO_AFTER     = 1 <<  8,
+    FLAG_WRITE        = 1 <<  9,
+    FLAG_EXECUTE      = 1 << 10,
+    FLAG_SYNC_COMMAND = 1 << 11,
+    FLAG_SYNC_BEFORE  = 1 << 12,
+    FLAG_SYNC_AFTER   = 1 << 13
+};
 
-typedef struct
+typedef uint8_t KeyChordState;
+enum
 {
-    bool ctrl:1;
-    bool alt:1;
-    bool hyper:1;
-    bool shift:1;
-} Modifiers;
+    KC_NULL,
+    KC_NOT_NULL,
+};
 
-typedef enum
+typedef uint8_t KeyType;
+enum
+{
+    KT_STRICTLY_MOD,
+    KT_SPECIAL,
+    KT_NORMAL,
+    KT_UNKNOWN,
+};
+
+typedef uint8_t Modifier;
+enum
+{
+    MOD_NONE  = 0,
+    MOD_CTRL  = 1 << 0,
+    MOD_META  = 1 << 1,
+    MOD_HYPER = 1 << 2,
+    MOD_SHIFT = 1 << 3
+};
+
+typedef uint8_t SpecialKey;
+enum
 {
     SPECIAL_KEY_NONE,
     SPECIAL_KEY_LEFT,
@@ -87,63 +116,53 @@ typedef enum
     SPECIAL_KEY_AUDIO_PREV,
     SPECIAL_KEY_AUDIO_NEXT,
     SPECIAL_KEY_LAST,
-} SpecialKey;
+};
 
 typedef struct
 {
-    bool keep:1;
-    bool close:1;
-    bool inherit:1;
-    bool ignore:1;
-    bool ignoreSort:1;
-    bool unhook:1;
-    bool deflag:1;
-    bool nobefore:1;
-    bool noafter:1;
-    bool write:1;
-    bool execute:1;
-    bool syncCommand:1;
-    bool syncBefore:1;
-    bool syncAfter:1;
-} ChordFlags;
-
-typedef struct
-{
-    Modifiers mods;
+    Modifier mods;
     SpecialKey special;
-    char* repr;
-    size_t len;
+    String repr;
 } Key;
 
 typedef struct KeyChord
 {
     KeyChordState state;
     Key key;
-    char* description;
-    char* command;
-    char* before;
-    char* after;
-    ChordFlags flags;
-    struct KeyChord* keyChords;
+    String description;
+    String command;
+    String before;
+    String after;
+    ChordFlag flags;
+    Array keyChords;
 } KeyChord;
 
-void copyChordFlags(const ChordFlags* from, ChordFlags* to);
-void copyChordModifiers(const Modifiers* from, Modifiers* to);
-void copyKey(const Key* from, Key* to);
-void copyKeyChord(const KeyChord* from, KeyChord* to);
-uint32_t countChordFlags(const ChordFlags* flags);
-uint32_t countKeyChords(const KeyChord* keyChords);
-uint32_t countModifiers(const Modifiers* mods);
-const char* getSpecialKeyLiteral(const SpecialKey special);
-const char* getSpecialKeyRepr(const SpecialKey special);
-bool hasChordFlags(const ChordFlags* flags);
-void initKey(Key* key);
-void initKeyChord(KeyChord* keyChord);
-void initChordFlags(ChordFlags* flags);
-void initChordModifiers(Modifiers* mods);
-bool hasActiveModifier(const Modifiers* mods);
-bool hasDefaultChordFlags(const ChordFlags* flags);
-bool keysAreEqual(const Key* a, const Key* b, bool shiftIsSignificant);
-void makeNullKeyChord(KeyChord* keyChord);
+/* Helpers */
+void chordFlagCopy(const ChordFlag* from, ChordFlag* to);
+int  chordFlagCount(ChordFlag flag);
+bool chordFlagHasAnyActive(ChordFlag flag);
+void chordFlagInit(ChordFlag* flag);
+bool chordFlagIsActive(ChordFlag flag, ChordFlag test);
+
+void modifierCopy(const Modifier* from, Modifier* to);
+int  modifierCount(Modifier mod);
+bool modifierHasAnyActive(Modifier mod);
+void modifierInit(Modifier* mod);
+bool modifierIsActive(Modifier mod, Modifier test);
+
+const char* specialKeyGetLiteral(const SpecialKey special);
+const char* specialKeyGetRepr(const SpecialKey special);
+
+/* Core */
+void keyCopy(const Key* from, Key* to);
+void keyInit(Key* key);
+bool keyIsEqual(const Key* a, const Key* b, bool shiftIsSignificant);
+
+void keyChordArrayFree(Array* keyChords);
+void keyChordCopy(const KeyChord* from, KeyChord* to);
+void keyChordFree(KeyChord* keyChord);
+void keyChordInit(KeyChord* keyChord);
+void keyChordMakeNull(KeyChord* keyChord);
+
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

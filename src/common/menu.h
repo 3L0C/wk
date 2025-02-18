@@ -4,23 +4,26 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "string.h"
+#include "common/arena.h"
+#include "common/array.h"
 #include "key_chord.h"
 
 #define MENU_MIN_WIDTH 80
 
 typedef void (*CleanupFP)(void* xp);
 
-typedef enum
+typedef uint8_t ForegroundColor;
+enum
 {
     FOREGROUND_COLOR_KEY,
     FOREGROUND_COLOR_DELIMITER,
     FOREGROUND_COLOR_PREFIX,
     FOREGROUND_COLOR_CHORD,
     FOREGROUND_COLOR_LAST,
-} ForegroundColor;
+};
 
-typedef enum
+typedef uint8_t MenuColor;
+enum
 {
     MENU_COLOR_KEY,
     MENU_COLOR_DELIMITER,
@@ -29,7 +32,23 @@ typedef enum
     MENU_COLOR_BACKGROUND,
     MENU_COLOR_BORDER,
     MENU_COLOR_LAST
-} MenuColor;
+};
+
+typedef uint8_t MenuStatus;
+enum
+{
+    MENU_STATUS_RUNNING,
+    MENU_STATUS_DAMAGED,
+    MENU_STATUS_EXIT_OK,
+    MENU_STATUS_EXIT_SOFTWARE,
+};
+
+typedef uint8_t MenuPosition;
+enum
+{
+    MENU_POS_BOTTOM,
+    MENU_POS_TOP
+};
 
 typedef struct
 {
@@ -40,23 +59,29 @@ typedef struct
     uint8_t a;
 } MenuHexColor;
 
-typedef enum
-{
-    MENU_STATUS_RUNNING,
-    MENU_STATUS_DAMAGED,
-    MENU_STATUS_EXIT_OK,
-    MENU_STATUS_EXIT_SOFTWARE,
-} MenuStatus;
-
-typedef enum
-{
-    MENU_POS_BOTTOM,
-    MENU_POS_TOP
-} MenuPosition;
-
 typedef struct
 {
     const char* delimiter;
+    const char* shell;
+    const char* font;
+    const char* implicitArrayKeys;
+    double borderRadius;
+    MenuHexColor colors[MENU_COLOR_LAST];
+    struct Client
+    {
+        const char* keys;
+        const char* transpile;
+        const char* wksFile;
+        char* script;
+        bool tryScript;
+    } client;
+    struct timespec timer;
+    CleanupFP cleanupfp;
+    Array* keyChords;
+    Array* keyChordsHead;
+    void* xp;
+    Arena arena;
+
     uint32_t maxCols;
     int32_t  menuWidth;
     int32_t  menuGap;
@@ -67,57 +92,27 @@ typedef struct
     uint32_t cols;
     uint32_t width;
     uint32_t height;
-    MenuPosition position;
     uint32_t borderWidth;
-    double borderRadius;
-    MenuHexColor colors[MENU_COLOR_LAST];
-    const char* shell;
-    const char* font;
-    const char* implicitArrayKeys;
-    KeyChord* keyChords;
-    KeyChord* keyChordsHead;
-    uint32_t keyChordCount;
+    uint32_t delay;
+
+    MenuPosition position;
     bool debug;
     bool sort;
     bool dirty;
-    struct Client
-    {
-        const char* keys;
-        const char* transpile;
-        const char* wksFile;
-        bool tryScript;
-        String script;
-    } client;
-    struct Garbage
-    {
-        char* shell;
-        char* font;
-        char* implicitArrayKeys;
-        char* foregroundKeyColor;
-        char* foregroundDelimiterColor;
-        char* foregroundPrefixColor;
-        char* foregroundChordColor;
-        char* backgroundColor;
-        char* borderColor;
-    } garbage;
-    uint32_t delay;
-    struct timespec timer;
-    CleanupFP cleanupfp;
-    void* xp;
 } Menu;
 
-void countMenuKeyChords(Menu* menu);
-int displayMenu(Menu* menu);
-void freeMenuGarbage(Menu* menu);
-MenuStatus handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant);
-void initMenu(Menu* menu, KeyChord* keyChords);
+int menuDisplay(Menu* menu);
+void menuFree(Menu* menu, Array* keyChords);
+MenuStatus menuHandleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant);
+void menuInit(Menu* menu, Array* keyChords);
 bool menuIsDelayed(Menu* menu);
+void menuParseArgs(Menu* menu, int* argc, char*** argv);
 void menuResetTimer(Menu* menu);
-void parseArgs(Menu* menu, int* argc, char*** argv);
-void setMenuColor(Menu* menu, const char* color, MenuColor colorType);
-MenuStatus spawn(const Menu* menu, const char* cmd, bool async);
-bool statusIsError(MenuStatus status);
-bool statusIsRunning(MenuStatus status);
-bool tryStdin(Menu* menu);
+void menuSetColor(Menu* menu, const char* color, MenuColor colorType);
+MenuStatus menuSpawn(const Menu* menu, const String* cmd, bool async);
+bool menuTryStdin(Menu* menu);
+
+bool menuStatusIsError(MenuStatus status);
+bool menuStatusIsRunning(MenuStatus status);
 
 #endif /* WK_COMMON_MENU_H_ */

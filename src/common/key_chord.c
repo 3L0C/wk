@@ -2,11 +2,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 /* local includes */
 #include "key_chord.h"
+#include "array.h"
+#include "string.h"
 
+/* Helpers */
 typedef struct
 {
     const char* literal;
@@ -74,276 +76,266 @@ static const SpecialTable specialTable[SPECIAL_KEY_LAST] = {
 };
 
 void
-copyChordFlags(const ChordFlags* from, ChordFlags* to)
+chordFlagCopy(const ChordFlag* from, ChordFlag* to)
 {
     assert(from), assert(to);
 
-    to->keep = from->keep;
-    to->close = from->close;
-    to->inherit = from->inherit;
-    to->ignore = from->ignore;
-    to->ignoreSort = from->ignoreSort;
-    to->unhook = from->unhook;
-    to->deflag = from->deflag;
-    to->nobefore = from->nobefore;
-    to->noafter = from->noafter;
-    to->write = from->write;
-    to->execute = from->execute;
-    to->syncCommand = from->syncCommand;
-    to->syncBefore = from->syncBefore;
-    to->syncAfter = from->syncAfter;
+    *to = *from;
 }
 
-void
-copyChordModifiers(const Modifiers* from, Modifiers* to)
+int
+chordFlagCount(ChordFlag flag)
 {
-    assert(from), assert(to);
-
-    to->ctrl = from->ctrl;
-    to->alt = from->alt;
-    to->hyper = from->hyper;
-    to->shift = from->shift;
-}
-
-void
-copyKey(const Key* from, Key* to)
-{
-    assert(from), assert(to);
-
-    copyChordModifiers(&from->mods, &to->mods);
-    to->special = from->special;
-    to->repr = from->repr;
-    to->len = from->len;
-}
-
-void
-copyKeyChord(const KeyChord* from, KeyChord* to)
-{
-    assert(from), assert(to);
-
-    to->state = from->state;
-    copyKey(&from->key, &to->key);
-    to->description = from->description;
-    to->command = from->command;
-    to->before = from->before;
-    to->after = from->after;
-    copyChordFlags(&from->flags, &to->flags);
-    to->keyChords = from->keyChords;
-}
-
-uint32_t
-countChordFlags(const ChordFlags* flags)
-{
-    assert(flags);
-
-    uint32_t result = 0;
-
-    if (flags->keep) result++;
-    if (flags->close) result++;
-    if (flags->inherit) result++;
-    if (flags->ignore) result++;
-    if (flags->ignoreSort) result++;
-    if (flags->unhook) result++;
-    if (flags->deflag) result++;
-    if (flags->nobefore) result++;
-    if (flags->noafter) result++;
-    if (flags->write) result++;
-    if (flags->execute) result++;
-    if (flags->syncCommand) result++;
-    if (flags->syncBefore) result++;
-    if (flags->syncAfter) result++;
+    int result = 0;
+    while (flag)
+    {
+        result++;
+        flag &= flag - 1;
+    }
 
     return result;
 }
 
-uint32_t
-countKeyChords(const KeyChord* keyChords)
+bool
+chordFlagHasAnyActive(ChordFlag flag)
 {
-    assert(keyChords);
+    assert(flag);
 
-    uint32_t count = 0;
-    while (keyChords[count].state == KEY_CHORD_STATE_NOT_NULL) count++;
+    static const ChordFlag any = FLAG_KEEP
+                                | FLAG_CLOSE
+                                | FLAG_INHERIT
+                                | FLAG_IGNORE
+                                | FLAG_IGNORE_SORT
+                                | FLAG_UNHOOK
+                                | FLAG_DEFLAG
+                                | FLAG_NO_BEFORE
+                                | FLAG_NO_AFTER
+                                | FLAG_WRITE
+                                | FLAG_EXECUTE
+                                | FLAG_SYNC_COMMAND
+                                | FLAG_SYNC_BEFORE
+                                | FLAG_SYNC_AFTER;
 
-    return count;
+    return (flag & any) != 0;
 }
 
-uint32_t
-countModifiers(const Modifiers* mods)
+bool
+chordFlagsAreDefault(ChordFlag flag)
 {
-    assert(mods);
+    return !chordFlagHasAnyActive(flag);
+}
 
-    uint32_t result = 0;
-    if (mods->ctrl) result++;
-    if (mods->alt) result++;
-    if (mods->hyper) result++;
-    if (mods->shift) result++;
+void
+chordFlagInit(ChordFlag* flag)
+{
+    assert(flag);
+
+    *flag = FLAG_NONE;
+}
+
+bool
+chordFlagIsActive(ChordFlag flag, ChordFlag test)
+{
+    return (flag & test) != 0;
+}
+
+static bool
+modifiersAreEqual(Modifier a, Modifier b, bool shiftIsSignificant)
+{
+    assert(a), assert(b);
+
+    static const Modifier mask = ~(Modifier)MOD_SHIFT;
+
+    if (shiftIsSignificant) return a == b;
+
+    return (a & mask) == (b & mask);
+}
+
+void
+modifierCopy(const Modifier* from, Modifier* to)
+{
+    assert(from), assert(to);
+
+    *to = *from;
+}
+
+int
+modifierCount(Modifier mod)
+{
+    int result = 0;
+    while (mod)
+    {
+        result++;
+        mod &= mod - 1;
+    }
 
     return result;
 }
+
+bool
+modifierHasAnyActive(Modifier mod)
+{
+    assert(mod);
+
+    static const Modifier any = MOD_CTRL
+                               | MOD_META
+                               | MOD_HYPER
+                               | MOD_SHIFT;
+
+    return (mod & any) != 0;
+}
+
+void
+modifierInit(Modifier* mod)
+{
+    assert(mod);
+
+    *mod = MOD_NONE;
+}
+
+bool
+modifierIsActive(Modifier mod, Modifier test)
+{
+    return (mod & test) != 0;
+}
+
 
 const char*
-getSpecialKeyLiteral(const SpecialKey special)
+specialKeyGetLiteral(const SpecialKey special)
 {
     return specialTable[special].literal;
 }
 
 const char*
-getSpecialKeyRepr(const SpecialKey special)
+specialKeyGetRepr(const SpecialKey special)
 {
     return specialTable[special].repr;
 }
 
-bool
-hasChordFlags(const ChordFlags* flags)
-{
-    assert(flags);
-
-    return !hasDefaultChordFlags(flags);
-}
-
-void
-initKey(Key* key)
+/* Core */
+static bool
+keyIsSpecial(const Key* key)
 {
     assert(key);
 
-    initChordModifiers(&key->mods);
+    return key->special != SPECIAL_KEY_NONE;
+}
+
+static bool
+keyIsEqualSpecial(const Key* a, const Key* b)
+{
+    assert(a), assert(b);
+
+    if (!keyIsSpecial(a) || !keyIsSpecial(b)) return false;
+
+    return (
+        a->special == b->special &&
+        modifiersAreEqual(a->mods, b->mods, true)
+    );
+}
+
+void
+keyCopy(const Key* from, Key* to)
+{
+    assert(from), assert(to);
+
+    to->mods = from->mods;
+    to->special = from->special;
+    to->repr = from->repr;
+}
+
+void
+keyInit(Key* key)
+{
+    assert(key);
+
+    modifierInit(&key->mods);
     key->special = SPECIAL_KEY_NONE;
-    key->repr = NULL;
-    key->len = 0;
+    stringInit(&key->repr);
+}
+
+bool
+keyIsEqual(const Key* a, const Key* b, bool shiftIsSignificant)
+{
+    assert(a), assert(b);
+
+    if (keyIsEqualSpecial(a, b)) return true;
+    return (
+        a->special == b->special &&
+        modifiersAreEqual(a->mods, b->mods, shiftIsSignificant) &&
+        stringEquals(&a->repr, &b->repr)
+    );
 }
 
 void
-initKeyChord(KeyChord* keyChord)
+keyChordArrayFree(Array* keyChords)
+{
+    assert(keyChords);
+
+    ArrayIterator iter = arrayIteratorMake(keyChords);
+    KeyChord* keyChord = NULL;
+    while ((keyChord = ARRAY_ITER_NEXT(&iter, KeyChord)) != NULL)
+    {
+        keyChordFree(keyChord);
+    }
+    arrayFree(keyChords);
+}
+
+void
+keyChordCopy(const KeyChord* from, KeyChord* to)
+{
+    assert(from), assert(to);
+
+    to->state = from->state;
+    keyCopy(&from->key, &to->key);
+    to->description = from->description;
+    to->command = from->command;
+    to->before = from->before;
+    to->after = from->after;
+    chordFlagCopy(&from->flags, &to->flags);
+    to->keyChords = from->keyChords;
+}
+
+void
+keyChordFree(KeyChord* keyChord)
 {
     assert(keyChord);
 
-    keyChord->state = KEY_CHORD_STATE_NOT_NULL;
-    initKey(&keyChord->key);
-    keyChord->description = NULL;
-    keyChord->command = NULL;
-    keyChord->before = NULL;
-    keyChord->after = NULL;
-    initChordFlags(&keyChord->flags);
-    keyChord->keyChords = NULL;
+    stringFree(&keyChord->key.repr);
+    stringFree(&keyChord->description);
+    stringFree(&keyChord->command);
+    stringFree(&keyChord->before);
+    stringFree(&keyChord->after);
+    keyChordArrayFree(&keyChord->keyChords);
 }
 
 void
-initChordFlags(ChordFlags* flags)
-{
-    assert(flags);
-
-    flags->keep = false;
-    flags->close = false;
-    flags->inherit = false;
-    flags->ignore = false;
-    flags->ignoreSort = false;
-    flags->unhook = false;
-    flags->deflag = false;
-    flags->nobefore = false;
-    flags->noafter = false;
-    flags->write = false;
-    flags->execute = false;
-    flags->syncCommand = false;
-    flags->syncBefore = false;
-    flags->syncAfter = false;
-}
-
-void
-initChordModifiers(Modifiers* mods)
-{
-    assert(mods);
-
-    mods->ctrl = false;
-    mods->alt = false;
-    mods->hyper = false;
-    mods->shift = false;
-}
-
-bool
-hasActiveModifier(const Modifiers* mods)
-{
-    assert(mods);
-
-    return (mods->ctrl || mods->alt || mods->hyper || mods->shift);
-}
-
-bool
-hasDefaultChordFlags(const ChordFlags* flags)
-{
-    return !(
-        flags->keep ||
-        flags->close ||
-        flags->inherit ||
-        flags->ignore ||
-        flags->ignoreSort ||
-        flags->unhook ||
-        flags->deflag ||
-        flags->nobefore ||
-        flags->noafter ||
-        flags->write ||
-        flags->execute ||
-        flags->syncCommand ||
-        flags->syncBefore ||
-        flags->syncAfter
-    );
-}
-
-static bool
-modsAreEqual(const Modifiers* a, const Modifiers* b, bool shiftIsSignificant)
-{
-    assert(a), assert(b);
-
-    return (
-        a->ctrl == b->ctrl &&
-        a->alt == b->alt &&
-        a->hyper == b->hyper &&
-        (!shiftIsSignificant || a->shift == b->shift)
-    );
-}
-
-static bool
-keysAreSpecial(const Key* a, const Key* b)
-{
-    assert(a), assert(b);
-
-    return a->special != SPECIAL_KEY_NONE && b->special != SPECIAL_KEY_NONE;
-}
-
-static bool
-specialKeysAreEqual(const Key* a, const Key* b)
-{
-    assert(a), assert(b);
-
-    return (
-        a->special == b->special &&
-        modsAreEqual(&a->mods, &b->mods, true)
-    );
-}
-
-bool
-keysAreEqual(const Key* a, const Key* b, bool shiftIsSignificant)
-{
-    assert(a), assert(b);
-
-    if (keysAreSpecial(a, b) && specialKeysAreEqual(a, b)) return true;
-    return (
-        a->special == b->special &&
-        modsAreEqual(&a->mods, &b->mods, shiftIsSignificant) &&
-        strcmp(a->repr, b->repr) == 0
-    );
-}
-
-void
-makeNullKeyChord(KeyChord* keyChord)
+keyChordInit(KeyChord* keyChord)
 {
     assert(keyChord);
 
-    keyChord->state = KEY_CHORD_STATE_IS_NULL;
-    initKey(&keyChord->key);
-    keyChord->description = NULL;
-    keyChord->command = NULL;
-    keyChord->before = NULL;
-    keyChord->after = NULL;
-    initChordFlags(&keyChord->flags);
-    keyChord->keyChords = NULL;
+    keyChord->state = KC_NOT_NULL;
+    keyInit(&keyChord->key);
+    stringInit(&keyChord->description);
+    stringInit(&keyChord->command);
+    stringInit(&keyChord->before);
+    stringInit(&keyChord->after);
+    chordFlagInit(&keyChord->flags);
+    keyChord->keyChords = ARRAY_INIT(KeyChord);
 }
+
+void
+keyChordMakeNull(KeyChord* keyChord)
+{
+    assert(keyChord);
+
+    keyChord->state = KC_NULL;
+    keyInit(&keyChord->key);
+    stringInit(&keyChord->description);
+    stringInit(&keyChord->command);
+    stringInit(&keyChord->before);
+    stringInit(&keyChord->after);
+    chordFlagInit(&keyChord->flags);
+    keyChord->keyChords = ARRAY_INIT(KeyChord);
+}
+

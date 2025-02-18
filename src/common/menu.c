@@ -1,3 +1,5 @@
+#include "arena.h"
+#include "array.h"
 #include <assert.h>
 #include <bits/getopt_core.h>
 #include <errno.h>
@@ -28,19 +30,12 @@
 /* local includes */
 #include "common.h"
 #include "debug.h"
-#include "menu.h"
 #include "key_chord.h"
-
-void
-countMenuKeyChords(Menu* menu)
-{
-    assert(menu);
-
-    menu->keyChordCount = countKeyChords(menu->keyChords);
-}
+#include "menu.h"
+#include "string.h"
 
 int
-displayMenu(Menu* menu)
+menuDisplay(Menu* menu)
 {
     assert(menu);
 
@@ -62,87 +57,84 @@ displayMenu(Menu* menu)
 }
 
 void
-freeMenuGarbage(Menu* menu)
+menuFree(Menu* menu, Array* keyChords)
 {
-    if (menu->garbage.shell) free(menu->garbage.shell);
-    if (menu->garbage.font) free(menu->garbage.font);
-    if (menu->garbage.implicitArrayKeys) free(menu->garbage.implicitArrayKeys);
-    if (menu->garbage.foregroundKeyColor) free(menu->garbage.foregroundKeyColor);
-    if (menu->garbage.foregroundDelimiterColor) free(menu->garbage.foregroundDelimiterColor);
-    if (menu->garbage.foregroundPrefixColor) free(menu->garbage.foregroundPrefixColor);
-    if (menu->garbage.foregroundChordColor) free(menu->garbage.foregroundChordColor);
-    if (menu->garbage.backgroundColor) free(menu->garbage.backgroundColor);
-    if (menu->garbage.borderColor) free(menu->garbage.borderColor);
+    assert(menu);
+
+    if (menu->keyChordsHead != keyChords) keyChordArrayFree(menu->keyChordsHead);
+    arenaFree(&menu->arena);
 }
 
 static MenuStatus
-handlePrefix(Menu* menu, const KeyChord* keyChord)
+menuHandlePrefix(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
     debugMsg(menu->debug, "Found prefix.");
 
-    menu->keyChords = keyChord->keyChords;
-    countMenuKeyChords(menu);
+    menu->keyChords = &keyChord->keyChords;
     return MENU_STATUS_DAMAGED;
 }
 
 static void
-handleCommand(Menu* menu, const KeyChord* keyChord)
+menuHandleCommand(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (keyChord->flags.write)
+    if (keyChord->flags & FLAG_WRITE)
     {
-        printf("%s\n", keyChord->command);
+        char buffer[keyChord->command.length + 1];
+        stringWriteToBuffer(&keyChord->command, buffer);
+        printf("%s\n", buffer);
         return;
     }
-    spawn(menu, keyChord->command, keyChord->flags.syncCommand);
+
+    menuSpawn(menu, &keyChord->command, keyChord->flags);
 }
 
 static MenuStatus
-handleCommands(Menu* menu, const KeyChord* keyChord)
+menuHandleCommands(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    /* no command */
-    if (!keyChord->command) return MENU_STATUS_EXIT_OK;
+    /* TODO handle before/after write rather than always spawn */
+    menuSpawn(menu, &keyChord->before, chordFlagIsActive(keyChord->flags, FLAG_SYNC_BEFORE));
+    menuHandleCommand(menu, keyChord);
+    menuSpawn(menu, &keyChord->after, chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
-    if (keyChord->before) spawn(menu, keyChord->before, keyChord->flags.syncBefore);
-    handleCommand(menu, keyChord);
-    if (keyChord->after) spawn(menu, keyChord->after, keyChord->flags.syncAfter);
-    return keyChord->flags.keep ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
+    return chordFlagIsActive(keyChord->flags, FLAG_KEEP) ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
 }
 
 static MenuStatus
-pressKey(Menu* menu, const KeyChord* keyChord)
+menuPressKey(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (keyChord->keyChords) return handlePrefix(menu, keyChord);
-    return handleCommands(menu, keyChord);
+    if (arrayIsEmpty(menu->keyChords)) return menuHandlePrefix(menu, keyChord);
+    return menuHandleCommands(menu, keyChord);
 }
 
 MenuStatus
-handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
+menuHandleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
 {
     assert(menu), assert(key);
 
-    uint32_t len = menu->keyChordCount;
-    const KeyChord* keyChords = menu->keyChords;
-
-    for (uint32_t i = 0; i < len; i++)
+    ArrayIterator iter = arrayIteratorMake(menu->keyChords);
+    while (arrayIteratorHasNext(&iter))
     {
-        if (keysAreEqual(&keyChords[i].key, key, shiftIsSignificant))
+        KeyChord* keyChord = ARRAY_ITER_NEXT(&iter, KeyChord);
+        if (keyIsEqual(&keyChord->key, key, shiftIsSignificant))
         {
             if (menu->debug)
             {
-                debugMsg(menu->debug, "Found match: '%s'.\n", keyChords[i].key);
-                disassembleKeyChordWithHeader(&keyChords[i], 0);
+                char buffer[keyChord->key.repr.length + 1];
+                stringWriteToBuffer(&keyChord->key.repr, buffer);
+                debugMsg(menu->debug, "Found match: '%s'.\n", buffer);
+                disassembleKeyChordWithHeader(keyChord, 0);
                 disassembleKey(key);
             }
             menu->dirty = true;
-            return pressKey(menu, &keyChords[i]);
+            return menuPressKey(menu, keyChord);
         }
     }
 
@@ -155,36 +147,8 @@ handleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
     return MENU_STATUS_EXIT_SOFTWARE;
 }
 
-bool
-menuIsDelayed(Menu* menu)
-{
-    assert(menu);
-    if (!menu->delay) return false;
-
-    static struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-
-    long elapsedTime = (
-        ((now.tv_sec - menu->timer.tv_sec) * 1000) +
-        ((now.tv_nsec - menu->timer.tv_nsec) / 1000000)
-    );
-
-    bool result = elapsedTime < menu->delay;
-    if (!result) menu->delay = 0;
-
-    return result;
-}
-
-void
-menuResetTimer(Menu* menu)
-{
-    assert(menu);
-
-    if (menuIsDelayed(menu)) clock_gettime(CLOCK_MONOTONIC, &menu->timer);
-}
-
 static bool
-initColor(MenuHexColor* hexColor, const char* color)
+menuHexColorInitColor(MenuHexColor* hexColor, const char* color)
 {
     assert(hexColor), assert(color);
 
@@ -203,7 +167,7 @@ initColor(MenuHexColor* hexColor, const char* color)
 }
 
 static void
-initColors(MenuHexColor* hexColors)
+menuHexColorInitColors(MenuHexColor* hexColors)
 {
     assert(hexColors);
 
@@ -226,7 +190,7 @@ initColors(MenuHexColor* hexColors)
     };
     for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
-        if (!initColor(&hexColors[i], colors[i]))
+        if (!menuHexColorInitColor(&hexColors[i], colors[i]))
         {
             char* colorType;
             warnMsg("Invalid color string '%s':", colors[i]);
@@ -241,9 +205,71 @@ initColors(MenuHexColor* hexColors)
             default: colorType = "UNKNOWN"; break;
             }
             fprintf(stderr, "setting %s to '%s'.\n", colorType, defaultColors[i]);
-            initColor(&hexColors[i], defaultColors[i]);
+            menuHexColorInitColor(&hexColors[i], defaultColors[i]);
         }
     }
+}
+
+void
+menuInit(Menu* menu, Array* keyChords)
+{
+    assert(menu);
+
+    menu->delimiter = delimiter;
+    menu->shell = shell;
+    menu->font = font;
+    menu->implicitArrayKeys = implicitArrayKeys;
+    menu->borderRadius = borderRadius;
+    menuHexColorInitColors(menu->colors);
+    menu->client.keys = NULL;
+    menu->client.transpile = NULL;
+    menu->client.wksFile = NULL;
+    menu->client.tryScript = false;
+    menu->client.script = NULL;
+    menu->delay = delay;
+    clock_gettime(CLOCK_MONOTONIC, &menu->timer);
+    menu->keyChords = keyChords;
+    menu->keyChordsHead = keyChords;
+    menu->cleanupfp = NULL;
+    menu->xp = NULL;
+    arenaInit(&menu->arena);
+
+    menu->maxCols = maxCols;
+    menu->menuWidth = menuWidth;
+    menu->menuGap = menuGap;
+    menu->wpadding = widthPadding;
+    menu->hpadding = heightPadding;
+    menu->cellHeight = 0;
+    menu->rows = 0;
+    menu->cols = 0;
+    menu->width = 0;
+    menu->height = 0;
+    menu->borderWidth = borderWidth;
+
+    menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
+    menu->debug = false;
+    menu->sort = false;
+    menu->dirty = true;
+}
+
+bool
+menuIsDelayed(Menu* menu)
+{
+    assert(menu);
+    if (!menu->delay) return false;
+
+    static struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    long elapsedTime = (
+        ((now.tv_sec - menu->timer.tv_sec) * 1000) +
+        ((now.tv_nsec - menu->timer.tv_nsec) / 1000000)
+    );
+
+    bool result = elapsedTime < menu->delay;
+    if (!result) menu->delay = 0;
+
+    return result;
 }
 
 static void
@@ -325,7 +351,7 @@ getNum(double* num)
 }
 
 void
-parseArgs(Menu* menu, int* argc, char*** argv)
+menuParseArgs(Menu* menu, int* argc, char*** argv)
 {
 #define GET_ARG(arg)        ((*arg)[(optind == 1 ? optind : optind - 1)])
 
@@ -492,24 +518,24 @@ parseArgs(Menu* menu, int* argc, char*** argv)
         /* fg */
         case 0x094:
         {
-            setMenuColor(menu, optarg, MENU_COLOR_KEY);
-            setMenuColor(menu, optarg, MENU_COLOR_DELIMITER);
-            setMenuColor(menu, optarg, MENU_COLOR_PREFIX);
-            setMenuColor(menu, optarg, MENU_COLOR_CHORD);
+            menuSetColor(menu, optarg, MENU_COLOR_KEY);
+            menuSetColor(menu, optarg, MENU_COLOR_DELIMITER);
+            menuSetColor(menu, optarg, MENU_COLOR_PREFIX);
+            menuSetColor(menu, optarg, MENU_COLOR_CHORD);
             break;
         }
         /* fg-key */
-        case 0x095: setMenuColor(menu, optarg, MENU_COLOR_KEY); break;
+        case 0x095: menuSetColor(menu, optarg, MENU_COLOR_KEY); break;
         /* fg-delimiter */
-        case 0x096: setMenuColor(menu, optarg, MENU_COLOR_DELIMITER); break;
+        case 0x096: menuSetColor(menu, optarg, MENU_COLOR_DELIMITER); break;
         /* fg-prefix */
-        case 0x097: setMenuColor(menu, optarg, MENU_COLOR_PREFIX); break;
+        case 0x097: menuSetColor(menu, optarg, MENU_COLOR_PREFIX); break;
         /* fg-chord */
-        case 0x098: setMenuColor(menu, optarg, MENU_COLOR_CHORD); break;
+        case 0x098: menuSetColor(menu, optarg, MENU_COLOR_CHORD); break;
         /* bg */
-        case 0x099: setMenuColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
+        case 0x099: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
         /* bd */
-        case 0x100: setMenuColor(menu, optarg, MENU_COLOR_BORDER); break;
+        case 0x100: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
         /* shell */
         case 0x101: menu->shell = optarg; break;
         /* font */
@@ -544,60 +570,19 @@ parseArgs(Menu* menu, int* argc, char*** argv)
 }
 
 void
-initMenu(Menu* menu, KeyChord* keyChords)
+menuResetTimer(Menu* menu)
 {
     assert(menu);
 
-    menu->delimiter = delimiter;
-    menu->maxCols = maxCols;
-    menu->menuWidth = menuWidth;
-    menu->menuGap = menuGap;
-    menu->wpadding = widthPadding;
-    menu->hpadding = heightPadding;
-    menu->cellHeight = 0;
-    menu->rows = 0;
-    menu->cols = 0;
-    menu->width = 0;
-    menu->height = 0;
-    menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
-    menu->borderWidth = borderWidth;
-    menu->borderRadius = borderRadius;
-    initColors(menu->colors);
-    menu->shell = shell;
-    menu->font = font;
-    menu->implicitArrayKeys = implicitArrayKeys;
-    menu->keyChords = keyChords;
-    menu->keyChordsHead = NULL;
-    menu->keyChordCount = 0;
-    menu->debug = false;
-    menu->sort = false;
-    menu->dirty = true;
-    menu->client.keys = NULL;
-    menu->client.transpile = NULL;
-    menu->client.wksFile = NULL;
-    menu->client.tryScript = false;
-    initString(&menu->client.script);
-    menu->garbage.shell = NULL;
-    menu->garbage.font = NULL;
-    menu->garbage.implicitArrayKeys = NULL;
-    menu->garbage.foregroundKeyColor = NULL;
-    menu->garbage.foregroundDelimiterColor = NULL;
-    menu->garbage.foregroundPrefixColor = NULL;
-    menu->garbage.foregroundChordColor = NULL;
-    menu->garbage.backgroundColor = NULL;
-    menu->garbage.borderColor = NULL;
-    menu->delay = delay;
-    clock_gettime(CLOCK_MONOTONIC, &menu->timer);
-    menu->cleanupfp = NULL;
-    menu->xp = NULL;
+    if (menuIsDelayed(menu)) clock_gettime(CLOCK_MONOTONIC, &menu->timer);
 }
 
 void
-setMenuColor(Menu* menu, const char* color, MenuColor colorType)
+menuSetColor(Menu* menu, const char* color, MenuColor colorType)
 {
     assert(menu), assert(colorType < MENU_COLOR_LAST), assert(!(colorType < 0));
 
-    if (!initColor(&menu->colors[colorType], color)) warnMsg("Invalid color string: '%s'.", color);
+    if (!menuHexColorInitColor(&menu->colors[colorType], color)) warnMsg("Invalid color string: '%s'.", color);
 }
 
 static MenuStatus
@@ -639,9 +624,11 @@ spawnAsync(const char* shell, const char* cmd)
 }
 
 MenuStatus
-spawn(const Menu* menu, const char* cmd, bool sync)
+menuSpawn(const Menu* menu, const String* cmd, bool sync)
 {
     assert(menu), assert(cmd);
+
+    if (stringIsEmpty(cmd)) return MENU_STATUS_EXIT_OK;
 
     pid_t child = fork();
 
@@ -655,13 +642,17 @@ spawn(const Menu* menu, const char* cmd, bool sync)
     if (child == 0)
     {
         if (menu->xp && menu->cleanupfp) menu->cleanupfp(menu->xp);
+
+        char buffer[cmd->length + 1];
+        stringWriteToBuffer(cmd, buffer);
+
         if (sync)
         {
-            spawnSync(menu->shell, cmd);
+            spawnSync(menu->shell, buffer);
         }
         else
         {
-            spawnAsync(menu->shell, cmd);
+            spawnAsync(menu->shell, buffer);
         }
         exit(EX_OK);
     }
@@ -684,30 +675,44 @@ spawn(const Menu* menu, const char* cmd, bool sync)
 }
 
 bool
-statusIsError(MenuStatus status)
+menuStatusIsError(MenuStatus status)
 {
     return status == MENU_STATUS_EXIT_SOFTWARE;
 }
 
 bool
-statusIsRunning(MenuStatus status)
+menuStatusIsRunning(MenuStatus status)
 {
     return status == MENU_STATUS_RUNNING || status == MENU_STATUS_DAMAGED;
 }
+
 bool
-tryStdin(Menu* menu)
+menuTryStdin(Menu* menu)
 {
     assert(menu);
 
-    ssize_t n;
-    size_t lineLength = 0;
-    char* line = NULL;
+    Array scriptArray = ARRAY_INIT(char);
 
-    while ((n = getline(&line, &lineLength, stdin)) > 0)
+    char* line = NULL;
+    size_t lineCapacity = 0;
+    ssize_t n;
+    while ((n = getline(&line, &lineCapacity, stdin)) != -1)
     {
-        appendToString(&menu->client.script, line, n);
+        if (n > 0)
+        {
+            arrayAppendN(&scriptArray, line, n);
+        }
     }
     free(line);
 
+    char null = '\0';
+    arrayAppend(&scriptArray, &null);
+
+    menu->client.script = ARENA_ALLOCATE(&menu->arena, char, scriptArray.length);
+    memcpy(menu->client.script, scriptArray.data, scriptArray.length);
+
+    arrayFree(&scriptArray);
+
     return n == -1 && feof(stdin);
 }
+

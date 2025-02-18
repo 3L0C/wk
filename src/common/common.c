@@ -8,7 +8,7 @@
 
 /* local */
 #include "common.h"
-#include "memory.h"
+#include "arena.h"
 
 void
 errorMsg(const char* fmt, ...)
@@ -44,46 +44,35 @@ isUtf8MultiByteStartByte(char byte)
 }
 
 char*
-readFile(const char* filepath)
+readFile(Arena* arena, const char* filepath)
 {
-    assert(filepath);
+    assert(arena), assert(filepath);
 
     FILE* file = fopen(filepath, "rb");
     if (!file)
     {
         errorMsg("Could not open file '%s'.", filepath);
-        goto fail;
+        return NULL;
     }
 
     fseek(file, 0L, SEEK_END);
     size_t fileSize = ftell(file);
     rewind(file);
 
-    char* buffer = ALLOCATE(char, fileSize + 1);
-    if (!buffer)
-    {
-        errorMsg("Not enough memory to read '%s'.", filepath);
-        goto alloc_error;
-    }
+    char* buffer = ARENA_ALLOCATE(arena, char, fileSize + 1);
 
     size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
     if (bytesRead < fileSize)
     {
         errorMsg("Could not read file '%s'.", filepath);
-        goto read_error;
+        fclose(file);
+        return NULL;
     }
 
     buffer[bytesRead] = '\0';
     fclose(file);
 
     return buffer;
-
-read_error:
-    free(buffer);
-alloc_error:
-    fclose(file);
-fail:
-    return NULL;
 }
 
 void

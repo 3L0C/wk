@@ -5,10 +5,13 @@
 #include <stdio.h>
 #include <string.h>
 
+/* local includes */
+#include "array.h"
 #include "common.h"
 #include "debug.h"
 #include "menu.h"
 #include "key_chord.h"
+#include "string.h"
 
 static const int MAX_HEADER_WIDTH = 80;
 static const int DEBUG_SPACE = 9; /* '[DEBUG] |' == 9 */
@@ -229,42 +232,30 @@ getDelim(int* count, char a, char b)
 }
 
 static void
-disassembleMod(const Modifiers* mods, int indent)
+disassembleMod(const Modifier mod, int indent)
 {
-    assert(mods);
+    assert(mod);
 
     debugMsgWithIndent(indent, "| Mods:              ");
 
-    if (!hasActiveModifier(mods))
+    if (!modifierHasAnyActive(mod))
     {
         printf("NONE\n");
         return;
     }
 
-    int count = countModifiers(mods);
-    if (mods->ctrl) printf("CTRL%c", getDelim(&count, '|', '\n'));
-    if (mods->alt) printf("ALT%c", getDelim(&count, '|', '\n'));
-    if (mods->hyper) printf("HYPER%c", getDelim(&count, '|', '\n'));
-    if (mods->shift) printf("SHIFT%c", getDelim(&count, '|', '\n'));
-}
-
-static bool
-disassembleSpecial(SpecialKey special, int indent)
-{
-    debugMsgWithIndent(indent, "| Special:           ");
-    const char* text = getSpecialKeyLiteral(special);
-    bool flag = special == SPECIAL_KEY_NONE ? false : true;
-
-    printf("%s|%d\n", text, special);
-    return flag;
+    int count = modifierCount(mod);
+    if (modifierIsActive(mod, MOD_CTRL)) printf("CTRL%c", getDelim(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_META)) printf("ALT%c", getDelim(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_HYPER)) printf("HYPER%c", getDelim(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_SHIFT)) printf("SHIFT%c", getDelim(&count, '|', '\n'));
 }
 
 static void
-debugString(const char* text, const char* value, int indent)
+disassembleSpecial(SpecialKey special, int indent)
 {
-    assert(text);
-
-    debugMsgWithIndent(indent, "| %-19s'%s'", text, value);
+    debugMsgWithIndent(indent, "| Special:           ");
+    printf("%s|%d\n", specialKeyGetLiteral(special), special);
 }
 
 void
@@ -284,45 +275,39 @@ disassembleKeyWithoutHeader(const Key* key, int indent)
 {
     assert(key);
 
-    disassembleMod(&key->mods, indent);
-    if (disassembleSpecial(key->special, indent))
-    {
-        debugString("Key:", getSpecialKeyRepr(key->special), indent);
-    }
-    else
-    {
-        debugString("Key:", key->repr, indent);
-    }
-    debugMsgWithIndent(indent, "| Length:            %04d", key->len);
+    disassembleMod(key->mods, indent);
+    disassembleSpecial(key->special, indent);
+    disassembleString(&key->repr, "Key:", indent);
+    debugMsgWithIndent(indent, "| Length:            %04d", stringLength(&key->repr));
 }
 
 void
-disassembleFlags(const ChordFlags* flags, int indent)
+disassembleChordFlag(ChordFlag flag, int indent)
 {
-    assert(flags);
+    assert(flag);
 
     debugMsgWithIndent(indent, "| Flags:             ");
 
-    if (!hasChordFlags(flags))
+    if (!chordFlagHasAnyActive(flag))
     {
         printf("WK_FLAG_DEFAULTS\n");
         return;
     }
 
-    int count = countChordFlags(flags);
-    if (flags->keep) printf("KEEP%c", getDelim(&count, '|', '\n'));
-    if (flags->close) printf("CLOSE%c", getDelim(&count, '|', '\n'));
-    if (flags->inherit) printf("INHERIT%c", getDelim(&count, '|', '\n'));
-    if (flags->ignore) printf("IGNORE%c", getDelim(&count, '|', '\n'));
-    if (flags->unhook) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
-    if (flags->deflag) printf("DEFLAG%c", getDelim(&count, '|', '\n'));
-    if (flags->nobefore) printf("NO_BEFORE%c", getDelim(&count, '|', '\n'));
-    if (flags->noafter) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
-    if (flags->write) printf("WRITE%c", getDelim(&count, '|', '\n'));
-    if (flags->execute) printf("EXECUTE%c", getDelim(&count, '|', '\n'));
-    if (flags->syncCommand) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
-    if (flags->syncBefore) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
-    if (flags->syncAfter) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
+    int count = chordFlagCount(flag);
+    if (chordFlagIsActive(flag, FLAG_KEEP)) printf("KEEP%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_CLOSE)) printf("CLOSE%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_INHERIT)) printf("INHERIT%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_IGNORE)) printf("IGNORE%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_UNHOOK)) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_DEFLAG)) printf("DEFLAG%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_NO_BEFORE)) printf("NO_BEFORE%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_NO_AFTER)) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_WRITE)) printf("WRITE%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_EXECUTE)) printf("EXECUTE%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_SYNC_COMMAND)) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
 }
 
 void
@@ -335,11 +320,11 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
     debugMsgWithIndent(indent, "| Command:           %{{ %s }}", keyChord->command);
     debugMsgWithIndent(indent, "| Before:            %{{ %s }}", keyChord->before);
     debugMsgWithIndent(indent, "| After:             %{{ %s }}", keyChord->after);
-    disassembleFlags(&keyChord->flags, indent);
+    disassembleChordFlag(keyChord->flags, indent);
 }
 
 void
-disassembleKeyChords(const KeyChord* keyChords, int indent)
+disassembleKeyChordArray(const Array* keyChords, int indent)
 {
     assert(keyChords);
 
@@ -347,20 +332,23 @@ disassembleKeyChords(const KeyChord* keyChords, int indent)
     {
         debugPrintHeaderWithIndent(indent, " KeyChords ");
     }
-    for (uint32_t i = 0; keyChords[i].state == KEY_CHORD_STATE_NOT_NULL; i++)
+
+    ArrayIterator iter = arrayIteratorMake(keyChords);
+    const KeyChord* keyChord = NULL;
+    while ((keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord)) != NULL)
     {
         debugMsgWithIndent(indent, "|");
-        debugMsgWithIndent(indent, "| Chord Index:       %04u", i);
-        disassembleKeyChord(&keyChords[i], indent);
+        debugMsgWithIndent(indent, "| Chord Index:       %04u", iter.index);
+        disassembleKeyChord(keyChord, indent);
         debugMsgWithIndent(indent, "|");
-        if (keyChords[i].keyChords)
+        if (!arrayIsEmpty(&keyChord->keyChords))
         {
             debugMsgWithIndent(
                 indent,
                 "|------------ Nested KeyChords: %04u -------------",
-                countKeyChords(keyChords[i].keyChords)
+                arrayLength(&keyChord->keyChords)
             );
-            disassembleKeyChords(keyChords[i].keyChords, indent + 1);
+            disassembleKeyChordArray(&keyChord->keyChords, indent + 1);
         }
         debugPrintHeaderWithIndent(indent, "-");
     }
@@ -368,13 +356,15 @@ disassembleKeyChords(const KeyChord* keyChords, int indent)
 }
 
 void
-disassembleKeyChordsShallow(const KeyChord* keyChords, uint32_t len)
+disassembleKeyChordArrayShallow(const Array* keyChords)
 {
     assert(keyChords);
 
-    for (uint32_t i = 0; i < len; i++)
+    ArrayIterator iter = arrayIteratorMake(keyChords);
+    const KeyChord* keyChord = NULL;
+    while ((keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord)) != NULL)
     {
-        disassembleKeyChordWithHeader(&keyChords[i], 0);
+        disassembleKeyChordWithHeader(keyChord, 0);
     }
 }
 
@@ -418,25 +408,23 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| Shell:             '%s'",  menu->shell);
     debugMsgWithIndent(0, "| Font:              '%s'",  menu->font);
     debugMsgWithIndent(0, "| Chords:            %p",    menu->keyChords);
-    debugMsgWithIndent(0, "| Chord count:       %04u",  menu->keyChordCount);
+    debugMsgWithIndent(0, "| Chord count:       %04u",  arrayLength(menu->keyChords));
     debugMsgWithIndent(0, "| Debug:             %s",    "true");
     debugMsgWithIndent(0, "| Keys:              %s",    menu->client.keys);
     debugMsgWithIndent(0, "| Transpile:         %s",    menu->client.transpile);
     debugMsgWithIndent(0, "| wks file:          '%s'",  menu->client.wksFile);
     debugMsgWithIndent(0, "| Try script:        %s",    (menu->client.tryScript ? "true" : "false"));
-    if (menu->client.script.string)
+    if (menu->client.script)
     {
         debugMsgWithIndent(0, "| Script:");
         debugMsgWithIndent(0, "|");
-        debugTextWithLineNumber(menu->client.script.string);
+        debugTextWithLineNumber(menu->client.script);
         debugMsgWithIndent(0, "|");
     }
     else
     {
         debugMsgWithIndent(0, "| Script:            (null)");
     }
-    debugMsgWithIndent(0, "| Script capacity:   %04zu", menu->client.script.capacity);
-    debugMsgWithIndent(0, "| Script count:      %04zu", menu->client.script.count);
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
 }
@@ -454,3 +442,14 @@ disassembleStatus(MenuStatus status)
     }
 }
 
+void
+disassembleString(const String* string, const char* title, int indent)
+{
+    assert(string);
+
+    if (title == NULL) title = "(null)";
+
+    char buffer[stringLength(string) + 1];
+    stringWriteToBuffer(string, buffer);
+    debugMsgWithIndent(indent, "| %-19s'%s'", title, buffer);
+}
