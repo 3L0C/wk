@@ -62,21 +62,21 @@ debugPrintHeader(const char* header)
     assert(header);
 
     int headerLen = strlen(header); /* add a space to each side */
-    if (headerLen > (MAX_HEADER_WIDTH - DEBUG_SPACE))
+    int dashCount = (MAX_HEADER_WIDTH - DEBUG_SPACE - headerLen - 2);
+    if (dashCount < 2)
     {
         debugMsg(true, "| %s", header);
-        return;
     }
     else if (headerLen == 0)
     {
-        debugMsg(true, "|%s\n", DASHES);
-        return;
+        debugMsg(true, "|%s", DASHES);
     }
-
-    int dashCount = (MAX_HEADER_WIDTH - DEBUG_SPACE - headerLen);
-    int leftDashes = dashCount / 2;
-    int rightDashes = dashCount - leftDashes;
-    debugMsg(true, "|%.*s%s%.*s", leftDashes, DASHES, header, rightDashes, DASHES);
+    else
+    {
+        int leftDashes = dashCount / 2;
+        int rightDashes = dashCount - leftDashes;
+        debugMsg(true, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
+    }
 }
 
 void
@@ -85,21 +85,21 @@ debugPrintHeaderWithIndent(int indent, const char* header)
     assert(header);
 
     int headerLen = strlen(header); /* add a space to each side */
-    if (headerLen > (MAX_HEADER_WIDTH - DEBUG_SPACE))
+    int dashCount = (MAX_HEADER_WIDTH - DEBUG_SPACE - headerLen - 2);
+    if (dashCount < 2)
     {
         debugMsgWithIndent(indent, "| %s", header);
-        return;
     }
     else if (headerLen == 0)
     {
         debugMsgWithIndent(indent, "|%s\n", DASHES);
-        return;
     }
-
-    int dashCount = (MAX_HEADER_WIDTH - DEBUG_SPACE - headerLen);
-    int leftDashes = dashCount / 2;
-    int rightDashes = dashCount - leftDashes;
-    debugMsgWithIndent(indent, "|%.*s%s%.*s", leftDashes, DASHES, header, rightDashes, DASHES);
+    else
+    {
+        int leftDashes = dashCount / 2;
+        int rightDashes = dashCount - leftDashes;
+        debugMsgWithIndent(indent, "|%.*s%s%.*s", leftDashes, DASHES, header, rightDashes, DASHES);
+    }
 }
 
 void
@@ -146,7 +146,7 @@ disassembleGrid(
     uint32_t startx, uint32_t starty, uint32_t rows, uint32_t cols, uint32_t wpadding,
     uint32_t hpadding, uint32_t cellw, uint32_t cellh, uint32_t count)
 {
-    debugPrintHeader(" Grid ");
+    debugPrintHeader("Grid");
     debugMsgWithIndent(0, "|");
     debugMsgWithIndent(0, "| Start X:           %04u", startx, 0);
     debugMsgWithIndent(0, "| Start Y:           %04u", starty);
@@ -223,14 +223,6 @@ disassembleHexColors(const MenuHexColor* colors)
     debugMsgWithIndent(0, "|--------------------------------");
 }
 
-static char
-getDelim(int* count, char a, char b)
-{
-    assert(count);
-
-    return ((*count)-- > 1 ? a : b);
-}
-
 static void
 disassembleMod(const Modifier mod, int indent)
 {
@@ -245,10 +237,10 @@ disassembleMod(const Modifier mod, int indent)
     }
 
     int count = modifierCount(mod);
-    if (modifierIsActive(mod, MOD_CTRL)) printf("CTRL%c", getDelim(&count, '|', '\n'));
-    if (modifierIsActive(mod, MOD_META)) printf("ALT%c", getDelim(&count, '|', '\n'));
-    if (modifierIsActive(mod, MOD_HYPER)) printf("HYPER%c", getDelim(&count, '|', '\n'));
-    if (modifierIsActive(mod, MOD_SHIFT)) printf("SHIFT%c", getDelim(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_CTRL)) printf("CTRL%c", getSeparator(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_META)) printf("ALT%c", getSeparator(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_HYPER)) printf("HYPER%c", getSeparator(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_SHIFT)) printf("SHIFT%c", getSeparator(&count, '|', '\n'));
 }
 
 static void
@@ -263,7 +255,7 @@ disassembleKey(const Key* key)
 {
     assert(key);
 
-    debugPrintHeader(" Key ");
+    debugPrintHeader("Key");
     debugMsgWithIndent(0, "|");
     disassembleKeyWithoutHeader(key, 0);
     debugMsgWithIndent(0, "|");
@@ -295,19 +287,19 @@ disassembleChordFlag(ChordFlag flag, int indent)
     }
 
     int count = chordFlagCount(flag);
-    if (chordFlagIsActive(flag, FLAG_KEEP)) printf("KEEP%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_CLOSE)) printf("CLOSE%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_INHERIT)) printf("INHERIT%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_IGNORE)) printf("IGNORE%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_UNHOOK)) printf("UNHOOK%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_DEFLAG)) printf("DEFLAG%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_NO_BEFORE)) printf("NO_BEFORE%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_NO_AFTER)) printf("NO_AFTER%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_WRITE)) printf("WRITE%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_EXECUTE)) printf("EXECUTE%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_SYNC_COMMAND)) printf("SYNC_COMMAND%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%c", getDelim(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%c", getDelim(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_KEEP)) printf("KEEP%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_CLOSE)) printf("CLOSE%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_INHERIT)) printf("INHERIT%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_IGNORE)) printf("IGNORE%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_UNHOOK)) printf("UNHOOK%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_DEFLAG)) printf("DEFLAG%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_NO_BEFORE)) printf("NO_BEFORE%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_NO_AFTER)) printf("NO_AFTER%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_WRITE)) printf("WRITE%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_EXECUTE)) printf("EXECUTE%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_SYNC_COMMAND)) printf("SYNC_COMMAND%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%c", getSeparator(&count, '|', '\n'));
 }
 
 void
@@ -330,7 +322,7 @@ disassembleKeyChordArray(const Array* keyChords, int indent)
 
     if (indent == 0)
     {
-        debugPrintHeaderWithIndent(indent, " KeyChords ");
+        debugPrintHeaderWithIndent(indent, "KeyChords");
     }
 
     ArrayIterator iter = arrayIteratorMake(keyChords);
@@ -338,7 +330,7 @@ disassembleKeyChordArray(const Array* keyChords, int indent)
     while ((keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord)) != NULL)
     {
         debugMsgWithIndent(indent, "|");
-        debugMsgWithIndent(indent, "| Chord Index:       %04u", iter.index);
+        debugMsgWithIndent(indent, "| Chord Index:       %04u", iter.index - 1);
         disassembleKeyChord(keyChord, indent);
         debugMsgWithIndent(indent, "|");
         if (!arrayIsEmpty(&keyChord->keyChords))
@@ -350,7 +342,7 @@ disassembleKeyChordArray(const Array* keyChords, int indent)
             );
             disassembleKeyChordArray(&keyChord->keyChords, indent + 1);
         }
-        debugPrintHeaderWithIndent(indent, "-");
+        debugPrintHeaderWithIndent(indent, "");
     }
     if (indent == 0) printf("\n");
 }
@@ -373,7 +365,7 @@ disassembleKeyChordWithHeader(const KeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
-    debugPrintHeaderWithIndent(indent, " KeyChord ");
+    debugPrintHeaderWithIndent(indent, "KeyChord");
     debugMsgWithIndent(indent, "|");
     disassembleKeyChord(keyChord, indent);
     debugMsgWithIndent(indent, "|");
@@ -385,7 +377,7 @@ disassembleMenu(const Menu* menu)
 {
     assert(menu);
 
-    debugPrintHeader(" Menu ");
+    debugPrintHeader("Menu");
     debugMsg(true, "|");
     debugMsgWithIndent(0, "| Delimiter:         '%s'",  menu->delimiter);
     debugMsgWithIndent(0, "| Max columns:       %04u",  menu->maxCols);
@@ -414,11 +406,11 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| Transpile:         %s",    menu->client.transpile);
     debugMsgWithIndent(0, "| wks file:          '%s'",  menu->client.wksFile);
     debugMsgWithIndent(0, "| Try script:        %s",    (menu->client.tryScript ? "true" : "false"));
-    if (menu->client.script)
+    if (!arrayIsEmpty(&menu->client.script))
     {
         debugMsgWithIndent(0, "| Script:");
         debugMsgWithIndent(0, "|");
-        debugTextWithLineNumber(menu->client.script);
+        debugTextWithLineNumber(ARRAY_AS(&menu->client.script, char));
         debugMsgWithIndent(0, "|");
     }
     else

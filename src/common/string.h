@@ -1,7 +1,6 @@
 #ifndef WK_COMMON_STRING_H_
 #define WK_COMMON_STRING_H_
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -25,11 +24,11 @@ typedef struct
 
 typedef enum
 {
-    STRING_APPEND_UPPER_FIRST,
-    STRING_APPEND_LOWER_FIRST,
-    STRING_APPEND_UPPER_ALL,
-    STRING_APPEND_LOWER_ALL
-} StringAppendState;
+    STRING_CASE_UPPER_FIRST,
+    STRING_CASE_LOWER_FIRST,
+    STRING_CASE_UPPER_ALL,
+    STRING_CASE_LOWER_ALL
+} StringCase;
 
 typedef struct
 {
@@ -38,18 +37,23 @@ typedef struct
     size_t offset;
 } StringIterator;
 
+void stringAppend(String* dest, const char* src, size_t len);
 void stringAppendChar(Arena* arena, String* dest, char c);
-void stringAppendEscString(Arena* arena, String* dest, const char* source, size_t len);
+void stringAppendCString(String* dest, const char* src);
+void stringAppendEscString(Arena* arena, String* dest, const char* src, size_t len);
 void stringAppendInt32(Arena* arena, String* dest, int32_t i);
-void stringAppend(Arena* arena, String* dest, const char* source, size_t len);
-void stringAppendWithState(Arena* arena, String* dest, const char* source, size_t len, StringAppendState state);
+void stringAppendString(String* dest, const String* src);
+void stringAppendStringWithState(Arena* arena, String* dest, const String* src, StringCase state);
 void stringAppendUInt32(Arena* arena, String* dest, uint32_t i);
-void stringDisown(String* string);
+void stringAppendWithState(Arena* arena, String* dest, const char* src, size_t len, StringCase state);
+int  stringCompare(const String* a, const String* b);
+String stringCopy(const String* from);
 bool stringEquals(const String* a, const String* b);
 void stringFree(String* string);
-void stringInitFromChar(Arena* arena, String* string, const char* source);
-void stringInit(String* string);
+String stringInitFromChar(const char* src);
+String stringInit(void);
 bool stringIsEmpty(const String* string);
+String stringMake(Arena* arena, const char* src);
 void stringPrint(const String* string);
 void stringPrintToFile(const String* string, FILE* s);
 void stringRtrim(String* string);

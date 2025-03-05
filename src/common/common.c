@@ -8,7 +8,8 @@
 
 /* local */
 #include "common.h"
-#include "arena.h"
+#include "array.h"
+#include "memory.h"
 
 void
 errorMsg(const char* fmt, ...)
@@ -23,6 +24,14 @@ errorMsg(const char* fmt, ...)
     va_end(ap);
 
     fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
+}
+
+char
+getSeparator(int* count, char a, char b)
+{
+    assert(count);
+
+    return ((*count)-- > 1 ? a : b);
 }
 
 bool
@@ -43,36 +52,39 @@ isUtf8MultiByteStartByte(char byte)
     return (byte & 0x80) == 0x80 && (byte & 0xC0) != 0x80;
 }
 
-char*
-readFile(Arena* arena, const char* filepath)
+Array
+readFile(const char* filepath)
 {
-    assert(arena), assert(filepath);
+    assert(filepath);
 
+    Array result = ARRAY_INIT(char);
     FILE* file = fopen(filepath, "rb");
     if (!file)
     {
         errorMsg("Could not open file '%s'.", filepath);
-        return NULL;
+        return result;
     }
 
     fseek(file, 0L, SEEK_END);
     size_t fileSize = ftell(file);
     rewind(file);
 
-    char* buffer = ARENA_ALLOCATE(arena, char, fileSize + 1);
+    char* buffer = ALLOCATE(char, fileSize + 1);
 
     size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
     if (bytesRead < fileSize)
     {
         errorMsg("Could not read file '%s'.", filepath);
         fclose(file);
-        return NULL;
+        return result;
     }
 
     buffer[bytesRead] = '\0';
     fclose(file);
+    arrayAppendN(&result, buffer, bytesRead + 1);
+    free(buffer);
 
-    return buffer;
+    return result;
 }
 
 void

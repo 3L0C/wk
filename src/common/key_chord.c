@@ -75,14 +75,6 @@ static const SpecialTable specialTable[SPECIAL_KEY_LAST] = {
     [SPECIAL_KEY_AUDIO_NEXT] = { "SPECIAL_KEY_AUDIO_NEXT", "Next" },
 };
 
-void
-chordFlagCopy(const ChordFlag* from, ChordFlag* to)
-{
-    assert(from), assert(to);
-
-    *to = *from;
-}
-
 int
 chordFlagCount(ChordFlag flag)
 {
@@ -125,12 +117,10 @@ chordFlagsAreDefault(ChordFlag flag)
     return !chordFlagHasAnyActive(flag);
 }
 
-void
-chordFlagInit(ChordFlag* flag)
+ChordFlag
+chordFlagInit(void)
 {
-    assert(flag);
-
-    *flag = FLAG_NONE;
+    return FLAG_NONE;
 }
 
 bool
@@ -140,23 +130,11 @@ chordFlagIsActive(ChordFlag flag, ChordFlag test)
 }
 
 static bool
-modifiersAreEqual(Modifier a, Modifier b, bool shiftIsSignificant)
+modifiersAreEqual(Modifier a, Modifier b)
 {
     assert(a), assert(b);
 
-    static const Modifier mask = ~(Modifier)MOD_SHIFT;
-
-    if (shiftIsSignificant) return a == b;
-
-    return (a & mask) == (b & mask);
-}
-
-void
-modifierCopy(const Modifier* from, Modifier* to)
-{
-    assert(from), assert(to);
-
-    *to = *from;
+    return a == b;
 }
 
 int
@@ -185,12 +163,10 @@ modifierHasAnyActive(Modifier mod)
     return (mod & any) != 0;
 }
 
-void
-modifierInit(Modifier* mod)
+Modifier
+modifierInit(void)
 {
-    assert(mod);
-
-    *mod = MOD_NONE;
+    return MOD_NONE;
 }
 
 bool
@@ -230,7 +206,7 @@ keyIsEqualSpecial(const Key* a, const Key* b)
 
     return (
         a->special == b->special &&
-        modifiersAreEqual(a->mods, b->mods, true)
+        modifiersAreEqual(a->mods, b->mods)
     );
 }
 
@@ -245,24 +221,32 @@ keyCopy(const Key* from, Key* to)
 }
 
 void
+keyFree(Key* key)
+{
+    assert(key);
+
+    stringFree(&key->repr);
+}
+
+void
 keyInit(Key* key)
 {
     assert(key);
 
-    modifierInit(&key->mods);
+    key->repr = stringInit();
+    key->mods = modifierInit();
     key->special = SPECIAL_KEY_NONE;
-    stringInit(&key->repr);
 }
 
 bool
-keyIsEqual(const Key* a, const Key* b, bool shiftIsSignificant)
+keyIsEqual(const Key* a, const Key* b)
 {
     assert(a), assert(b);
 
     if (keyIsEqualSpecial(a, b)) return true;
     return (
         a->special == b->special &&
-        modifiersAreEqual(a->mods, b->mods, shiftIsSignificant) &&
+        modifiersAreEqual(a->mods, b->mods) &&
         stringEquals(&a->repr, &b->repr)
     );
 }
@@ -272,9 +256,7 @@ keyChordArrayFree(Array* keyChords)
 {
     assert(keyChords);
 
-    ArrayIterator iter = arrayIteratorMake(keyChords);
-    KeyChord* keyChord = NULL;
-    while ((keyChord = ARRAY_ITER_NEXT(&iter, KeyChord)) != NULL)
+    forEach(keyChords, KeyChord, keyChord)
     {
         keyChordFree(keyChord);
     }
@@ -286,13 +268,12 @@ keyChordCopy(const KeyChord* from, KeyChord* to)
 {
     assert(from), assert(to);
 
-    to->state = from->state;
     keyCopy(&from->key, &to->key);
     to->description = from->description;
     to->command = from->command;
     to->before = from->before;
     to->after = from->after;
-    chordFlagCopy(&from->flags, &to->flags);
+    to->flags = from->flags;
     to->keyChords = from->keyChords;
 }
 
@@ -314,28 +295,12 @@ keyChordInit(KeyChord* keyChord)
 {
     assert(keyChord);
 
-    keyChord->state = KC_NOT_NULL;
     keyInit(&keyChord->key);
-    stringInit(&keyChord->description);
-    stringInit(&keyChord->command);
-    stringInit(&keyChord->before);
-    stringInit(&keyChord->after);
-    chordFlagInit(&keyChord->flags);
-    keyChord->keyChords = ARRAY_INIT(KeyChord);
-}
-
-void
-keyChordMakeNull(KeyChord* keyChord)
-{
-    assert(keyChord);
-
-    keyChord->state = KC_NULL;
-    keyInit(&keyChord->key);
-    stringInit(&keyChord->description);
-    stringInit(&keyChord->command);
-    stringInit(&keyChord->before);
-    stringInit(&keyChord->after);
-    chordFlagInit(&keyChord->flags);
+    keyChord->description = stringInit();
+    keyChord->command = stringInit();
+    keyChord->before = stringInit();
+    keyChord->after = stringInit();
+    keyChord->flags = chordFlagInit();
     keyChord->keyChords = ARRAY_INIT(KeyChord);
 }
 

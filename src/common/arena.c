@@ -4,6 +4,7 @@
 
 /* local includes */
 #include "arena.h"
+#include "array.h"
 #include "memory.h"
 
 void
@@ -13,6 +14,19 @@ arenaInit(Arena* arena)
     arena->bufferSize = 0;
     arena->used = 0;
     arena->prev = NULL;
+}
+
+void*
+arenaAdoptArray(Arena* arena, Array* arr)
+{
+    assert(arena), assert(arr);
+    if (arrayIsEmpty(arr)) return NULL;
+
+    size_t bytes = arrayLength(arr) * arr->elementSize;
+    void* buffer = arenaAlloc(arena, bytes);
+    memcpy(buffer, arr->data, bytes);
+    arrayFree(arr);
+    return buffer;
 }
 
 void*
@@ -43,6 +57,18 @@ arenaAlloc(Arena* arena, size_t size)
     /* Allocation fits in current block */
     void* result = arena->buffer + arena->used;
     arena->used += size;
+
+    return result;
+}
+
+char*
+arenaCopyCString(Arena* arena, const char* src, size_t length)
+{
+    assert(arena), assert(src);
+
+    char* result = ARENA_ALLOCATE(arena, char, length + 1);
+    memcpy(result, src, length);
+    result[length] = '\0';
 
     return result;
 }

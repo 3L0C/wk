@@ -72,7 +72,7 @@ typedef struct
         const char* keys;
         const char* transpile;
         const char* wksFile;
-        char* script;
+        Array script;
         bool tryScript;
     } client;
     struct timespec timer;
@@ -103,7 +103,7 @@ typedef struct
 
 int menuDisplay(Menu* menu);
 void menuFree(Menu* menu, Array* keyChords);
-MenuStatus menuHandleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant);
+MenuStatus menuHandleKeypress(Menu* menu, const Key* key);
 void menuInit(Menu* menu, Array* keyChords);
 bool menuIsDelayed(Menu* menu);
 void menuParseArgs(Menu* menu, int* argc, char*** argv);

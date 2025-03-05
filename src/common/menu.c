@@ -59,7 +59,7 @@ menuDisplay(Menu* menu)
 void
 menuFree(Menu* menu, Array* keyChords)
 {
-    assert(menu);
+    assert(menu), assert(keyChords);
 
     if (menu->keyChordsHead != keyChords) keyChordArrayFree(menu->keyChordsHead);
     arenaFree(&menu->arena);
@@ -115,7 +115,7 @@ menuPressKey(Menu* menu, KeyChord* keyChord)
 }
 
 MenuStatus
-menuHandleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
+menuHandleKeypress(Menu* menu, const Key* key)
 {
     assert(menu), assert(key);
 
@@ -123,7 +123,7 @@ menuHandleKeypress(Menu* menu, const Key* key, bool shiftIsSignificant)
     while (arrayIteratorHasNext(&iter))
     {
         KeyChord* keyChord = ARRAY_ITER_NEXT(&iter, KeyChord);
-        if (keyIsEqual(&keyChord->key, key, shiftIsSignificant))
+        if (keyIsEqual(&keyChord->key, key))
         {
             if (menu->debug)
             {
@@ -225,7 +225,7 @@ menuInit(Menu* menu, Array* keyChords)
     menu->client.transpile = NULL;
     menu->client.wksFile = NULL;
     menu->client.tryScript = false;
-    menu->client.script = NULL;
+    menu->client.script = ARRAY_INIT(char);
     menu->delay = delay;
     clock_gettime(CLOCK_MONOTONIC, &menu->timer);
     menu->keyChords = keyChords;
@@ -580,7 +580,7 @@ menuResetTimer(Menu* menu)
 void
 menuSetColor(Menu* menu, const char* color, MenuColor colorType)
 {
-    assert(menu), assert(colorType < MENU_COLOR_LAST), assert(!(colorType < 0));
+    assert(menu), assert(colorType < MENU_COLOR_LAST);
 
     if (!menuHexColorInitColor(&menu->colors[colorType], color)) warnMsg("Invalid color string: '%s'.", color);
 }
@@ -691,28 +691,18 @@ menuTryStdin(Menu* menu)
 {
     assert(menu);
 
-    Array scriptArray = ARRAY_INIT(char);
+    Array* scriptArray = &menu->client.script;
 
     char* line = NULL;
     size_t lineCapacity = 0;
     ssize_t n;
     while ((n = getline(&line, &lineCapacity, stdin)) != -1)
     {
-        if (n > 0)
-        {
-            arrayAppendN(&scriptArray, line, n);
-        }
+        if (n > 0) arrayAppendN(scriptArray, line, n);
     }
+
     free(line);
-
-    char null = '\0';
-    arrayAppend(&scriptArray, &null);
-
-    menu->client.script = ARENA_ALLOCATE(&menu->arena, char, scriptArray.length);
-    memcpy(menu->client.script, scriptArray.data, scriptArray.length);
-
-    arrayFree(&scriptArray);
-
+    arrayAppend(scriptArray, "");
     return n == -1 && feof(stdin);
 }
 

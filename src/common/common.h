@@ -4,13 +4,14 @@
 #include <stdbool.h>
 
 /* common includes */
-#include "common/arena.h"
+#include "common/array.h"
 
 void errorMsg(const char* fmt, ...);
+char getSeparator(int* count, char a, char b);
 bool isUtf8ContByte(char byte);
 bool isUtf8MultiByteStartByte(char byte);
 bool isUtf8StartByte(char byte);
-char* readFile(Arena* arena, const char* filepath);
+Array readFile(const char* filepath);
 void warnMsg(const char* fmt, ...);
 
 #endif /* WK_COMMON_COMMON_H_ */

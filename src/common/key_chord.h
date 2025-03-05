@@ -7,7 +7,7 @@
 
 /* Common includes */
 #include "array.h"
-#include "common/string.h"
+#include "string.h"
 
 typedef uint16_t ChordFlag;
 enum
@@ -27,13 +27,6 @@ enum
     FLAG_SYNC_COMMAND = 1 << 11,
     FLAG_SYNC_BEFORE  = 1 << 12,
     FLAG_SYNC_AFTER   = 1 << 13
-};
-
-typedef uint8_t KeyChordState;
-enum
-{
-    KC_NULL,
-    KC_NOT_NULL,
 };
 
 typedef uint8_t KeyType;
@@ -120,14 +113,13 @@ enum
 
 typedef struct
 {
+    String repr;
     Modifier mods;
     SpecialKey special;
-    String repr;
 } Key;
 
 typedef struct KeyChord
 {
-    KeyChordState state;
     Key key;
     String description;
     String command;
@@ -138,16 +130,14 @@ typedef struct KeyChord
 } KeyChord;
 
 /* Helpers */
-void chordFlagCopy(const ChordFlag* from, ChordFlag* to);
 int  chordFlagCount(ChordFlag flag);
 bool chordFlagHasAnyActive(ChordFlag flag);
-void chordFlagInit(ChordFlag* flag);
+ChordFlag chordFlagInit(void);
 bool chordFlagIsActive(ChordFlag flag, ChordFlag test);
 
-void modifierCopy(const Modifier* from, Modifier* to);
 int  modifierCount(Modifier mod);
 bool modifierHasAnyActive(Modifier mod);
-void modifierInit(Modifier* mod);
+Modifier modifierInit(void);
 bool modifierIsActive(Modifier mod, Modifier test);
 
 const char* specialKeyGetLiteral(const SpecialKey special);
@@ -155,14 +145,13 @@ const char* specialKeyGetRepr(const SpecialKey special);
 
 /* Core */
 void keyCopy(const Key* from, Key* to);
+void keyFree(Key* key);
 void keyInit(Key* key);
-bool keyIsEqual(const Key* a, const Key* b, bool shiftIsSignificant);
+bool keyIsEqual(const Key* a, const Key* b);
 
 void keyChordArrayFree(Array* keyChords);
 void keyChordCopy(const KeyChord* from, KeyChord* to);
 void keyChordFree(KeyChord* keyChord);
 void keyChordInit(KeyChord* keyChord);
-void keyChordMakeNull(KeyChord* keyChord);
-
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

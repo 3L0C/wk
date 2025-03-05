@@ -2,20 +2,26 @@
 #define WK_COMMON_STACK_H_
 
 #include <assert.h>
+#include <stddef.h>
 
 #include "array.h"
 
-#define STACK_INIT(type) stackInit(sizeof(type))
+#define STACK_INIT(type) ARRAY_INIT(type)
 #define STACK_PEEK(stack, type) ((type*)stackPeek(stack))
-#define STACK_ITER_NEXT(iter, type) ((type*)stackIteratorNext(iter))
+#define STACK_AS_ARRAY(stack) ((Array)stack)
 
 typedef Array Stack;
-typedef ArrayIterator StackIterator;
 
 static inline Stack
 stackInit(size_t elementSize)
 {
     return arrayInit(elementSize);
+}
+
+static inline bool
+stackIsEmpty(const Stack* stack)
+{
+    return arrayIsEmpty(stack);
 }
 
 static inline void
@@ -45,24 +51,6 @@ static inline void
 stackFree(Stack* stack)
 {
     arrayFree(stack);
-}
-
-static inline void
-stackIteratorInit(const Stack* stack, StackIterator* iter)
-{
-    arrayIteratorInit(stack, iter);
-}
-
-static inline bool
-stackIteratorHasNext(const StackIterator* iter)
-{
-    return arrayIteratorHasNext(iter);
-}
-
-static inline void*
-stackIteratorNext(StackIterator* iter)
-{
-    return arrayIteratorNext(iter);
 }
 
 #endif /* WK_COMMON_STACK_H_ */
