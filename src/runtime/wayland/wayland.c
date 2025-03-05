@@ -19,6 +19,7 @@
 #include "common/key_chord.h"
 
 /* runtime includes */
+#include "common/string.h"
 #include "runtime/cairo.h"
 
 /* local includes */
@@ -229,64 +230,25 @@ xkbStateRestoreMask(Xkb* xkb)
     xkbStateUpdateMask(xkb, xkb->depressedMods, xkb->latchedMods, xkb->lockedMods, 0, 0, xkb->group);
 }
 
-static bool
-isShiftSignificant(Wayland* wayland, const char* check, size_t checkLen)
-{
-    assert(wayland), assert(check);
-
-    Xkb* xkb = &wayland->input.xkb;
-    struct xkb_state* state = xkb->state;
-    xkbStateRemoveMask(xkb, (xkb->masks[MASK_SHIFT] | xkb->masks[MASK_CTRL]));
-
-    char buffer[128] = {0};
-    size_t len = xkb_state_key_get_utf8(
-        state, wayland->input.code, buffer, sizeof(buffer)
-    );
-
-    xkbStateRestoreMask(xkb);
-
-    return !(
-        len == checkLen &&
-        memcmp(buffer, check, len) == 0
-    );
-}
-
 static void
-setKeyEventMods(Modifiers* mods, uint32_t state)
+setKeyMods(Key* key, uint32_t state)
 {
-    assert(mods);
+    assert(key);
 
-    if (state & MOD_CTRL) mods->ctrl = true;
-    if (state & MOD_ALT) mods->alt = true;
-    if (state & MOD_LOGO) mods->hyper = true;
-    if (state & MOD_SHIFT) mods->shift = true;
+    if (state & MOD_CTRL) key->mods |= MOD_CTRL;
+    if (state & XKB_MOD_ALT) key->mods |= MOD_META;
+    if (state & XKB_MOD_LOGO) key->mods |= MOD_HYPER;
+    if (state & MOD_SHIFT) key->mods |= MOD_SHIFT;
 }
 
 static SpecialKey
-getSpecialKey(void* keysymPtr)
+getSpecialKey(xkb_keysym_t keysym)
 {
-    assert(keysymPtr);
-    xkb_keysym_t keysym = (*(xkb_keysym_t*)keysymPtr);
     for (size_t i = 0; i < specialkeysLen; i++)
     {
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
     }
     return SPECIAL_KEY_NONE;
-}
-
-static bool
-isUnshiftedSpecialKey(Wayland* wayland, Key* key)
-{
-    assert(wayland), assert(key);
-
-    Xkb* xkb = &wayland->input.xkb;
-    xkbStateRemoveMask(xkb, xkb->masks[MASK_SHIFT]);
-
-    xkb_keysym_t keysym = xkb_state_key_get_one_sym(xkb->state, wayland->input.code);
-
-    xkbStateRestoreMask(xkb);
-
-    return isSpecialKey(key, &keysym, getSpecialKey);
 }
 
 static bool
@@ -303,49 +265,146 @@ xkbIsModifierKey(xkb_keysym_t keysym)
     );
 }
 
-static KeyType
-getKeyType(Wayland* wayland, Key* key, uint32_t mods, xkb_keysym_t keysym, char* buffer, size_t len)
-{
-    assert(wayland), assert(key), assert(buffer);
+static size_t
+maskedKeyGetUtf8(
+    Xkb* xkb,
+    uint32_t keycode,
+    char* buffer,
+    size_t size,
+    xkb_keysym_t* keysym,
+    xkb_mod_mask_t mask
+) {
+    assert(xkb), assert(buffer), assert(keysym);
 
-    if (xkbIsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
+    size_t len = 0;
 
-    setKeyEventMods(&key->mods, mods);
+    xkbStateRemoveMask(xkb, mask);
+    *keysym = xkb_state_key_get_one_sym(xkb->state, keycode);
+    if (!xkbIsModifierKey(*keysym))
+    {
+        len = xkb_state_key_get_utf8(xkb->state, keycode, buffer, size);
+    }
+    xkbStateRestoreMask(xkb);
 
-    if (isSpecialKey(key, &keysym, getSpecialKey)) return KEY_TYPE_IS_SPECIAL;
-    if ((mods & MOD_SHIFT) && isUnshiftedSpecialKey(wayland, key)) return KEY_TYPE_IS_SPECIAL;
-    if (isNormalKey(key, buffer, len)) return KEY_TYPE_IS_NORMAL;
-
-    return KEY_TYPE_IS_UNKNOWN;
+    return len;
 }
 
-
-static MenuStatus
-handleMysteryKeypress(Menu* menu, Key* key, xkb_keysym_t keysym)
+static bool
+shiftIsSignificant(const char* a, size_t aLen, const char* b, size_t bLen)
 {
-    assert(menu), assert(key);
+    assert(a), assert(b);
+
+    return (
+        aLen != bLen ||
+        memcmp(a, b, (aLen < bLen) ? aLen : bLen)
+    );
+}
+
+static void
+handleMysteryKeypress(Menu* menu, Key* key, xkb_keysym_t keysym, char* repr, size_t reprSize)
+{
+    assert(menu), assert(key), assert(repr);
     debugMsg(menu->debug, "Checking mystery key.");
 
-    char buffer[128] = {0};
-    int len = xkb_keysym_get_name(keysym, buffer, sizeof(buffer));
-    if (len == -1)
+    int len = xkb_keysym_get_name(keysym, repr, reprSize);
+    if (len == 0)
     {
-        debugMsg(debug, "Got invalid keysym.");
-        return MENU_STATUS_RUNNING;
+        warnMsg("[WAYLAND]: Could not get keysym.");
+        return;
     }
-    debugMsg(menu->debug, "Mystery key value: '%s'", buffer);
+    if (len < 0)
+    {
+        errorMsg("[WAYLAND]: Invalid keysym.");
+        return;
+    }
 
-    key->special = SPECIAL_KEY_NONE;
-    key->repr = buffer;
-    key->len = (size_t)len;
+    stringAppendCString(&key->repr, repr);
+}
 
-    return handleKeypress(menu, key, true);
+static void
+setKeyRepr(
+    Wayland* wayland,
+    Menu* menu,
+    Key* key,
+    xkb_keysym_t* outKeysym,
+    char* repr,
+    size_t reprSize
+) {
+    assert(wayland), assert(menu), assert(key), assert(outKeysym), assert(repr);
+
+    Xkb* xkb = &wayland->input.xkb;
+    uint32_t keycode = wayland->input.code;
+    uint32_t state = wayland->input.modifiers;
+    xkb_keysym_t aKeysym;
+    xkb_keysym_t bKeysym;
+    size_t reprLen = 0;
+
+    char aBuffer[128] = {0};
+    size_t aLen = maskedKeyGetUtf8(
+        xkb,
+        keycode,
+        aBuffer,
+        sizeof(aBuffer),
+        &aKeysym,
+        ~(xkb->masks[MASK_CTRL])
+    );
+
+    char bBuffer[128] = {0};
+    size_t bLen = maskedKeyGetUtf8(
+        xkb,
+        keycode,
+        bBuffer,
+        sizeof(bBuffer),
+        &bKeysym,
+        ~(xkb->masks[MASK_SHIFT] | xkb->masks[MASK_CTRL])
+    );
+
+    if (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen))
+    {
+        reprLen = aLen;
+        *outKeysym = aKeysym;
+        if (reprLen > 0) mempcpy(repr, aBuffer, reprLen);
+        state &= ~(MOD_SHIFT);
+    }
+    else
+    {
+        reprLen = bLen;
+        *outKeysym = bKeysym;
+        if (reprLen > 0) mempcpy(repr, bBuffer, reprLen);
+    }
+
+    key->special = getSpecialKey(*outKeysym);
+    if (reprLen > 0 && isNormalKey(repr, reprLen))
+    {
+        stringAppend(&key->repr, repr, reprLen);
+    }
+    else if (key->special != SPECIAL_KEY_NONE)
+    {
+        stringAppendCString(&key->repr, specialKeyGetRepr(key->special));
+    }
+    else
+    {
+        handleMysteryKeypress(menu, key, *outKeysym, repr, reprSize);
+    }
+    setKeyMods(key, state);
+}
+
+static Key
+makeKeyFromEvent(Wayland* wayland, Menu* menu, xkb_keysym_t* keysym, char* buffer, size_t size)
+{
+    assert(wayland), assert(menu), assert(keysym), assert(buffer);
+
+    Key key = {0};
+    keyInit(&key);
+    setKeyRepr(wayland, menu, &key, keysym, buffer, size);
+
+    return key;
 }
 
 static MenuStatus
-pollKey(Menu* menu, Wayland* wayland)
+pollKey(Wayland* wayland, Menu* menu)
 {
-    assert(menu), assert(wayland);
+    assert(wayland), assert(menu);
 
     if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
     {
@@ -353,48 +412,21 @@ pollKey(Menu* menu, Wayland* wayland)
         return MENU_STATUS_RUNNING;
     }
 
-    xkb_keysym_t keysym = wayland->input.keysym;
-    uint32_t mods = wayland->input.modifiers;
-    Xkb* xkb = &wayland->input.xkb;
-    struct xkb_state* state = xkb->state;
-    xkbStateRemoveMask(xkb, xkb->masks[MASK_CTRL]);
-
-    char buffer[128] = {0};
-    Key key = {0};
-    bool shiftIsSignificant = true;
-    size_t len = xkb_state_key_get_utf8(
-        state, wayland->input.code, buffer, sizeof(buffer)
-    );
-
-    xkbStateRestoreMask(xkb);
-
-    /* Cleanup */
     wayland->input.keyPending = false;
 
-    if (len > sizeof(buffer))
+    xkb_keysym_t keysym;
+    char buffer[128] = {0};
+
+    Key key = makeKeyFromEvent(wayland, menu, &keysym, buffer, sizeof(buffer));
+    if (stringIsEmpty(&key.repr))
     {
-        errorMsg(
-            "Buffer too small when polling key. Buffer size '%zu', key length '%zu'.",
-            sizeof(buffer), len
-        );
-        return MENU_STATUS_EXIT_SOFTWARE;
+        return MENU_STATUS_RUNNING;
     }
 
-    if (mods & MOD_SHIFT) shiftIsSignificant = isShiftSignificant(wayland, buffer, len);
+    MenuStatus status = menuHandleKeypress(menu, &key);
 
-    KeyType type = getKeyType(wayland, &key, mods, keysym, buffer, len);
-    if (type != KEY_TYPE_IS_STRICTLY_MOD) menuResetTimer(menu);
-
-    switch (type)
-    {
-    case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
-    case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
-    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key, !shiftIsSignificant);
-    case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
-    default: errorMsg("Got an unkown return value from 'processKey'."); break;
-    }
-
-    return MENU_STATUS_EXIT_SOFTWARE;
+    keyFree(&key);
+    return status;
 }
 
 static bool
@@ -676,7 +708,7 @@ runWayland(Menu* menu)
         if (pollTouch(&wayland)) break;
 
         render(menu, &wayland);
-        switch (status = pollKey(menu, &wayland))
+        switch (status = pollKey(&wayland, menu))
         {
         case MENU_STATUS_RUNNING: break;
         case MENU_STATUS_DAMAGED: render(menu, &wayland); break;
@@ -684,7 +716,7 @@ runWayland(Menu* menu)
         case MENU_STATUS_EXIT_SOFTWARE: result = EX_SOFTWARE; break;
         }
     }
-    while (statusIsRunning(status));
+    while (menuStatusIsRunning(status));
 
     freeWayland(&wayland);
 

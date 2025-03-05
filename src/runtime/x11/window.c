@@ -24,6 +24,7 @@
 #include "common/key_chord.h"
 
 /* runtime includes */
+#include "common/string.h"
 #include "runtime/cairo.h"
 #include "runtime/common.h"
 
@@ -528,48 +529,20 @@ grabkeyboard(X11* x11, X11Window* window)
     return false;
 }
 
-static bool
-isShiftSignificant(X11Window* window, XKeyEvent* keyEvent, const char* check, int checkLen)
-{
-    assert(window), assert(keyEvent), assert(check);
-
-    KeySym keysym = XK_VoidSymbol;
-    Status status;
-    unsigned int state = keyEvent->state;
-    char buffer[128] = {0};
-    int len;
-
-    keyEvent->state &= ~(ShiftMask | ControlMask);
-
-    len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
-
-    keyEvent->state = state;
-
-    if (status == XLookupNone || status == XBufferOverflow) return true;
-
-    return !(
-        len == checkLen &&
-        memcmp(buffer, check, len) == 0
-    );
-}
-
 static void
-setKeyEventMods(Modifiers* mods, unsigned int state)
+setKeyMods(Key* key, unsigned int state)
 {
-    assert(mods);
+    assert(key);
 
-    if (state & ControlMask) mods->ctrl = true;
-    if (state & Mod1Mask) mods->alt = true;
-    if (state & Mod4Mask) mods->hyper = true;
-    if (state & ShiftMask) mods->shift = true;
+    if (state & ControlMask) key->mods |= MOD_CTRL;
+    if (state & Mod1Mask) key->mods |= MOD_META;
+    if (state & Mod4Mask) key->mods |= MOD_HYPER;
+    if (state & ShiftMask) key->mods |= MOD_SHIFT;
 }
 
 static SpecialKey
-getSpecialKey(void* keysymPtr)
+getSpecialKey(KeySym keysym)
 {
-    assert(keysymPtr);
-
-    KeySym keysym = (*(KeySym*)keysymPtr);
     for (size_t i = 0; i < specialkeysLen; i++)
     {
         if (specialkeys[i].keysym == keysym) return specialkeys[i].special;
@@ -577,59 +550,121 @@ getSpecialKey(void* keysymPtr)
     return SPECIAL_KEY_NONE;
 }
 
-static bool
-isUnshiftedSpecialKey(X11Window* window, Key* key, XKeyEvent* keyEvent, KeySym* keysym)
-{
-    assert(window), assert(key), assert(keyEvent), assert(keysym);
+static int
+maskedLookupString(
+    XIC* xic,
+    XKeyEvent* keyEvent,
+    char* buffer,
+    int size,
+    KeySym* keysym,
+    unsigned int mask
+) {
+    assert(xic), assert(keyEvent), assert(buffer), assert(keysym);
 
     Status status;
     unsigned int state = keyEvent->state;
-    char buffer[128] = {0};
 
-    keyEvent->state &= ~(ShiftMask | ControlMask);
-
-    XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), keysym, &status);
-
+    keyEvent->state &= mask;
+    int len = XmbLookupString(*xic, keyEvent, buffer, size, keysym, &status);
     keyEvent->state = state;
 
-    if (status == XLookupNone || status == XBufferOverflow) return false;
-
-    return isSpecialKey(key, keysym, getSpecialKey);
+    if (status == XLookupNone || status == XBufferOverflow) return 0;
+    if (IsModifierKey(*keysym)) return 0;
+    return len;
 }
 
-static KeyType
-getKeyType(X11Window* window, Key* key, XKeyEvent* keyEvent, KeySym keysym, char* buffer, int len)
+static bool
+shiftIsSignificant(const char* a, int aLen, const char* b, int bLen)
 {
-    assert(window), assert(key), assert(keyEvent), assert(buffer);
+    assert(a), assert(b);
 
-    if (IsModifierKey(keysym)) return KEY_TYPE_IS_STRICTLY_MOD;
-
-    setKeyEventMods(&key->mods, keyEvent->state);
-
-    if (isSpecialKey(key, &keysym, getSpecialKey)) return KEY_TYPE_IS_SPECIAL;
-    if ((keyEvent->state & ShiftMask) &&
-        isUnshiftedSpecialKey(window, key, keyEvent, &keysym)) return KEY_TYPE_IS_SPECIAL;
-    if (isNormalKey(key, buffer, len)) return KEY_TYPE_IS_NORMAL;
-
-    return KEY_TYPE_IS_UNKNOWN;
+    return (
+        aLen != bLen ||
+        memcmp(a, b, (aLen < bLen) ? aLen : bLen) != 0
+    );
 }
 
-static MenuStatus
+static void
 handleMysteryKeypress(Menu* menu, Key* key, KeySym keysym)
 {
     assert(menu), assert(key);
     debugMsg(menu->debug, "Checking mystery key.");
 
-    key->repr = XKeysymToString(keysym);
-    if (!key->repr)
+    const char* repr = XKeysymToString(keysym);
+    if (!repr)
     {
-        debugMsg(menu->debug, "Got invalid keysym.");
-        return MENU_STATUS_RUNNING;
+        debugMsg(menu->debug, "[X11]: Got invalid keysym.");
+        return;
     }
-    key->len = strlen(key->repr);
-    key->special = SPECIAL_KEY_NONE;
 
-    return handleKeypress(menu, key, true);
+    stringAppendCString(&key->repr, repr);
+    return;
+}
+
+static void
+setKeyRepr(
+    X11Window* window,
+    Menu* menu,
+    XKeyEvent* keyEvent,
+    Key* key,
+    KeySym* keysym,
+    char* repr
+) {
+    assert(window), assert(menu), assert(keyEvent), assert(key), assert(keysym);
+
+    KeySym aKeysym;
+    KeySym bKeysym;
+    unsigned int state = keyEvent->state;
+    int reprLen = 0;
+    char aBuffer[128] = {0};
+    int aLen = maskedLookupString(
+        &window->xic, keyEvent, aBuffer, sizeof(aBuffer), &aKeysym, ~(ControlMask)
+    );
+    char bBuffer[128] = {0};
+    int bLen = maskedLookupString(
+        &window->xic, keyEvent, bBuffer, sizeof(bBuffer), &bKeysym, ~(ShiftMask | ControlMask)
+    );
+
+    if (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen))
+    {
+        reprLen = aLen;
+        *keysym = aKeysym;
+        if (reprLen > 0) memcpy(repr, aBuffer, reprLen);
+        state &= ~(ShiftMask);
+    }
+    else
+    {
+        reprLen = bLen;
+        *keysym = bKeysym;
+        if (reprLen > 0) memcpy(repr, bBuffer, reprLen);
+    }
+
+    key->special = getSpecialKey(*keysym);
+    if (isNormalKey(repr, reprLen))
+    {
+        stringAppend(&key->repr, repr, reprLen);
+    }
+    else if (key->special != SPECIAL_KEY_NONE)
+    {
+        stringAppendCString(&key->repr, specialKeyGetRepr(key->special));
+    }
+    else
+    {
+        handleMysteryKeypress(menu, key, *keysym);
+    }
+    setKeyMods(key, state);
+}
+
+static Key
+makeKeyFromEvent(X11Window* window, Menu* menu, XKeyEvent* keyEvent, KeySym* keysym, char* buffer)
+{
+    assert(window), assert(keyEvent), assert(keysym), assert(buffer);
+
+    Key key = {0};
+    keyInit(&key);
+    setKeyRepr(window, menu, keyEvent, &key, keysym, buffer);
+
+    return key;
 }
 
 static MenuStatus
@@ -637,37 +672,15 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
 {
     assert(window), assert(menu), assert(keyEvent);
 
-    KeySym keysym = XK_VoidSymbol;
-    Status status;
+    KeySym keysym;
     char buffer[128] = {0};
-    int len;
-    Key key = {0};
-    bool shiftIsSignificant = true;
-    unsigned int state = keyEvent->state;
+    Key key = makeKeyFromEvent(window, menu, keyEvent, &keysym, buffer);
+    if (stringIsEmpty(&key.repr)) return MENU_STATUS_RUNNING;
 
-    keyEvent->state &= ~(ControlMask);
+    MenuStatus status = menuHandleKeypress(menu, &key);
 
-    len = XmbLookupString(window->xic, keyEvent, buffer, sizeof(buffer), &keysym, &status);
-
-    keyEvent->state = state;
-
-    if (status == XLookupNone || status == XBufferOverflow) return MENU_STATUS_RUNNING;
-
-    if (state & ShiftMask) shiftIsSignificant = isShiftSignificant(window, keyEvent, buffer, len);
-
-    KeyType type = getKeyType(window, &key, keyEvent, keysym, buffer, len);
-    if (type != KEY_TYPE_IS_STRICTLY_MOD) menuResetTimer(menu);
-
-    switch (type)
-    {
-    case KEY_TYPE_IS_STRICTLY_MOD: return MENU_STATUS_RUNNING;
-    case KEY_TYPE_IS_SPECIAL: /* FALLTHROUGH */
-    case KEY_TYPE_IS_NORMAL: return handleKeypress(menu, &key, !shiftIsSignificant);
-    case KEY_TYPE_IS_UNKNOWN: return handleMysteryKeypress(menu, &key, keysym);
-    default: errorMsg("Got an unkown return value from 'processKey'."); break;
-    }
-
-    return MENU_STATUS_EXIT_SOFTWARE;
+    keyFree(&key);
+    return status;
 }
 
 static int
@@ -694,20 +707,27 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
         switch (ev.type)
         {
         case DestroyNotify:
+        {
             if (ev.xdestroywindow.window != window->drawable) break;
             cleanup(x11);
             return EX_SOFTWARE;
+        }
         case Expose:
+        {
             if (ev.xexpose.count == 0) if (!render(window, menu)) return EX_SOFTWARE;
             break;
+        }
         case FocusIn:
+        {
             /* regrab focus from parent window */
             if (ev.xfocus.window != window->drawable)
             {
                 if (!grabfocus(x11, window)) return EX_SOFTWARE;
             }
             break;
+        }
         case KeyPress:
+        {
             switch (keypress(window, menu, &ev.xkey))
             {
             case MENU_STATUS_RUNNING: break;
@@ -716,14 +736,17 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
             case MENU_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;
             }
             break;
+        }
         case ButtonPress: return EX_SOFTWARE;
         case VisibilityNotify:
+        {
             if (ev.xvisibility.state != VisibilityUnobscured)
             {
                 XRaiseWindow(window->display, window->drawable);
                 XFlush(window->display);
             }
             break;
+        }
         }
     }
 
