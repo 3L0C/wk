@@ -35,14 +35,14 @@ const char* WK_XKB_MASK_NAMES[MASK_LAST] = {
 };
 
 const XkbModBit WK_XKB_MODS[MASK_LAST] = {
-    MOD_SHIFT,
-    MOD_CAPS,
-    MOD_CTRL,
-    MOD_ALT,
-    MOD_MOD2,
-    MOD_MOD3,
-    MOD_LOGO,
-    MOD_MOD5,
+    XKB_MOD_SHIFT,
+    XKB_MOD_CAPS,
+    XKB_MOD_CTRL,
+    XKB_MOD_ALT,
+    XKB_MOD_MOD2,
+    XKB_MOD_MOD3,
+    XKB_MOD_LOGO,
+    XKB_MOD_MOD5,
 };
 
 static bool debug = false;

@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* common includes */
+#include "common/key_chord.h"
+
 typedef enum
 {
     /* single characters */
@@ -78,6 +81,7 @@ typedef enum
     TOKEN_NO_BEFORE,
     TOKEN_NO_AFTER,
     TOKEN_WRITE,
+    TOKEN_EXECUTE,
     TOKEN_SYNC_CMD,
 
     /* literals */
@@ -93,7 +97,7 @@ typedef enum
 
     /* mods */
     TOKEN_MOD_CTRL,
-    TOKEN_MOD_ALT,
+    TOKEN_MOD_META,
     TOKEN_MOD_HYPER,
     TOKEN_MOD_SHIFT,
 
@@ -106,38 +110,32 @@ typedef enum
     TOKEN_EMPTY,
     TOKEN_ERROR,
     TOKEN_EOF,
+    TOKEN_UNKNOWN,
+
+    /* end */
+    TOKEN_LAST,
 } TokenType;
 
 typedef struct
 {
-    TokenType type;
     const char* start;
+    const char* message;
     size_t length;
+    size_t messageLength;
     uint32_t line;
     uint32_t column;
-    const char* message;
-    size_t messageLength;
+    TokenType type;
+    SpecialKey special;
 } Token;
 
-typedef struct
-{
-    Token* tokens;
-    size_t count;
-    size_t capacity;
-} TokenArray;
-
-void copyToken(const Token* from, Token* to);
-void copyTokenArray(const TokenArray* from, TokenArray* to);
-void errorAtToken(const Token* token, const char* filepath, const char* fmt, ...);
-bool getDoubleFromToken(const Token* token, double* dest, bool debug);
-bool getInt32FromToken(const Token* token, int32_t* dest, bool debug);
-bool getUint32FromToken(const Token* token, uint32_t* dest, bool debug);
-const char* getTokenLiteral(const TokenType type);
-void initToken(Token* token);
-void initTokenArray(TokenArray* tokens);
-bool isTokenHookType(const TokenType type);
-bool isTokenModType(const TokenType type);
-void freeTokenArray(TokenArray* tokens);
-void writeTokenArray(TokenArray* tokens, Token* token);
+void tokenCopy(const Token* from, Token* to);
+void tokenErrorAt(const Token* token, const char* filepath, const char* fmt, ...);
+bool tokenGetDouble(const Token* token, double* dest, bool debug);
+bool tokenGetInt32(const Token* token, int32_t* dest, bool debug);
+const char* tokenGetLiteral(const TokenType type);
+bool tokenGetUint32(const Token* token, uint32_t* dest, bool debug);
+void tokenInit(Token* token);
+bool tokenIsHookType(const TokenType type);
+bool tokenIsModType(const TokenType type);
 
 #endif /* WK_COMPILER_TOKEN_H_ */

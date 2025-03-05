@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -11,7 +10,6 @@
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/key_chord.h"
-#include "common/memory.h"
 #include "common/menu.h"
 #include "common/string.h"
 
@@ -21,114 +19,91 @@
 #include "scanner.h"
 #include "token.h"
 
-static void compileKeyChord(Compiler* compiler);
-
-static void
-initPseudoChordArray(PseudoChordArray* array)
+typedef struct
 {
-    assert(array);
+    Key key;
+    Array desc;
+    Array cmd;
+    Array before;
+    Array after;
+    Array chords;
+    ChordFlag flags;
+} PseudoChord;
 
-    array->chords = NULL;
-    array->count = 0;
-    array->capacity = 0;
+static void pseudoChordArrayFree(Array* arr);
+
+static int
+pseudoChordCompare(const void* a, const void* b)
+{
+    assert(a), assert(b);
+
+    PseudoChord* aChord = (PseudoChord*)a;
+    PseudoChord* bChord = (PseudoChord*)b;
+
+    if (chordFlagIsActive(aChord->flags, FLAG_IGNORE_SORT)) return 0;
+    if (chordFlagIsActive(bChord->flags, FLAG_IGNORE_SORT)) return 0;
+
+    const Key* aKey = &aChord->key;
+    const Key* bKey = &bChord->key;
+
+    bool aHasMods = modifierHasAnyActive(aKey->mods);
+    bool bHasMods = modifierHasAnyActive(bKey->mods);
+
+    if (aHasMods == bHasMods) return stringCompare(&aKey->repr, &bKey->repr);
+    if (aHasMods) return 1;
+    return -1;
 }
 
 static void
-initPseudoChord(PseudoChord* chord)
-{
-    assert(chord);
-
-    chord->state = KEY_CHORD_STATE_NOT_NULL;
-    initKey(&chord->key);
-    initToken(&chord->keyToken);
-    initTokenArray(&chord->description);
-    initTokenArray(&chord->command);
-    initTokenArray(&chord->command);
-    initTokenArray(&chord->command);
-    initChordFlags(&chord->flags);
-    initPseudoChordArray(&chord->chords);
-}
-
-static void
-makeNullPseudoChord(PseudoChord* chord)
-{
-    assert(chord);
-
-    initPseudoChord(chord);
-    chord->state = KEY_CHORD_STATE_IS_NULL;
-}
-
-static void
-copyPseudoChord(PseudoChord* from, PseudoChord* to)
-{
-    assert(from), assert(to);
-
-    to->state = from->state;
-    copyKey(&from->key, &to->key);
-    copyToken(&from->keyToken, &to->keyToken);
-    copyTokenArray(&from->description, &to->description);
-    copyTokenArray(&from->command, &to->command);
-    copyTokenArray(&from->before, &to->before);
-    copyTokenArray(&from->after, &to->after);
-    copyChordFlags(&from->flags, &to->flags);
-    to->chords = from->chords;
-}
-
-static void freePseudoChordArray(PseudoChordArray* chords);
-
-static void
-freePseudoChord(PseudoChord* chord)
-{
-    assert(chord);
-
-    if (chord->key.repr) free(chord->key.repr);
-    freeTokenArray(&chord->description);
-    freeTokenArray(&chord->command);
-    freeTokenArray(&chord->before);
-    freeTokenArray(&chord->after);
-    if (chord->chords.count) freePseudoChordArray(&chord->chords);
-    initPseudoChord(chord);
-}
-
-void
-freePseudoChordArray(PseudoChordArray* chords)
+pseudoChordArraySort(Array* chords)
 {
     assert(chords);
 
-    for (size_t i = 0; i < chords->count; i++)
-    {
-        freePseudoChord(&chords->chords[i]);
-    }
-    FREE_ARRAY(PseudoChordArray, chords->chords, chords->count);
-    chords->chords = NULL;
-    chords->count = 0;
-    chords->capacity = 0;
+    qsort(ARRAY_AS(chords, PseudoChord), arrayLength(chords), sizeof(PseudoChord), pseudoChordCompare);
 }
 
-static PseudoChord*
-writePseudoChordToPseudoChordArray(PseudoChord* chord, PseudoChordArray* array)
+static void
+pseudoChordInit(PseudoChord* chord)
 {
-    assert(chord), assert(array);
+    assert(chord);
 
-    if (array->count == array->capacity)
+    keyInit(&chord->key);
+    chord->desc = ARRAY_INIT(Token);
+    chord->cmd = ARRAY_INIT(Token);
+    chord->before = ARRAY_INIT(Token);
+    chord->after = ARRAY_INIT(Token);
+    chord->chords = ARRAY_INIT(PseudoChord);
+    chord->flags = chordFlagInit();
+}
+
+static void
+pseudoChordFree(PseudoChord* chord)
+{
+    assert(chord);
+
+    arrayFree(&chord->desc);
+    arrayFree(&chord->cmd);
+    arrayFree(&chord->before);
+    arrayFree(&chord->after);
+    pseudoChordArrayFree(&chord->chords);
+    pseudoChordInit(chord);
+}
+
+static void
+pseudoChordArrayFree(Array* arr)
+{
+    assert(arr);
+
+    forEach(arr, PseudoChord, chord)
     {
-        size_t oldCapacity = array->capacity;
-        array->capacity = GROW_CAPACITY(oldCapacity);
-        array->chords = GROW_ARRAY(PseudoChord, array->chords, oldCapacity, array->capacity);
+        pseudoChordFree(chord);
     }
 
-    copyPseudoChord(chord, &array->chords[array->count]);
-    PseudoChord* result = &array->chords[array->count++];
-    return result;
+    arrayFree(arr);
 }
 
-static PseudoChord*
-writePseudoChordToDest(Compiler* compiler, PseudoChord* chord)
-{
-    assert(compiler), assert(chord);
-
-    return writePseudoChordToPseudoChordArray(chord, compiler->chordsDest);
-}
+static void compileKeyChord(Compiler* compiler);
+static void compilePrefix(Compiler* compiler, PseudoChord* chord);
 
 static void
 errorAt(Compiler* compiler, Token* token, const char* fmt, ...)
@@ -141,7 +116,7 @@ errorAt(Compiler* compiler, Token* token, const char* fmt, ...)
 
     va_list ap;
     va_start(ap, fmt);
-    errorAtToken(token, compiler->scanner.filepath, fmt, ap);
+    tokenErrorAt(token, compiler->scanner.filepath, fmt, ap);
     va_end(ap);
 }
 
@@ -158,19 +133,18 @@ errorAtCurrent(Compiler* compiler, const char* fmt, ...)
 
     compiler->panicMode = true;
     compiler->hadError = true;
-
 }
 
 static TokenType
-advanceCompiler(Compiler* compiler)
+advance(Compiler* compiler)
 {
     assert(compiler);
 
-    copyToken(&compiler->current, &compiler->previous);
+    tokenCopy(&compiler->current, &compiler->previous);
 
     while (true)
     {
-        scanTokenForCompiler(&compiler->scanner, &compiler->current);
+        scannerGetTokenForCompiler(&compiler->scanner, &compiler->current);
         if (compiler->debug) disassembleToken(&compiler->current);
         if (compiler->current.type != TOKEN_ERROR) break;
 
@@ -180,26 +154,18 @@ advanceCompiler(Compiler* compiler)
     return compiler->current.type;
 }
 
-static bool
-consume(Compiler* compiler, TokenType type, const char* message)
+static void
+appendToDest(Compiler* compiler, const PseudoChord* chord)
 {
-    assert(compiler), assert(message);
+    assert(compiler), assert(chord);
 
-    if (compiler->current.type == type)
-    {
-        advanceCompiler(compiler);
-        return true;
-    }
-
-    errorAtCurrent(compiler, message);
-    return false;
+    arrayAppend(compiler->dest, chord);
 }
 
 static bool
-checkCompiler(Compiler* compiler, TokenType type)
+check(Compiler* compiler, TokenType type)
 {
     assert(compiler);
-
     return compiler->current.type == type;
 }
 
@@ -207,62 +173,111 @@ static bool
 compilerIsAtEnd(Compiler* compiler)
 {
     assert(compiler);
-
-    return isAtEnd(&compiler->scanner);
+    return scannerIsAtEnd(&compiler->scanner);
 }
 
 static bool
-matchCompiler(Compiler* compiler, TokenType type)
+consume(Compiler* compiler, TokenType type, const char* message)
 {
-    assert(compiler);
+    assert(compiler), assert(message);
 
-    if (!compilerIsAtEnd(compiler) && !checkCompiler(compiler, type)) return false;
-    advanceCompiler(compiler);
-    return true;
-}
+    if (compiler->current.type == type)
+    {
+        advance(compiler);
+        return true;
+    }
 
-static TokenType
-currentType(Compiler* compiler)
-{
-    assert(compiler);
-
-    return compiler->current.type;
+    errorAtCurrent(compiler, message);
+    return false;
 }
 
 static Token*
 currentToken(Compiler* compiler)
 {
     assert(compiler);
-
     return &compiler->current;
 }
 
-static void
-addMod(TokenType type, Modifiers* mod)
+static TokenType
+currentType(Compiler* compiler)
 {
-    assert(mod);
+    assert(compiler);
+    return compiler->current.type;
+}
 
-    switch (type)
+static Array*
+getDest(Compiler* compiler)
+{
+    assert(compiler);
+    return compiler->dest;
+}
+
+static size_t
+getIndex(Compiler* compiler)
+{
+    assert(compiler), assert(!arrayIsEmpty(compiler->dest));
+    return arrayLength(compiler->dest) - 1;
+}
+
+static size_t
+getNextIndex(Compiler* compiler)
+{
+    assert(compiler);
+    return getIndex(compiler) + 1;
+}
+
+static SpecialKey
+getSpecial(Compiler* compiler)
+{
+    assert(compiler);
+
+    return compiler->current.special;
+}
+
+static bool
+match(Compiler* compiler, TokenType type)
+{
+    assert(compiler);
+
+    if (!compilerIsAtEnd(compiler) && !check(compiler, type)) return false;
+    advance(compiler);
+    return true;
+}
+
+static Token*
+previousToken(Compiler* compiler)
+{
+    assert(compiler);
+    return &compiler->previous;
+}
+
+static void
+compileMod(Compiler* compiler, Key* key, Token* token)
+{
+    assert(compiler), assert(key), assert(token), assert(tokenIsModType(token->type));
+    if (compiler->panicMode) return;
+
+    switch (token->type)
     {
-    case TOKEN_MOD_CTRL: mod->ctrl = true; break;
-    case TOKEN_MOD_ALT: mod->alt = true; break;
-    case TOKEN_MOD_HYPER: mod->hyper = true; break;
-    case TOKEN_MOD_SHIFT: mod->shift = true; break;
+    case TOKEN_MOD_CTRL: key->mods |= MOD_CTRL; break;
+    case TOKEN_MOD_META: key->mods |= MOD_META; break;
+    case TOKEN_MOD_HYPER: key->mods |= MOD_HYPER; break;
+    case TOKEN_MOD_SHIFT: key->mods |= MOD_SHIFT; break;
     default: break;
     }
 }
 
 static void
-compileMods(Compiler* compiler, Modifiers* mods)
+compileMods(Compiler* compiler, Key* key)
 {
-    assert(compiler), assert(mods);
+    assert(compiler), assert(key);
     if (compiler->panicMode) return;
 
     TokenType type = currentType(compiler);
-    while (isTokenModType(type))
+    while (tokenIsModType(type))
     {
-        addMod(type, mods);
-        type = advanceCompiler(compiler);
+        compileMod(compiler, key, currentToken(compiler));
+        type = advance(compiler);
     }
 }
 
@@ -282,49 +297,50 @@ isKey(Compiler* compiler)
     return false;
 }
 
-static SpecialKey
-compilerGetSpecial(Compiler* compiler)
+static void
+compileKeyToString(Compiler* compiler, Key* key)
 {
-    assert(compiler);
+    assert(compiler), assert(key);
+    if (compiler->panicMode) return;
 
-    return compiler->scanner.special;
+    Token* token = currentToken(compiler);
+    if (token->type == TOKEN_SPECIAL_KEY)
+    {
+        key->special = getSpecial(compiler);
+        stringAppendCString(&key->repr, specialKeyGetRepr(key->special));
+    }
+    else
+    {
+        stringAppend(&key->repr, token->start, token->length);
+    }
 }
 
 static void
-compileKey(Compiler* compiler, PseudoChord* chord)
+compileKey(Compiler* compiler, Key* key)
 {
-    assert(compiler), assert(chord);
+    assert(compiler), assert(key);
     if (compiler->panicMode) return;
 
     if (!isKey(compiler)) return errorAtCurrent(compiler, "Expected key or special.");
-    Token* token = currentToken(compiler);
-    if (token->type == TOKEN_SPECIAL_KEY) chord->key.special = compilerGetSpecial(compiler);
-    copyToken(token, &chord->keyToken);
+
+    compileKeyToString(compiler, key);
     consume(compiler, currentType(compiler), "Expected key or special.");
 }
 
-static size_t
-compilerGetIndex(Compiler* compiler)
-{
-    assert(compiler);
-
-    return compiler->chordsDest->count;
-}
-
 static void
-collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
+compileDescriptionTokens(Compiler* compiler, Array* desc)
 {
-    assert(compiler), assert(tokens);
+    assert(compiler), assert(desc);
     if (compiler->panicMode) return;
 
-    if (!checkCompiler(compiler, TOKEN_DESC_INTERP) &&
-        !checkCompiler(compiler, TOKEN_DESCRIPTION))
+    if (!check(compiler, TOKEN_DESC_INTERP) &&
+        !check(compiler, TOKEN_DESCRIPTION))
     {
         errorAtCurrent(compiler, "Expected description.");
         return;
     }
 
-    while (!checkCompiler(compiler, TOKEN_EOF))
+    while (!check(compiler, TOKEN_EOF))
     {
         Token* token = currentToken(compiler);
         switch (token->type)
@@ -333,11 +349,11 @@ collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         case TOKEN_DESC_INTERP:
-        case TOKEN_DESCRIPTION: writeTokenArray(tokens, token); break;
+        case TOKEN_DESCRIPTION: arrayAppend(desc, token); break;
         default: errorAtCurrent(compiler, "Malfromed description."); return;
         }
-        if (checkCompiler(compiler, TOKEN_DESCRIPTION)) break;
-        advanceCompiler(compiler);
+        if (check(compiler, TOKEN_DESCRIPTION)) break;
+        advance(compiler);
     }
 
     consume(compiler, TOKEN_DESCRIPTION, "Expect description.");
@@ -345,20 +361,20 @@ collectDescriptionTokens(Compiler* compiler, TokenArray* tokens)
 }
 
 static bool
-collectCommandTokens(Compiler* compiler, TokenArray* tokens, bool inChordArray, const char* message)
+compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const char* message)
 {
-    assert(compiler), assert(tokens), assert(message);
+    assert(compiler), assert(cmd), assert(message);
     if (compiler->panicMode) return false;
-    if (inChordArray && checkCompiler(compiler, TOKEN_RIGHT_PAREN)) return false;
+    if (inChordArray && check(compiler, TOKEN_RIGHT_PAREN)) return false;
 
-    if (!checkCompiler(compiler, TOKEN_COMM_INTERP) &&
-        !checkCompiler(compiler, TOKEN_COMMAND))
+    if (!check(compiler, TOKEN_COMM_INTERP) &&
+        !check(compiler, TOKEN_COMMAND))
     {
         errorAtCurrent(compiler, message);
         return false;
     }
 
-    while (!checkCompiler(compiler, TOKEN_EOF))
+    while (!check(compiler, TOKEN_EOF))
     {
         Token* token = currentToken(compiler);
         switch (token->type)
@@ -372,11 +388,11 @@ collectCommandTokens(Compiler* compiler, TokenArray* tokens, bool inChordArray, 
         case TOKEN_THIS_DESC_UPPER_ALL:
         case TOKEN_THIS_DESC_LOWER_ALL:
         case TOKEN_COMM_INTERP:
-        case TOKEN_COMMAND: writeTokenArray(tokens, token); break;
+        case TOKEN_COMMAND: arrayAppend(cmd, token); break;
         default: errorAtCurrent(compiler, "Malfromed command."); return false;
         }
-        if (checkCompiler(compiler, TOKEN_COMMAND)) break;
-        advanceCompiler(compiler);
+        if (check(compiler, TOKEN_COMMAND)) break;
+        advance(compiler);
     }
 
     return consume(compiler, TOKEN_COMMAND, "Expected end of command.");
@@ -393,31 +409,35 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
     case TOKEN_BEFORE:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^before' hook.");
-        return collectCommandTokens(
-            compiler, &chord->before, false, "Expected command after '^before' hook."
+        return compileCommandTokens(
+            compiler, &chord->before,
+            false, "Expected command after '^before' hook."
         );
     }
     case TOKEN_AFTER:
     {
         consume(compiler, TOKEN_AFTER, "Expected '^after' hook.");
-        return collectCommandTokens(
-            compiler, &chord->after, false, "Expected command after '^after' hook."
+        return compileCommandTokens(
+            compiler, &chord->after,
+            false, "Expected command after '^after' hook."
         );
     }
     case TOKEN_SYNC_BEFORE:
     {
         consume(compiler, TOKEN_SYNC_BEFORE, "Expected '^sync-before' hook.");
-        chord->flags.syncBefore = true;
-        return collectCommandTokens(
-            compiler, &chord->before, false, "Expected command after '^sync-before' hook."
+        chord->flags |= FLAG_SYNC_BEFORE;
+        return compileCommandTokens(
+            compiler, &chord->before,
+            false, "Expected command after '^sync-before' hook."
         );
     }
     case TOKEN_SYNC_AFTER:
     {
         consume(compiler, TOKEN_SYNC_AFTER, "Expected '^sync-after' hook.");
-        chord->flags.syncAfter = true;
-        return collectCommandTokens(
-            compiler, &chord->after, false, "Expected command after '^sync-after' hook."
+        chord->flags |= FLAG_SYNC_AFTER;
+        return compileCommandTokens(
+            compiler, &chord->after,
+            false, "Expected command after '^sync-after' hook."
         );
     }
     default: return false;
@@ -432,104 +452,76 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
 
     switch (type)
     {
-    case TOKEN_KEEP: chord->flags.keep = true; return true;
-    case TOKEN_CLOSE: chord->flags.close = true; return true;
-    case TOKEN_INHERIT: chord->flags.inherit = true; return true;
-    case TOKEN_IGNORE: chord->flags.ignore = true; return true;
-    case TOKEN_IGNORE_SORT: chord->flags.ignoreSort = true; return true;
-    case TOKEN_UNHOOK: chord->flags.unhook = true; return true;
-    case TOKEN_DEFLAG: chord->flags.deflag = true; return true;
-    case TOKEN_NO_BEFORE: chord->flags.nobefore = true; return true;
-    case TOKEN_NO_AFTER: chord->flags.noafter = true; return true;
-    case TOKEN_WRITE: chord->flags.write = true; return true;
-    case TOKEN_SYNC_CMD: chord->flags.syncCommand = true; return true;
+    case TOKEN_KEEP: chord->flags |= FLAG_KEEP; return true;
+    case TOKEN_CLOSE: chord->flags |= FLAG_CLOSE; return true;
+    case TOKEN_INHERIT: chord->flags |= FLAG_INHERIT; return true;
+    case TOKEN_IGNORE: chord->flags |= FLAG_IGNORE; return true;
+    case TOKEN_IGNORE_SORT: chord->flags |= FLAG_IGNORE_SORT; return true;
+    case TOKEN_UNHOOK: chord->flags |= FLAG_UNHOOK; return true;
+    case TOKEN_DEFLAG: chord->flags |= FLAG_DEFLAG; return true;
+    case TOKEN_NO_BEFORE: chord->flags |= FLAG_NO_BEFORE; return true;
+    case TOKEN_NO_AFTER: chord->flags |= FLAG_NO_AFTER; return true;
+    case TOKEN_WRITE: chord->flags |= FLAG_WRITE; return true;
+    case TOKEN_EXECUTE: chord->flags |= FLAG_EXECUTE; return true;
+    case TOKEN_SYNC_CMD: chord->flags |= FLAG_SYNC_COMMAND; return true;
     default: return false;
     }
 }
 
 static void
-compileHooksAndFlags(Compiler* compiler, PseudoChord* keyChord)
+compileHooksAndFlags(Compiler* compiler, PseudoChord* chord)
 {
-    assert(compiler), assert(keyChord);
+    assert(compiler), assert(chord);
     if (compiler->panicMode) return;
 
     TokenType type = currentType(compiler);
     while (!compilerIsAtEnd(compiler))
     {
-        if (!compileHook(compiler, keyChord, type) && !compileFlag(compiler, keyChord, type)) return;
+        if (!compileHook(compiler, chord, type) && !compileFlag(compiler, chord, type)) return;
 
         /* Hooks consume their own token and their command
          * which leaves them pointing at the next token. */
-        type = isTokenHookType(type) ? currentType(compiler) : advanceCompiler(compiler);
+        type = tokenIsHookType(type) ? currentType(compiler) : advance(compiler);
     }
 }
 
 static void
-compileMissingKeyChordInfo(
-    Compiler* compiler,
-    PseudoChord* from,
-    PseudoChord* to,
-    TokenArray* descriptionTokens,
-    TokenArray* commandTokens,
-    size_t index)
+compileMissingKeyChordInfo(Compiler* compiler, const PseudoChord* from, PseudoChord* to)
 {
-    assert(compiler), assert(from), assert(to), assert(descriptionTokens), assert(commandTokens);
+    assert(compiler), assert(from), assert(to);
 
-    if (!to->description.count) copyTokenArray(&from->description, &to->description);
-    if (!to->command.count) copyTokenArray(&from->command, &to->command);
-    if (!to->before.count && from->before.count) copyTokenArray(&from->before, &to->before);
-    if (!to->after.count && from->after.count) copyTokenArray(&from->after, &to->after);
-    if (hasDefaultChordFlags(&to->flags)) copyChordFlags(&from->flags, &to->flags);
+    if (!chordFlagHasAnyActive(to->flags)) to->flags = from->flags;
+    if (arrayLength(&to->desc) == 0) to->desc = arrayCopy(&from->desc);
+    if (arrayLength(&to->cmd) == 0) to->cmd = arrayCopy(&from->cmd);
+    if (arrayLength(&to->before) == 0) to->before = arrayCopy(&from->before);
+    if (arrayLength(&to->after) == 0) to->after = arrayCopy(&from->after);
 }
 
 static void
-compileImplicitChordArray(Compiler* compiler)
+compileImplicitChordArray(Compiler* compiler, PseudoChord* dummy)
 {
     assert(compiler);
 
-    if (!checkCompiler(compiler, TOKEN_DESCRIPTION) && !checkCompiler(compiler, TOKEN_DESC_INTERP))
+    if (!check(compiler, TOKEN_DESCRIPTION) && !check(compiler, TOKEN_DESC_INTERP))
     {
         errorAtCurrent(compiler, "Expected description, or description expressions after '...'.");
         return;
     }
 
-    size_t arrayStart = compilerGetIndex(compiler);
-    PseudoChordArray* keys = &compiler->implicitArrayKeys;
-    PseudoChord mods = {0};
-    copyPseudoChord(&compiler->chord, &mods);
+    compileDescriptionTokens(compiler, &dummy->desc);
+    compileHooksAndFlags(compiler, dummy);
+    compileCommandTokens(compiler, &dummy->cmd, false, "Expected command.");
 
-    for (size_t i = 0; i < keys->count; i++)
+    forEach(&compiler->implicitKeys, const Key, key)
     {
-        PseudoChord* key = &keys->chords[i];
-        PseudoChord* chord = &compiler->chord;
-        initPseudoChord(chord);
-        copyPseudoChord(key, chord);
-        if (hasActiveModifier(&mods.key.mods)) copyChordModifiers(&mods.key.mods, &chord->key.mods);
-
-        writePseudoChordToDest(compiler, chord);
-        freePseudoChord(chord);
+        PseudoChord chord = {0};
+        pseudoChordInit(&chord);
+        keyCopy(key, &chord.key);
+        compileMissingKeyChordInfo(compiler, dummy, &chord);
+        arrayAppend(compiler->dest, &chord);
     }
 
-    PseudoChord dummy = {0};
-    initPseudoChord(&dummy);
-
-    collectDescriptionTokens(compiler, &dummy.description);
-    compileHooksAndFlags(compiler, &dummy);
-    collectCommandTokens(compiler, &dummy.command, false, "Expected command.");
-
-    /* Write chords in chord array to destination */
-    PseudoChordArray* array = compiler->chordsDest;
-    size_t arrayEnd = array->count;
-    for (size_t i = arrayStart; i < arrayEnd; i++)
-    {
-        PseudoChord* chord = &array->chords[i];
-        compileMissingKeyChordInfo(
-            compiler, &dummy, chord, &dummy.description, &dummy.command, i
-        );
-    }
-
-    freePseudoChord(&dummy);
-    return;
+    pseudoChordFree(dummy);
 }
 
 static void
@@ -538,77 +530,68 @@ compileChordArray(Compiler* compiler)
     assert(compiler);
 
     if (!isKey(compiler) &&
-        !isTokenModType(currentType(compiler)) &&
-        !checkCompiler(compiler, TOKEN_LEFT_PAREN))
+        !tokenIsModType(currentType(compiler)) &&
+        !check(compiler, TOKEN_LEFT_PAREN))
     {
         errorAtCurrent(compiler, "Expect modifier, key, or chord expression after '['.");
         return;
     }
 
-    size_t arrayStart = compilerGetIndex(compiler);
+    size_t arrayStart = getNextIndex(compiler);
 
     while (!compilerIsAtEnd(compiler) &&
-           !checkCompiler(compiler, TOKEN_RIGHT_BRACKET))
+           !check(compiler, TOKEN_RIGHT_BRACKET))
     {
         if (!isKey(compiler) &&
-            !isTokenModType(currentType(compiler)) &&
-            !checkCompiler(compiler, TOKEN_LEFT_PAREN))
+            !tokenIsModType(currentType(compiler)) &&
+            !check(compiler, TOKEN_LEFT_PAREN))
         {
             errorAtCurrent(
                 compiler,
                 "Chord arrays may only contain modifiers, keys, and chord expressions."
             );
-            goto fail;
+            compiler->hadError = true;
+            return;
         }
 
-        PseudoChord* chord = &compiler->chord;
-        initPseudoChord(chord);
+        PseudoChord chord = {0};
+        pseudoChordInit(&chord);
 
-        if (matchCompiler(compiler, TOKEN_LEFT_PAREN))
+        if (match(compiler, TOKEN_LEFT_PAREN))
         {
-            compileMods(compiler, &chord->key.mods);
-            compileKey(compiler, chord);
-            collectDescriptionTokens(compiler, &chord->description);
-            /* don't compile command until the end */
-            compileHooksAndFlags(compiler, chord);
-            collectCommandTokens(compiler, &chord->command, true, "Expected command.");
+            compileMods(compiler, &chord.key);
+            compileKey(compiler, &chord.key);
+            compileDescriptionTokens(compiler, &chord.desc);
+            compileHooksAndFlags(compiler, &chord);
+            compileCommandTokens(compiler, &chord.cmd, true, "Expected command.");
             consume(compiler, TOKEN_RIGHT_PAREN, "Expect closing parenthesis after '('.");
         }
         else
         {
-            compileMods(compiler, &chord->key.mods);
-            compileKey(compiler, chord);
+            compileMods(compiler, &chord.key);
+            compileKey(compiler, &chord.key);
         }
 
-        writePseudoChordToDest(compiler, chord);
-        freePseudoChord(chord);
+        appendToDest(compiler, &chord);
+        pseudoChordFree(&chord);
     }
 
     consume(compiler, TOKEN_RIGHT_BRACKET, "Expect ']' after chord array.");
     PseudoChord dummy = {0};
-    initPseudoChord(&dummy);
+    pseudoChordInit(&dummy);
 
-    collectDescriptionTokens(compiler, &dummy.description);
+    compileDescriptionTokens(compiler, &dummy.desc);
     compileHooksAndFlags(compiler, &dummy);
-    collectCommandTokens(compiler, &dummy.command, false, "Expected command.");
+    compileCommandTokens(compiler, &dummy.cmd, false, "Expected command.");
 
     /* Write chords in chord array to destination */
-    PseudoChordArray* array = compiler->chordsDest;
-    size_t arrayEnd = array->count;
-    for (size_t i = arrayStart; i < arrayEnd; i++)
+    forEachFrom(getDest(compiler), PseudoChord, chord, arrayStart)
     {
-        PseudoChord* chord = &array->chords[i];
-        compileMissingKeyChordInfo(
-            compiler, &dummy, chord, &dummy.description, &dummy.command, i
-        );
+        compileMissingKeyChordInfo(compiler, &dummy, chord);
     }
 
-    freePseudoChord(&dummy);
-    return;
+    pseudoChordFree(&dummy);
 
-fail:
-    compiler->hadError = true;
-    freePseudoChord(&compiler->chord);
     return;
 }
 
@@ -617,38 +600,29 @@ compileChord(Compiler* compiler)
 {
     assert(compiler);
 
-    PseudoChord* chord = &compiler->chord;
-    freePseudoChord(chord);
-    initPseudoChord(chord);
+    PseudoChord dummy = {0};
+    pseudoChordInit(&dummy);
 
-    compileMods(compiler, &chord->key.mods);
-    if (matchCompiler(compiler, TOKEN_ELLIPSIS)) return compileImplicitChordArray(compiler);
-    compileKey(compiler, chord);
-    collectDescriptionTokens(compiler, &chord->description);
-    compileHooksAndFlags(compiler, chord);
+    compileMods(compiler, &dummy.key);
+    if (match(compiler, TOKEN_ELLIPSIS)) return compileImplicitChordArray(compiler, &dummy);
+    compileKey(compiler, &dummy.key);
+    compileDescriptionTokens(compiler, &dummy.desc);
+    compileHooksAndFlags(compiler, &dummy);
 
     /* Prefix */
-    if (checkCompiler(compiler, TOKEN_LEFT_BRACE)) return;
+    if (check(compiler, TOKEN_LEFT_BRACE)) return compilePrefix(compiler, &dummy);
 
-    collectCommandTokens(compiler, &chord->command, false, "Expected command.");
+    compileCommandTokens(compiler, &dummy.cmd, false, "Expected command.");
 
     /* Check for brace after command */
-    if (checkCompiler(compiler, TOKEN_LEFT_BRACE))
+    if (check(compiler, TOKEN_LEFT_BRACE))
     {
         errorAtCurrent(compiler, "Expected end of key chord after command but got '{'.");
         return;
     }
 
-    writePseudoChordToDest(compiler, chord);
-    freePseudoChord(chord);
-}
-
-static void
-compileNullKeyChord(Compiler* compiler)
-{
-    assert(compiler);
-
-    writePseudoChordToDest(compiler, &compiler->nullPseudoChord);
+    appendToDest(compiler, &dummy);
+    pseudoChordFree(&dummy);
 }
 
 static void
@@ -657,12 +631,13 @@ setBeforeHook(PseudoChord* parent, PseudoChord* child)
     assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
-    if (child->flags.nobefore || !parent->before.count) return;
+    if (chordFlagIsActive(child->flags, FLAG_NO_BEFORE) || arrayLength(&parent->before) == 0) return;
 
-    copyTokenArray(&parent->before, &child->before);
+    arrayFree(&child->before);
+    child->before = arrayCopy(&parent->before);
 
     /* set syncBefore flag */
-    if (parent->flags.syncBefore) child->flags.syncBefore = parent->flags.syncBefore;
+    if (chordFlagIsActive(parent->flags, FLAG_SYNC_BEFORE)) child->flags |= FLAG_SYNC_BEFORE;
 }
 
 static void
@@ -671,12 +646,13 @@ setAfterHook(PseudoChord* parent, PseudoChord* child)
     assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
-    if (child->flags.noafter || !parent->after.count) return;
+    if (chordFlagIsActive(child->flags, FLAG_NO_AFTER) || arrayLength(&parent->after) == 0) return;
 
-    copyTokenArray(&parent->after, &child->after);
+    arrayFree(&child->after);
+    child->after = arrayCopy(&parent->after);
 
     /* set syncAfter flag */
-    if (parent->flags.syncAfter) child->flags.syncAfter = parent->flags.syncAfter;
+    if (chordFlagIsActive(parent->flags, FLAG_SYNC_AFTER)) child->flags |= FLAG_SYNC_AFTER;
 }
 
 static void
@@ -685,137 +661,86 @@ setHooks(PseudoChord* parent, PseudoChord* child)
     assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
-    if (child->flags.unhook) return;
+    if (chordFlagIsActive(child->flags, FLAG_UNHOOK)) return;
 
     setBeforeHook(parent, child);
     setAfterHook(parent, child);
 }
 
-static void
-setFlags(ChordFlags* parent, ChordFlags* child)
+static ChordFlag
+setFlags(ChordFlag parent, ChordFlag child)
 {
     assert(parent), assert(child);
 
     /* Children that opt out do not inherit */
-    if (child->deflag) return;
+    if (chordFlagIsActive(child, FLAG_DEFLAG)) return child;
 
-    if (!child->close && parent->keep) child->keep = parent->keep;
-    if (!child->execute && parent->write) child->write = parent->write;
-    if (parent->syncCommand) child->syncCommand = parent->syncCommand;
+    if (!chordFlagIsActive(child, FLAG_CLOSE) && chordFlagIsActive(parent, FLAG_KEEP))
+    {
+        child |= FLAG_KEEP;
+    }
+    if (!chordFlagIsActive(child, FLAG_EXECUTE) && chordFlagIsActive(parent, FLAG_WRITE))
+    {
+        child |= FLAG_WRITE;
+    }
+    if (chordFlagIsActive(parent, FLAG_SYNC_COMMAND))
+    {
+        child |= FLAG_SYNC_COMMAND;
+    }
+
+    return child;
 }
 
 static void
-setHooksAndFlags(PseudoChord* parent, PseudoChordArray* children)
+setHooksAndFlags(PseudoChord* parent, Array* children)
 {
     assert(parent), assert(children);
 
-    for (size_t i = 0; i < children->count; i++)
+    forEach(children, PseudoChord, child)
     {
-        PseudoChord* child = &children->chords[i];
-        /* Don't make any changes to defiant children */
-        if (child->flags.ignore) continue;
-
-        /* Prefixes don't inherit unless requested */
-        if (child->chords.count && !child->flags.inherit) continue;
+        if (chordFlagIsActive(child->flags, FLAG_IGNORE)) continue;
+        if (!arrayIsEmpty(&child->chords) && !chordFlagIsActive(child->flags, FLAG_INHERIT)) continue;
 
         setHooks(parent, child);
-        setFlags(&parent->flags, &child->flags);
-        if (child->chords.count)
+        child->flags = setFlags(parent->flags, child->flags);
+        if (!arrayIsEmpty(&child->chords))
         {
             setHooksAndFlags(child, &child->chords);
         }
     }
 }
 
-static int
-compareKeyRepr(const Token* a, const Token* b, size_t minLength)
-{
-    assert(a), assert(b);
-
-    for (size_t i = 0; i < minLength; i++)
-    {
-        char one = tolower(a->start[i]);
-        char two = tolower(b->start[i]);
-
-        if (one != two) return one - two;
-    }
-
-    if (a->length == b->length)
-    {
-        return islower(*a->start) == islower(*b->start) ? 0 : !islower(*a->start);
-    }
-
-    return a->length - b->length;
-}
-
-static int
-compareKeyChords(const void* a, const void* b)
-{
-    assert(a), assert(b);
-
-    if (((PseudoChord*)a)->flags.ignoreSort) return 0;
-    if (((PseudoChord*)b)->flags.ignoreSort) return 0;
-
-    const Key* keyA = &((PseudoChord*)a)->key;
-    const Key* keyB = &((PseudoChord*)b)->key;
-    const Token* tokenA = &((PseudoChord*)a)->keyToken;
-    const Token* tokenB = &((PseudoChord*)b)->keyToken;
-
-
-    bool aHasMods = hasActiveModifier(&keyA->mods);
-    bool bHasMods = hasActiveModifier(&keyB->mods);
-
-    if (aHasMods == bHasMods) return compareKeyRepr(
-        tokenA, tokenB,
-        (tokenA->length < tokenB->length) ? tokenA->length : tokenB->length
-    );
-    if (aHasMods) return 1;
-    return -1;
-}
-
 static void
-sortPseudoChordArray(PseudoChord* chords, size_t count)
+compilePrefix(Compiler* compiler, PseudoChord* chord)
 {
-    assert(chords);
-
-    qsort(chords, count, sizeof(PseudoChord), compareKeyChords);
-}
-
-static void
-compilePrefix(Compiler* compiler)
-{
-    assert(compiler);
+    assert(compiler), assert(chord);
 
     /* Backup information */
-    PseudoChordArray* previousDest = compiler->chordsDest;
+    Array* previousDest = getDest(compiler);
 
     /* advance */
-    PseudoChord* parent = writePseudoChordToDest(compiler, &compiler->chord);
-    freePseudoChord(&compiler->chord);
-    PseudoChordArray* children = &parent->chords;
-    compiler->chordsDest = children;
-
-    /* start new scope */
-    initPseudoChordArray(compiler->chordsDest);
+    appendToDest(compiler, chord);
+    PseudoChord* parent = ARRAY_GET_LAST(previousDest, PseudoChord);
+    pseudoChordFree(chord);
+    Array* children = &parent->chords;
+    compiler->dest = children;
 
     /* Compile children */
-    while (!compilerIsAtEnd(compiler) && !checkCompiler(compiler, TOKEN_RIGHT_BRACE))
+    while (!compilerIsAtEnd(compiler) && !check(compiler, TOKEN_RIGHT_BRACE))
     {
         compileKeyChord(compiler);
     }
     consume(compiler, TOKEN_RIGHT_BRACE, "Expect '}' after prefix.");
 
-    if (children->count == 0)
+    if (arrayIsEmpty(children))
     {
-        errorAt(compiler, &parent->keyToken, "No key chords set for prefix.");
+        errorAt(compiler, previousToken(compiler), "No key chords set for prefix.");
         compiler->hadError = true;
     }
 
     /* end prefix */
-    setHooksAndFlags(parent, compiler->chordsDest);
-    if (compiler->sort) sortPseudoChordArray(children->chords, compilerGetIndex(compiler));
-    compileNullKeyChord(compiler);
-    compiler->chordsDest = previousDest;
+    setHooksAndFlags(parent, getDest(compiler));
+    compiler->dest = previousDest;
 }
 
 static void
@@ -836,24 +761,24 @@ synchronize(Compiler* compiler)
         case TOKEN_COMMAND:
         {
             /* Will consume until TOKEN_COMMAND */
-            while (!compilerIsAtEnd(compiler) && !checkCompiler(compiler, TOKEN_COMMAND))
+            while (!compilerIsAtEnd(compiler) && !check(compiler, TOKEN_COMMAND))
             {
-                advanceCompiler(compiler);
+                advance(compiler);
             }
             consume(compiler, TOKEN_COMMAND, "Expected command.");
-            if (!isTokenModType(currentType(compiler)) && !isKey(compiler))
+            if (!tokenIsModType(currentType(compiler)) && !isKey(compiler))
             {
                 while (!compilerIsAtEnd(compiler))
                 {
-                    if (isTokenModType(currentType(compiler)) || isKey(compiler)) break;
-                    advanceCompiler(compiler);
+                    if (tokenIsModType(currentType(compiler)) || isKey(compiler)) break;
+                    advance(compiler);
                 }
             }
             return;
         }
         /* Return on prefix start '{' */
         case TOKEN_LEFT_BRACE: return;
-        default: advanceCompiler(compiler); break;
+        default: advance(compiler); break;
         }
     }
 }
@@ -866,17 +791,15 @@ compileKeyChord(Compiler* compiler)
     if (compiler->panicMode) synchronize(compiler);
     if (compilerIsAtEnd(compiler)) return;
 
-    if (matchCompiler(compiler, TOKEN_ELLIPSIS))
+    if (match(compiler, TOKEN_ELLIPSIS))
     {
-        compileImplicitChordArray(compiler);
+        PseudoChord dummy = {0};
+        pseudoChordInit(&dummy);
+        compileImplicitChordArray(compiler, &dummy);
     }
-    else if (matchCompiler(compiler, TOKEN_LEFT_BRACKET))
+    else if (match(compiler, TOKEN_LEFT_BRACKET))
     {
         compileChordArray(compiler);
-    }
-    else if (matchCompiler(compiler, TOKEN_LEFT_BRACE))
-    {
-        compilePrefix(compiler);
     }
     else
     {
@@ -885,66 +808,48 @@ compileKeyChord(Compiler* compiler)
 }
 
 static void
-compileKeyFromToken(Token* token, Key* key)
-{
-    assert(token), assert(key);
-
-    String result = {0};
-    initString(&result);
-    appendToString(&result, token->start, token->length);
-    key->repr = result.string;
-    key->len = result.count;
-    disownString(&result);
-}
-
-static void
-compileStringFromKeyAndMods(String* result, const Key* key)
+compileStringFromKey(String* result, const Key* key)
 {
     assert(result), assert(key);
 
-    if (key->mods.ctrl) appendToString(result, "C-", 2);
-    if (key->mods.alt) appendToString(result, "A-", 2);
-    if (key->mods.hyper) appendToString(result, "H-", 2);
-    if (key->mods.shift) appendToString(result, "S-", 2);
-    appendToString(result, key->repr, key->len);
+    stringAppendString(result, &key->repr);
 }
 
 static void
-compileDescriptionWithState(String* result, TokenType type, const char* desc)
+compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, const String* desc)
 {
-    assert(result), assert(desc);
+    assert(compiler), assert(dest), assert(desc);
 
 
-    StringAppendState state;
+    StringCase state;
     switch (type)
     {
-    case TOKEN_THIS_DESC_UPPER_FIRST: state = STRING_APPEND_UPPER_FIRST; break;
-    case TOKEN_THIS_DESC_LOWER_FIRST: state = STRING_APPEND_LOWER_FIRST; break;
-    case TOKEN_THIS_DESC_UPPER_ALL: state = STRING_APPEND_UPPER_ALL; break;
-    case TOKEN_THIS_DESC_LOWER_ALL: state = STRING_APPEND_LOWER_ALL; break;
+    case TOKEN_THIS_DESC_UPPER_FIRST: state = STRING_CASE_UPPER_FIRST; break;
+    case TOKEN_THIS_DESC_LOWER_FIRST: state = STRING_CASE_LOWER_FIRST; break;
+    case TOKEN_THIS_DESC_UPPER_ALL: state = STRING_CASE_UPPER_ALL; break;
+    case TOKEN_THIS_DESC_LOWER_ALL: state = STRING_CASE_LOWER_ALL; break;
     default:
     {
         errorMsg("Got unexpected token type to `compileDescriptionWithState`.");
-        appendToString(result, desc, strlen(desc));
+        stringAppendString(dest, desc);
         return;
     }
     }
 
-    appendToStringWithState(result, desc, strlen(desc), state);
+    stringAppendStringWithState(compiler->arena, dest, desc, state);
 }
 
 static void
-compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
+compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* dest, size_t index)
 {
-    assert(token), assert(to), assert(result);
-
+    assert(compiler), assert(token), assert(to), assert(dest);
 
     switch (token->type)
     {
-    case TOKEN_THIS_KEY: compileStringFromKeyAndMods(result, &to->key); break;
+    case TOKEN_THIS_KEY: compileStringFromKey(dest, &to->key); break;
     case TOKEN_THIS_DESC:
     {
-        if (to->description) appendToString(result, to->description, strlen(to->description));
+        if (!stringIsEmpty(&to->description)) stringAppendString(dest, &to->description);
         break;
     }
     case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
@@ -952,20 +857,23 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
     case TOKEN_THIS_DESC_UPPER_ALL:
     case TOKEN_THIS_DESC_LOWER_ALL:
     {
-        if (to->description) compileDescriptionWithState(result, token->type, to->description);
+        if (!stringIsEmpty(&to->description))
+        {
+            compileDescriptionWithState(compiler, dest, token->type, &to->description);
+        }
         break;
     }
-    case TOKEN_INDEX: appendUInt32ToString(result, index); break;
-    case TOKEN_INDEX_ONE: appendUInt32ToString(result, index + 1); break;
+    case TOKEN_INDEX: stringAppendUInt32(compiler->arena, dest, index); break;
+    case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); break;
     case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-    case TOKEN_DESCRIPTION: appendEscStringToString(result, token->start, token->length); break;
+    case TOKEN_DESCRIPTION: stringAppendEscString(compiler->arena, dest, token->start, token->length); break;
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
-    case TOKEN_COMMAND: appendToString(result, token->start, token->length); break;
+    case TOKEN_COMMAND: stringAppend(dest, token->start, token->length); break;
     default:
     {
         errorMsg(
             "Got unexpected token when compiling token array: '%s'.",
-            getTokenLiteral(token->type)
+            tokenGetLiteral(token->type)
         );
         break;
     }
@@ -973,67 +881,50 @@ compileStringFromToken(Token* token, KeyChord* to, String* result, size_t index)
 }
 
 static void
-compileStringFromTokens(TokenArray* tokens, KeyChord* to, char** dest, size_t index)
+compileStringFromTokens(Compiler* compiler, Array* tokens, KeyChord* to, String* dest, size_t index)
 {
-    assert(tokens), assert(to), assert(dest);
+    assert(compiler), assert(tokens), assert(to), assert(dest);
 
-    String result = {0};
-    initString(&result);
+    *dest = stringInit();
 
-    for (size_t i = 0; i < tokens->count; i++)
+    forEach(tokens, Token, token)
     {
-        compileStringFromToken(&tokens->tokens[i], to, &result, index);
+        compileStringFromToken(compiler, token, to, dest, index);
     }
 
-    rtrimString(&result);
-    *dest = result.string;
-    disownString(&result);
+    stringRtrim(dest);
 }
 
-static KeyChord*
-compileFromPseudoChords(Compiler* compiler, KeyChord** dest)
+static Array*
+compileFromPseudoChords(Compiler* compiler, Array* dest)
 {
     assert(compiler), assert(dest);
 
-    PseudoChordArray* array = compiler->chordsDest;
-    size_t count = compiler->chordsDest->count;
-    *dest = ALLOCATE(KeyChord, count);
-    for (size_t i = 0; i < count; i++)
+    Array* root = compiler->dest;
+    forEach(root, PseudoChord, chord)
     {
-        KeyChord* chord = &(*dest)[i];
-        PseudoChord* pseudo = &array->chords[i];
-        initKeyChord(chord);
-        /* Reached null key chord */
-        if (pseudo->state == KEY_CHORD_STATE_IS_NULL)
-        {
-            makeNullKeyChord(chord);
-            break;
-        }
-        /* Set state */
-        chord->state = KEY_CHORD_STATE_NOT_NULL;
+        KeyChord* keyChord = ARRAY_APPEND_SLOT(dest, KeyChord);
         /* Key */
-        copyKey(&pseudo->key, &chord->key);
-        compileKeyFromToken(&pseudo->keyToken, &chord->key);
+        keyCopy(&chord->key, &keyChord->key);
         /* Description */
-        compileStringFromTokens(&pseudo->description, chord, &chord->description, i);
+        compileStringFromTokens(compiler, &chord->desc, keyChord, &keyChord->description, iter.index);
         /* Hooks */
-        compileStringFromTokens(&pseudo->before, chord, &chord->before, i);
-        compileStringFromTokens(&pseudo->after, chord, &chord->after, i);
-        copyChordFlags(&pseudo->flags, &chord->flags);
+        compileStringFromTokens(compiler, &chord->before, keyChord, &keyChord->before, iter.index);
+        compileStringFromTokens(compiler, &chord->after, keyChord, &keyChord->after, iter.index);
+        keyChord->flags = chord->flags;
         /* Command */
-        compileStringFromTokens(&pseudo->command, chord, &chord->command, i);
-        if (pseudo->chords.count)
+        compileStringFromTokens(compiler, &chord->cmd, keyChord, &keyChord->command, iter.index);
+        if (!arrayIsEmpty(&chord->chords))
         {
-            PseudoChordArray* parent = compiler->chordsDest;
-            PseudoChordArray* children = &pseudo->chords;
-            compiler->chordsDest = children;
-            compileFromPseudoChords(compiler, &chord->keyChords);
-            compiler->chordsDest = parent;
+            Array* children = &chord->chords;
+            compiler->dest = children;
+            compileFromPseudoChords(compiler, &keyChord->keyChords);
+            compiler->dest = root;
         }
     }
 
-    freePseudoChordArray(compiler->chordsDest);
-    return *dest;
+    pseudoChordArrayFree(compiler->dest);
+    return dest;
 }
 
 static bool
@@ -1042,55 +933,52 @@ compileImplicitChordArrayKeys(Compiler* compiler, Menu* menu)
     assert(compiler), assert(menu);
 
     Scanner scanner = {0};
-    initScanner(&scanner, menu->implicitArrayKeys, ".");
+    scannerInit(&scanner, menu->implicitArrayKeys, ".");
 
-    PseudoChord chord = {0};
-    initPseudoChord(&chord);
-
-    while (!isAtEnd(&scanner))
+    while (!scannerIsAtEnd(&scanner))
     {
         Token* token = currentToken(compiler);
-        initToken(token);
+        tokenInit(token);
 
-        scanTokenForCompiler(&scanner, token);
+        scannerGetTokenForCompiler(&scanner, token);
 
         switch (token->type)
         {
         case TOKEN_SPECIAL_KEY: /* FALLTHROUGH */
         case TOKEN_KEY:
+        case TOKEN_MOD_CTRL:
+        case TOKEN_MOD_META:
+        case TOKEN_MOD_HYPER:
+        case TOKEN_MOD_SHIFT:
         {
-            copyToken(token, &chord.keyToken);
-            writePseudoChordToPseudoChordArray(&chord, &compiler->implicitArrayKeys);
-            initPseudoChord(&chord);
+            Key* key = ARRAY_APPEND_SLOT(&compiler->implicitKeys, Key);
+            keyInit(key);
+            compileMods(compiler, key);
+            compileKey(compiler, key);
             break;
         }
-        case TOKEN_MOD_CTRL: /* FALLTHROUGH */
-        case TOKEN_MOD_ALT:
-        case TOKEN_MOD_HYPER:
-        case TOKEN_MOD_SHIFT: addMod(token->type, &chord.key.mods); break;
         default:
         {
-            initToken(token);
+            tokenInit(token);
             return false;
         }
         }
     }
 
-    initToken(currentToken(compiler));
+    tokenInit(currentToken(compiler));
     return true;
 }
 
 static void
-freeCompiler(Compiler* compiler)
+compilerFree(Compiler* compiler)
 {
     assert(compiler);
 
-    freePseudoChord(&compiler->chord);
-    freePseudoChordArray(&compiler->chords);
-    freePseudoChordArray(&compiler->implicitArrayKeys);
+    if (compiler->chords != NULL) pseudoChordArrayFree(compiler->chords);
+    arrayFree(&compiler->implicitKeys);
 }
 
-KeyChord*
+Array*
 compileKeyChords(Compiler* compiler, Menu* menu)
 {
     assert(compiler), assert(menu);
@@ -1100,53 +988,55 @@ compileKeyChords(Compiler* compiler, Menu* menu)
     if (!compileImplicitChordArrayKeys(compiler, menu))
     {
         errorMsg("Could not compile chord array keys: '%s'.", menu->implicitArrayKeys);
-        freeCompiler(compiler);
+        compilerFree(compiler);
         return NULL;
     }
 
-    advanceCompiler(compiler);
+    Array chords = ARRAY_INIT(PseudoChord);
+    compiler->chords = compiler->dest = &chords;
+
+    advance(compiler);
     while (!compilerIsAtEnd(compiler))
     {
         compileKeyChord(compiler);
     }
 
-    if (compiler->sort) sortPseudoChordArray(compiler->chords.chords, compilerGetIndex(compiler));
-    compileNullKeyChord(compiler);
-
     if (compiler->hadError)
     {
-        freeCompiler(compiler);
+        compilerFree(compiler);
         return NULL;
     }
 
-    menu->keyChords = compileFromPseudoChords(compiler, &menu->keyChordsHead);
+    if (compiler->sort) pseudoChordArraySort(compiler->chords);
+    menu->keyChords = compileFromPseudoChords(compiler, menu->keyChordsHead);
 
     if (compiler->debug)
     {
         debugPrintScannedTokenFooter();
-        disassembleKeyChords(menu->keyChordsHead, 0);
+        disassembleKeyChordArray(menu->keyChordsHead, 0);
     }
 
-    freePseudoChordArray(&compiler->implicitArrayKeys);
+    compilerFree(compiler);
     return compiler->hadError ? NULL : menu->keyChords;
 }
 
 void
-initCompiler(const Menu* menu, Compiler* compiler, char *source, const char *filepath)
+initCompiler(Compiler* compiler, Menu* menu, char* source, const char* filepath)
 {
     assert(compiler), assert(source), assert(filepath);
 
-    initScanner(&compiler->scanner, source, filepath);
+    scannerInit(&compiler->scanner, source, filepath);
+    tokenInit(currentToken(compiler));
+    tokenInit(previousToken(compiler));
+    compiler->implicitKeys = ARRAY_INIT(KeyChord);
+    compiler->dest = NULL;
+    compiler->chords = NULL;
+    compiler->arena = &menu->arena;
+    compiler->delimiter = menu->delimiter;
+    compiler->source = source;
+    compiler->delimiterLen = strlen(menu->delimiter);
     compiler->hadError = false;
     compiler->panicMode = false;
     compiler->sort = menu->sort;
     compiler->debug = menu->debug;
-    compiler->delimiter = menu->delimiter;
-    compiler->delimiterLen = strlen(menu->delimiter);
-    makeNullPseudoChord(&compiler->nullPseudoChord);
-    initPseudoChord(&compiler->chord);
-    initPseudoChordArray(&compiler->chords);
-    initPseudoChordArray(&compiler->implicitArrayKeys);
-    compiler->chordsDest = &compiler->chords;
-    compiler->source = source;
 }

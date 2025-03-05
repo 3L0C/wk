@@ -10,14 +10,14 @@ typedef struct Wayland Wayland;
 
 typedef enum
 {
-    MOD_SHIFT = 1<<0,
-    MOD_CAPS = 1<<1,
-    MOD_CTRL = 1<<2,
-    MOD_ALT = 1<<3,
-    MOD_MOD2 = 1<<4,
-    MOD_MOD3 = 1<<5,
-    MOD_LOGO = 1<<6,
-    MOD_MOD5 = 1<<7,
+    XKB_MOD_SHIFT = 1 << 0,
+    XKB_MOD_CAPS  = 1 << 1,
+    XKB_MOD_CTRL  = 1 << 2,
+    XKB_MOD_ALT   = 1 << 3,
+    XKB_MOD_MOD2  = 1 << 4,
+    XKB_MOD_MOD3  = 1 << 5,
+    XKB_MOD_LOGO  = 1 << 6,
+    XKB_MOD_MOD5  = 1 << 7,
 } XkbModBit;
 
 typedef enum

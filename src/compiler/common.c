@@ -1,9 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /* common includes */
 #include "common/common.h"
@@ -12,6 +9,8 @@
 
 /* local includes */
 #include "common.h"
+#include "common/menu.h"
+#include "common/string.h"
 #include "scanner.h"
 #include "token.h"
 
@@ -22,10 +21,10 @@ addMod(Key* key, TokenType type)
 
     switch (type)
     {
-    case TOKEN_MOD_CTRL: key->mods.ctrl = true; break;
-    case TOKEN_MOD_ALT: key->mods.alt = true; break;
-    case TOKEN_MOD_HYPER: key->mods.hyper = true; break;
-    case TOKEN_MOD_SHIFT: key->mods.shift = true; break;
+    case TOKEN_MOD_CTRL: key->mods  |= MOD_CTRL; break;
+    case TOKEN_MOD_META: key->mods   |= MOD_META; break;
+    case TOKEN_MOD_HYPER: key->mods |= MOD_HYPER; break;
+    case TOKEN_MOD_SHIFT: key->mods |= MOD_SHIFT; break;
     default: return false;
     }
 
@@ -37,36 +36,25 @@ pressKey(Menu* menu, Scanner* scanner)
 {
     assert(menu), assert(scanner);
 
-    static const size_t bufmax = 128;
-    char buffer[bufmax];
-    memset(buffer, 0, 32);
     Key key = {0};
+    keyInit(&key);
     Token token = {0};
-    initToken(&token);
-    scanTokenForCompiler(scanner, &token);
+    tokenInit(&token);
+    scannerGetTokenForCompiler(scanner, &token);
 
     while (addMod(&key, token.type))
     {
-        scanTokenForCompiler(scanner, &token);
+        scannerGetTokenForCompiler(scanner, &token);
     }
 
     if (token.type == TOKEN_KEY)
     {
         key.special = SPECIAL_KEY_NONE;
-        if (token.length > bufmax)
-        {
-            errorMsg("Key is longer than max size of %zu: %04zu", bufmax, token.length);
-            return MENU_STATUS_EXIT_SOFTWARE;
-        }
-        memcpy(buffer, token.start, token.length);
-        buffer[token.length] = '\0';
-        key.repr = buffer;
-        key.len = token.length;
+        stringAppend(&key.repr, token.start, token.length);
     }
     else if (token.type == TOKEN_SPECIAL_KEY)
     {
-        key.repr = NULL;
-        key.special = scanner->special;
+        key.special = token.special;
     }
     else
     {
@@ -83,7 +71,7 @@ pressKey(Menu* menu, Scanner* scanner)
         disassembleKey(&key);
     }
 
-    MenuStatus status = handleKeypress(menu, &key, true);
+    MenuStatus status = menuHandleKeypress(menu, &key);
 
     if (status == MENU_STATUS_EXIT_SOFTWARE)
     {
@@ -93,7 +81,7 @@ pressKey(Menu* menu, Scanner* scanner)
 
     if (status == MENU_STATUS_EXIT_OK)
     {
-        scanTokenForCompiler(scanner, &token);
+        scannerGetTokenForCompiler(scanner, &token);
         if (token.type == TOKEN_EOF) return status;
         return MENU_STATUS_EXIT_SOFTWARE;
     }
@@ -107,10 +95,10 @@ pressKeys(Menu* menu, const char* keys)
     assert(menu), assert(keys);
 
     Scanner scanner;
-    initScanner(&scanner, keys, "KEYS");
+    scannerInit(&scanner, keys, "KEYS");
     MenuStatus status = pressKey(menu, &scanner);
 
-    while (!isAtEnd(&scanner) && statusIsRunning(status))
+    while (!scannerIsAtEnd(&scanner) && menuStatusIsRunning(status))
     {
         status = pressKey(menu, &scanner);
     }

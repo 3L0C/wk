@@ -10,46 +10,136 @@
 
 /* common includes */
 #include "common/debug.h"
-#include "common/memory.h"
+#include "common/key_chord.h"
 
 /* local includes */
 #include "token.h"
 
+typedef char* TokenTable;
+
+static const TokenTable tokenTable[TOKEN_LAST] = {
+    /* single characters */
+    [TOKEN_LEFT_BRACKET] = "TOKEN_LEFT_BRACKET",
+    [TOKEN_RIGHT_BRACKET] = "TOKEN_RIGHT_BRACKET",
+    [TOKEN_LEFT_BRACE] = "TOKEN_LEFT_BRACE",
+    [TOKEN_RIGHT_BRACE] = "TOKEN_RIGHT_BRACE",
+    [TOKEN_LEFT_PAREN] = "TOKEN_LEFT_PAREN",
+    [TOKEN_RIGHT_PAREN] = "TOKEN_RIGHT_PAREN",
+    [TOKEN_ELLIPSIS] = "TOKEN_ELLIPSIS",
+
+    /* preprocessor macros */
+
+    /* string macros */
+    [TOKEN_INCLUDE] = "TOKEN_INCLUDE",
+    [TOKEN_FOREGROUND_COLOR] = "TOKEN_FOREGROUND_COLOR",
+    [TOKEN_FOREGROUND_KEY_COLOR] = "TOKEN_FOREGROUND_KEY_COLOR",
+    [TOKEN_FOREGROUND_DELIMITER_COLOR] = "TOKEN_FOREGROUND_DELIMITER_COLOR",
+    [TOKEN_FOREGROUND_PREFIX_COLOR] = "TOKEN_FOREGROUND_PREFIX_COLOR",
+    [TOKEN_FOREGROUND_CHORD_COLOR] = "TOKEN_FOREGROUND_CHORD_COLOR",
+    [TOKEN_BACKGROUND_COLOR] = "TOKEN_BACKGROUND_COLOR",
+    [TOKEN_BORDER_COLOR] = "TOKEN_BORDER_COLOR",
+    [TOKEN_SHELL] = "TOKEN_SHELL",
+    [TOKEN_FONT] = "TOKEN_FONT",
+    [TOKEN_IMPLICIT_ARRAY_KEYS] = "TOKEN_IMPLICIT_ARRAY_KEYS",
+
+    /* switch macros */
+    [TOKEN_DEBUG] = "TOKEN_DEBUG",
+    [TOKEN_SORT] = "TOKEN_SORT",
+    [TOKEN_TOP] = "TOKEN_TOP",
+    [TOKEN_BOTTOM] = "TOKEN_BOTTOM",
+
+    /* [-]integer macros */
+    [TOKEN_MENU_WIDTH] = "TOKEN_MENU_WIDTH",
+    [TOKEN_MENU_GAP] = "TOKEN_MENU_GAP",
+
+    /* integer macros */
+    [TOKEN_MAX_COLUMNS] = "TOKEN_MAX_COLUMNS",
+    [TOKEN_BORDER_WIDTH] = "TOKEN_BORDER_WIDTH",
+    [TOKEN_WIDTH_PADDING] = "TOKEN_WIDTH_PADDING",
+    [TOKEN_HEIGHT_PADDING] = "TOKEN_HEIGHT_PADDING",
+    [TOKEN_MENU_DELAY] = "TOKEN_MENU_DELAY",
+
+    /* number macros */
+    [TOKEN_BORDER_RADIUS] = "TOKEN_BORDER_RADIUS",
+
+    /* identifiers */
+    [TOKEN_THIS_KEY] = "TOKEN_THIS_KEY",
+    [TOKEN_INDEX] = "TOKEN_INDEX",
+    [TOKEN_INDEX_ONE] = "TOKEN_INDEX_ONE",
+    [TOKEN_THIS_DESC] = "TOKEN_THIS_DESC",
+    [TOKEN_THIS_DESC_UPPER_FIRST] = "TOKEN_THIS_DESC_UPPER_FIRST",
+    [TOKEN_THIS_DESC_LOWER_FIRST] = "TOKEN_THIS_DESC_LOWER_FIRST",
+    [TOKEN_THIS_DESC_UPPER_ALL] = "TOKEN_THIS_DESC_UPPER_ALL",
+    [TOKEN_THIS_DESC_LOWER_ALL] = "TOKEN_THIS_DESC_LOWER_ALL",
+
+    /* hooks */
+    [TOKEN_BEFORE] = "TOKEN_BEFORE",
+    [TOKEN_AFTER] = "TOKEN_AFTER",
+    [TOKEN_SYNC_BEFORE] = "TOKEN_SYNC_BEFORE",
+    [TOKEN_SYNC_AFTER] = "TOKEN_SYNC_AFTER",
+
+    /* flags */
+    [TOKEN_KEEP] = "TOKEN_KEEP",
+    [TOKEN_CLOSE] = "TOKEN_CLOSE",
+    [TOKEN_INHERIT] = "TOKEN_INHERIT",
+    [TOKEN_IGNORE] = "TOKEN_IGNORE",
+    [TOKEN_IGNORE_SORT] = "TOKEN_IGNORE_SORT",
+    [TOKEN_UNHOOK] = "TOKEN_UNHOOK",
+    [TOKEN_DEFLAG] = "TOKEN_DEFLAG",
+    [TOKEN_NO_BEFORE] = "TOKEN_NO_BEFORE",
+    [TOKEN_NO_AFTER] = "TOKEN_NO_AFTER",
+    [TOKEN_WRITE] = "TOKEN_WRITE",
+    [TOKEN_EXECUTE] = "TOKEN_EXECUTE",
+    [TOKEN_SYNC_CMD] = "TOKEN_SYNC_CMD",
+
+    /* literals */
+    [TOKEN_COMMAND] = "TOKEN_COMMAND",
+    [TOKEN_DESCRIPTION] = "TOKEN_DESCRIPTION",
+    [TOKEN_DOUBLE] = "TOKEN_DOUBLE",
+    [TOKEN_INTEGER] = "TOKEN_INTEGER",
+    [TOKEN_UNSIGNED_INTEGER] = "TOKEN_UNSIGNED_INTEGER",
+
+    /* interpolations */
+    [TOKEN_COMM_INTERP] = "TOKEN_COMM_INTERP",
+    [TOKEN_DESC_INTERP] = "TOKEN_DESC_INTERP",
+
+    /* keys */
+    [TOKEN_KEY] = "TOKEN_KEY",
+
+    /* mods */
+    [TOKEN_MOD_CTRL] = "TOKEN_MOD_CTRL",
+    [TOKEN_MOD_META] = "TOKEN_MOD_META",
+    [TOKEN_MOD_HYPER] = "TOKEN_MOD_HYPER",
+    [TOKEN_MOD_SHIFT] = "TOKEN_MOD_SHIFT",
+
+    /* special keys */
+    [TOKEN_SPECIAL_KEY] = "TOKEN_SPECIAL_KEY",
+
+    /* control */
+    [TOKEN_NO_INTERP] = "TOKEN_NO_INTERP",
+    [TOKEN_ERROR] = "TOKEN_ERROR",
+    [TOKEN_EOF] = "TOKEN_EOF",
+    [TOKEN_EMPTY] = "TOKEN_EMPTY",
+    [TOKEN_UNKNOWN] = "TOKEN_UNKNOWN",
+};
+
 void
-copyToken(const Token* from, Token* to)
+tokenCopy(const Token* from, Token* to)
 {
     assert(from), assert(to);
 
-    to->type = from->type;
     to->start = from->start;
+    to->message = from->message;
     to->length = from->length;
+    to->messageLength = from->messageLength;
     to->line = from->line;
     to->column = from->column;
-    to->message = from->message;
-    to->messageLength = from->messageLength;
+    to->type = from->type;
+    to->special = from->special;
 }
 
 void
-copyTokenArray(const TokenArray* from, TokenArray* to)
-{
-    assert(from), assert(to);
-
-    if (from->count == 0)
-    {
-        initTokenArray(to);
-        return;
-    }
-    to->tokens = ALLOCATE(Token, from->capacity);
-    to->count = from->count;
-    to->capacity = from->capacity;
-    for (size_t i = 0; i < from->count; i++)
-    {
-        copyToken(&from->tokens[i], &to->tokens[i]);
-    }
-}
-
-void
-errorAtToken(const Token* token, const char* filepath, const char* fmt, ...)
+tokenErrorAt(const Token* token, const char* filepath, const char* fmt, ...)
 {
     assert(token), assert(filepath), assert(fmt);
 
@@ -81,7 +171,7 @@ errorAtToken(const Token* token, const char* filepath, const char* fmt, ...)
 }
 
 bool
-getDoubleFromToken(const Token* token, double* dest, bool debug)
+tokenGetDouble(const Token* token, double* dest, bool debug)
 {
     assert(token), assert(dest);
 
@@ -119,7 +209,7 @@ getDoubleFromToken(const Token* token, double* dest, bool debug)
 }
 
 bool
-getInt32FromToken(const Token* token, int32_t* dest, bool debug)
+tokenGetInt32(const Token* token, int32_t* dest, bool debug)
 {
     assert(token), assert(dest);
 
@@ -165,8 +255,14 @@ getInt32FromToken(const Token* token, int32_t* dest, bool debug)
     return true;
 }
 
+const char*
+tokenGetLiteral(const TokenType type)
+{
+    return tokenTable[type];
+}
+
 bool
-getUint32FromToken(const Token* token, uint32_t* dest, bool debug)
+tokenGetUint32(const Token* token, uint32_t* dest, bool debug)
 {
     assert(token), assert(dest);
 
@@ -212,154 +308,23 @@ getUint32FromToken(const Token* token, uint32_t* dest, bool debug)
     return true;
 }
 
-const char*
-getTokenLiteral(const TokenType type)
-{
-    switch (type)
-    {
-    /* single characters */
-    case TOKEN_LEFT_BRACKET: return "TOKEN_LEFT_BRACKET";
-    case TOKEN_RIGHT_BRACKET: return "TOKEN_RIGHT_BRACKET";
-    case TOKEN_LEFT_BRACE: return "TOKEN_LEFT_BRACE";
-    case TOKEN_RIGHT_BRACE: return "TOKEN_RIGHT_BRACE";
-    case TOKEN_LEFT_PAREN: return "TOKEN_LEFT_PAREN";
-    case TOKEN_RIGHT_PAREN: return "TOKEN_RIGHT_PAREN";
-    case TOKEN_ELLIPSIS: return "TOKEN_ELLIPSIS";
-
-    /* preprocessor macros */
-
-    /* string macros */
-    case TOKEN_INCLUDE: return "TOKEN_INCLUDE";
-    case TOKEN_FOREGROUND_COLOR: return "TOKEN_FOREGROUND_COLOR";
-    case TOKEN_FOREGROUND_KEY_COLOR: return "TOKEN_FOREGROUND_KEY_COLOR";
-    case TOKEN_FOREGROUND_DELIMITER_COLOR: return "TOKEN_FOREGROUND_DELIMITER_COLOR";
-    case TOKEN_FOREGROUND_PREFIX_COLOR: return "TOKEN_FOREGROUND_PREFIX_COLOR";
-    case TOKEN_FOREGROUND_CHORD_COLOR: return "TOKEN_FOREGROUND_CHORD_COLOR";
-    case TOKEN_BACKGROUND_COLOR: return "TOKEN_BACKGROUND_COLOR";
-    case TOKEN_BORDER_COLOR: return "TOKEN_BORDER_COLOR";
-    case TOKEN_SHELL: return "TOKEN_SHELL";
-    case TOKEN_FONT: return "TOKEN_FONT";
-    case TOKEN_IMPLICIT_ARRAY_KEYS: return "TOKEN_IMPLICIT_ARRAY_KEYS";
-
-    /* switch macros */
-    case TOKEN_DEBUG: return "TOKEN_DEBUG";
-    case TOKEN_SORT: return "TOKEN_SORT";
-    case TOKEN_TOP: return "TOKEN_TOP";
-    case TOKEN_BOTTOM: return "TOKEN_BOTTOM";
-
-    /* [-]integer macros */
-    case TOKEN_MENU_WIDTH: return "TOKEN_MENU_WIDTH";
-    case TOKEN_MENU_GAP: return "TOKEN_MENU_GAP";
-
-    /* integer macros */
-    case TOKEN_MAX_COLUMNS: return "TOKEN_MAX_COLUMNS";
-    case TOKEN_BORDER_WIDTH: return "TOKEN_BORDER_WIDTH";
-    case TOKEN_WIDTH_PADDING: return "TOKEN_WIDTH_PADDING";
-    case TOKEN_HEIGHT_PADDING: return "TOKEN_HEIGHT_PADDING";
-    case TOKEN_MENU_DELAY: return "TOKEN_MENU_DELAY";
-
-    /* number macros */
-    case TOKEN_BORDER_RADIUS: return "TOKEN_BORDER_RADIUS";
-
-    /* identifiers */
-    case TOKEN_THIS_KEY: return "TOKEN_THIS_KEY";
-    case TOKEN_INDEX: return "TOKEN_INDEX";
-    case TOKEN_INDEX_ONE: return "TOKEN_INDEX_ONE";
-    case TOKEN_THIS_DESC: return "TOKEN_THIS_DESC";
-    case TOKEN_THIS_DESC_UPPER_FIRST: return "TOKEN_THIS_DESC_UPPER_FIRST";
-    case TOKEN_THIS_DESC_LOWER_FIRST: return "TOKEN_THIS_DESC_LOWER_FIRST";
-    case TOKEN_THIS_DESC_UPPER_ALL: return "TOKEN_THIS_DESC_UPPER_ALL";
-    case TOKEN_THIS_DESC_LOWER_ALL: return "TOKEN_THIS_DESC_LOWER_ALL";
-
-    /* hooks */
-    case TOKEN_BEFORE: return "TOKEN_BEFORE";
-    case TOKEN_AFTER: return "TOKEN_AFTER";
-    case TOKEN_SYNC_BEFORE: return "TOKEN_SYNC_BEFORE";
-    case TOKEN_SYNC_AFTER: return "TOKEN_SYNC_AFTER";
-
-    /* flags */
-    case TOKEN_KEEP: return "TOKEN_KEEP";
-    case TOKEN_CLOSE: return "TOKEN_CLOSE";
-    case TOKEN_INHERIT: return "TOKEN_INHERIT";
-    case TOKEN_IGNORE: return "TOKEN_IGNORE";
-    case TOKEN_IGNORE_SORT: return "TOKEN_IGNORE_SORT";
-    case TOKEN_UNHOOK: return "TOKEN_UNHOOK";
-    case TOKEN_DEFLAG: return "TOKEN_DEFLAG";
-    case TOKEN_NO_BEFORE: return "TOKEN_NO_BEFORE";
-    case TOKEN_NO_AFTER: return "TOKEN_NO_AFTER";
-    case TOKEN_WRITE: return "TOKEN_WRITE";
-    case TOKEN_SYNC_CMD: return "TOKEN_SYNC_CMD";
-
-    /* literals */
-    case TOKEN_COMMAND: return "TOKEN_COMMAND";
-    case TOKEN_DESCRIPTION: return "TOKEN_DESCRIPTION";
-    case TOKEN_DOUBLE: return "TOKEN_DOUBLE";
-    case TOKEN_INTEGER: return "TOKEN_INTEGER";
-    case TOKEN_UNSIGNED_INTEGER: return "TOKEN_UNSIGNED_INTEGER";
-
-    /* interpolations */
-    case TOKEN_COMM_INTERP: return "TOKEN_COMM_INTERP";
-    case TOKEN_DESC_INTERP: return "TOKEN_DESC_INTERP";
-
-    /* keys */
-    case TOKEN_KEY: return "TOKEN_KEY";
-
-    /* mods */
-    case TOKEN_MOD_CTRL: return "TOKEN_MOD_CTRL";
-    case TOKEN_MOD_ALT: return "TOKEN_MOD_ALT";
-    case TOKEN_MOD_HYPER: return "TOKEN_MOD_HYPER";
-    case TOKEN_MOD_SHIFT: return "TOKEN_MOD_SHIFT";
-
-    /* special keys */
-    case TOKEN_SPECIAL_KEY: return "TOKEN_SPECIAL_KEY";
-
-    /* control */
-    case TOKEN_NO_INTERP: return "TOKEN_NO_INTERP";
-    case TOKEN_ERROR: return "TOKEN_ERROR";
-    case TOKEN_EOF: return "TOKEN_EOF";
-    case TOKEN_EMPTY: return "TOKEN_EMPTY";
-    }
-
-    return "TOKEN_UNKNOWN";
-}
-
 void
-initToken(Token* token)
+tokenInit(Token* token)
 {
     assert(token);
 
-    token->type = TOKEN_EMPTY;
     token->start = NULL;
+    token->message = NULL;
     token->length = 0;
+    token->messageLength = 0;
     token->line = 0;
     token->column = 0;
-    token->message = NULL;
-    token->messageLength = 0;
-}
-
-void
-initTokenArray(TokenArray* tokens)
-{
-    assert(tokens);
-
-    tokens->tokens = NULL;
-    tokens->count = 0;
-    tokens->capacity = 0;
-}
-
-void
-freeTokenArray(TokenArray* tokens)
-{
-    assert(tokens);
-
-    FREE_ARRAY(Token, tokens->tokens, tokens->capacity);
-    tokens->tokens = NULL;
-    tokens->count = 0;
-    tokens->capacity = 0;
+    token->type = TOKEN_EMPTY;
+    token->special = SPECIAL_KEY_NONE;
 }
 
 bool
-isTokenHookType(const TokenType type)
+tokenIsHookType(const TokenType type)
 {
     return (
         type == TOKEN_BEFORE || type == TOKEN_AFTER ||
@@ -368,28 +333,11 @@ isTokenHookType(const TokenType type)
 }
 
 bool
-isTokenModType(const TokenType type)
+tokenIsModType(const TokenType type)
 {
     return (
-        type == TOKEN_MOD_CTRL || type == TOKEN_MOD_ALT ||
+        type == TOKEN_MOD_CTRL || type == TOKEN_MOD_META ||
         type == TOKEN_MOD_HYPER || type == TOKEN_MOD_SHIFT
     );
 }
 
-void
-writeTokenArray(TokenArray* tokens, Token* token)
-{
-    assert(tokens), assert(token);
-
-    if (tokens->count == tokens->capacity)
-    {
-        size_t oldCapacity = tokens->capacity;
-        tokens->capacity = GROW_CAPACITY(oldCapacity);
-        tokens->tokens = GROW_ARRAY(
-            Token, tokens->tokens, oldCapacity, tokens->capacity
-        );
-    }
-
-    copyToken(token, &tokens->tokens[tokens->count]);
-    tokens->count++;
-}

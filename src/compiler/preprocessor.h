@@ -6,6 +6,6 @@
 /* common includes */
 #include "common/menu.h"
 
-char* runPreprocessor(Menu* menu, const char* source, const char* sourcePath);
+Array preprocessorRun(Menu* menu, Array* source, const char* sourcePath);
 
 #endif /* WK_COMPILER_PREPROCESSOR_H_ */

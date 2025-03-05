@@ -15,21 +15,33 @@
 #include <pango/pangocairo.h>
 
 /* common includes */
+#include "common/array.h"
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/menu.h"
 #include "common/key_chord.h"
+#include "common/string.h"
 
 /* local includes */
 #include "cairo.h"
 
-static Cairo* cairo;
-static Menu* mainMenu;
-static uint32_t width;
-static uint32_t height;
-static int ellipsisWidth = -1;
-static int ellipsisHeight = -1;
-static bool ellipsisIsSet = false;
+/* Drawing context to store ellipsis state */
+typedef struct
+{
+    int ellipsisWidth;
+    int ellipsisHeight;
+    bool ellipsisIsSet;
+} DrawingContext;
+
+static void
+initDrawingContext(DrawingContext* ctx)
+{
+    assert(ctx);
+
+    ctx->ellipsisWidth = -1;
+    ctx->ellipsisHeight = -1;
+    ctx->ellipsisIsSet = false;
+}
 
 bool
 cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface)
@@ -81,14 +93,13 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     assert(menu), assert(surface);
 
     uint32_t height = 0;
-    countMenuKeyChords(menu);
 
     cairo_t* cr = cairo_create(surface);
     PangoLayout* layout = pango_cairo_create_layout(cr);
     PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
     PangoRectangle rect;
 
-    calculateGrid(menu->keyChordCount, menu->maxCols, &menu->rows, &menu->cols);
+    calculateGrid(menu->keyChords->length, menu->maxCols, &menu->rows, &menu->cols);
 
     pango_layout_set_text(
         layout,
@@ -163,34 +174,33 @@ cairoInitPaint(Menu* menu, CairoPaint* paint)
 }
 
 static bool
-setSourceRgba(MenuColor type)
+setSourceRgba(cairo_t* cr, CairoPaint* paint, MenuColor type)
 {
+    assert(cr), assert(paint);
+
     CairoColor* color = NULL;
 
     switch (type)
     {
-    case MENU_COLOR_KEY: color = &cairo->paint->fgKey; break;
-    case MENU_COLOR_DELIMITER: color = &cairo->paint->fgDelimiter; break;
-    case MENU_COLOR_PREFIX: color = &cairo->paint->fgPrefix; break;
-    case MENU_COLOR_CHORD: color = &cairo->paint->fgChord; break;
-    case MENU_COLOR_BACKGROUND: color = &cairo->paint->bg; break;
-    case MENU_COLOR_BORDER: color = &cairo->paint->bd; break;
+    case MENU_COLOR_KEY: color = &paint->fgKey; break;
+    case MENU_COLOR_DELIMITER: color = &paint->fgDelimiter; break;
+    case MENU_COLOR_PREFIX: color = &paint->fgPrefix; break;
+    case MENU_COLOR_CHORD: color = &paint->fgChord; break;
+    case MENU_COLOR_BACKGROUND: color = &paint->bg; break;
+    case MENU_COLOR_BORDER: color = &paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;
     }
 
-    cairo_set_source_rgba(cairo->cr, color->r, color->g, color->b, color->a);
+    cairo_set_source_rgba(cr, color->r, color->g, color->b, color->a);
     return true;
 }
 
 static void
-cairoDrawRoundedPath(double radius)
+drawRoundedPath(cairo_t* cr, double x, double y, double w, double h, double radius)
 {
-    cairo_t* cr = cairo->cr;
+    assert(cr);
+
     double degrees = M_PI / 180;
-    double x = mainMenu->borderWidth / 2.0;
-    double y = mainMenu->borderWidth / 2.0;
-    double w = width - mainMenu->borderWidth;
-    double h = height - mainMenu->borderWidth;
     cairo_new_sub_path(cr);
     cairo_arc(cr, x + w - radius, y + radius, radius, -90 * degrees, 0 * degrees);
     cairo_arc(cr, x + w - radius, y + h - radius, radius, 0 * degrees, 90 * degrees);
@@ -200,52 +210,75 @@ cairoDrawRoundedPath(double radius)
 }
 
 static bool
-drawBackground()
+drawBackground(cairo_t* cr, CairoPaint* paint, Menu* menu, uint32_t width, uint32_t height)
 {
-    assert(cairo), assert(mainMenu);
+    assert(cr), assert(paint), assert(menu);
 
-    if (!setSourceRgba(MENU_COLOR_BACKGROUND)) return false;
+    if (!setSourceRgba(cr, paint, MENU_COLOR_BACKGROUND)) return false;
 
-    double radius = mainMenu->borderRadius;
+    double radius = menu->borderRadius;
 
-    if (!radius) {
-        cairo_paint(cairo->cr);
-    } else {
-        cairoDrawRoundedPath(radius);
-        cairo_fill(cairo->cr);
+    if (!radius)
+    {
+        cairo_paint(cr);
+    }
+    else
+    {
+        double x = menu->borderWidth / 2.0;
+        double y = menu->borderWidth / 2.0;
+        double w = width - menu->borderWidth;
+        double h = height - menu->borderWidth;
+        drawRoundedPath(cr, x, y, w, h, radius);
+        cairo_fill(cr);
     }
 
     return true;
 }
 
 static bool
-drawBorder()
+drawBorder(cairo_t* cr, CairoPaint* paint, Menu* menu, uint32_t width, uint32_t height)
 {
-    assert(cairo), assert(mainMenu);
+    assert(cr), assert(paint), assert(menu);
 
-    double lineW = cairo_get_line_width(cairo->cr);
-    cairo_set_line_width(cairo->cr, mainMenu->borderWidth);
-    if (!setSourceRgba(MENU_COLOR_BORDER)) return false;
+    double lineW = cairo_get_line_width(cr);
+    cairo_set_line_width(cr, menu->borderWidth);
+    if (!setSourceRgba(cr, paint, MENU_COLOR_BORDER)) return false;
 
-    double radius = mainMenu->borderRadius;
+    double radius = menu->borderRadius;
 
-    if (!radius) {
-        double x = mainMenu->borderWidth / 2.0;
-        double y = mainMenu->borderWidth / 2.0;
-        double w = width - mainMenu->borderWidth;
-        double h = height - mainMenu->borderWidth;
-        cairo_rectangle(cairo->cr, x, y, w, h);
-    } else {
-        cairoDrawRoundedPath(radius);
+    double x = menu->borderWidth / 2.0;
+    double y = menu->borderWidth / 2.0;
+    double w = width - menu->borderWidth;
+    double h = height - menu->borderWidth;
+    if (!radius)
+    {
+        cairo_rectangle(cr, x, y, w, h);
+    }
+    else
+    {
+        drawRoundedPath(cr, x, y, w, h, radius);
     }
 
-    cairo_stroke(cairo->cr);
-    cairo_set_line_width(cairo->cr, lineW);
+    cairo_stroke(cr);
+    cairo_set_line_width(cr, lineW);
     return true;
 }
 
 static void
-drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw)
+initEllipsisIfNeeded(cairo_t* cr, PangoLayout* layout, DrawingContext* ctx)
+{
+    assert(cr), assert(layout), assert(ctx);
+
+    if (!ctx->ellipsisIsSet)
+    {
+        ctx->ellipsisIsSet = true;
+        pango_layout_set_text(layout, "...", -1);
+        pango_layout_get_pixel_size(layout, &ctx->ellipsisWidth, &ctx->ellipsisHeight);
+    }
+}
+
+static void
+drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw, int ellipsisWidth)
 {
     assert(layout), assert(text);
     if ((uint32_t)ellipsisWidth > cellw) return;
@@ -301,9 +334,16 @@ drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw)
 }
 
 static bool
-drawText(PangoLayout* layout, const char* text, uint32_t* cellw, uint32_t* x, uint32_t* y)
-{
-    assert(layout), assert(text), assert(cellw), assert(x), assert(y);
+drawText(
+    cairo_t* cr,
+    PangoLayout* layout,
+    const char* text,
+    uint32_t* cellw,
+    uint32_t* x,
+    uint32_t* y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(layout), assert(text), assert(cellw), assert(x), assert(y);
     if (*cellw == 0) return false;
     if ((uint32_t)ellipsisWidth > *cellw) return false;
 
@@ -313,7 +353,7 @@ drawText(PangoLayout* layout, const char* text, uint32_t* cellw, uint32_t* x, ui
 
     if ((uint32_t)w > *cellw)
     {
-        drawTruncatedText(layout, text, *cellw);
+        drawTruncatedText(layout, text, *cellw, ellipsisWidth);
         *cellw = 0;
     }
     else
@@ -321,108 +361,179 @@ drawText(PangoLayout* layout, const char* text, uint32_t* cellw, uint32_t* x, ui
         *cellw -= w;
     }
 
-    cairo_move_to(cairo->cr, *x, *y);
-    pango_cairo_show_layout(cairo->cr, layout);
+    cairo_move_to(cr, *x, *y);
+    pango_cairo_show_layout(cr, layout);
     *x += w;
     return *cellw != 0;
 }
 
 static bool
-drawModText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
-{
-    assert(layout), assert(cellw), assert(x), assert(y);
-    if (!setSourceRgba(MENU_COLOR_KEY)) return false;
+drawString(
+    cairo_t* cr,
+    PangoLayout* layout,
+    const String* string,
+    uint32_t* cellw,
+    uint32_t* x,
+    uint32_t* y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(layout), assert(string), assert(cellw), assert(x), assert(y);
 
-    Modifiers* mods = &mainMenu->keyChords[idx].key.mods;
-    if (mods->ctrl && !drawText(layout, "C-", cellw, x, y)) return false;
-    if (mods->alt && !drawText(layout, "M-", cellw, x, y)) return false;
-    if (mods->hyper && !drawText(layout, "H-", cellw, x, y)) return false;
-    if (mods->shift && !drawText(layout, "S-", cellw, x, y)) return false;
-
-    return true;
+    char buffer[string->length + 1];
+    stringWriteToBuffer(string, buffer);
+    return drawText(cr, layout, buffer, cellw, x, y, ellipsisWidth);
 }
 
 static bool
-drawKeyText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
-{
-    assert(layout), assert(cellw), assert(x), assert(y);
-    if (!setSourceRgba(MENU_COLOR_KEY)) return false;
+drawKeyModText(
+    cairo_t* cr,
+    CairoPaint* paint,
+    PangoLayout* layout,
+    const Key* key,
+    uint32_t* cellw,
+    uint32_t* x,
+    uint32_t* y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(paint), assert(layout), assert(key), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(cr, paint, MENU_COLOR_KEY)) return false;
+    if (!modifierHasAnyActive(key->mods)) return true;
 
-    return drawText(layout, mainMenu->keyChords[idx].key.repr, cellw, x, y);
+    bool status = true;
+    if (modifierIsActive(key->mods, MOD_CTRL))
+    {
+        status = drawText(cr, layout, "C-", cellw, x, y, ellipsisWidth);
+    }
+    if (status && modifierIsActive(key->mods, MOD_META))
+    {
+        status = drawText(cr, layout, "M-", cellw, x, y, ellipsisWidth);
+    }
+    if (status && modifierIsActive(key->mods, MOD_HYPER))
+    {
+        status = drawText(cr, layout, "H-", cellw, x, y, ellipsisWidth);
+    }
+    if (status && modifierIsActive(key->mods, MOD_SHIFT))
+    {
+        status = drawText(cr, layout, "S-", cellw, x, y, ellipsisWidth);
+    }
+    return status;
 }
 
 static bool
-drawDelimiterText(PangoLayout* layout, uint32_t* cellw, uint32_t* x, uint32_t* y)
-{
-    assert(layout), assert(cellw), assert(x), assert(y);
-    if (!setSourceRgba(MENU_COLOR_DELIMITER)) return false;
+drawKeyText(
+    cairo_t* cr,
+    CairoPaint* paint,
+    PangoLayout* layout,
+    const String* string,
+    uint32_t* cellw,
+    uint32_t* x,
+    uint32_t* y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(paint), assert(layout), assert(string), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(cr, paint, MENU_COLOR_KEY)) return false;
 
-    return drawText(layout, mainMenu->delimiter, cellw, x, y);
+    return drawString(cr, layout, string, cellw, x, y, ellipsisWidth);
 }
 
 static bool
-drawDescriptionText(PangoLayout* layout, uint32_t idx, uint32_t* cellw, uint32_t* x, uint32_t* y)
-{
-    assert(layout), assert(cellw), assert(x), assert(y);
+drawDelimiterText(
+    cairo_t* cr,
+    CairoPaint* paint,
+    PangoLayout* layout,
+    const char* delimiter,
+    uint32_t* cellw,
+    uint32_t* x,
+    uint32_t* y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(paint), assert(layout), assert(delimiter), assert(cellw), assert(x), assert(y);
+    if (!setSourceRgba(cr, paint, MENU_COLOR_DELIMITER)) return false;
+
+    return drawText(cr, layout, delimiter, cellw, x, y, ellipsisWidth);
+}
+
+static bool
+drawDescriptionText(
+    cairo_t* cr,
+    CairoPaint* paint,
+    PangoLayout* layout,
+    const KeyChord* keyChord,
+    uint32_t* cellw,
+    uint32_t* x,
+    uint32_t* y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x), assert(y);
     if (!setSourceRgba(
-            mainMenu->keyChords[idx].keyChords ? MENU_COLOR_PREFIX : MENU_COLOR_CHORD
+            cr, paint,
+            arrayIsEmpty(&keyChord->keyChords) ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX
         )) return false;
 
-    return drawText(layout, mainMenu->keyChords[idx].description, cellw, x, y);
+    return drawString(cr, layout, &keyChord->description, cellw, x, y, ellipsisWidth);
 }
 
 static void
-drawHintText(PangoLayout* layout, uint32_t idx, uint32_t cellw, uint32_t x, uint32_t y)
-{
-    assert(layout);
+drawHintText(
+    cairo_t* cr,
+    CairoPaint* paint,
+    PangoLayout* layout,
+    const char* delimiter,
+    const KeyChord* keyChord,
+    uint32_t cellw,
+    uint32_t x,
+    uint32_t y,
+    int ellipsisWidth
+) {
+    assert(cr), assert(paint),assert(layout), assert(delimiter), assert(keyChord);
 
-    if (!drawModText(layout, idx, &cellw, &x, &y)) return;
-    if (!drawKeyText(layout, idx, &cellw, &x, &y)) return;
-    if (!drawDelimiterText(layout, &cellw, &x, &y)) return;
-    if (!drawDescriptionText(layout, idx, &cellw, &x, &y)) return;
+    if (!drawKeyModText(cr, paint, layout, &keyChord->key, &cellw, &x, &y, ellipsisWidth)) return;
+    if (!drawKeyText(cr, paint, layout, &keyChord->key.repr, &cellw, &x, &y, ellipsisWidth)) return;
+    if (!drawDelimiterText(cr, paint, layout, delimiter, &cellw, &x, &y, ellipsisWidth)) return;
+    if (!drawDescriptionText(cr, paint, layout, keyChord, &cellw, &x, &y, ellipsisWidth)) return;
 }
 
 static bool
-drawGrid()
-{
-    assert(cairo), assert(mainMenu);
+drawGrid(
+    cairo_t* cr,
+    CairoPaint* paint,
+    Menu* menu,
+    uint32_t width,
+    uint32_t height,
+    DrawingContext* ctx
+) {
+    assert(cr), assert(paint), assert(menu);
 
-    if (mainMenu->borderWidth * 2 >= width)
+    if (menu->borderWidth * 2 >= width)
     {
         errorMsg("Border is larger than menu width.");
-        goto end;
+        return false;
     }
 
-    uint32_t startx = mainMenu->borderWidth;
-    uint32_t starty = mainMenu->borderWidth;
-    uint32_t rows = mainMenu->rows;
-    uint32_t cols = mainMenu->cols;
-    uint32_t wpadding = mainMenu->wpadding;
-    uint32_t hpadding = mainMenu->hpadding;
-    uint32_t cellWidth = (width - (mainMenu->borderWidth * 2)) / cols;
-    uint32_t cellHeight = mainMenu->cellHeight;
-    uint32_t idx = 0;
-    uint32_t count = mainMenu->keyChordCount;
-    PangoLayout* layout = pango_cairo_create_layout(cairo->cr);
-    PangoFontDescription* fontDesc = pango_font_description_from_string(mainMenu->font);
+    uint32_t startx = menu->borderWidth;
+    uint32_t starty = menu->borderWidth;
+    uint32_t rows = menu->rows;
+    uint32_t cols = menu->cols;
+    uint32_t wpadding = menu->wpadding;
+    uint32_t hpadding = menu->hpadding;
+    uint32_t cellWidth = (width - (menu->borderWidth * 2)) / cols;
+    uint32_t cellHeight = menu->cellHeight;
+    size_t count = menu->keyChords->length;
+    PangoLayout* layout = pango_cairo_create_layout(cr);
+    PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
 
     pango_layout_set_font_description(layout, fontDesc);
     pango_font_description_free(fontDesc);
 
-    if (!setSourceRgba(MENU_COLOR_KEY)) goto fail;
+    if (!setSourceRgba(cr, paint, MENU_COLOR_KEY)) goto fail;
 
-    if (mainMenu->debug)
+    if (menu->debug)
     {
         disassembleGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
-        disassembleKeyChordsShallow(mainMenu->keyChords, mainMenu->keyChordCount);
+        disassembleKeyChordArrayShallow(menu->keyChords);
     }
 
-    if (!ellipsisIsSet)
-    {
-        ellipsisIsSet = true;
-        pango_layout_set_text(layout, "...", -1);
-        pango_layout_get_pixel_size(layout, &ellipsisWidth, &ellipsisHeight);
-    }
+    initEllipsisIfNeeded(cr, layout, ctx);
 
     if ((wpadding * 2) >= cellWidth)
     {
@@ -430,68 +541,78 @@ drawGrid()
         goto fail;
     }
 
-    if ((uint32_t)ellipsisWidth > cellWidth - (wpadding * 2))
+    if ((uint32_t)ctx->ellipsisWidth > cellWidth - (wpadding * 2))
     {
         warnMsg("Not enough cell space to draw truncated hints.");
-        ellipsisWidth = 0;
-        ellipsisHeight = -1;
+        ctx->ellipsisWidth = 0;
+        ctx->ellipsisHeight = -1;
     }
 
-    for (uint32_t i = 0; i < cols && idx < count; i++)
+    ArrayIterator iter = arrayIteratorMake(menu->keyChords);
+    const KeyChord* keyChord = NULL;
+    for (uint32_t i = 0; i < cols; i++)
     {
         uint32_t x = startx + (i * cellWidth) + wpadding;
-        for (uint32_t j = 0; j < rows && idx < count; j++, idx++)
+        for (uint32_t j = 0; j < rows; j++)
         {
+            keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord);
+            if (!keyChord) goto done;
+
             uint32_t y = starty + (j * cellHeight) + hpadding;
-            drawHintText(layout, idx, cellWidth - (wpadding * 2), x, y);
+            drawHintText(
+                cr,
+                paint,
+                layout,
+                menu->delimiter,
+                keyChord,
+                cellWidth - (wpadding * 2),
+                x,
+                y,
+                ctx->ellipsisWidth
+            );
         }
     }
 
+done:
     g_object_unref(layout);
     return true;
 
 fail:
     g_object_unref(layout);
-end:
     return false;
 }
 
 bool
-cairoPaint(Cairo* cr, Menu* menu)
+cairoPaint(Cairo* cairo, Menu* menu)
 {
-    assert(cr), assert(menu);
+    assert(cairo), assert(menu);
 
     if (menuIsDelayed(menu)) return true;
 
     if (menu->debug) disassembleMenu(menu);
 
-    cairo = cr;
-    mainMenu = menu;
-    width = menu->width;
-    height = menu->height;
+    uint32_t width = menu->width;
+    uint32_t height = menu->height / cairo->scale;
+    DrawingContext ctx;
+    initDrawingContext(&ctx);
 
-    height /= cairo->scale;
-
-    if (!drawBackground())
+    if (!drawBackground(cairo->cr, cairo->paint, menu, width, height))
     {
         errorMsg("Could not draw background.");
-        goto fail;
+        return false;
     }
 
-    if (!drawBorder())
+    if (!drawBorder(cairo->cr, cairo->paint, menu, width, height))
     {
         errorMsg("Could not draw border.");
-        goto fail;
+        return false;
     }
 
-    if (!drawGrid())
+    if (!drawGrid(cairo->cr, cairo->paint, menu, width, height, &ctx))
     {
         errorMsg("Could not draw grid.");
-        goto fail;
+        return false;
     }
 
     return true;
-
-fail:
-    return false;
 }

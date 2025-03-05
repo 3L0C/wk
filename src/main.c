@@ -1,49 +1,30 @@
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sysexits.h>
 
 /* config includes */
-#include "config/key_chords.h"
+#include "common/arena.h"
+#include "common/array.h"
 
 /* common includes */
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/menu.h"
-#include "common/string.h"
-#include "common/key_chord.h"
 
 /* compiler includes */
 #include "compiler/common.h"
 #include "compiler/compiler.h"
 #include "compiler/preprocessor.h"
 #include "compiler/writer.h"
+#include "config/key_chords.h"
 
-static void
-freeKeyChords(KeyChord* keyChords)
-{
-    if (!keyChords) return;
-
-    for (size_t i = 0; keyChords[i].state == KEY_CHORD_STATE_NOT_NULL; i++)
-    {
-        free(keyChords[i].key.repr);
-        free(keyChords[i].description);
-        free(keyChords[i].command);
-        free(keyChords[i].before);
-        free(keyChords[i].after);
-        if (keyChords[i].keyChords) freeKeyChords(keyChords[i].keyChords);
-    }
-    free(keyChords);
-}
-
-static char*
-preprocessSource(Menu* menu, const char* source, const char* filepath)
+static Array
+preprocessSource(Menu* menu, Array* source, const char* filepath)
 {
     assert(menu), assert(source);
 
-    char* processedSource = runPreprocessor(menu, source, filepath);
-    if (!processedSource)
+    Array processedSource = preprocessorRun(menu, source, filepath);
+    if (arrayIsEmpty(&processedSource))
     {
         errorMsg("Failed while running preprocessor on `wks` file: '%s'.", filepath);
     }
@@ -51,20 +32,22 @@ preprocessSource(Menu* menu, const char* source, const char* filepath)
     {
         debugPrintHeader(" Contents of Preprocessed Source ");
         debugMsg(true, "| ");
-        debugTextWithLineNumber(processedSource);
+        debugTextWithLineNumber(ARRAY_AS(&processedSource, char));
         debugMsg(true, "| ");
         debugPrintHeader("");
     }
 
+    arrayFree(source);
     return processedSource;
 }
 
 static int
-compileSource(Menu* menu, Compiler* compiler, char* source, const char* filepath)
+compileSource(Menu* menu, Compiler* compiler, Array* source, const char* filepath)
 {
     assert(menu),assert(compiler), assert(source), assert(filepath);
 
-    initCompiler(menu, compiler, source, filepath);
+    char* src = ARENA_ADOPT_ARRAY(&menu->arena, source, char);
+    initCompiler(compiler, menu, src, filepath);
 
     /* Compile lines, retruns null on error. */
     menu->keyChordsHead = menu->keyChords = compileKeyChords(compiler, menu);
@@ -80,7 +63,6 @@ runMenu(Menu* menu)
 
     int result = EX_SOFTWARE;
     MenuStatus status = MENU_STATUS_RUNNING;
-    countMenuKeyChords(menu);
 
     /* Pre-press keys */
     if (menu->client.keys)
@@ -102,37 +84,31 @@ runMenu(Menu* menu)
     }
     else
     {
-        result = displayMenu(menu);
+        result = menuDisplay(menu);
     }
+
     return result;
 }
 
 static int
-runSource(Menu* menu, const char* source, const char* filepath)
+runSource(Menu* menu, Array* source, const char* filepath)
 {
     assert(menu), assert(source), assert(filepath);
 
-    int result = EX_SOFTWARE;
-
     /* Run preprocessor on `script` and fail if mallformed or other error. */
-    char* processedSource = preprocessSource(menu, source, filepath);
-    if (!processedSource) return EX_DATAERR;
+    Array processedSource = preprocessSource(menu, source, filepath);
+    if (arrayIsEmpty(&processedSource)) return EX_DATAERR;
 
     /* Begin compilation */
     Compiler compiler = {0};
-    result = compileSource(menu, &compiler, processedSource, filepath);
+    int result = compileSource(menu, &compiler, &processedSource, filepath);
     if (result != EX_OK)
     {
         errorMsg("Could not compile `wks` file: '%s'.", filepath);
-        goto fail;
+        return result;
     }
 
-    result = runMenu(menu);
-
-    freeKeyChords(menu->keyChordsHead);
-fail:
-    free(processedSource);
-    return result;
+    return runMenu(menu);
 }
 
 /* Read the given '.wks' file, and transpile it into chords.h syntax. */
@@ -141,32 +117,21 @@ transpileWksFile(Menu* menu)
 {
     assert(menu);
 
-    int result = EX_SOFTWARE;
-
     /* Read given file to `source` and exit if read failed. */
-    char* source = readFile(menu->client.transpile);
-    if (!source) return EX_IOERR;
+    Array source = readFile(menu->client.transpile);
+    if (arrayIsEmpty(&source)) return EX_IOERR;
 
     /* Run the preprocessor on source */
-    char* processedSource = preprocessSource(menu, source, menu->client.transpile);
-    if (!processedSource)
-    {
-        result = EX_DATAERR;
-        goto end;
-    }
+    Array processedSource = preprocessSource(menu, &source, menu->client.transpile);
+    if (arrayIsEmpty(&processedSource)) return EX_DATAERR;
 
     Compiler compiler = {0};
-    result = compileSource(menu, &compiler, processedSource, menu->client.transpile);
-    if (result != EX_OK) goto fail;
+    int result = compileSource(menu, &compiler, &processedSource, menu->client.transpile);
+    if (result != EX_OK) return result;
 
     /* Well formed file, write to stdout. */
     writeBuiltinKeyChordsHeaderFile(menu->keyChordsHead);
 
-    freeKeyChords(menu->keyChordsHead);
-fail:
-    free(processedSource);
-end:
-    free(source);
     return result;
 }
 
@@ -181,12 +146,10 @@ runScript(Menu* menu)
     int result = EX_SOFTWARE;
 
     /* Exit on failure to read stdin. */
-    if (!tryStdin(menu)) return EX_IOERR;
-    String* source = &menu->client.script;
+    if (!menuTryStdin(menu)) return EX_IOERR;
 
-    result = runSource(menu, source->string, ".");
+    result = runSource(menu, &menu->client.script, ".");
 
-    freeString(source);
     return result;
 }
 
@@ -199,12 +162,11 @@ runWksFile(Menu* menu)
     int result = EX_SOFTWARE;
 
     /* Exit on failure to read source file. */
-    char* source = readFile(menu->client.wksFile);
-    if (!source) return EX_IOERR;
+    Array source = readFile(menu->client.wksFile);
+    if (arrayIsEmpty(&source)) return EX_IOERR;
 
-    result = runSource(menu, source, menu->client.wksFile);
+    result = runSource(menu, &source, menu->client.wksFile);
 
-    free(source);
     return result;
 }
 
@@ -214,7 +176,7 @@ runBuiltinKeyChords(Menu* menu)
 {
     assert(menu);
 
-    if (menu->debug) disassembleKeyChords(menu->keyChords, 0);
+    if (menu->debug) disassembleKeyChordArray(menu->keyChords, 0);
     return runMenu(menu);
 }
 
@@ -224,8 +186,8 @@ main(int argc, char** argv)
     int result = EX_SOFTWARE;
 
     Menu menu = {0};
-    initMenu(&menu, builtinKeyChords);
-    parseArgs(&menu, &argc, &argv);
+    menuInit(&menu, &builtinKeyChords);
+    menuParseArgs(&menu, &argc, &argv);
 
     if (menu.debug) disassembleMenu(&menu);
 
@@ -246,7 +208,6 @@ main(int argc, char** argv)
         result = runBuiltinKeyChords(&menu);
     }
 
-    freeMenuGarbage(&menu);
-
+    menuFree(&menu, &builtinKeyChords);
     return result;
 }

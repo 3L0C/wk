@@ -2,20 +2,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 /* common includes */
+#include "common/array.h"
+#include "common/common.h"
 #include "common/key_chord.h"
+#include "common/string.h"
 
-/* local includes */
-#include "writer.h"
+static size_t offset = 0;
 
-static void writeKeyChords(const KeyChord* keyChords, int indent);
-
-static void
-writeIndent(int indent)
-{
-    printf("%*s", indent * 4, " ");
-}
+static void writeKeyChords(const Array* keyChords, int indent);
 
 static void
 writeNewlineWithIndent(int indent)
@@ -32,145 +29,196 @@ writeChordsHeader(void)
         "\n"
         "#include <stddef.h>\n"
         "\n"
+        "/* common includes */\n"
+        "#include \"src/common/array.h\"\n"
         "#include \"src/common/key_chord.h\"\n"
+        "#include \"src/common/string.h\"\n"
         "\n"
-        "/* state,\n"
-        " * KEY(\n"
-        " *     mods,\n"
-        " *     special,\n"
-        " *     key, key_len\n"
-        " * ),\n"
-        " * description,\n"
-        " * command\n"
-        " * before\n"
-        " * after\n"
-        " * flags, chords\n"
-        " */\n"
-        "KeyChord builtinKeyChords[] = {\n"
-    );
-}
-
-static void
-writeChordsFooter(void)
-{
-    printf(
-        "};\n"
+        "#define ARRAY(T, len, ...) (Array){ \\\n"
+        "    .data = (T[]){ __VA_ARGS__ }, \\\n"
+        "    .length = (len), \\\n"
+        "    .capacity = (len), \\\n"
+        "    .elementSize = sizeof(T) \\\n"
+        "}\n"
+        "#define EMPTY_ARRAY(T) (Array){ \\\n"
+        "    .data = NULL, \\\n"
+        "    .length = 0, \\\n"
+        "    .capacity = 0, \\\n"
+        "    .elementSize = sizeof(T) \\\n"
+        "}\n"
+        "#define STRING(offset, len) (String){ \\\n"
+        "    .parts = ARRAY(StringPart, (len), { .source = BUILTIN_SOURCE + (offset), .length = (len) }), \\\n"
+        "    .length = (len) \\\n"
+        "}\n"
+        "#define EMPTY_STRING (String){ \\\n"
+        "    .parts = EMPTY_ARRAY(StringPart), \\\n"
+        "    .length = 0 \\\n"
+        "}\n"
+        "#define KEY_CHORD(_key, desc, cmd, _before, _after, _flags, chords) \\\n"
+        "    (KeyChord){ \\\n"
+        "        .key         = (_key), \\\n"
+        "        .description = (desc), \\\n"
+        "        .command     = (cmd), \\\n"
+        "        .before      = (_before), \\\n"
+        "        .after       = (_after), \\\n"
+        "        .flags       = (_flags), \\\n"
+        "        .keyChords   = (chords) \\\n"
+        "    }\n"
+        "#define KEY(offset, len, _mods, _special) \\\n"
+        "    (Key){ \\\n"
+        "        .repr    = STRING((offset), (len)), \\\n"
+        "        .mods    = (_mods), \\\n"
+        "        .special = (_special) \\\n"
+        "    }\n"
         "\n"
-        "#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n"
+        "static const char BUILTIN_SOURCE[] = "
     );
 }
 
 static void
-writeChordMods(const Modifiers* mods, int indent)
+writeEscString(const String* string)
 {
-    assert(mods);
+    if (!string) return;
+    if (stringIsEmpty(string)) return;
 
-    printf(".mods = {");
-    writeNewlineWithIndent(indent + 1);
-    printf(
-        ".ctrl = %-5s, .alt = %-5s, .hyper = %-5s, .shift = %-5s",
-        (mods->ctrl ? "true" : "false"),
-        (mods->alt ? "true" : "false"),
-        (mods->hyper ? "true" : "false"),
-        (mods->shift ? "true" : "false")
-    );
-    writeNewlineWithIndent(indent);
-    printf("},");
-}
-
-static void
-writeChordSpecial(SpecialKey special)
-{
-    printf("    .special = %s,", getSpecialKeyLiteral(special));
-}
-
-static void
-writeEscString(const char* text)
-{
-    if (!text)
+    StringIterator iter = stringIteratorMake(string);
+    char c = '\0';
+    while ((c = stringIteratorNext(&iter)) != '\0')
     {
-        printf("NULL, ");
-        return;
-    }
-
-    printf("\"");
-    const char* current = text;
-    while (*current != '\0')
-    {
-        switch (*current)
+        switch (c)
         {
         case '\\': printf("\\"); break;
         case '\"': printf("\\\""); break;
         case '\n': printf("\\\n"); break;
-        default: printf("%c", *current); break;
+        default: printf("%c", c); break;
         }
-        current++;
     }
-    printf("\", ");
 }
 
 static void
-writeEscStringWithIndent(const char* member, const char* text, int indent)
+writeBuiltinSource(const Array* arr)
 {
-    writeIndent(indent);
-    printf(".%s = ", member);
-    writeEscString(text);
+    assert(arr);
+
+    forEach(arr, KeyChord, keyChord)
+    {
+        writeEscString(&keyChord->key.repr);
+        writeEscString(&keyChord->description);
+        writeEscString(&keyChord->command);
+        writeEscString(&keyChord->before);
+        writeEscString(&keyChord->after);
+    }
 }
 
 static void
-writeEscStringWithIndentAndNewline(const char* member, const char* text, int indent)
+writeModifier(const Modifier mods, int indent)
 {
-    printf("\n");
-    writeEscStringWithIndent(member, text, indent);
+    assert(mods);
+
+    if (!modifierHasAnyActive(mods))
+    {
+        printf("MOD_NONE,");
+    }
+    else
+    {
+        int count = modifierCount(mods);
+        if (modifierIsActive(mods, MOD_CTRL)) printf("MOD_CTRL%c", getSeparator(&count, '|', ','));
+        if (modifierIsActive(mods, MOD_META)) printf("MOD_META%c", getSeparator(&count, '|', ','));
+        if (modifierIsActive(mods, MOD_HYPER)) printf("MOD_HYPER%c", getSeparator(&count, '|', ','));
+        if (modifierIsActive(mods, MOD_SHIFT)) printf("MOD_SHIFT%c", getSeparator(&count, '|', ','));
+    }
+    printf(" ");
 }
 
 static void
-writeChordKey(const Key* key, int indent)
+writeSpecialKey(SpecialKey special)
+{
+    printf("%s", specialKeyGetLiteral(special));
+}
+
+static void
+writeOffsetAndLength(const String* string, const char* rest)
+{
+    assert(string), assert(rest);
+    printf("%zu, %zu", offset, string->length);
+    if (rest) printf("%s", rest);
+    offset += string->length;
+}
+
+static void
+writeKey(const Key* key, int indent)
 {
     assert(key);
 
     writeNewlineWithIndent(indent);
-    printf(".key = {");
-    writeNewlineWithIndent(indent + 1);
-    writeChordMods(&key->mods, indent + 1);
-    writeNewlineWithIndent(indent);
-    writeChordSpecial(key->special);
-    printf("\n    ");
-    writeEscStringWithIndent("repr", key->repr, indent);
-    printf(".len = %lu", strlen(key->repr));
-    writeNewlineWithIndent(indent);
-    printf("},\n");
+    printf("KEY(");
+    writeOffsetAndLength(&key->repr, ", ");
+    writeModifier(key->mods, indent);
+    writeSpecialKey(key->special);
+    printf("),");
 }
 
 static void
-writeChordFlags(const ChordFlags* flags, int indent)
+writeString(const String* string, int indent)
+{
+    assert(string);
+
+    writeNewlineWithIndent(indent);
+    if (stringIsEmpty(string))
+    {
+        printf("EMPTY_STRING,");
+    }
+    else
+    {
+        printf("STRING(");
+        writeOffsetAndLength(string, "),");
+    }
+}
+
+static void
+writeChordFlag(const ChordFlag flags, int indent)
 {
     assert(flags);
 
-    printf(".flags = {\n");
-    writeIndent(indent);
-    printf(
-        "    %-5s, %-5s, %-5s, %-5s, %-5s, %-5s, %-5s,\n",
-        (flags->keep ? "true" : "false"),
-        (flags->close ? "true" : "false"),
-        (flags->inherit ? "true" : "false"),
-        (flags->ignore ? "true" : "false"),
-        (flags->ignoreSort ? "true" : "false"),
-        (flags->unhook ? "true" : "false"),
-        (flags->deflag ? "true" : "false")
-    );
-    writeIndent(indent);
-    printf("    %-5s, %-5s, %-5s, %-5s, %-5s, %-5s, %-5s\n",
-        (flags->nobefore ? "true" : "false"),
-        (flags->noafter ? "true" : "false"),
-        (flags->write ? "true" : "false"),
-        (flags->execute ? "true" : "false"),
-        (flags->syncCommand ? "true" : "false"),
-        (flags->syncBefore ? "true" : "false"),
-        (flags->syncAfter ? "true" : "false")
-    );
-    writeIndent(indent);
-    printf("}, ");
+    writeNewlineWithIndent(indent);
+    if (!chordFlagHasAnyActive(flags))
+    {
+        printf("FLAG_NONE,");
+    }
+    else
+    {
+        int count = chordFlagCount(flags);
+        if (chordFlagIsActive(flags, FLAG_KEEP)) printf("FLAG_KEEP%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_CLOSE)) printf("FLAG_CLOSE%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_INHERIT)) printf("FLAG_INHERIT%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_IGNORE)) printf("FLAG_IGNORE%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_IGNORE_SORT)) printf("FLAG_IGNORE_SORT%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_UNHOOK)) printf("FLAG_UNHOOK%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_DEFLAG)) printf("FLAG_DEFLAG%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_NO_BEFORE)) printf("FLAG_NO_BEFORE%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_NO_AFTER)) printf("FLAG_NO_AFTER%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_WRITE)) printf("FLAG_WRITE%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_EXECUTE)) printf("FLAG_EXECUTE%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_SYNC_COMMAND)) printf("FLAG_SYNC_COMMAND%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_SYNC_BEFORE)) printf("FLAG_SYNC_BEFORE%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_SYNC_AFTER)) printf("FLAG_SYNC_AFTER%c", getSeparator(&count, '|', ','));
+    }
+}
+
+static void
+writePrefix(const Array* arr, int indent)
+{
+    assert(arr);
+
+    writeNewlineWithIndent(indent);
+    if (!arrayIsEmpty(arr))
+    {
+        writeKeyChords(arr, indent);
+    }
+    else
+    {
+        printf("EMPTY_ARRAY(KeyChord)");
+    }
 }
 
 static void
@@ -178,70 +226,51 @@ writeChord(const KeyChord* keyChord, int indent)
 {
     assert(keyChord);
 
-    printf("%*s", indent * 4, " ");
-    printf(".state = KEY_CHORD_STATE_NOT_NULL, ");
-    writeChordKey(&keyChord->key, indent);
-    writeEscStringWithIndent("description", keyChord->description, indent);
-
-    /* command */
-    writeEscStringWithIndentAndNewline("command", keyChord->command, indent);
-
-    /* before */
-    writeEscStringWithIndentAndNewline("before", keyChord->before, indent);
-
-    /* after */
-    writeEscStringWithIndentAndNewline("after", keyChord->after, indent);
-
-    /* flags */
     writeNewlineWithIndent(indent);
-    writeChordFlags(&keyChord->flags, indent);
-
-    /* prefix */
-    if (keyChord->keyChords)
-    {
-        writeNewlineWithIndent(indent);
-        printf(".keyChords = (KeyChord[]){\n");
-        writeKeyChords(keyChord->keyChords, indent + 1);
-        writeIndent(indent);
-        printf("}\n");
-    }
-    else
-    {
-        printf(".keyChords = NULL\n");
-    }
+    printf("KEY_CHORD(");
+    writeKey(&keyChord->key, indent + 1);
+    writeString(&keyChord->description, indent + 1);
+    writeString(&keyChord->command, indent + 1);
+    writeString(&keyChord->before, indent + 1);
+    writeString(&keyChord->after, indent + 1);
+    writeChordFlag(keyChord->flags, indent + 1);
+    writePrefix(&keyChord->keyChords, indent + 1);
+    writeNewlineWithIndent(indent);
+    printf(")");
 }
 
 static void
-writeNullKeyChord(int indent)
+writeKeyChords(const Array* arr, int indent)
 {
-    writeIndent(indent);
-    printf("{ .state = KEY_CHORD_STATE_IS_NULL }\n");
+    assert(arr);
+
+    printf("ARRAY(KeyChord, %zu,", arr->length);
+    forEach(arr, KeyChord, keyChord)
+    {
+        writeChord(keyChord, indent + 1);
+        if (iter.index < arr->length - 1) printf(",");
+    }
+    writeNewlineWithIndent(indent);
+    printf(")");
 }
 
 static void
-writeKeyChords(const KeyChord* keyChords, int indent)
+writeChordsFooter(void)
 {
-    assert(keyChords);
-
-    size_t count = countKeyChords(keyChords);
-    for (size_t i = 0; i < count; i++)
-    {
-        writeIndent(indent);
-        printf("{\n");
-        writeChord(&keyChords[i], indent + 1);
-        writeIndent(indent);
-        printf("},\n");
-    }
-
-    writeNullKeyChord(indent);
+    printf(
+        ";\n"
+        "\n"
+        "#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n"
+    );
 }
 
 void
-writeBuiltinKeyChordsHeaderFile(const KeyChord* keyChords)
+writeBuiltinKeyChordsHeaderFile(const Array* keyChords)
 {
     assert(keyChords);
 
     writeChordsHeader();
-    writeKeyChords(keyChords, 1);
+    writeBuiltinSource(keyChords);
+    writeKeyChords(keyChords, 0);
     writeChordsFooter();
 }

@@ -7,7 +7,6 @@
 
 /* local includes */
 #include "debug.h"
-#include "piece_table.h"
 #include "token.h"
 
 void
@@ -20,95 +19,23 @@ debugPrintScannedTokenFooter(void)
 void
 debugPrintScannedTokenHeader(void)
 {
-    debugPrintHeader("-");
+    debugPrintHeader("");
     debugMsg(true, "|                            Scanned Tokens                            |");
-    debugPrintHeader("-");
+    debugPrintHeader("");
     debugMsg(true, "| Line:Col  |          TokenType          |           Lexeme           |");
-    debugPrintHeader("-");
+    debugPrintHeader("");
     debugMsg(true, "|           |                             |                            |");
 }
 
 void
-disassemblePiece(const PieceTable* pieceTable, size_t index)
+disassembleArrayAsText(const Array* arr, const char* title)
 {
-    assert(pieceTable);
+    assert(arr), assert(title);
 
-    Piece* piece = &pieceTable->pieces.pieces[index];
+    debugPrintHeader(title);
     debugMsg(true, "| ");
-    debugMsg(
-        true,
-        "| Source:   %s",
-        piece->source == PIECE_SOURCE_ORIGINAL
-        ? "ORIGINAL" : "ADD"
-    );
-    debugMsg(true, "| Index:    %04zu", piece->index);
-    debugMsg(true, "| Length:   %04zu", piece->len);
-    if (piece->len > 0)
-    {
-        debugMsg(true, "| Text: ");
-        debugMsg(true, "| ");
-        debugTextLenWithLineNumber(getTextAtPiece(pieceTable, piece), piece->len);
-    }
-}
-
-static void
-disassemblePieceArray(const PieceTable* pieceTable)
-{
-    assert(pieceTable);
-
-    const PieceArray* array = &pieceTable->pieces;
-    for (size_t i = 0; i < array->count; i++)
-    {
-        debugMsg(true, "|----------- Piece number: %04zu ------------", i);
-        disassemblePiece(pieceTable, i);
-        debugMsg(true, "| ");
-    }
-}
-
-void
-disassemblePieceTable(const PieceTable* pieceTable)
-{
-    assert(pieceTable);
-
-    debugPrintHeader(" PieceTable ");
+    debugTextWithLineNumber(ARRAY_AS(arr, char));
     debugMsg(true, "| ");
-    debugMsg(true, "| Total pieces:         %zu", pieceTable->pieces.count);
-    debugMsg(true, "| Original Text length: %zu", pieceTable->originalLen);
-    debugMsg(true, "| Add Text length:      %zu", pieceTable->add.count);
-    debugMsg(true, "| ");
-    debugMsg(true, "|-------------- Original Text --------------");
-    debugMsg(true, "| ");
-    debugTextWithLineNumber(pieceTable->original);
-    debugMsg(true, "| ");
-    if (pieceTable->add.string)
-    {
-        debugMsg(true, "|---------------- Add Text -----------------");
-        debugMsg(true, "| ");
-        debugTextWithLineNumber(pieceTable->add.string);
-        debugMsg(true, "| ");
-    }
-    disassemblePieceArray(pieceTable);
-    debugPrintHeader("");
-}
-
-void
-disassemblePseudoChord(const PseudoChord* chord)
-{
-    assert(chord);
-
-    debugPrintHeader(" PseudoChord ");
-    debugMsg(true, "|");
-    debugMsg(
-        true, "| State:             %s",
-        chord->state == KEY_CHORD_STATE_IS_NULL ? "STATE_IS_NULL" : "STATE_NOT_NULL"
-    );
-    disassembleKeyWithoutHeader(&chord->key, 0);
-    disassembleTokenArray(&chord->description);
-    disassembleTokenArray(&chord->command);
-    disassembleTokenArray(&chord->before);
-    disassembleTokenArray(&chord->after);
-    disassembleFlags(&chord->flags, 0);
-    debugMsg(true, "|");
     debugPrintHeader("");
 }
 
@@ -129,7 +56,7 @@ disassembleScanner(const Scanner* scanner)
     debugMsg(true, "| Had Error:         %s", scanner->hadError ? "true" : "false");
     /* debugMsg(true, "| State:             %s", *scanner->head); */
     /* debugMsg(true, "| Prev State:        %s", *scanner->head); */
-    debugMsg(true, "| Interp Type:       %s", getTokenLiteral(scanner->interpType));
+    debugMsg(true, "| Interp Type:       %s", tokenGetLiteral(scanner->interpType));
     debugMsg(true, "|");
     debugPrintHeader("");
 }
@@ -165,7 +92,7 @@ printSimpleToken(const Token* token)
     debugMsg(
         true,
         "| %04zu:%04zu | %-27s | %-26.*s |",
-        token->line, token->column, getTokenLiteral(token->type),
+        token->line, token->column, tokenGetLiteral(token->type),
         (int)token->length, token->start
     );
 }
@@ -177,17 +104,4 @@ disassembleToken(const Token* token)
 
     if (token->type == TOKEN_ERROR) printErrorToken(token);
     else printSimpleToken(token);
-}
-
-void
-disassembleTokenArray(const TokenArray* tokens)
-{
-    assert(tokens);
-
-    if (tokens->count == 0) return;
-
-    for (size_t i = 0; i < tokens->count; i++)
-    {
-        disassembleToken(&tokens->tokens[i]);
-    }
 }

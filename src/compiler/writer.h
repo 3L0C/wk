@@ -2,8 +2,8 @@
 #define WK_COMPILER_WRITER_H_
 
 /* common includes */
-#include "common/key_chord.h"
+#include "common/array.h"
 
-void writeBuiltinKeyChordsHeaderFile(const KeyChord* keyChords);
+void writeBuiltinKeyChordsHeaderFile(const Array* keyChords);
 
 #endif /* WK_COMPILER_WRITER_H_ */
