@@ -211,7 +211,7 @@ keyCopy(const Key* from, Key* to)
 
     to->mods = from->mods;
     to->special = from->special;
-    to->repr = from->repr;
+    to->repr = stringCopy(&from->repr);
 }
 
 void
