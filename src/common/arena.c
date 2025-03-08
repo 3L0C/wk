@@ -37,21 +37,29 @@ arenaAlloc(Arena* arena, size_t size)
     size = ARENA_ALIGN(size);
 
     /* If this allocation won't fit in the current block */
-    if (arena->used + size > arena->bufferSize)
+    if (arena->buffer == NULL || arena->used + size > arena->bufferSize)
     {
         /* Allocate a new block */
         size_t blockSize = size > ARENA_BLOCK_SIZE ? size : ARENA_BLOCK_SIZE;
 
-        Arena newArena = {0};
-        newArena.buffer = (char*)reallocate(NULL, 0, blockSize);
-        newArena.bufferSize = blockSize;
-        newArena.used = size;
-        newArena.prev = arena;
+        if (arena->buffer != NULL) {
+            /* If we already have a buffer, create a new arena to hold the old state */
+            Arena* oldArena = (Arena*)reallocate(NULL, 0, sizeof(Arena));
+            oldArena->buffer = arena->buffer;
+            oldArena->bufferSize = arena->bufferSize;
+            oldArena->used = arena->used;
+            oldArena->prev = arena->prev;
 
-        void* result = newArena.buffer;
-        *arena = newArena;
+            /* Update the current arena */
+            arena->prev = oldArena;
+        }
 
-        return result;
+        /* Allocate new buffer for the current arena */
+        arena->buffer = (char*)reallocate(NULL, 0, blockSize);
+        arena->bufferSize = blockSize;
+        arena->used = size;
+
+        return arena->buffer;
     }
 
     /* Allocation fits in current block */
