@@ -806,14 +806,6 @@ compileKeyChord(Compiler* compiler)
 }
 
 static void
-compileStringFromKey(String* result, const Key* key)
-{
-    assert(result), assert(key);
-
-    stringAppendString(result, &key->repr);
-}
-
-static void
 compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, const String* desc)
 {
     assert(compiler), assert(dest), assert(desc);
@@ -844,7 +836,7 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
 
     switch (token->type)
     {
-    case TOKEN_THIS_KEY: compileStringFromKey(dest, &to->key); break;
+    case TOKEN_THIS_KEY: stringAppendString(dest, &to->key.repr); break;
     case TOKEN_THIS_DESC:
     {
         if (!stringIsEmpty(&to->description)) stringAppendString(dest, &to->description);
@@ -864,7 +856,7 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
     case TOKEN_INDEX: stringAppendUInt32(compiler->arena, dest, index); break;
     case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); break;
     case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-    case TOKEN_DESCRIPTION: stringAppendEscString(compiler->arena, dest, token->start, token->length); break;
+    case TOKEN_DESCRIPTION: stringAppendEscString(dest, token->start, token->length); break;
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
     case TOKEN_COMMAND: stringAppend(dest, token->start, token->length); break;
     default:
@@ -883,8 +875,6 @@ compileStringFromTokens(Compiler* compiler, Array* tokens, KeyChord* to, String*
 {
     assert(compiler), assert(tokens), assert(to), assert(dest);
 
-    *dest = stringInit();
-
     forEach(tokens, Token, token)
     {
         compileStringFromToken(compiler, token, to, dest, index);
@@ -902,6 +892,7 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
     forEach(root, PseudoChord, chord)
     {
         KeyChord* keyChord = ARRAY_APPEND_SLOT(dest, KeyChord);
+        keyChordInit(keyChord);
         /* Key */
         keyCopy(&chord->key, &keyChord->key);
         /* Description */
