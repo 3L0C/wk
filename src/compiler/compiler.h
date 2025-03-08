@@ -12,13 +12,15 @@
 
 typedef struct
 {
-    Scanner scanner;
+    Scanner sourceScanner;
+    Scanner implicitArrayKeysScanner;
     Token current;
     Token previous;
     Array implicitKeys;
     Array* dest;
     Array* chords;
     Arena* arena;
+    Scanner* scanner;
     const char* delimiter;
     char* source;
     size_t delimiterLen;

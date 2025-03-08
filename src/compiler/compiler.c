@@ -116,7 +116,7 @@ errorAt(Compiler* compiler, Token* token, const char* fmt, ...)
 
     va_list ap;
     va_start(ap, fmt);
-    tokenErrorAt(token, compiler->scanner.filepath, fmt, ap);
+    tokenErrorAt(token, compiler->scanner->filepath, fmt, ap);
     va_end(ap);
 }
 
@@ -144,7 +144,7 @@ advance(Compiler* compiler)
 
     while (true)
     {
-        scannerGetTokenForCompiler(&compiler->scanner, &compiler->current);
+        scannerGetTokenForCompiler(compiler->scanner, &compiler->current);
         if (compiler->debug) disassembleToken(&compiler->current);
         if (compiler->current.type != TOKEN_ERROR) break;
 
@@ -173,7 +173,7 @@ static bool
 compilerIsAtEnd(Compiler* compiler)
 {
     assert(compiler);
-    return scannerIsAtEnd(&compiler->scanner);
+    return scannerIsAtEnd(compiler->scanner);
 }
 
 static bool
@@ -932,17 +932,12 @@ compileImplicitChordArrayKeys(Compiler* compiler, Menu* menu)
 {
     assert(compiler), assert(menu);
 
-    Scanner scanner = {0};
-    scannerInit(&scanner, menu->implicitArrayKeys, ".");
+    scannerInit(&compiler->implicitArrayKeysScanner, menu->implicitArrayKeys, ".");
+    compiler->scanner = &compiler->implicitArrayKeysScanner;
 
-    while (!scannerIsAtEnd(&scanner))
+    while (!compilerIsAtEnd(compiler))
     {
-        Token* token = currentToken(compiler);
-        tokenInit(token);
-
-        scannerGetTokenForCompiler(&scanner, token);
-
-        switch (token->type)
+        switch (advance(compiler))
         {
         case TOKEN_SPECIAL_KEY: /* FALLTHROUGH */
         case TOKEN_KEY:
@@ -959,13 +954,16 @@ compileImplicitChordArrayKeys(Compiler* compiler, Menu* menu)
         }
         default:
         {
-            tokenInit(token);
+            errorAtCurrent(compiler, "Expected modifier, special, or normal key.");
+            tokenInit(currentToken(compiler));
+            compiler->scanner = &compiler->sourceScanner;
             return false;
         }
         }
     }
 
     tokenInit(currentToken(compiler));
+    compiler->scanner = &compiler->sourceScanner;
     return true;
 }
 
@@ -1025,7 +1023,7 @@ initCompiler(Compiler* compiler, Menu* menu, char* source, const char* filepath)
 {
     assert(compiler), assert(source), assert(filepath);
 
-    scannerInit(&compiler->scanner, source, filepath);
+    scannerInit(&compiler->sourceScanner, source, filepath);
     tokenInit(currentToken(compiler));
     tokenInit(previousToken(compiler));
     compiler->implicitKeys = ARRAY_INIT(KeyChord);
