@@ -386,11 +386,10 @@ stringRtrim(String* string)
             string->length--;
         }
 
-        if (newLength != part->length)
-        {
-            part->length = newLength;
-            if (newLength > 0) return;
-        }
+        if (newLength == part->length) return;
+
+        part->length = newLength;
+        if (newLength > 0) return;
 
         arrayRemove(&string->parts, i);
     }
