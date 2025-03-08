@@ -20,6 +20,11 @@
 #include "scanner.h"
 #include "token.h"
 
+typedef struct
+{
+    char* path;
+} FilePath;
+
 static Array preprocessorRunImpl(Menu*, Array*, const char*, Stack*, Arena*);
 
 static bool
@@ -27,9 +32,9 @@ fileIsInIncludeStack(Stack* stack, const char* filepath)
 {
     assert(stack), assert(filepath);
 
-    forEach(stack, const char, file)
+    forEach(stack, FilePath, entry)
     {
-        if (strcmp(file, filepath) == 0) return true;
+        if (strcmp(entry->path, filepath) == 0) return true;
     }
 
     return false;
@@ -48,17 +53,17 @@ disassembleIncludeStack(Stack* stack)
     }
     size_t pwdLen = strlen(pwd);
 
-    debugPrintHeader(" IncludeStack ");
+    debugPrintHeader("IncludeStack");
     debugMsg(true, "|");
-    forEach(stack, const char, file)
+    forEach(stack, FilePath, entry)
     {
-        if (strncmp(file, pwd, pwdLen) == 0 && file[pwdLen] == '/')
+        if (strncmp(entry->path, pwd, pwdLen) == 0 && entry->path[pwdLen] == '/')
         {
-            debugMsg(true, "| %4zu | %s", iter.index, file + pwdLen + 1);
+            debugMsg(true, "| %4zu | %s", iter.index, entry->path + pwdLen + 1);
         }
         else
         {
-            debugMsg(true, "| %4zu | %s", iter.index, file);
+            debugMsg(true, "| %4zu | %s", iter.index, entry->path);
         }
     }
     debugMsg(true, "|");
@@ -378,6 +383,18 @@ fail:
     return;
 }
 
+static void
+popFilePath(Stack* stack)
+{
+    assert(stack);
+
+    if (stackIsEmpty(stack)) return;
+
+    FilePath* entry = STACK_PEEK(stack, FilePath);
+    free(entry->path);
+    stackPop(stack);
+}
+
 static Array
 preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stack, Arena* arena)
 {
@@ -390,7 +407,8 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     Array result = ARRAY_INIT(char);
 
     char* absoluteFilePath = getAbsolutePath(filepath, strlen(filepath), ".");
-    stackPush(stack, absoluteFilePath);
+    FilePath pathEntry = { .path = absoluteFilePath };
+    stackPush(stack, &pathEntry);
     if (menu->debug)
     {
         disassembleIncludeStack(stack);
@@ -488,9 +506,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     }
 
 fail:
-    stackPop(stack);
-    if (stackIsEmpty(stack)) stackFree(stack);
-    free(absoluteFilePath);
+    popFilePath(stack);
     arrayAppend(&result, "");
 
     if (scanner.hadError) arrayFree(&result);
@@ -502,8 +518,8 @@ preprocessorRun(Menu* menu, Array* source, const char* filepath)
 {
     assert(menu), assert(source);
 
-    Stack stack = STACK_INIT(char*);
+    Stack stack = STACK_INIT(FilePath);
     Array result = preprocessorRunImpl(menu, source, filepath, &stack, &menu->arena);
-    if (!stackIsEmpty(&stack)) stackFree(&stack);
+    while (!stackIsEmpty(&stack)) popFilePath(&stack);
     return result;
 }
