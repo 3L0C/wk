@@ -77,6 +77,8 @@ typedef struct
     } client;
     struct timespec timer;
     CleanupFP cleanupfp;
+    Array  compiledKeyChords;
+    Array* builtinKeyChords;
     Array* keyChords;
     Array* keyChordsHead;
     void* xp;
@@ -102,7 +104,7 @@ typedef struct
 } Menu;
 
 int menuDisplay(Menu* menu);
-void menuFree(Menu* menu, Array* keyChords);
+void menuFree(Menu* menu);
 MenuStatus menuHandleKeypress(Menu* menu, const Key* key);
 void menuInit(Menu* menu, Array* keyChords);
 bool menuIsDelayed(Menu* menu);

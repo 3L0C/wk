@@ -45,23 +45,23 @@ menuDisplay(Menu* menu)
     if (getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET"))
     {
         debugMsg(menu->debug, "Running on wayland.");
-        return runWayland(menu);
+        return waylandRun(menu);
     }
 #endif
 #ifdef WK_X11_BACKEND
     debugMsg(menu->debug, "Running on x11.");
-    return runX11(menu);
+    return x11Run(menu);
 #endif
     errorMsg("Can only run under X11 and/or Wayland.");
     return EX_SOFTWARE;
 }
 
 void
-menuFree(Menu* menu, Array* keyChords)
+menuFree(Menu* menu)
 {
-    assert(menu), assert(keyChords);
+    assert(menu);
 
-    if (menu->keyChordsHead != keyChords) keyChordArrayFree(menu->keyChordsHead);
+    keyChordArrayFree(&menu->compiledKeyChords);
     arenaFree(&menu->arena);
 }
 
@@ -119,17 +119,15 @@ menuHandleKeypress(Menu* menu, const Key* key)
 {
     assert(menu), assert(key);
 
-    ArrayIterator iter = arrayIteratorMake(menu->keyChords);
-    while (arrayIteratorHasNext(&iter))
+    forEach(menu->keyChords, KeyChord, keyChord)
     {
-        KeyChord* keyChord = ARRAY_ITER_NEXT(&iter, KeyChord);
         if (keyIsEqual(&keyChord->key, key))
         {
             if (menu->debug)
             {
                 char buffer[keyChord->key.repr.length + 1];
                 stringWriteToBuffer(&keyChord->key.repr, buffer);
-                debugMsg(menu->debug, "Found match: '%s'.\n", buffer);
+                debugMsg(menu->debug, "Found match: '%.*s'.\n", buffer);
                 disassembleKeyChordWithHeader(keyChord, 0);
                 disassembleKey(key);
             }
@@ -226,8 +224,9 @@ menuInit(Menu* menu, Array* keyChords)
     menu->client.wksFile = NULL;
     menu->client.tryScript = false;
     menu->client.script = ARRAY_INIT(char);
-    menu->delay = delay;
     clock_gettime(CLOCK_MONOTONIC, &menu->timer);
+    menu->compiledKeyChords = ARRAY_INIT(KeyChord);
+    menu->builtinKeyChords = keyChords;
     menu->keyChords = keyChords;
     menu->keyChordsHead = keyChords;
     menu->cleanupfp = NULL;
@@ -245,6 +244,7 @@ menuInit(Menu* menu, Array* keyChords)
     menu->width = 0;
     menu->height = 0;
     menu->borderWidth = borderWidth;
+    menu->delay = delay;
 
     menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
     menu->debug = false;
