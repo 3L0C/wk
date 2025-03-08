@@ -113,8 +113,6 @@ writeBuiltinSource(const Array* arr)
 static void
 writeModifier(const Modifier mods, int indent)
 {
-    assert(mods);
-
     if (!modifierHasAnyActive(mods))
     {
         printf("MOD_NONE,");
@@ -178,8 +176,6 @@ writeString(const String* string, int indent)
 static void
 writeChordFlag(const ChordFlag flags, int indent)
 {
-    assert(flags);
-
     writeNewlineWithIndent(indent);
     if (!chordFlagHasAnyActive(flags))
     {
