@@ -92,19 +92,19 @@ bool
 chordFlagHasAnyActive(ChordFlag flag)
 {
     static const ChordFlag any = FLAG_KEEP
-                                | FLAG_CLOSE
-                                | FLAG_INHERIT
-                                | FLAG_IGNORE
-                                | FLAG_IGNORE_SORT
-                                | FLAG_UNHOOK
-                                | FLAG_DEFLAG
-                                | FLAG_NO_BEFORE
-                                | FLAG_NO_AFTER
-                                | FLAG_WRITE
-                                | FLAG_EXECUTE
-                                | FLAG_SYNC_COMMAND
-                                | FLAG_SYNC_BEFORE
-                                | FLAG_SYNC_AFTER;
+        | FLAG_CLOSE
+        | FLAG_INHERIT
+        | FLAG_IGNORE
+        | FLAG_IGNORE_SORT
+        | FLAG_UNHOOK
+        | FLAG_DEFLAG
+        | FLAG_NO_BEFORE
+        | FLAG_NO_AFTER
+        | FLAG_WRITE
+        | FLAG_EXECUTE
+        | FLAG_SYNC_COMMAND
+        | FLAG_SYNC_BEFORE
+        | FLAG_SYNC_AFTER;
 
     return (flag & any) != 0;
 }
@@ -150,9 +150,9 @@ bool
 modifierHasAnyActive(Modifier mod)
 {
     static const Modifier any = MOD_CTRL
-                               | MOD_META
-                               | MOD_HYPER
-                               | MOD_SHIFT;
+        | MOD_META
+        | MOD_HYPER
+        | MOD_SHIFT;
 
     return (mod & any) != 0;
 }
