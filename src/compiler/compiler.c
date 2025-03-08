@@ -1004,12 +1004,12 @@ compileKeyChords(Compiler* compiler, Menu* menu)
     }
 
     if (compiler->sort) pseudoChordArraySort(compiler->chords);
-    menu->keyChords = compileFromPseudoChords(compiler, menu->keyChordsHead);
+    menu->keyChords = compileFromPseudoChords(compiler, &menu->compiledKeyChords);
 
     if (compiler->debug)
     {
         debugPrintScannedTokenFooter();
-        disassembleKeyChordArray(menu->keyChordsHead, 0);
+        disassembleKeyChordArray(menu->keyChords, 0);
     }
 
     compilerFree(compiler);
