@@ -96,7 +96,7 @@ writeEscString(const String* string)
 }
 
 static void
-writeBuiltinSource(const Array* arr)
+writeBuiltinSourceImpl(const Array* arr)
 {
     assert(arr);
 
@@ -107,7 +107,24 @@ writeBuiltinSource(const Array* arr)
         writeEscString(&keyChord->command);
         writeEscString(&keyChord->before);
         writeEscString(&keyChord->after);
+        if (!arrayIsEmpty(&keyChord->keyChords)) writeBuiltinSourceImpl(&keyChord->keyChords);
     }
+}
+
+static void
+writeBuiltinSource(const Array* arr)
+{
+    assert(arr);
+
+    printf("\"");
+    writeBuiltinSourceImpl(arr);
+    printf("\";\n\n");
+}
+
+static void
+writetKeyChordsDeclaration(void)
+{
+    printf("static Array builtinKeyChords = ");
 }
 
 static void
@@ -267,6 +284,7 @@ writeBuiltinKeyChordsHeaderFile(const Array* keyChords)
 
     writeChordsHeader();
     writeBuiltinSource(keyChords);
+    writetKeyChordsDeclaration();
     writeKeyChords(keyChords, 0);
     writeChordsFooter();
 }
