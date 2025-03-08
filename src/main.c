@@ -50,8 +50,8 @@ compileSource(Menu* menu, Compiler* compiler, Array* source, const char* filepat
     initCompiler(compiler, menu, src, filepath);
 
     /* Compile lines, retruns null on error. */
-    menu->keyChordsHead = menu->keyChords = compileKeyChords(compiler, menu);
-    if (!menu->keyChords) return EX_DATAERR;
+    menu->keyChordsHead = compileKeyChords(compiler, menu);
+    if (!menu->keyChordsHead) return EX_DATAERR;
 
     return EX_OK;
 }
@@ -208,6 +208,6 @@ main(int argc, char** argv)
         result = runBuiltinKeyChords(&menu);
     }
 
-    menuFree(&menu, &builtinKeyChords);
+    menuFree(&menu);
     return result;
 }
