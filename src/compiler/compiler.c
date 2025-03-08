@@ -610,7 +610,7 @@ compileChord(Compiler* compiler)
     compileHooksAndFlags(compiler, &dummy);
 
     /* Prefix */
-    if (check(compiler, TOKEN_LEFT_BRACE)) return compilePrefix(compiler, &dummy);
+    if (match(compiler, TOKEN_LEFT_BRACE)) return compilePrefix(compiler, &dummy);
 
     compileCommandTokens(compiler, &dummy.cmd, false, "Expected command.");
 
