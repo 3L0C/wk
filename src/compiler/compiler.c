@@ -529,6 +529,7 @@ compileImplicitChordArray(Compiler* compiler, PseudoChord* dummy)
         arrayAppend(compiler->dest, &chord);
     }
 
+    /* FIXME not sure if this should be freed or not. */
     pseudoChordFree(dummy);
 }
 
@@ -597,9 +598,8 @@ compileChordArray(Compiler* compiler)
         compileMissingKeyChordInfo(compiler, &dummy, chord);
     }
 
+    /* FIXME not sure if this should be freed or not. */
     pseudoChordFree(&dummy);
-
-    return;
 }
 
 static void
