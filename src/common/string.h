@@ -40,7 +40,7 @@ typedef struct
 void stringAppend(String* dest, const char* src, size_t len);
 void stringAppendChar(Arena* arena, String* dest, char c);
 void stringAppendCString(String* dest, const char* src);
-void stringAppendEscString(Arena* arena, String* dest, const char* src, size_t len);
+void stringAppendEscString(String* dest, const char* src, size_t len);
 void stringAppendInt32(Arena* arena, String* dest, int32_t i);
 void stringAppendString(String* dest, const String* src);
 void stringAppendStringWithState(Arena* arena, String* dest, const String* src, StringCase state);

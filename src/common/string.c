@@ -51,9 +51,9 @@ stringAppendCString(String* dest, const char* src)
 }
 
 void
-stringAppendEscString(Arena* arena, String* dest, const char* src, size_t length)
+stringAppendEscString(String* dest, const char* src, size_t length)
 {
-    assert(arena), assert(dest), assert(src);
+    assert(dest), assert(src);
 
     for (size_t i = 0; i < length; i++)
     {
