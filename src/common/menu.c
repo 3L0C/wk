@@ -110,7 +110,7 @@ menuPressKey(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (arrayIsEmpty(menu->keyChords)) return menuHandlePrefix(menu, keyChord);
+    if (!arrayIsEmpty(&keyChord->keyChords)) return menuHandlePrefix(menu, keyChord);
     return menuHandleCommands(menu, keyChord);
 }
 
