@@ -91,8 +91,6 @@ chordFlagCount(ChordFlag flag)
 bool
 chordFlagHasAnyActive(ChordFlag flag)
 {
-    assert(flag);
-
     static const ChordFlag any = FLAG_KEEP
                                 | FLAG_CLOSE
                                 | FLAG_INHERIT
@@ -132,8 +130,6 @@ chordFlagIsActive(ChordFlag flag, ChordFlag test)
 static bool
 modifiersAreEqual(Modifier a, Modifier b)
 {
-    assert(a), assert(b);
-
     return a == b;
 }
 
@@ -153,8 +149,6 @@ modifierCount(Modifier mod)
 bool
 modifierHasAnyActive(Modifier mod)
 {
-    assert(mod);
-
     static const Modifier any = MOD_CTRL
                                | MOD_META
                                | MOD_HYPER
