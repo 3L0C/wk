@@ -7,6 +7,7 @@
 #include <string.h>
 
 /* common includes */
+#include "common/array.h"
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/key_chord.h"
@@ -174,6 +175,13 @@ compilerIsAtEnd(Compiler* compiler)
 {
     assert(compiler);
     return scannerIsAtEnd(compiler->scanner);
+}
+
+static bool
+compilerDestIsEmpty(Compiler* compiler)
+{
+    assert(compiler);
+    return arrayIsEmpty(compiler->dest);
 }
 
 static bool
@@ -537,7 +545,7 @@ compileChordArray(Compiler* compiler)
         return;
     }
 
-    size_t arrayStart = getNextIndex(compiler);
+    size_t arrayStart = compilerDestIsEmpty(compiler) ? 0 : getNextIndex(compiler);
 
     while (!compilerIsAtEnd(compiler) &&
            !check(compiler, TOKEN_RIGHT_BRACKET))
@@ -573,7 +581,6 @@ compileChordArray(Compiler* compiler)
         }
 
         appendToDest(compiler, &chord);
-        pseudoChordFree(&chord);
     }
 
     consume(compiler, TOKEN_RIGHT_BRACKET, "Expect ']' after chord array.");
@@ -622,7 +629,6 @@ compileChord(Compiler* compiler)
     }
 
     appendToDest(compiler, &dummy);
-    pseudoChordFree(&dummy);
 }
 
 static void
@@ -719,7 +725,6 @@ compilePrefix(Compiler* compiler, PseudoChord* chord)
     /* advance */
     appendToDest(compiler, chord);
     PseudoChord* parent = ARRAY_GET_LAST(previousDest, PseudoChord);
-    pseudoChordFree(chord);
     Array* children = &parent->chords;
     compiler->dest = children;
 
