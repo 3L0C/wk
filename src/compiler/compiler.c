@@ -670,8 +670,6 @@ setHooks(PseudoChord* parent, PseudoChord* child)
 static ChordFlag
 setFlags(ChordFlag parent, ChordFlag child)
 {
-    assert(parent), assert(child);
-
     /* Children that opt out do not inherit */
     if (chordFlagIsActive(child, FLAG_DEFLAG)) return child;
 
