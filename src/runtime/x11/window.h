@@ -49,6 +49,6 @@ typedef struct
     Menu* menu;
 } X11;
 
-int runX11(Menu* menu);
+int x11Run(Menu* menu);
 
 #endif /* WK_X11_WINDOW_H_ */

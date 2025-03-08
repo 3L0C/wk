@@ -161,8 +161,8 @@ typedef struct Wayland
     uint32_t formats;
 } Wayland;
 
-void freeWayland(Wayland* wayland);
-bool initWayland(Menu* props, Wayland* wayland);
-int  runWayland(Menu* props);
+void waylandFree(Wayland* wayland);
+bool waylandInit(Menu* props, Wayland* wayland);
+int  waylandRun(Menu* props);
 
 #endif /* WK_WAYLAND_WAYLAND_H_ */

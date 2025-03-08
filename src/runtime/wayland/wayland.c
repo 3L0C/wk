@@ -630,7 +630,7 @@ fail:
 }
 
 void
-freeWayland(Wayland* wayland)
+waylandFree(Wayland* wayland)
 {
     assert(wayland);
 
@@ -649,7 +649,7 @@ freeWayland(Wayland* wayland)
 }
 
 bool
-initWayland(Menu* menu, Wayland* wayland)
+waylandInit(Menu* menu, Wayland* wayland)
 {
     assert(menu), assert(wayland);
 
@@ -681,12 +681,12 @@ initWayland(Menu* menu, Wayland* wayland)
     return true;
 
 fail:
-    freeWayland(wayland);
+    waylandFree(wayland);
     return false;
 }
 
 int
-runWayland(Menu* menu)
+waylandRun(Menu* menu)
 {
     assert(menu);
 
@@ -694,7 +694,7 @@ runWayland(Menu* menu)
 
     Wayland wayland = {0};
     int result = EX_SOFTWARE;
-    if (!initWayland(menu, &wayland))
+    if (!waylandInit(menu, &wayland))
     {
         errorMsg("Failed to create Wayland structure.");
         return EX_SOFTWARE;
@@ -718,7 +718,7 @@ runWayland(Menu* menu)
     }
     while (menuStatusIsRunning(status));
 
-    freeWayland(&wayland);
+    waylandFree(&wayland);
 
     return result;
 }

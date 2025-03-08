@@ -754,7 +754,7 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
 }
 
 int
-runX11(Menu* menu)
+x11Run(Menu* menu)
 {
     assert(menu);
 
