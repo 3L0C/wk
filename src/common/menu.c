@@ -89,7 +89,7 @@ menuHandleCommand(Menu* menu, KeyChord* keyChord)
         return;
     }
 
-    menuSpawn(menu, &keyChord->command, keyChord->flags);
+    menuSpawn(menu, &keyChord->command, chordFlagIsActive(keyChord->flags, FLAG_SYNC_COMMAND));
 }
 
 static MenuStatus

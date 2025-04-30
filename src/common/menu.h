@@ -111,7 +111,7 @@ bool menuIsDelayed(Menu* menu);
 void menuParseArgs(Menu* menu, int* argc, char*** argv);
 void menuResetTimer(Menu* menu);
 void menuSetColor(Menu* menu, const char* color, MenuColor colorType);
-MenuStatus menuSpawn(const Menu* menu, const String* cmd, bool async);
+MenuStatus menuSpawn(const Menu* menu, const String* cmd, bool sync);
 bool menuTryStdin(Menu* menu);
 
 bool menuStatusIsError(MenuStatus status);
