@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -11,11 +12,12 @@
 #include "scanner.h"
 #include "token.h"
 
-typedef enum
+typedef uint8_t CharType;
+enum
 {
     CHAR_TYPE_WHITESPACE,
     CHAR_TYPE_INTERP_END,
-} CharType;
+};
 
 void
 scannerInit(Scanner* scanner, const char* source, const char* filepath)
@@ -346,7 +348,7 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     {
         if (isKeyword(scanner, 1, 1, "g")) result = TOKEN_FOREGROUND_COLOR;
         else if (isKeyword(scanner, 1, 5, "g-key")) result = TOKEN_FOREGROUND_KEY_COLOR;
-        else if (isKeyword(scanner, 1, 7, "g-delimiter")) result = TOKEN_FOREGROUND_DELIMITER_COLOR;
+        else if (isKeyword(scanner, 1, 11, "g-delimiter")) result = TOKEN_FOREGROUND_DELIMITER_COLOR;
         else if (isKeyword(scanner, 1, 8, "g-prefix")) result = TOKEN_FOREGROUND_PREFIX_COLOR;
         else if (isKeyword(scanner, 1, 7, "g-chord")) result = TOKEN_FOREGROUND_CHORD_COLOR;
         else if (isKeyword(scanner, 1, 3, "ont")) result = TOKEN_FONT;

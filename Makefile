@@ -19,6 +19,8 @@ RUNTIME_DIR  := $(SOURCE_DIR)/runtime
 COMPILER_DIR := $(SOURCE_DIR)/compiler
 X11_DIR      := $(RUNTIME_DIR)/x11
 WAY_DIR      := $(RUNTIME_DIR)/wayland
+TEST_DIR     := ./tests
+TEST_SCRIPTS := $(TEST_DIR)/scripts
 
 # Files
 HEADERS      := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h $(CONF_DIR)/key_chords.h
@@ -50,7 +52,7 @@ WAY_CFLAGS   += -DWK_WAYLAND_BACKEND $(shell $(PKG_CONFIG) --cflags wayland-clie
 WAY_LDFLAGS  += $(shell $(PKG_CONFIG) --libs wayland-client xkbcommon)
 
 # Make goals
-ALL_GOALS    := all debug
+ALL_GOALS    := all debug test
 X11_GOALS    := x11 debug-x11
 WAY_GOALS    := wayland debug-wayland
 
@@ -110,6 +112,11 @@ debug-x11: x11
 
 debug-wayland: CFLAGS += -ggdb
 debug-wayland: wayland
+
+test: options
+test: $(WAY_FILES)
+test: $(BUILD_DIR)/$(NAME)
+	@ bash $(TEST_SCRIPTS)/run_tests.sh
 
 $(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $(TARGET_OBJS)
 	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"
@@ -203,6 +210,6 @@ uninstall:
 		rm -f $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
 	done
 
-.PHONY: all debug x11 wayland debug-x11 debug-wayland clean dist install uninstall
+.PHONY: all debug x11 wayland debug-x11 debug-wayland clean dist install uninstall test
 
 -include $(OBJECTS:.o=.d) $(COMM_OBJS:.o=.d) $(COMP_OBJS:.o=.d) $(RUN_OBJS:.o=.d) $(X11_OBJS:.o=.d) $(WAY_OBJS:.o=.d)

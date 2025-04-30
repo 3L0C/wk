@@ -57,19 +57,19 @@ debugMsgWithIndent(int indent, const char* fmt, ...)
 }
 
 static void
-debugStringWithIndent(int indent, const char* fmt, const String* string)
+debugStringWithIndent(int indent, const char* title, const String* string)
 {
-    assert(fmt), assert(string);
+    assert(title), assert(string);
 
     if (stringIsEmpty(string))
     {
-        debugMsgWithIndent(indent, fmt, "(empty_string)");
+        debugMsgWithIndent(indent, "| %-20s %s", title, "(empty_string)");
     }
     else
     {
         char buffer[string->length + 1];
         stringWriteToBuffer(string, buffer);
-        debugMsgWithIndent(indent, fmt, buffer);
+        debugMsgWithIndent(indent, "| %-20s '%s'", title, buffer);
     }
 }
 
@@ -115,7 +115,7 @@ debugPrintHeaderWithIndent(int indent, const char* header)
     {
         int leftDashes = dashCount / 2;
         int rightDashes = dashCount - leftDashes;
-        debugMsgWithIndent(indent, "|%.*s%s%.*s", leftDashes, DASHES, header, rightDashes, DASHES);
+        debugMsgWithIndent(indent, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
     }
 }
 
@@ -151,7 +151,15 @@ debugTextLenWithLineNumber(const char* text, size_t len)
         printf("[DEBUG] | %4zu | ", i++);
         while (*current != '\n' && current < text + len)
         {
-            printf("%c", *current++);
+            if (*current == '\0')
+            {
+                printf("␀");
+            }
+            else
+            {
+                printf("%c", *current);
+            }
+            current++;
         }
         if (*current == '\n' && current < text + len) printf("%c", *current++);
     }
@@ -165,15 +173,15 @@ disassembleGrid(
 {
     debugPrintHeader("Grid");
     debugMsgWithIndent(0, "|");
-    debugMsgWithIndent(0, "| Start X:           %04u", startx, 0);
-    debugMsgWithIndent(0, "| Start Y:           %04u", starty);
-    debugMsgWithIndent(0, "| Rows:              %04u", rows);
-    debugMsgWithIndent(0, "| Columns:           %04u", cols);
-    debugMsgWithIndent(0, "| Width padding:     %04u", wpadding);
-    debugMsgWithIndent(0, "| Height padding:    %04u", hpadding);
-    debugMsgWithIndent(0, "| Cell width:        %04u", cellw);
-    debugMsgWithIndent(0, "| Cell height:       %04u", cellh);
-    debugMsgWithIndent(0, "| Count:             %04u", count);
+    debugMsgWithIndent(0, "| %-20s %04u", "Start X:", startx, 0);
+    debugMsgWithIndent(0, "| %-20s %04u", "Start Y:", starty);
+    debugMsgWithIndent(0, "| %-20s %04u", "Rows:", rows);
+    debugMsgWithIndent(0, "| %-20s %04u", "Columns:", cols);
+    debugMsgWithIndent(0, "| %-20s %04u", "Width padding:", wpadding);
+    debugMsgWithIndent(0, "| %-20s %04u", "Height padding:", hpadding);
+    debugMsgWithIndent(0, "| %-20s %04u", "Cell width:", cellw);
+    debugMsgWithIndent(0, "| %-20s %04u", "Cell height:", cellh);
+    debugMsgWithIndent(0, "| %-20s %04u", "Count:", count);
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
 }
@@ -183,13 +191,13 @@ disassembleHexColor(const MenuHexColor* color)
 {
     assert(color);
 
-    debugMsg(true, "| ");
-    debugMsgWithIndent(0, "| Hex string:        '%s'",  color->hex);
-    debugMsgWithIndent(0, "| Red value:         %#02X", color->r * 255);
-    debugMsgWithIndent(0, "| Green value:       %#02X", color->g * 255);
-    debugMsgWithIndent(0, "| Blue value:        %#02X", color->b * 255);
-    debugMsgWithIndent(0, "| Alpha value:       %#02X", color->a * 255);
-    debugMsg(true, "| ");
+    debugMsg(true, "|");
+    debugMsgWithIndent(0, "| %-20s '%s'", "Hex string:",  color->hex);
+    debugMsgWithIndent(0, "| %-20s %#02X", "Red value:", color->r * 255);
+    debugMsgWithIndent(0, "| %-20s %#02X", "Green value:", color->g * 255);
+    debugMsgWithIndent(0, "| %-20s %#02X", "Blue value:", color->b * 255);
+    debugMsgWithIndent(0, "| %-20s %#02X", "Alpha value:", color->a * 255);
+    debugMsg(true, "|");
 }
 
 void
@@ -197,6 +205,7 @@ disassembleHexColors(const MenuHexColor* colors)
 {
     assert(colors);
 
+    debugMsg(true, "|");
     for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
         /* TODO refactor */
@@ -237,13 +246,14 @@ disassembleHexColors(const MenuHexColor* colors)
 
         disassembleHexColor(&colors[i]);
     }
-    debugMsgWithIndent(0, "|--------------------------------");
+    debugMsg(true, "|--------------------------------");
+    debugMsg(true, "|");
 }
 
 static void
 disassembleMod(const Modifier mod, int indent)
 {
-    debugMsgWithIndent(indent, "| Mods:              ");
+    debugMsgWithIndent(indent, "| %-20s ", "Mods:");
 
     if (!modifierHasAnyActive(mod))
     {
@@ -261,8 +271,8 @@ disassembleMod(const Modifier mod, int indent)
 static void
 disassembleSpecial(SpecialKey special, int indent)
 {
-    debugMsgWithIndent(indent, "| Special:           ");
-    printf("%s|%d\n", specialKeyGetLiteral(special), special);
+    debugMsgWithIndent(indent, "| %-20s ", "Special:");
+    printf("%s | %d\n", specialKeyGetLiteral(special), special);
 }
 
 void
@@ -270,11 +280,13 @@ disassembleKey(const Key* key)
 {
     assert(key);
 
+    debugMsg(true, "");
     debugPrintHeader("Key");
     debugMsgWithIndent(0, "|");
     disassembleKeyWithoutHeader(key, 0);
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
+    debugMsg(true, "");
 }
 
 void
@@ -285,13 +297,25 @@ disassembleKeyWithoutHeader(const Key* key, int indent)
     disassembleMod(key->mods, indent);
     disassembleSpecial(key->special, indent);
     disassembleString(&key->repr, "Key:", indent);
-    debugMsgWithIndent(indent, "| Length:            %04d", stringLength(&key->repr));
+    debugMsgWithIndent(indent, "| %-20s %04d", "Length:", stringLength(&key->repr));
+}
+
+void
+disassembleArrayAsText(const Array* arr, const char* title)
+{
+    assert(arr), assert(title);
+
+    debugPrintHeader(title);
+    debugMsg(true, "| ");
+    debugTextLenWithLineNumber(ARRAY_AS(arr, char), arrayLength(arr));
+    debugMsg(true, "| ");
+    debugPrintHeader("");
 }
 
 void
 disassembleChordFlag(ChordFlag flag, int indent)
 {
-    debugMsgWithIndent(indent, "| Flags:             ");
+    debugMsgWithIndent(indent, "| %-20s ", "Flags");
 
     if (!chordFlagHasAnyActive(flag))
     {
@@ -321,10 +345,10 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
     assert(keyChord);
 
     disassembleKeyWithoutHeader(&keyChord->key, indent);
-    debugStringWithIndent(indent, "| Description:       \"%s\"", &keyChord->description);
-    debugStringWithIndent(indent, "| Command:           %{{ %s }}", &keyChord->command);
-    debugStringWithIndent(indent, "| Before:            %{{ %s }}", &keyChord->before);
-    debugStringWithIndent(indent, "| After:             %{{ %s }}", &keyChord->after);
+    debugStringWithIndent(indent, "Description:", &keyChord->description);
+    debugStringWithIndent(indent, "Command:", &keyChord->command);
+    debugStringWithIndent(indent, "Before:", &keyChord->before);
+    debugStringWithIndent(indent, "After:", &keyChord->after);
     disassembleChordFlag(keyChord->flags, indent);
 }
 
@@ -333,17 +357,13 @@ disassembleKeyChordArray(const Array* keyChords, int indent)
 {
     assert(keyChords);
 
-    if (indent == 0)
-    {
-        debugPrintHeaderWithIndent(indent, "KeyChords");
-    }
+    debugMsg(true, "");
+    if (indent == 0) debugPrintHeader("KeyChords");
 
-    ArrayIterator iter = arrayIteratorMake(keyChords);
-    const KeyChord* keyChord = NULL;
-    while ((keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord)) != NULL)
+    forEach(keyChords, const KeyChord, keyChord)
     {
         debugMsgWithIndent(indent, "|");
-        debugMsgWithIndent(indent, "| Chord Index:       %04zu", iter.index);
+        debugMsgWithIndent(indent, "| %-20s %04zu", "Chord Index:", iter.index);
         disassembleKeyChord(keyChord, indent);
         debugMsgWithIndent(indent, "|");
         if (!arrayIsEmpty(&keyChord->keyChords))
@@ -357,6 +377,7 @@ disassembleKeyChordArray(const Array* keyChords, int indent)
         }
         debugPrintHeaderWithIndent(indent, "");
     }
+    debugMsg(true, "");
 }
 
 void
@@ -364,12 +385,12 @@ disassembleKeyChordArrayShallow(const Array* keyChords)
 {
     assert(keyChords);
 
-    ArrayIterator iter = arrayIteratorMake(keyChords);
-    const KeyChord* keyChord = NULL;
-    while ((keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord)) != NULL)
+    debugMsg(true, "");
+    forEach(keyChords, const KeyChord, keyChord)
     {
         disassembleKeyChordWithHeader(keyChord, 0);
     }
+    debugMsg(true, "");
 }
 
 void
@@ -389,18 +410,19 @@ disassembleMenu(const Menu* menu)
 {
     assert(menu);
 
+    debugMsg(true, "");
     debugPrintHeader("Menu");
     debugMsg(true, "|");
-    debugMsgWithIndent(0, "| Delimiter:         '%s'",  menu->delimiter);
-    debugMsgWithIndent(0, "| Shell:             '%s'",  menu->shell);
-    debugMsgWithIndent(0, "| Font:              '%s'",  menu->font);
-    debugMsgWithIndent(0, "| Array Keys:        '%s'",  menu->implicitArrayKeys);
-    debugMsgWithIndent(0, "| Border Radius:     %04.4f",  menu->borderRadius);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Delimiter:", menu->delimiter);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Shell:", menu->shell);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Font:", menu->font);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Array Keys:", menu->implicitArrayKeys);
+    debugMsgWithIndent(0, "| %-20s %04.4f", "Border Radius:", menu->borderRadius);
     disassembleHexColors(menu->colors);
-    debugMsgWithIndent(0, "| Keys:              %s",    menu->client.keys);
-    debugMsgWithIndent(0, "| Transpile:         %s",    menu->client.transpile);
-    debugMsgWithIndent(0, "| wks file:          '%s'",  menu->client.wksFile);
-    debugMsgWithIndent(0, "| Try script:        %s",    (menu->client.tryScript ? "true" : "false"));
+    debugMsgWithIndent(0, "| %-20s %s", "Keys:", menu->client.keys);
+    debugMsgWithIndent(0, "| %-20s %s", "Transpile:", menu->client.transpile);
+    debugMsgWithIndent(0, "| %-20s '%s'", "wks file:", menu->client.wksFile);
+    debugMsgWithIndent(0, "| %-20s %s", "Try script:", (menu->client.tryScript ? "true" : "false"));
     if (!arrayIsEmpty(&menu->client.script))
     {
         debugMsgWithIndent(0, "| Script:");
@@ -410,27 +432,28 @@ disassembleMenu(const Menu* menu)
     }
     else
     {
-        debugMsgWithIndent(0, "| Script:            (null)");
+        debugMsgWithIndent(0, "| %-20s (null)", "Script:");
     }
-    debugMsgWithIndent(0, "| Max columns:       %04u",  menu->maxCols);
-    debugMsgWithIndent(0, "| Menu width:        %04i",  menu->menuWidth);
-    debugMsgWithIndent(0, "| Menu gap:          %04i",  menu->menuGap);
-    debugMsgWithIndent(0, "| Width padding:     %04u",  menu->wpadding);
-    debugMsgWithIndent(0, "| Height padding:    %04u",  menu->hpadding);
-    debugMsgWithIndent(0, "| Cell height:       %04u",  menu->cellHeight);
-    debugMsgWithIndent(0, "| Rows:              %04u",  menu->rows);
-    debugMsgWithIndent(0, "| Cols:              %04u",  menu->cols);
-    debugMsgWithIndent(0, "| Width:             %04u",  menu->width);
-    debugMsgWithIndent(0, "| Height:            %04u",  menu->height);
-    debugMsgWithIndent(0, "| Border width:      %04u",  menu->borderWidth);
-    debugMsgWithIndent(0, "| Window position:   %s",
+    debugMsgWithIndent(0, "| %-20s %04u", "Max columns:", menu->maxCols);
+    debugMsgWithIndent(0, "| %-20s %04i", "Menu width:", menu->menuWidth);
+    debugMsgWithIndent(0, "| %-20s %04i", "Menu gap:", menu->menuGap);
+    debugMsgWithIndent(0, "| %-20s %04u", "Width padding:", menu->wpadding);
+    debugMsgWithIndent(0, "| %-20s %04u", "Height padding:", menu->hpadding);
+    debugMsgWithIndent(0, "| %-20s %04u", "Cell height:", menu->cellHeight);
+    debugMsgWithIndent(0, "| %-20s %04u", "Rows:", menu->rows);
+    debugMsgWithIndent(0, "| %-20s %04u", "Cols:", menu->cols);
+    debugMsgWithIndent(0, "| %-20s %04u", "Width:", menu->width);
+    debugMsgWithIndent(0, "| %-20s %04u", "Height:", menu->height);
+    debugMsgWithIndent(0, "| %-20s %04u", "Border width:", menu->borderWidth);
+    debugMsgWithIndent(0, "| %-20s %s", "Window position:",
         (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP")
     );
-    debugMsgWithIndent(0, "| Debug:             %s",    "true");
-    debugMsgWithIndent(0, "| Sort:              %s",    menu->sort ? "true" : "false");
-    debugMsgWithIndent(0, "| Dirty:             %s",    menu->dirty ? "true" : "false");
+    debugMsgWithIndent(0, "| %-20s %s", "Debug:", "true");
+    debugMsgWithIndent(0, "| %-20s %s", "Sort:", menu->sort ? "true" : "false");
+    debugMsgWithIndent(0, "| %-20s %s", "Dirty:", menu->dirty ? "true" : "false");
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
+    debugMsg(true, "");
 }
 
 void
@@ -455,5 +478,5 @@ disassembleString(const String* string, const char* title, int indent)
 
     char buffer[string->length + 1];
     stringWriteToBuffer(string, buffer);
-    debugMsgWithIndent(indent, "| %-19s'%s'", title, buffer);
+    debugMsgWithIndent(indent, "| %-20s '%s'", title, buffer);
 }

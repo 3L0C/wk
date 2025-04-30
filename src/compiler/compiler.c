@@ -82,6 +82,7 @@ pseudoChordFree(PseudoChord* chord)
 {
     assert(chord);
 
+    keyFree(&chord->key);
     arrayFree(&chord->desc);
     arrayFree(&chord->cmd);
     arrayFree(&chord->before);
@@ -497,6 +498,7 @@ static void
 compileMissingKeyChordInfo(Compiler* compiler, const PseudoChord* from, PseudoChord* to)
 {
     assert(compiler), assert(from), assert(to);
+    if (compiler->panicMode) return;
 
     if (!chordFlagHasAnyActive(to->flags)) to->flags = from->flags;
     if (arrayLength(&to->desc) == 0) to->desc = arrayCopy(&from->desc);
@@ -509,10 +511,16 @@ static void
 compileImplicitChordArray(Compiler* compiler, PseudoChord* dummy)
 {
     assert(compiler);
+    if (compiler->panicMode)
+    {
+        pseudoChordFree(dummy);
+        return;
+    }
 
     if (!check(compiler, TOKEN_DESCRIPTION) && !check(compiler, TOKEN_DESC_INTERP))
     {
         errorAtCurrent(compiler, "Expected description, or description expressions after '...'.");
+        pseudoChordFree(dummy);
         return;
     }
 
@@ -524,12 +532,12 @@ compileImplicitChordArray(Compiler* compiler, PseudoChord* dummy)
     {
         PseudoChord chord = {0};
         pseudoChordInit(&chord);
+        keyCopy(&dummy->key, &chord.key);
         keyCopy(key, &chord.key);
         compileMissingKeyChordInfo(compiler, dummy, &chord);
         arrayAppend(compiler->dest, &chord);
     }
 
-    /* FIXME not sure if this should be freed or not. */
     pseudoChordFree(dummy);
 }
 
@@ -537,7 +545,7 @@ static void
 compileChordArray(Compiler* compiler)
 {
     assert(compiler);
-
+    if (compiler->panicMode) return;
     if (!isKey(compiler) &&
         !tokenIsModType(currentType(compiler)) &&
         !check(compiler, TOKEN_LEFT_PAREN))
@@ -598,7 +606,6 @@ compileChordArray(Compiler* compiler)
         compileMissingKeyChordInfo(compiler, &dummy, chord);
     }
 
-    /* FIXME not sure if this should be freed or not. */
     pseudoChordFree(&dummy);
 }
 
@@ -606,6 +613,7 @@ static void
 compileChord(Compiler* compiler)
 {
     assert(compiler);
+    if (compiler->panicMode) return;
 
     PseudoChord dummy = {0};
     pseudoChordInit(&dummy);
@@ -718,6 +726,11 @@ static void
 compilePrefix(Compiler* compiler, PseudoChord* chord)
 {
     assert(compiler), assert(chord);
+    if (compiler->panicMode)
+    {
+        pseudoChordFree(chord);
+        return;
+    }
 
     /* Backup information */
     Array* previousDest = getDest(compiler);
@@ -768,6 +781,7 @@ synchronize(Compiler* compiler)
             {
                 advance(compiler);
             }
+            if (compilerIsAtEnd(compiler)) return;
             consume(compiler, TOKEN_COMMAND, "Expected command.");
             if (!tokenIsModType(currentType(compiler)) && !isKey(compiler))
             {
@@ -814,7 +828,6 @@ static void
 compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, const String* desc)
 {
     assert(compiler), assert(dest), assert(desc);
-
 
     StringCase state;
     switch (type)
@@ -929,9 +942,10 @@ compileImplicitChordArrayKeys(Compiler* compiler, Menu* menu)
     scannerInit(&compiler->implicitArrayKeysScanner, menu->implicitArrayKeys, ".");
     compiler->scanner = &compiler->implicitArrayKeysScanner;
 
-    while (!compilerIsAtEnd(compiler))
+    TokenType type = advance(compiler);
+    while (type != TOKEN_EOF)
     {
-        switch (advance(compiler))
+        switch (type)
         {
         case TOKEN_SPECIAL_KEY: /* FALLTHROUGH */
         case TOKEN_KEY:
@@ -954,6 +968,7 @@ compileImplicitChordArrayKeys(Compiler* compiler, Menu* menu)
             return false;
         }
         }
+        type = currentType(compiler);
     }
 
     tokenInit(currentToken(compiler));
@@ -967,6 +982,10 @@ compilerFree(Compiler* compiler)
     assert(compiler);
 
     if (compiler->chords != NULL) pseudoChordArrayFree(compiler->chords);
+    forEach(&compiler->implicitKeys, Key, key)
+    {
+        keyFree(key);
+    }
     arrayFree(&compiler->implicitKeys);
 }
 

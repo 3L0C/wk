@@ -587,9 +587,9 @@ cairoPaint(Cairo* cairo, Menu* menu)
 {
     assert(cairo), assert(menu);
 
-    if (menuIsDelayed(menu)) return true;
-
     if (menu->debug) disassembleMenu(menu);
+    if (arrayIsEmpty(menu->keyChords)) return false;
+    if (menuIsDelayed(menu)) return true;
 
     uint32_t width = menu->width;
     uint32_t height = menu->height / cairo->scale;

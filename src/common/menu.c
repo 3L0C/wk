@@ -127,7 +127,7 @@ menuHandleKeypress(Menu* menu, const Key* key)
             {
                 char buffer[keyChord->key.repr.length + 1];
                 stringWriteToBuffer(&keyChord->key.repr, buffer);
-                debugMsg(menu->debug, "Found match: '%.*s'.\n", buffer);
+                debugMsg(menu->debug, "Found match: '%.*s'.", buffer);
                 disassembleKeyChordWithHeader(keyChord, 0);
                 disassembleKey(key);
             }
@@ -138,7 +138,7 @@ menuHandleKeypress(Menu* menu, const Key* key)
 
     if (menu->debug)
     {
-        debugMsg(menu->debug, "Did not find a match for keypress.\n");
+        debugMsg(menu->debug, "Did not find a match for keypress.");
         disassembleKey(key);
     }
 

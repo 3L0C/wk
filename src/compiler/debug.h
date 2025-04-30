@@ -6,7 +6,6 @@
 
 void debugPrintScannedTokenHeader(void);
 void debugPrintScannedTokenFooter(void);
-void disassembleArrayAsText(const Array* arr, const char* title);
 void disassembleScanner(const Scanner* scanner);
 void disassembleSingleToken(const Token* token);
 void disassembleToken(const Token* token);

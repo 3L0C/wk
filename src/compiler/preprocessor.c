@@ -53,6 +53,7 @@ disassembleIncludeStack(Stack* stack)
     }
     size_t pwdLen = strlen(pwd);
 
+    debugMsg(true, "");
     debugPrintHeader("IncludeStack");
     debugMsg(true, "|");
     forEach(stack, FilePath, entry)
@@ -68,6 +69,7 @@ disassembleIncludeStack(Stack* stack)
     }
     debugMsg(true, "|");
     debugPrintHeader("");
+    debugMsg(true, "");
 }
 
 static size_t
@@ -197,6 +199,10 @@ handleIncludeMacro(
 
     /* Append the result. */
     arrayAppendN(result, ARRAY_AS(&includeResult, char), arrayLength(&includeResult));
+    /* if (!arrayIsEmpty(&includeResult)) */
+    /* { */
+    /*     arrayAppendN(result, ARRAY_AS(&includeResult, char), arrayLength(&includeResult) - 1); */
+    /* } */
 
 fail:
     free(includeFilePath);
@@ -412,7 +418,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     if (menu->debug)
     {
         disassembleIncludeStack(stack);
-        disassembleArrayAsText(source, "Preprocessed Source");
+        disassembleArrayAsText(source, "Source");
     }
 
     while (!scannerIsAtEnd(&scanner))
@@ -507,7 +513,6 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
 
 fail:
     popFilePath(stack);
-    arrayAppend(&result, "");
 
     if (scanner.hadError) arrayFree(&result);
     return result;
@@ -521,5 +526,7 @@ preprocessorRun(Menu* menu, Array* source, const char* filepath)
     Stack stack = STACK_INIT(FilePath);
     Array result = preprocessorRunImpl(menu, source, filepath, &stack, &menu->arena);
     while (!stackIsEmpty(&stack)) popFilePath(&stack);
+    stackFree(&stack);
+    arrayAppend(&result, "");
     return result;
 }

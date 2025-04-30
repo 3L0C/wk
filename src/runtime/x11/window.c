@@ -569,7 +569,6 @@ maskedLookupString(
     keyEvent->state = state;
 
     if (status == XLookupNone || status == XBufferOverflow) return 0;
-    if (IsModifierKey(*keysym)) return 0;
     return len;
 }
 
@@ -620,11 +619,13 @@ setKeyRepr(
     int aLen = maskedLookupString(
         &window->xic, keyEvent, aBuffer, sizeof(aBuffer), &aKeysym, ~(ControlMask)
     );
+
     char bBuffer[128] = {0};
     int bLen = maskedLookupString(
         &window->xic, keyEvent, bBuffer, sizeof(bBuffer), &bKeysym, ~(ShiftMask | ControlMask)
     );
 
+    if (IsModifierKey(aKeysym) || IsModifierKey(bKeysym)) return;
     if (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen))
     {
         reprLen = aLen;

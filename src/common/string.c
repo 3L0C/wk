@@ -236,9 +236,9 @@ stringCopy(const String* from)
     assert(from);
 
     String to = stringInit();
-    if (from->length > 0 && from->parts.length > 0)
+    if (!stringIsEmpty(from))
     {
-        arrayAppendN(&to.parts, from->parts.data, from->parts.length);
+        to.parts = arrayCopy(&from->parts);
     }
 
     to.length = from->length;

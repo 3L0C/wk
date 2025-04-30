@@ -2,14 +2,17 @@
 #define WK_WAYLAND_REGISTRY_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /* common includes */
 #include "common/menu.h"
 
 typedef struct Wayland Wayland;
 
-typedef enum
+typedef uint8_t XkbModBit;
+enum
 {
+    XKB_MOD_NONE  = 0,
     XKB_MOD_SHIFT = 1 << 0,
     XKB_MOD_CAPS  = 1 << 1,
     XKB_MOD_CTRL  = 1 << 2,
@@ -18,9 +21,10 @@ typedef enum
     XKB_MOD_MOD3  = 1 << 5,
     XKB_MOD_LOGO  = 1 << 6,
     XKB_MOD_MOD5  = 1 << 7,
-} XkbModBit;
+};
 
-typedef enum
+typedef uint8_t XkbModMask;
+enum
 {
     MASK_SHIFT,
     MASK_CAPS,
@@ -31,10 +35,7 @@ typedef enum
     MASK_LOGO,
     MASK_MOD5,
     MASK_LAST,
-} XkbModMask;
-
-extern const char* WK_XKB_MASK_NAMES[MASK_LAST];
-extern const XkbModBit WK_XKB_MODS[MASK_LAST];
+};
 
 void waylandRepeat(Wayland* wayland);
 void waylandRegistryDestroy(Wayland* wayland);

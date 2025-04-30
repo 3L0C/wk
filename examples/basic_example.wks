@@ -20,3 +20,26 @@ p "A prefix"
         d "Done" %{{echo "You've reached the end!"}}
     }
 }
+
+# This is a comment
+    # This is also a comment
+
+# This is a prefix.
+# The trigger key is 'Control + a'
+p "A prefix"
+{
+    # Prefixes can nest additional prefixes arbitrarily deep
+    c "Another prefix"
+    {
+        d "Done" %{{echo "You've reached the end!"}}
+    }
+
+    # This is a chord that can only be accessed after triggering the parent prefix.
+    b "A chord" %{{echo "Hello from inside prefix 'C-a'"}}
+}
+
+# This is a chord.
+# The trigger key is 'a'.
+# The description is "A chord".
+# The command is 'echo "Hello, World"'.
+a "A chord" %{{echo "Hello, world!"}}

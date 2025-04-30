@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# Test runner for wk
+
+SUCCESS_COUNT=0
+FAILURE_COUNT=0
+TOTAL_TESTS=0
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Test log directory
+LOG_DIR="tests/logs"
+mkdir -p "$LOG_DIR"
+
+# Log file for this test run
+TEST_LOG="$LOG_DIR/test_run_$(date +%Y%m%d_%H%M%S).log"
+echo "Starting tests at $(date)" > "$TEST_LOG"
+
+# Create a function to run a test
+run_test() {
+    local test_file="$1"
+    local key_sequence="$2"
+    local expected_file="$3"
+    local test_name
+    test_name="$(basename "$test_file")"
+
+    ((TOTAL_TESTS++))
+
+    echo "==== Testing $test_name with key sequence '$key_sequence' ====" | tee -a "$TEST_LOG"
+
+    local output_file="$LOG_DIR/${test_name}_output.txt"
+
+    ./wk --key-chords "$test_file" --press "$key_sequence" > "$output_file" 2>&1
+    local exit_code=$?
+
+    echo "Command: ./wk --key-chords $test_file --press \"$key_sequence\"" >> "$TEST_LOG"
+    echo "Exit code: $exit_code" >> "$TEST_LOG"
+
+    if [[ -f "$expected_file" ]]; then
+        # Compare output with expected output
+        if diff -u "$expected_file" "$output_file" >> "$TEST_LOG"; then
+            echo -e "${GREEN}PASS${NC}: $test_name ($key_sequence)" | tee -a "$TEST_LOG"
+            ((SUCCESS_COUNT++))
+            return 0
+        else
+            echo -e "${RED}FAIL${NC}: $test_name ($key_sequence) - Output doesn't match expected" | tee -a "$TEST_LOG"
+            echo "Expected output (from $expected_file):" | tee -a "$TEST_LOG"
+            tee -a "$TEST_LOG" < "$expected_file"
+            echo "Actual output:" | tee -a "$TEST_LOG"
+            tee -a "$TEST_LOG" < "$output_file"
+            ((FAILURE_COUNT++))
+            return 1
+        fi
+    else
+        # If no expected file exists, check exit code
+        if [[ $exit_code -eq 0 ]]; then
+            echo -e "${GREEN}PASS${NC}: $test_name ($key_sequence) - Executed successfully" | tee -a "$TEST_LOG"
+            # Save the output as expected for future runs
+            cp "$output_file" "${expected_file}"
+            echo "Created new expected output file: $expected_file" | tee -a "$TEST_LOG"
+            ((SUCCESS_COUNT++))
+            return 0
+        else
+            echo -e "${RED}FAIL${NC}: $test_name ($key_sequence) - Non-zero exit code: $exit_code" | tee -a "$TEST_LOG"
+            echo "Output:" | tee -a "$TEST_LOG"
+            tee -a "$TEST_LOG" < "$output_file"
+            ((FAILURE_COUNT++))
+            return 1
+        fi
+    fi
+}
+
+run_error_test() {
+    local test_file="$1"
+    local expected_error="$2"
+    local test_name
+    test_name="$(basename "$test_file")"
+
+    ((TOTAL_TESTS++))
+
+    echo "==== Testing error handling for $test_name ====" | tee -a "$TEST_LOG"
+
+    # Run wk with the test file
+    local output_file="$LOG_DIR/${test_name}_error_output.txt"
+
+    # Run the command, expecting it to fail
+    ./wk --key-chords "$test_file" > "$output_file" 2>&1
+    local exit_code=$?
+
+    # Log the command and exit code
+    echo "Command: ./wk --key-chords $test_file" >> "$TEST_LOG"
+    echo "Exit code: $exit_code" >> "$TEST_LOG"
+
+    # Check for expected error
+    if [[ $exit_code -ne 0 ]] && grep -q "$expected_error" "$output_file"; then
+        echo -e "${GREEN}PASS${NC}: $test_name - Found expected error" | tee -a "$TEST_LOG"
+        ((SUCCESS_COUNT++))
+        return 0
+    else
+        echo -e "${RED}FAIL${NC}: $test_name - Did not find expected error: '$expected_error'" | tee -a "$TEST_LOG"
+        echo "Output:" | tee -a "$TEST_LOG"
+        tee -a "$TEST_LOG" < "$output_file"
+        ((FAILURE_COUNT++))
+        return 1
+    fi
+}
+
+# Run all valid tests
+echo "Running valid tests..." | tee -a "$TEST_LOG"
+echo "======================" | tee -a "$TEST_LOG"
+
+# Basic example tests
+run_test "tests/fixtures/valid/basic_test.wks" "a" "tests/expected/basic_test_a.txt"
+run_test "tests/fixtures/valid/basic_test.wks" "p b" "tests/expected/basic_test_p_b.txt"
+
+# Chord array tests
+run_test "tests/fixtures/valid/chord_array_test.wks" "x" "tests/expected/chord_array_test_x.txt"
+run_test "tests/fixtures/valid/chord_array_test.wks" "y" "tests/expected/chord_array_test_y.txt"
+run_test "tests/fixtures/valid/chord_array_test.wks" "z" "tests/expected/chord_array_test_z.txt"
+
+# Chord expression tests
+run_test "tests/fixtures/valid/chord_expression_test.wks" "a" "tests/expected/chord_expression_test_a.txt"
+run_test "tests/fixtures/valid/chord_expression_test.wks" "g" "tests/expected/chord_expression_test_g.txt"
+
+# Preprocessor tests
+run_test "tests/fixtures/valid/preprocessor_test.wks" "a" "tests/expected/preprocessor_test_a.txt"
+run_test "tests/fixtures/valid/preprocessor_test.wks" "p b" "tests/expected/preprocessor_test_p_b.txt"
+run_test "tests/fixtures/valid/preprocessor_test.wks" "b" "tests/expected/preprocessor_test_b.txt"
+
+# Sorting tests
+run_test "tests/fixtures/valid/sorted_test.wks" "a" "tests/expected/sorted_test_a.txt"
+run_test "tests/fixtures/valid/sorted_test.wks" "b" "tests/expected/sorted_test_b.txt"
+run_test "tests/fixtures/valid/sorted_with_ignore_sort_test.wks" "a" "tests/expected/sorted_with_ignore_sort_test_a.txt"
+run_test "tests/fixtures/valid/sorted_with_ignore_sort_test.wks" "b" "tests/expected/sorted_with_ignore_sort_test_b.txt"
+
+# Special keys tests
+run_test "tests/fixtures/valid/special_keys_test.wks" "TAB" "tests/expected/special_keys_test_tab.txt"
+run_test "tests/fixtures/valid/special_keys_test.wks" "ESC" "tests/expected/special_keys_test_esc.txt"
+run_test "tests/fixtures/valid/special_keys_test.wks" "VolDown" "tests/expected/special_keys_test_vol_down.txt"
+
+# Unicode tests
+run_test "tests/fixtures/valid/unicode_test.wks" "👍" "tests/expected/unicode_test_thumbs_up.txt"
+run_test "tests/fixtures/valid/unicode_test.wks" "ä" "tests/expected/unicode_test_umlaut.txt"
+
+# Error handling tests
+echo "Running error tests..." | tee -a "$TEST_LOG"
+echo "======================" | tee -a "$TEST_LOG"
+
+run_error_test "tests/fixtures/invalid/circular_include_test.wks" "tests/fixtures/invalid/circular_include_test.wks:2:35: wk does not support circular includes: ':include \"circular_include_test.wks\"'."
+
+# Print summary
+echo "" | tee -a "$TEST_LOG"
+echo "======================" | tee -a "$TEST_LOG"
+echo "Test Summary:" | tee -a "$TEST_LOG"
+echo "Total tests: $TOTAL_TESTS" | tee -a "$TEST_LOG"
+echo -e "${GREEN}Passed${NC}: $SUCCESS_COUNT" | tee -a "$TEST_LOG"
+echo -e "${RED}Failed${NC}: $FAILURE_COUNT" | tee -a "$TEST_LOG"
+
+# Return non-zero exit code if any tests failed
+if [[ $FAILURE_COUNT -gt 0 ]]; then
+    exit 1
+fi
+
+exit 0

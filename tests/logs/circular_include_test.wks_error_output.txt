@@ -1,0 +1,1 @@
+tests/fixtures/invalid/circular_include_test.wks:2:35: wk does not support circular includes: ':include "circular_include_test.wks"'.

@@ -72,6 +72,7 @@ pressKey(Menu* menu, Scanner* scanner)
     }
 
     MenuStatus status = menuHandleKeypress(menu, &key);
+    keyFree(&key);
 
     if (status == MENU_STATUS_EXIT_SOFTWARE)
     {

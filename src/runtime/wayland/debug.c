@@ -11,7 +11,8 @@
 void
 disassembleWaylandWindow(WaylandWindow* window)
 {
-    debugPrintHeader(" WkWaylandWindow ");
+    debugMsg(true, "");
+    debugPrintHeader("WkWaylandWindow");
     debugMsgWithIndent(0, "|");
     debugMsgWithIndent(0, "| Window width:      %04u", window->width);
     debugMsgWithIndent(0, "| Window max width:  %04u", window->maxWidth);
@@ -21,4 +22,5 @@ disassembleWaylandWindow(WaylandWindow* window)
     disassembleCairoPaint(&window->paint);
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
+    debugMsg(true, "");
 }

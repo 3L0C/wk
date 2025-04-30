@@ -8,7 +8,8 @@
 /* common includes */
 #include "common/key_chord.h"
 
-typedef enum
+typedef uint8_t TokenType;
+enum
 {
     /* single characters */
     TOKEN_LEFT_BRACKET,
@@ -114,7 +115,7 @@ typedef enum
 
     /* end */
     TOKEN_LAST,
-} TokenType;
+};
 
 typedef struct
 {

@@ -1,0 +1,21 @@
+:include "basic_test.wks"
+:fg "#ffffff"
+:fg-key "#ffffff"
+:fg-delimiter "#ffffff"
+:fg-prefix "#ffff00"
+:fg-chord "#ffffff"
+:bg "#123456"
+:bd "#654321"
+:shell "/usr/bin/zsh"
+:font "Sans, 14"
+:sort
+:top
+:menu-width 500
+:menu-gap -1
+:max-columns 3
+:border-width 2
+:width-padding 10
+:height-padding 4
+:delay 0
+:border-radius 15
+b "Basic" +write %{{%(key) - %(desc)}}

@@ -28,18 +28,6 @@ debugPrintScannedTokenHeader(void)
 }
 
 void
-disassembleArrayAsText(const Array* arr, const char* title)
-{
-    assert(arr), assert(title);
-
-    debugPrintHeader(title);
-    debugMsg(true, "| ");
-    debugTextWithLineNumber(ARRAY_AS(arr, char));
-    debugMsg(true, "| ");
-    debugPrintHeader("");
-}
-
-void
 disassembleScanner(const Scanner* scanner)
 {
     assert(scanner);
@@ -66,7 +54,7 @@ disassembleSingleToken(const Token* token)
 {
     assert(token);
 
-    debugPrintHeader("-");
+    debugPrintHeader("");
     disassembleToken(token);
     debugPrintHeader("");
 }

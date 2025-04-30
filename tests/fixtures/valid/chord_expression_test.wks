@@ -1,0 +1,6 @@
+[
+    arst
+    (g "special key" %{{%(key) - %(desc)}})
+    mnei
+] "Tag %(index+1)" +write %{{%(index)}}
+

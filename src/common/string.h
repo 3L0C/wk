@@ -22,13 +22,14 @@ typedef struct
     size_t length;
 } String;
 
-typedef enum
+typedef uint8_t StringCase;
+enum
 {
     STRING_CASE_UPPER_FIRST,
     STRING_CASE_LOWER_FIRST,
     STRING_CASE_UPPER_ALL,
     STRING_CASE_LOWER_ALL
-} StringCase;
+};
 
 typedef struct
 {

@@ -23,7 +23,7 @@
 #include "wayland.h"
 #include "wlr-layer-shell-unstable-v1.h"
 
-const char* WK_XKB_MASK_NAMES[MASK_LAST] = {
+static const char* WK_XKB_MASK_NAMES[MASK_LAST] = {
     XKB_MOD_NAME_SHIFT,
     XKB_MOD_NAME_CAPS,
     XKB_MOD_NAME_CTRL,
@@ -34,7 +34,7 @@ const char* WK_XKB_MASK_NAMES[MASK_LAST] = {
     "Mod5",
 };
 
-const XkbModBit WK_XKB_MODS[MASK_LAST] = {
+static const XkbModBit WK_XKB_MODS[MASK_LAST] = {
     XKB_MOD_SHIFT,
     XKB_MOD_CAPS,
     XKB_MOD_CTRL,

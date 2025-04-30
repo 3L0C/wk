@@ -1,0 +1,3 @@
+... "Switch %(index+1)" +write %{{switching to %(index)}}
+[xyz] "Switch %(index+1)" +write %{{switching to %(index)}}
+C-M-... "Switch %(index+1)" +write %{{switching to %(index)}}

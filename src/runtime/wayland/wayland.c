@@ -235,10 +235,10 @@ setKeyMods(Key* key, uint32_t state)
 {
     assert(key);
 
-    if (state & MOD_CTRL) key->mods |= MOD_CTRL;
+    if (state & XKB_MOD_CTRL) key->mods |= MOD_CTRL;
     if (state & XKB_MOD_ALT) key->mods |= MOD_META;
     if (state & XKB_MOD_LOGO) key->mods |= MOD_HYPER;
-    if (state & MOD_SHIFT) key->mods |= MOD_SHIFT;
+    if (state & XKB_MOD_SHIFT) key->mods |= MOD_SHIFT;
 }
 
 static SpecialKey
@@ -278,13 +278,13 @@ maskedKeyGetUtf8(
 
     size_t len = 0;
 
-    xkbStateRemoveMask(xkb, mask);
-    *keysym = xkb_state_key_get_one_sym(xkb->state, keycode);
     if (!xkbIsModifierKey(*keysym))
     {
+        xkbStateRemoveMask(xkb, mask);
+        *keysym = xkb_state_key_get_one_sym(xkb->state, keycode);
         len = xkb_state_key_get_utf8(xkb->state, keycode, buffer, size);
+        xkbStateRestoreMask(xkb);
     }
-    xkbStateRestoreMask(xkb);
 
     return len;
 }
@@ -346,7 +346,7 @@ setKeyRepr(
         aBuffer,
         sizeof(aBuffer),
         &aKeysym,
-        ~(xkb->masks[MASK_CTRL])
+        xkb->masks[MASK_CTRL]
     );
 
     char bBuffer[128] = {0};
@@ -356,15 +356,16 @@ setKeyRepr(
         bBuffer,
         sizeof(bBuffer),
         &bKeysym,
-        ~(xkb->masks[MASK_SHIFT] | xkb->masks[MASK_CTRL])
+        xkb->masks[MASK_SHIFT] | xkb->masks[MASK_CTRL]
     );
 
+    if (xkbIsModifierKey(aKeysym) || xkbIsModifierKey(bKeysym)) return;
     if (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen))
     {
         reprLen = aLen;
         *outKeysym = aKeysym;
         if (reprLen > 0) mempcpy(repr, aBuffer, reprLen);
-        state &= ~(MOD_SHIFT);
+        state &= ~(XKB_MOD_SHIFT);
     }
     else
     {

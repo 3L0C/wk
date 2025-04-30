@@ -209,7 +209,7 @@ keyCopy(const Key* from, Key* to)
 {
     assert(from), assert(to);
 
-    to->mods = from->mods;
+    to->mods |= from->mods;
     to->special = from->special;
     to->repr = stringCopy(&from->repr);
 }

@@ -1,2 +1,2 @@
-ä "Umlaut" %{{echo "Umlaut"}}
-👍 "Thumbs up" %{{echo "Thumbs up"}}
+ä  "Umlaut"    +write %{{%(desc)}}
+👍 "Thumbs up" +write %{{%(desc)}}

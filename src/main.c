@@ -28,14 +28,6 @@ preprocessSource(Menu* menu, Array* source, const char* filepath)
     {
         errorMsg("Failed while running preprocessor on `wks` file: '%s'.", filepath);
     }
-    else if (menu->debug)
-    {
-        debugPrintHeader(" Contents of Preprocessed Source ");
-        debugMsg(true, "| ");
-        debugTextWithLineNumber(ARRAY_AS(&processedSource, char));
-        debugMsg(true, "| ");
-        debugPrintHeader("");
-    }
 
     arrayFree(source);
     return processedSource;

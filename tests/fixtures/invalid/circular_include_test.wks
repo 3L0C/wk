@@ -1,0 +1,2 @@
+# This is not allowed.
+:include "circular_include_test.wks"

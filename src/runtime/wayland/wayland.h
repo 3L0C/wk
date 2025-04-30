@@ -11,7 +11,8 @@
 /* local includes */
 #include "registry.h"
 
-typedef enum
+typedef uint8_t TouchEventMask;
+enum
 {
     TOUCH_EVENT_DOWN = (1 << 0),
     TOUCH_EVENT_UP = (1 << 1),
@@ -19,9 +20,10 @@ typedef enum
     TOUCH_EVENT_CANCEL = (1 << 3),
     TOUCH_EVENT_SHAPE = (1 << 4),
     TOUCH_EVENT_ORIENTATION = (1 << 5),
-} TouchEventMask;
+};
 
-typedef enum
+typedef uint8_t PointerEventMask;
+enum
 {
     POINTER_EVENT_ENTER = (1 << 0),
     POINTER_EVENT_LEAVE = (1 << 1),
@@ -31,7 +33,7 @@ typedef enum
     POINTER_EVENT_AXIS_SOURCE = (1 << 5),
     POINTER_EVENT_AXIS_STOP = (1 << 6),
     POINTER_EVENT_AXIS_DISCRETE = (1 << 7),
-} PointerEventMask;
+};
 
 typedef struct
 {
