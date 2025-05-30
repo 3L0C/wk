@@ -55,6 +55,7 @@ pressKey(Menu* menu, Scanner* scanner)
     else if (token.type == TOKEN_SPECIAL_KEY)
     {
         key.special = token.special;
+        stringAppendCString(&key.repr, specialKeyGetRepr(key.special));
     }
     else
     {
