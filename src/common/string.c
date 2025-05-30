@@ -360,9 +360,7 @@ stringPrintToFile(const String* string, FILE* s)
     assert(string);
     if (s == NULL) return;
 
-    ArrayIterator iter = arrayIteratorMake(&string->parts);
-    const StringPart* part = NULL;
-    while ((part = ARRAY_ITER_NEXT(&iter, const StringPart)) != NULL)
+    forEach(&string->parts, const StringPart, part)
     {
         fwrite(part->source, sizeof(char), part->length, s);
     }

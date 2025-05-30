@@ -21,8 +21,8 @@ addMod(Key* key, TokenType type)
 
     switch (type)
     {
-    case TOKEN_MOD_CTRL: key->mods  |= MOD_CTRL; break;
-    case TOKEN_MOD_META: key->mods   |= MOD_META; break;
+    case TOKEN_MOD_CTRL: key->mods |= MOD_CTRL; break;
+    case TOKEN_MOD_META: key->mods |= MOD_META; break;
     case TOKEN_MOD_HYPER: key->mods |= MOD_HYPER; break;
     case TOKEN_MOD_SHIFT: key->mods |= MOD_SHIFT; break;
     default: return false;
