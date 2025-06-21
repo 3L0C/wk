@@ -87,7 +87,7 @@ writeEscString(const String* string)
     {
         switch (c)
         {
-        case '\\': printf("\\"); break;
+        case '\\': printf("\\\\"); break;
         case '\"': printf("\\\""); break;
         case '\n': printf("\\\n"); break;
         default: printf("%c", c); break;
