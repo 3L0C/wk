@@ -451,6 +451,7 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %s", "Debug:", "true");
     debugMsgWithIndent(0, "| %-20s %s", "Sort:", menu->sort ? "true" : "false");
     debugMsgWithIndent(0, "| %-20s %s", "Dirty:", menu->dirty ? "true" : "false");
+    debugMsgWithIndent(0, "| %-20s %s", "UWSM Wrapper:", menu->uwsmWrapper ? "true" : "false");
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
     debugMsg(true, "");

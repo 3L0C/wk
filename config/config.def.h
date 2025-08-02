@@ -43,5 +43,7 @@ static const char* shell = "/bin/sh";
 static const char* font = "monospace, 14";
 /* Keys to use for chord arrays */
 static const char* implicitArrayKeys = "asdfghjkl;";
+/* Wrap commands with `uwsm app -- cmd [args ...]`. '1' = enabled, '0' = disabled. (Wayland) */
+static const uint8_t uwsmWrapper = 0;
 
 #endif /* WK_CONFIG_CONFIG_H_ */

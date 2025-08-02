@@ -50,6 +50,7 @@ menuDisplay(Menu* menu)
 #endif
 #ifdef WK_X11_BACKEND
     debugMsg(menu->debug, "Running on x11.");
+    menu->uwsmWrapper = false;
     return x11Run(menu);
 #endif
     errorMsg("Can only run under X11 and/or Wayland.");
@@ -250,6 +251,7 @@ menuInit(Menu* menu, Array* keyChords)
     menu->debug = false;
     menu->sort = false;
     menu->dirty = true;
+    menu->uwsmWrapper = uwsmWrapper;
 }
 
 bool
@@ -282,6 +284,7 @@ usage(void)
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
         "    -d, --debug                Print debug information.\n"
+        "    -u, --uwsm                 Wrap commands with `uwsm app -- cmd [args ...]` (Wayland).\n"
         "    -D, --delay INT            Delay the popup menu by INT milliseconds from\n"
         "                               startup/last keypress (default 1000 ms).\n"
         "    -t, --top                  Position menu at top of screen.\n"
@@ -363,6 +366,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "help",           no_argument,        0, 'h' },
         { "version",        no_argument,        0, 'v' },
         { "debug",          no_argument,        0, 'd' },
+        { "uwsm",           no_argument,        0, 'u' },
         { "top",            no_argument,        0, 't' },
         { "bottom",         no_argument,        0, 'b' },
         { "script",         no_argument,        0, 's' },
@@ -407,6 +411,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case 'h': usage(); exit(EXIT_FAILURE);
         case 'v': puts("wk v"VERSION); exit(EXIT_SUCCESS);
         case 'd': menu->debug = true; break;
+        case 'u': menu->uwsmWrapper = true; break;
         case 't': menu->position = MENU_POS_TOP; break;
         case 'b': menu->position = MENU_POS_BOTTOM; break;
         case 's': menu->client.tryScript = true; break;
@@ -591,7 +596,7 @@ spawnSync(const char* shell, const char* cmd)
     assert(shell), assert(cmd);
 
     setsid();
-    char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL };
+    char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL, NULL };
     if (!exec[0])
     {
         errorMsg("Could not duplicate shell string: '%s'.", shell);
@@ -642,9 +647,24 @@ menuSpawn(const Menu* menu, const String* cmd, bool sync)
     if (child == 0)
     {
         if (menu->xp && menu->cleanupfp) menu->cleanupfp(menu->xp);
+        const char* uwsm_prefix = "uwsm app -- ";
+        size_t uwsm_prefix_len = strlen(uwsm_prefix);
 
-        char buffer[cmd->length + 1];
-        stringWriteToBuffer(cmd, buffer);
+        /* Calculate buffer size: command length + null terminator + optional prefix */
+        size_t buffer_len = cmd->length + 1 + (menu->uwsmWrapper ? uwsm_prefix_len : 0);
+        char buffer[buffer_len];
+
+        if (menu->uwsmWrapper)
+        {
+            strcpy(buffer, uwsm_prefix);
+            stringWriteToBuffer(cmd, buffer + uwsm_prefix_len);
+        }
+        else
+        {
+            stringWriteToBuffer(cmd, buffer);
+        }
+
+        printf("Running: `%s`\n", buffer);
 
         if (sync)
         {

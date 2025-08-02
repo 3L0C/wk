@@ -101,6 +101,7 @@ typedef struct
     bool debug;
     bool sort;
     bool dirty;
+    bool uwsmWrapper;
 } Menu;
 
 int menuDisplay(Menu* menu);
