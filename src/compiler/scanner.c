@@ -563,7 +563,7 @@ checkSpecialType(Scanner* scanner, Token* token)
     for (size_t i = SPECIAL_KEY_NONE; i < SPECIAL_KEY_LAST; i++)
     {
         const char* repr = specialKeyGetRepr(i);
-        if (isKeyword(scanner, 1, strlen(repr + 1), repr + 1))
+        if (isKeyword(scanner, 0, strlen(repr + 0), repr + 0)) /* Check the whole token, not n - 1 */
         {
             token->special = i;
             return TOKEN_SPECIAL_KEY;
