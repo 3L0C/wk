@@ -335,8 +335,8 @@ setKeyRepr(
     Xkb* xkb = &wayland->input.xkb;
     uint32_t keycode = wayland->input.code;
     uint32_t state = wayland->input.modifiers;
-    xkb_keysym_t aKeysym;
-    xkb_keysym_t bKeysym;
+    xkb_keysym_t aKeysym = XKB_KEY_NoSymbol;
+    xkb_keysym_t bKeysym = XKB_KEY_NoSymbol;
     size_t reprLen = 0;
 
     char aBuffer[128] = {0};

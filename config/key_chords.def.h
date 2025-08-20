@@ -3,118 +3,98 @@
 
 #include <stddef.h>
 
+/* common includes */
+#include "src/common/array.h"
 #include "src/common/key_chord.h"
+#include "src/common/string.h"
 
-/* state,
- * KEY(
- *     mods,
- *     special,
- *     key, key_len
- * ),
- * description,
- * command
- * before
- * after
- * flags, chords
- */
-KeyChord builtinKeyChords[] = {
-    {
-        .state = KEY_CHORD_STATE_NOT_NULL, 
-        .key = {
-            .mods = {
-                .ctrl = false, .alt = false, .hyper = false, .shift = false
-            },
-            .special = SPECIAL_KEY_NONE,
-            .repr = "a", .len = 1
-        },
-        .description = "A chord", 
-        .command = "echo \"Hello, world!\"", 
-        .before = NULL, 
-        .after = NULL, 
-        .flags = {
-            false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false
-        }, .keyChords = NULL
-    },
-    {
-        .state = KEY_CHORD_STATE_NOT_NULL, 
-        .key = {
-            .mods = {
-                .ctrl = false, .alt = false, .hyper = false, .shift = false
-            },
-            .special = SPECIAL_KEY_NONE,
-            .repr = "p", .len = 1
-        },
-        .description = "A prefix", 
-        .command = NULL, 
-        .before = NULL, 
-        .after = NULL, 
-        .flags = {
-            false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false
-        }, 
-        .keyChords = (KeyChord[]){
-            {
-                .state = KEY_CHORD_STATE_NOT_NULL, 
-                .key = {
-                    .mods = {
-                        .ctrl = false, .alt = false, .hyper = false, .shift = false
-                    },
-                    .special = SPECIAL_KEY_NONE,
-                    .repr = "b", .len = 1
-                },
-                .description = "A chord", 
-                .command = "echo \"Hello from inside prefix 'C-a'\"", 
-                .before = NULL, 
-                .after = NULL, 
-                .flags = {
-                    false, false, false, false, false, false, false,
-                    false, false, false, false, false, false, false
-                }, .keyChords = NULL
-            },
-            {
-                .state = KEY_CHORD_STATE_NOT_NULL, 
-                .key = {
-                    .mods = {
-                        .ctrl = false, .alt = false, .hyper = false, .shift = false
-                    },
-                    .special = SPECIAL_KEY_NONE,
-                    .repr = "c", .len = 1
-                },
-                .description = "Another prefix", 
-                .command = NULL, 
-                .before = NULL, 
-                .after = NULL, 
-                .flags = {
-                    false, false, false, false, false, false, false,
-                    false, false, false, false, false, false, false
-                }, 
-                .keyChords = (KeyChord[]){
-                    {
-                        .state = KEY_CHORD_STATE_NOT_NULL, 
-                        .key = {
-                            .mods = {
-                                .ctrl = false, .alt = false, .hyper = false, .shift = false
-                            },
-                            .special = SPECIAL_KEY_NONE,
-                            .repr = "d", .len = 1
-                        },
-                        .description = "Done", 
-                        .command = "echo \"You've reached the end!\"", 
-                        .before = NULL, 
-                        .after = NULL, 
-                        .flags = {
-                            false, false, false, false, false, false, false,
-                            false, false, false, false, false, false, false
-                        }, .keyChords = NULL
-                    },
-                    { .state = KEY_CHORD_STATE_IS_NULL }
-                }
-            },
-            { .state = KEY_CHORD_STATE_IS_NULL }
-        }
-    },
-    { .state = KEY_CHORD_STATE_IS_NULL }
-};
+#define ARRAY(T, _len, ...) (Array){ \
+    .data = (T[]){ __VA_ARGS__ }, \
+    .length = (_len), \
+    .capacity = (_len), \
+    .elementSize = sizeof(T) \
+}
+#define EMPTY_ARRAY(T) (Array){ \
+    .data = NULL, \
+    .length = 0, \
+    .capacity = 0, \
+    .elementSize = sizeof(T) \
+}
+#define STRING(_offset, _len) (String){ \
+    .parts = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
+    .length = (_len) \
+}
+#define EMPTY_STRING (String){ \
+    .parts = EMPTY_ARRAY(StringPart), \
+    .length = 0 \
+}
+#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _flags, _chords) \
+    (KeyChord){ \
+        .key         = (_key), \
+        .description = (_desc), \
+        .command     = (_cmd), \
+        .before      = (_before), \
+        .after       = (_after), \
+        .flags       = (_flags), \
+        .keyChords   = (_chords) \
+    }
+#define KEY(_offset, _len, _mods, _special) \
+    (Key){ \
+        .repr    = STRING((_offset), (_len)), \
+        .mods    = (_mods), \
+        .special = (_special) \
+    }
+
+static const char BUILTIN_SOURCE[] = "aA chordecho \"Hello, world!\"pA prefixbA chordecho \"Hello from inside prefix 'C-a'\"cAnother prefixdDoneecho \"You've reached the end!\"";
+
+static Array builtinKeyChords = ARRAY(KeyChord, 2,
+    KEY_CHORD(
+        KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
+        STRING(1, 7),
+        STRING(8, 20),
+        EMPTY_STRING,
+        EMPTY_STRING,
+        FLAG_NONE,
+        EMPTY_ARRAY(KeyChord)
+    ),
+    KEY_CHORD(
+        KEY(28, 1, MOD_NONE, SPECIAL_KEY_NONE),
+        STRING(29, 8),
+        EMPTY_STRING,
+        EMPTY_STRING,
+        EMPTY_STRING,
+        FLAG_NONE,
+        ARRAY(KeyChord, 2,
+            KEY_CHORD(
+                KEY(37, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                STRING(38, 7),
+                STRING(45, 37),
+                EMPTY_STRING,
+                EMPTY_STRING,
+                FLAG_NONE,
+                EMPTY_ARRAY(KeyChord)
+            ),
+            KEY_CHORD(
+                KEY(82, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                STRING(83, 14),
+                EMPTY_STRING,
+                EMPTY_STRING,
+                EMPTY_STRING,
+                FLAG_NONE,
+                ARRAY(KeyChord, 1,
+                    KEY_CHORD(
+                        KEY(97, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                        STRING(98, 4),
+                        STRING(102, 30),
+                        EMPTY_STRING,
+                        EMPTY_STRING,
+                        FLAG_NONE,
+                        EMPTY_ARRAY(KeyChord)
+                    )
+                )
+            )
+        )
+    )
+ );
 
 #endif /* WK_CONFIG_KEY_CHORDS_H_ */
