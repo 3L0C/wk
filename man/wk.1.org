@@ -66,7 +66,7 @@ of *wk*. For users looking for a more dynamic experience,
   Set menu gap between top/bottom of screen to /INT/. Set to
   '-1' for a gap equal to 1/10th of the screen height
   (default -1).
- 
+
 - *--border-width* /INT/ ::
   Set border width to /INT/ (default 4).
 
@@ -81,6 +81,11 @@ of *wk*. For users looking for a more dynamic experience,
 - *--hpadding* /INT/ ::
   Set up and down padding around hint text to /INT/.
   (default 2)
+
+- *--table-padding* /INT/ ::
+  Set additional padding between the outermost cells and the
+  border to /INT/. -1 = same as cell padding, 0 = no additional
+  padding (default -1).
 
 - *--fg* /COLOR/ ::
   Set all menu foreground text to /COLOR/ where color is

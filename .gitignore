@@ -3,3 +3,4 @@ src/runtime/wayland/wlr-layer-shell-unstable-v1.*
 src/runtime/wayland/xdg-shell.*
 config/config.h
 config/key_chords.h
+wk

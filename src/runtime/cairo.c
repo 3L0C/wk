@@ -107,7 +107,11 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     cairo_surface_destroy(surface);
 
     menu->cellHeight = (rect.height + menu->hpadding * 2);
-    height = menu->cellHeight * menu->rows + (menu->borderWidth * 2);
+    // Calculate table padding for height calculation - if -1, use cell padding, otherwise use the specified value
+    uint32_t tablePadding = (menu->tablePadding == -1) ?
+                              menu->hpadding :
+                              (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    height = menu->cellHeight * menu->rows + (tablePadding * 2) + (menu->borderWidth * 2);
     return height > maxHeight ? maxHeight : height;
 }
 
@@ -393,13 +397,24 @@ drawGrid()
         goto end;
     }
 
-    uint32_t startx = mainMenu->borderWidth;
-    uint32_t starty = mainMenu->borderWidth;
+    // Calculate table padding - if -1, use cell padding, otherwise use the specified value
+    uint32_t tablePadding = (mainMenu->tablePadding == -1) ?
+                              mainMenu->wpadding :
+                              (mainMenu->tablePadding < 0 ? 0U : (uint32_t)mainMenu->tablePadding);
+
+    uint32_t startx = mainMenu->borderWidth + tablePadding;
+    uint32_t starty = mainMenu->borderWidth + tablePadding;
     uint32_t rows = mainMenu->rows;
     uint32_t cols = mainMenu->cols;
     uint32_t wpadding = mainMenu->wpadding;
     uint32_t hpadding = mainMenu->hpadding;
-    uint32_t cellWidth = (width - (mainMenu->borderWidth * 2)) / cols;
+    // Calculate cell width accounting for table padding
+    uint32_t totalTablePadding = tablePadding * 2;
+    uint32_t borderWidthTotal = mainMenu->borderWidth * 2;
+    uint32_t availableWidth = (totalTablePadding > (width - borderWidthTotal)) ?
+                              0 :
+                              width - borderWidthTotal - totalTablePadding;
+    uint32_t cellWidth = (availableWidth > 0) ? availableWidth / cols : 0;
     uint32_t cellHeight = mainMenu->cellHeight;
     uint32_t idx = 0;
     uint32_t count = mainMenu->keyChordCount;

@@ -124,6 +124,9 @@ options:
                                INT (default 6).
     --hpadding INT             Set top and bottom padding around hint text to
                                INT (default 2).
+    --table-padding INT        Set additional padding between the outermost cells
+                               and the border to INT. -1 = same as cell padding,
+                               0 = no additional padding (default -1).
     --fg COLOR                 Set all menu foreground text to COLOR where color
                                is some hex string i.e. '#F1CD39' (default unset).
     --fg-key COLOR             Set foreground key to COLOR (default '#DCD7BA').
