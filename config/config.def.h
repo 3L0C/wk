@@ -20,6 +20,8 @@ static const int32_t menuGap = -1;
 static const uint32_t widthPadding = 6;
 /* Y-Padding around key/description text in cells. */
 static const uint32_t heightPadding = 2;
+/* Additional padding between the outermost cells and the border. -1 = same as cell padding, 0 = no additional padding. */
+static const int32_t tablePadding = -1;
 /* Position to place the menu. '0' = bottom; '1' = top. */
 static const uint32_t menuPosition = 0;
 /* Menu border width */

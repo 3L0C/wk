@@ -310,6 +310,9 @@ usage(void)
         "                               INT (default 6).\n"
         "    --hpadding INT             Set top and bottom padding around hint text to\n"
         "                               INT (default 2).\n"
+        "    --table-padding INT        Set additional padding between the outermost cells\n"
+        "                               and the border to INT. -1 = same as cell padding,\n"
+        "                               0 = no additional padding (default -1).\n"
         "    --fg COLOR                 Set all menu foreground text to COLOR where color\n"
         "                               is some hex string i.e. '#F1CD39' (default unset).\n"
         "    --fg-key COLOR             Set foreground key to COLOR (default '#DCD7BA').\n"
@@ -383,16 +386,17 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "border-radius",  required_argument,  0, 0x091 },
         { "wpadding",       required_argument,  0, 0x092 },
         { "hpadding",       required_argument,  0, 0x093 },
-        { "fg",             required_argument,  0, 0x094 },
-        { "fg-key",         required_argument,  0, 0x095 },
-        { "fg-delimiter",   required_argument,  0, 0x096 },
-        { "fg-prefix",      required_argument,  0, 0x097 },
-        { "fg-chord",       required_argument,  0, 0x098 },
-        { "bg",             required_argument,  0, 0x099 },
-        { "bd",             required_argument,  0, 0x100 },
-        { "shell",          required_argument,  0, 0x101 },
-        { "font",           required_argument,  0, 0x102 },
-        { "implicit-keys",  required_argument,  0, 0x103 },
+        { "table-padding",  required_argument,  0, 0x094 },
+        { "fg",             required_argument,  0, 0x095 },
+        { "fg-key",         required_argument,  0, 0x096 },
+        { "fg-delimiter",   required_argument,  0, 0x097 },
+        { "fg-prefix",      required_argument,  0, 0x098 },
+        { "fg-chord",       required_argument,  0, 0x099 },
+        { "bg",             required_argument,  0, 0x100 },
+        { "bd",             required_argument,  0, 0x101 },
+        { "shell",          required_argument,  0, 0x102 },
+        { "font",           required_argument,  0, 0x103 },
+        { "implicit-keys",  required_argument,  0, 0x104 },
         { 0, 0, 0, 0 }
     };
 
@@ -520,8 +524,21 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->hpadding = (uint32_t)n;
             break;
         }
-        /* fg */
+        /* table-padding */
         case 0x094:
+        {
+            int n = 0;
+            if (!getInt(&n))
+            {
+                warnMsg("Could not convert '%s' into a integer.", optarg);
+                warnMsg("Using default value for table-padding: %d.", menu->tablePadding);
+                break;
+            }
+            menu->tablePadding = n;
+            break;
+        }
+        /* fg */
+        case 0x095:
         {
             menuSetColor(menu, optarg, MENU_COLOR_KEY);
             menuSetColor(menu, optarg, MENU_COLOR_DELIMITER);
@@ -530,23 +547,23 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             break;
         }
         /* fg-key */
-        case 0x095: menuSetColor(menu, optarg, MENU_COLOR_KEY); break;
+        case 0x096: menuSetColor(menu, optarg, MENU_COLOR_KEY); break;
         /* fg-delimiter */
-        case 0x096: menuSetColor(menu, optarg, MENU_COLOR_DELIMITER); break;
+        case 0x097: menuSetColor(menu, optarg, MENU_COLOR_DELIMITER); break;
         /* fg-prefix */
-        case 0x097: menuSetColor(menu, optarg, MENU_COLOR_PREFIX); break;
+        case 0x098: menuSetColor(menu, optarg, MENU_COLOR_PREFIX); break;
         /* fg-chord */
-        case 0x098: menuSetColor(menu, optarg, MENU_COLOR_CHORD); break;
+        case 0x099: menuSetColor(menu, optarg, MENU_COLOR_CHORD); break;
         /* bg */
-        case 0x099: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
+        case 0x100: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
         /* bd */
-        case 0x100: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
+        case 0x101: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
         /* shell */
-        case 0x101: menu->shell = optarg; break;
+        case 0x102: menu->shell = optarg; break;
         /* font */
-        case 0x102: menu->font = optarg; break;
+        case 0x103: menu->font = optarg; break;
         /* implicit keys */
-        case 0x103: menu->implicitArrayKeys = optarg; break;
+        case 0x104: menu->implicitArrayKeys = optarg; break;
         /* Errors */
         case '?':
             usage();

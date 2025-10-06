@@ -118,7 +118,11 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     cairo_surface_destroy(surface);
 
     menu->cellHeight = (rect.height + menu->hpadding * 2);
-    height = menu->cellHeight * menu->rows + (menu->borderWidth * 2);
+    // Calculate table padding for height calculation - if -1, use cell padding, otherwise use the specified value
+    uint32_t tablePadding = (menu->tablePadding == -1) ?
+                              menu->hpadding :
+                              (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    height = menu->cellHeight * menu->rows + (tablePadding * 2) + (menu->borderWidth * 2);
     return height > maxHeight ? maxHeight : height;
 }
 
@@ -510,15 +514,26 @@ drawGrid(
         return false;
     }
 
-    uint32_t startx = menu->borderWidth;
-    uint32_t starty = menu->borderWidth;
+    uint32_t tablePaddingX = (menu->tablePadding == -1) ?
+                             menu->wpadding :
+                             (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    uint32_t tablePaddingY = (menu->tablePadding == -1) ?
+                             menu->hpadding :
+                             (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    uint32_t startx = menu->borderWidth + tablePaddingX;
+    uint32_t starty = menu->borderWidth + tablePaddingY;
     uint32_t rows = menu->rows;
     uint32_t cols = menu->cols;
     uint32_t wpadding = menu->wpadding;
     uint32_t hpadding = menu->hpadding;
-    uint32_t cellWidth = (width - (menu->borderWidth * 2)) / cols;
+    uint32_t totalTablePadding = tablePaddingX + tablePaddingY;
+    uint32_t borderWidthTotal = menu->borderWidth * 2;
+    uint32_t availableWidth = (totalTablePadding > (width - borderWidthTotal)) ?
+                              0 :
+                              width - borderWidthTotal - totalTablePadding;
+    uint32_t cellWidth = (availableWidth > 0) ? availableWidth / cols : 0;
     uint32_t cellHeight = menu->cellHeight;
-    size_t count = menu->keyChords->length;
+    uint32_t count = menu->keyChords->length;
     PangoLayout* layout = pango_cairo_create_layout(cr);
     PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
 

@@ -89,6 +89,7 @@ typedef struct
     int32_t  menuGap;
     uint32_t wpadding;
     uint32_t hpadding;
+    int32_t tablePadding;
     uint32_t cellHeight;
     uint32_t rows;
     uint32_t cols;
