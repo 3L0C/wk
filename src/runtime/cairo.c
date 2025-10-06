@@ -397,19 +397,20 @@ drawGrid()
         goto end;
     }
 
-    // Calculate table padding - if -1, use cell padding, otherwise use the specified value
-    uint32_t tablePadding = (mainMenu->tablePadding == -1) ?
+    uint32_t tablePaddingX = (mainMenu->tablePadding == -1) ?
                               mainMenu->wpadding :
                               (mainMenu->tablePadding < 0 ? 0U : (uint32_t)mainMenu->tablePadding);
+    uint32_t tablePaddingY = (mainMenu->tablePadding == -1) ?
+                              mainMenu->hpadding :
+                              (mainMenu->tablePadding < 0 ? 0U : (uint32_t)mainMenu->tablePadding);
 
-    uint32_t startx = mainMenu->borderWidth + tablePadding;
-    uint32_t starty = mainMenu->borderWidth + tablePadding;
+    uint32_t startx = mainMenu->borderWidth + tablePaddingX;
+    uint32_t starty = mainMenu->borderWidth + tablePaddingY;
     uint32_t rows = mainMenu->rows;
     uint32_t cols = mainMenu->cols;
     uint32_t wpadding = mainMenu->wpadding;
     uint32_t hpadding = mainMenu->hpadding;
-    // Calculate cell width accounting for table padding
-    uint32_t totalTablePadding = tablePadding * 2;
+    uint32_t totalTablePadding = tablePaddingX + tablePaddingY;
     uint32_t borderWidthTotal = mainMenu->borderWidth * 2;
     uint32_t availableWidth = (totalTablePadding > (width - borderWidthTotal)) ?
                               0 :
