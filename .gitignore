@@ -16,3 +16,17 @@ result-*
 
 # Development
 compile_commands.json
+
+# Dot dirs
+.*/
+
+# Scratch
+*.md
+*.org
+
+# Debugging
+*.diff
+*.log
+config/*.bak.h
+config/*template.h
+config/*template.def.h
