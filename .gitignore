@@ -1,6 +1,18 @@
+# Build artifacts
 build
+wk
+
+# Generated files
 src/runtime/wayland/wlr-layer-shell-unstable-v1.*
 src/runtime/wayland/xdg-shell.*
 config/config.h
 config/key_chords.h
-wk
+
+# Nix
+.direnv
+.pre-commit-config.yaml
+result
+result-*
+
+# Development
+compile_commands.json
