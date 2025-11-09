@@ -1,0 +1,50 @@
+# Test file for duplicate key deduplication
+# Expected behavior: last definition wins
+
+:delay 0
+
+# Simple duplicates - 'c' should show "Third definition wins"
+a "First definition" %{{echo "first a"}}
+b "Some command" %{{echo "b"}}
+c "First c" %{{echo "first c"}}
+c "Second c" %{{echo "second c"}}
+a "(wins) Second definition" %{{echo "second a"}}
+c "(wins) Third definition" %{{echo "third c"}}
+
+# Duplicates with modifiers - should keep "Last Meta-x"
+M-x "First Meta-x" %{{echo "first meta-x"}}
+M-x "(wins) Last Meta-x" %{{echo "last meta-x"}}
+
+# Duplicates with special keys - should keep "Space winner"
+SPC "First space" %{{echo "first space"}}
+SPC "(wins) Second space" %{{echo "space winner"}}
+
+# Duplicate prefixes - 'w' should have the second prefix definition
+w "First prefix" {
+    a "First w-a" %{{echo "first w-a"}}
+    b "First w-b" %{{echo "first w-b"}}
+}
+
+w "(wins) Second prefix" {
+    a "(wins) Second w-a" %{{echo "second w-a"}}
+    c "(wins) Second w-c" %{{echo "second w-c"}}
+}
+
+# Duplicates within a prefix - should deduplicate nested chords too
+p "Prefix with internal duplicates" {
+    x "First nested x" %{{echo "first nested x"}}
+    y "Some nested y" %{{echo "nested y"}}
+    x "Second nested x" %{{echo "second nested x"}}
+    x "(wins) Third nested x" %{{echo "third nested x"}}
+}
+
+# Mix of prefix and chord with same key - last wins
+# This 't' chord should win over the prefix
+t "Prefix t" {
+    a "Inside t prefix" %{{echo "t-a"}}
+}
+t "(wins) Chord t" %{{echo "chord t wins"}}
+
+# Multiple modifiers - C-S-k should show "Last ctrl-shift"
+C-S-k "First ctrl-shift" %{{echo "first C-S-k"}}
+C-S-k "(wins) Last ctrl-shift" %{{echo "last C-S-k"}}

@@ -93,6 +93,14 @@ pseudoChordFree(PseudoChord* chord)
     pseudoChordInit(chord);
 }
 
+static int
+compareSize_t(const void* a, const void* b)
+{
+    size_t x = *(const size_t*)a;
+    size_t y = *(const size_t*)b;
+    return (x > y) - (x < y);
+}
+
 static void
 deduplicatePseudoChordArray(Array* chords)
 {
@@ -106,31 +114,43 @@ deduplicatePseudoChordArray(Array* chords)
     forRange(chords, PseudoChord, outerChord, 0, arrayLength(chords) - 1)
     {
         ArrayIterator* outerIter = &iter;
-        forEachFrom(chords, PseudoChord, innerChord, iter.index + 1)
+        size_t swapIdx = outerIter->index;
+        forEachFrom(chords, PseudoChord, innerChord, outerIter->index + 1)
         {
             if (keyIsEqual(&outerChord->key, &innerChord->key))
             {
-                /* Swap so last definition moves to earlier position */
-                arraySwap(chords, outerIter->index, iter.index);
                 /* Mark the later position for removal */
                 stackPush(&stack, &iter.index);
+                /* Update the swap index */
+                swapIdx = iter.index;
             }
         }
+
+        /* Swap so last definition moves to earliest position */
+        arraySwap(chords, outerIter->index, swapIdx);
     }
 
-    /* Phase 2: Remove duplicates in reverse order to avoid index invalidation */
+    /* Phase 2: Sort the duplicates stack */
+    qsort(stack.data, stack.length, stack.elementSize, compareSize_t);
+
+    /* Phase 3: Remove duplicates in reverse order to avoid index invalidation */
     while (!stackIsEmpty(&stack))
     {
-        size_t* index = STACK_PEEK(&stack, size_t);
-        PseudoChord* dup = ARRAY_GET(chords, PseudoChord, *index);
+        size_t index = *(STACK_PEEK(&stack, size_t));
+        PseudoChord* dup = ARRAY_GET(chords, PseudoChord, index);
         pseudoChordFree(dup);
-        arrayRemove(chords, *index);
-        stackPop(&stack);
+        arrayRemove(chords, index);
+
+        /* Skip duplicate indices in stack i.e., [2, 4, 5, 5] */
+        while (!stackIsEmpty(&stack) && index == *(STACK_PEEK(&stack, size_t)))
+        {
+            stackPop(&stack);
+        }
     }
 
     stackFree(&stack);
 
-    /* Phase 3: Recursively deduplicate nested chords */
+    /* Phase 4: Recursively deduplicate nested chords */
     forEach(chords, PseudoChord, chord)
     {
         if (!arrayIsEmpty(&chord->chords))
@@ -1111,8 +1131,8 @@ compileKeyChords(Compiler* compiler, Menu* menu)
         return NULL;
     }
 
-    if (compiler->sort) pseudoChordArraySort(compiler->chords);
     deduplicatePseudoChordArray(compiler->chords);
+    if (compiler->sort) pseudoChordArraySort(compiler->chords);
     menu->keyChords = compileFromPseudoChords(compiler, &menu->compiledKeyChords);
 
     if (compiler->debug)
