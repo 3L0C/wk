@@ -7,8 +7,8 @@
 #include "common/menu.h"
 
 /* local includes */
-#include "token.h"
 #include "scanner.h"
+#include "token.h"
 
 typedef struct
 {
@@ -21,6 +21,7 @@ typedef struct
     Array* chords;
     Arena* arena;
     Scanner* scanner;
+    Array* userVars;
     const char* delimiter;
     char* source;
     size_t delimiterLen;
@@ -32,6 +33,5 @@ typedef struct
 
 Array* compileKeyChords(Compiler* compiler, Menu* menu);
 void initCompiler(Compiler* compiler, Menu* menu, char* source, const char* filepath);
-
 
 #endif /* WK_COMPILER_COMPILER_H_ */

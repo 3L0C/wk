@@ -42,6 +42,7 @@ typedef struct
 } Scanner;
 
 void scannerInit(Scanner* scanner, const char* source, const char* filepath);
+void scannerClone(const Scanner* scanner, Scanner* clone);
 bool scannerIsAtEnd(const Scanner* scanner);
 void scannerMakeCurrent(Scanner* scanner);
 void scannerGetTokenForCompiler(Scanner* scanner, Token* result);

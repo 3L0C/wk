@@ -22,3 +22,18 @@ AlignConsecutiveDeclarations: false
 # Other style preferences
 SpaceAfterCStyleCast: false
 IndentCaseLabels: false
+
+# Allow compact switch case statements
+AllowShortCaseLabelsOnASingleLine: true
+
+# Preserve multi-line array/argument formatting
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Align struct array initializers for table-like formatting
+AlignArrayOfStructures: Left
+
+# Preserve multi-line expressions with proper indentation
+AlignAfterOpenBracket: BlockIndent

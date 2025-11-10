@@ -29,7 +29,10 @@ run_test() {
 
     echo "==== Testing $test_name with key sequence '$key_sequence' ====" | tee -a "$TEST_LOG"
 
-    local output_file="$LOG_DIR/${test_name}_output.txt"
+    # Sanitize key sequence for filename (replace spaces and special chars with underscores)
+    local sanitized_keys
+    sanitized_keys=$(echo "$key_sequence" | tr ' -' '__')
+    local output_file="$LOG_DIR/${test_name}_${sanitized_keys}_output.txt"
 
     ./wk --key-chords "$test_file" --press "$key_sequence" > "$output_file" 2>&1
     local exit_code=$?
@@ -143,11 +146,40 @@ run_test "tests/fixtures/valid/special_keys_test.wks" "VolDown" "tests/expected/
 run_test "tests/fixtures/valid/unicode_test.wks" "👍" "tests/expected/unicode_test_thumbs_up.txt"
 run_test "tests/fixtures/valid/unicode_test.wks" "ä" "tests/expected/unicode_test_umlaut.txt"
 
+# Variable (:var) macro tests
+run_test "tests/fixtures/valid/var_test.wks" "a" "tests/expected/var_test_a.txt"
+run_test "tests/fixtures/valid/var_test.wks" "b" "tests/expected/var_test_b.txt"
+run_test "tests/fixtures/valid/var_test.wks" "c" "tests/expected/var_test_c.txt"
+run_test "tests/fixtures/valid/var_test.wks" "d" "tests/expected/var_test_d.txt"
+run_test "tests/fixtures/valid/var_test.wks" "e" "tests/expected/var_test_e.txt"
+run_test "tests/fixtures/valid/var_test.wks" "f" "tests/expected/var_test_f.txt"
+
+# Variable with include tests
+run_test "tests/fixtures/valid/var_include_test/main.wks" "a" "tests/expected/var_include_main_a.txt"
+run_test "tests/fixtures/valid/var_include_test/main.wks" "b" "tests/expected/var_include_main_b.txt"
+run_test "tests/fixtures/valid/var_include_test/main.wks" "c" "tests/expected/var_include_main_c.txt"
+
+# Duplicate key deduplication tests (last wins)
+run_test "tests/fixtures/valid/duplicate_test.wks" "a" "tests/expected/duplicate_test_a.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "b" "tests/expected/duplicate_test_b.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "c" "tests/expected/duplicate_test_c.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "M-x" "tests/expected/duplicate_test_M_x.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "SPC" "tests/expected/duplicate_test_SPC.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "w a" "tests/expected/duplicate_test_w_a.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "w c" "tests/expected/duplicate_test_w_c.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "p x" "tests/expected/duplicate_test_p_x.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "p y" "tests/expected/duplicate_test_p_y.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "t" "tests/expected/duplicate_test_t.txt"
+run_test "tests/fixtures/valid/duplicate_test.wks" "C-S-k" "tests/expected/duplicate_test_C_S_k.txt"
+
 # Error handling tests
 echo "Running error tests..." | tee -a "$TEST_LOG"
 echo "======================" | tee -a "$TEST_LOG"
 
 run_error_test "tests/fixtures/invalid/circular_include_test.wks" "tests/fixtures/invalid/circular_include_test.wks:2:35: wk does not support circular includes: ':include \"circular_include_test.wks\"'."
+run_error_test "tests/fixtures/invalid/var_undefined.wks" "Undefined variable"
+run_error_test "tests/fixtures/invalid/var_empty_key.wks" "Variable name cannot be empty"
+run_error_test "tests/fixtures/invalid/var_paren_in_key.wks" "Variable name contains ')'"
 
 # Print summary
 echo "" | tee -a "$TEST_LOG"

@@ -61,8 +61,9 @@ pseudoChordArraySort(Array* chords)
 {
     assert(chords);
 
-    qsort(ARRAY_AS(chords, PseudoChord), arrayLength(chords), sizeof(PseudoChord),
-          pseudoChordCompare);
+    qsort(
+        ARRAY_AS(chords, PseudoChord), arrayLength(chords), sizeof(PseudoChord), pseudoChordCompare
+    );
 }
 
 static void
@@ -334,20 +335,11 @@ compileMod(Compiler* compiler, Key* key, Token* token)
 
     switch (token->type)
     {
-    case TOKEN_MOD_CTRL:
-        key->mods |= MOD_CTRL;
-        break;
-    case TOKEN_MOD_META:
-        key->mods |= MOD_META;
-        break;
-    case TOKEN_MOD_HYPER:
-        key->mods |= MOD_HYPER;
-        break;
-    case TOKEN_MOD_SHIFT:
-        key->mods |= MOD_SHIFT;
-        break;
-    default:
-        break;
+    case TOKEN_MOD_CTRL: key->mods |= MOD_CTRL; break;
+    case TOKEN_MOD_META: key->mods |= MOD_META; break;
+    case TOKEN_MOD_HYPER: key->mods |= MOD_HYPER; break;
+    case TOKEN_MOD_SHIFT: key->mods |= MOD_SHIFT; break;
+    default: break;
     }
 }
 
@@ -374,10 +366,8 @@ isKey(Compiler* compiler)
     switch (currentType(compiler))
     {
     case TOKEN_KEY: /* FALLTHROUGH */
-    case TOKEN_SPECIAL_KEY:
-        return true;
-    default:
-        return false;
+    case TOKEN_SPECIAL_KEY: return true;
+    default: return false;
     }
 
     return false;
@@ -433,13 +423,10 @@ compileDescriptionTokens(Compiler* compiler, Array* desc)
         case TOKEN_THIS_KEY: /* FALLTHROUGH */
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
+        case TOKEN_USER_VAR:
         case TOKEN_DESC_INTERP:
-        case TOKEN_DESCRIPTION:
-            arrayAppend(desc, token);
-            break;
-        default:
-            errorAtCurrent(compiler, "Malfromed description.");
-            return;
+        case TOKEN_DESCRIPTION: arrayAppend(desc, token); break;
+        default: errorAtCurrent(compiler, "Malfromed description."); return;
         }
         if (check(compiler, TOKEN_DESCRIPTION)) break;
         advance(compiler);
@@ -470,18 +457,15 @@ compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const ch
         case TOKEN_THIS_KEY: /* FALLTHROUGH */
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
+        case TOKEN_USER_VAR:
         case TOKEN_THIS_DESC:
         case TOKEN_THIS_DESC_UPPER_FIRST:
         case TOKEN_THIS_DESC_LOWER_FIRST:
         case TOKEN_THIS_DESC_UPPER_ALL:
         case TOKEN_THIS_DESC_LOWER_ALL:
         case TOKEN_COMM_INTERP:
-        case TOKEN_COMMAND:
-            arrayAppend(cmd, token);
-            break;
-        default:
-            errorAtCurrent(compiler, "Malfromed command.");
-            return false;
+        case TOKEN_COMMAND: arrayAppend(cmd, token); break;
+        default: errorAtCurrent(compiler, "Malfromed command."); return false;
         }
         if (check(compiler, TOKEN_COMMAND)) break;
         advance(compiler);
@@ -501,31 +485,34 @@ compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
     case TOKEN_BEFORE:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^before' hook.");
-        return compileCommandTokens(compiler, &chord->before, false,
-                                    "Expected command after '^before' hook.");
+        return compileCommandTokens(
+            compiler, &chord->before, false, "Expected command after '^before' hook."
+        );
     }
     case TOKEN_AFTER:
     {
         consume(compiler, TOKEN_AFTER, "Expected '^after' hook.");
-        return compileCommandTokens(compiler, &chord->after, false,
-                                    "Expected command after '^after' hook.");
+        return compileCommandTokens(
+            compiler, &chord->after, false, "Expected command after '^after' hook."
+        );
     }
     case TOKEN_SYNC_BEFORE:
     {
         consume(compiler, TOKEN_SYNC_BEFORE, "Expected '^sync-before' hook.");
         chord->flags |= FLAG_SYNC_BEFORE;
-        return compileCommandTokens(compiler, &chord->before, false,
-                                    "Expected command after '^sync-before' hook.");
+        return compileCommandTokens(
+            compiler, &chord->before, false, "Expected command after '^sync-before' hook."
+        );
     }
     case TOKEN_SYNC_AFTER:
     {
         consume(compiler, TOKEN_SYNC_AFTER, "Expected '^sync-after' hook.");
         chord->flags |= FLAG_SYNC_AFTER;
-        return compileCommandTokens(compiler, &chord->after, false,
-                                    "Expected command after '^sync-after' hook.");
+        return compileCommandTokens(
+            compiler, &chord->after, false, "Expected command after '^sync-after' hook."
+        );
     }
-    default:
-        return false;
+    default: return false;
     }
 }
 
@@ -537,44 +524,19 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
 
     switch (type)
     {
-    case TOKEN_KEEP:
-        chord->flags |= FLAG_KEEP;
-        return true;
-    case TOKEN_CLOSE:
-        chord->flags |= FLAG_CLOSE;
-        return true;
-    case TOKEN_INHERIT:
-        chord->flags |= FLAG_INHERIT;
-        return true;
-    case TOKEN_IGNORE:
-        chord->flags |= FLAG_IGNORE;
-        return true;
-    case TOKEN_IGNORE_SORT:
-        chord->flags |= FLAG_IGNORE_SORT;
-        return true;
-    case TOKEN_UNHOOK:
-        chord->flags |= FLAG_UNHOOK;
-        return true;
-    case TOKEN_DEFLAG:
-        chord->flags |= FLAG_DEFLAG;
-        return true;
-    case TOKEN_NO_BEFORE:
-        chord->flags |= FLAG_NO_BEFORE;
-        return true;
-    case TOKEN_NO_AFTER:
-        chord->flags |= FLAG_NO_AFTER;
-        return true;
-    case TOKEN_WRITE:
-        chord->flags |= FLAG_WRITE;
-        return true;
-    case TOKEN_EXECUTE:
-        chord->flags |= FLAG_EXECUTE;
-        return true;
-    case TOKEN_SYNC_CMD:
-        chord->flags |= FLAG_SYNC_COMMAND;
-        return true;
-    default:
-        return false;
+    case TOKEN_KEEP: chord->flags |= FLAG_KEEP; return true;
+    case TOKEN_CLOSE: chord->flags |= FLAG_CLOSE; return true;
+    case TOKEN_INHERIT: chord->flags |= FLAG_INHERIT; return true;
+    case TOKEN_IGNORE: chord->flags |= FLAG_IGNORE; return true;
+    case TOKEN_IGNORE_SORT: chord->flags |= FLAG_IGNORE_SORT; return true;
+    case TOKEN_UNHOOK: chord->flags |= FLAG_UNHOOK; return true;
+    case TOKEN_DEFLAG: chord->flags |= FLAG_DEFLAG; return true;
+    case TOKEN_NO_BEFORE: chord->flags |= FLAG_NO_BEFORE; return true;
+    case TOKEN_NO_AFTER: chord->flags |= FLAG_NO_AFTER; return true;
+    case TOKEN_WRITE: chord->flags |= FLAG_WRITE; return true;
+    case TOKEN_EXECUTE: chord->flags |= FLAG_EXECUTE; return true;
+    case TOKEN_SYNC_CMD: chord->flags |= FLAG_SYNC_COMMAND; return true;
+    default: return false;
     }
 }
 
@@ -661,9 +623,9 @@ compileChordArray(Compiler* compiler)
         if (!isKey(compiler) && !tokenIsModType(currentType(compiler)) &&
             !check(compiler, TOKEN_LEFT_PAREN))
         {
-            errorAtCurrent(compiler,
-                           "Chord arrays may only contain modifiers, keys, and chord expressions.");
-            compiler->hadError = true;
+            errorAtCurrent(
+                compiler, "Chord arrays may only contain modifiers, keys, and chord expressions."
+            );
             return;
         }
 
@@ -849,7 +811,6 @@ compilePrefix(Compiler* compiler, PseudoChord* chord)
     if (arrayIsEmpty(children))
     {
         errorAt(compiler, previousToken(compiler), "No key chords set for prefix.");
-        compiler->hadError = true;
     }
 
     /* end prefix */
@@ -893,11 +854,8 @@ synchronize(Compiler* compiler)
             return;
         }
         /* Return on prefix start '{' */
-        case TOKEN_LEFT_BRACE:
-            return;
-        default:
-            advance(compiler);
-            break;
+        case TOKEN_LEFT_BRACE: return;
+        default: advance(compiler); break;
         }
     }
 }
@@ -934,18 +892,10 @@ compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, co
     StringCase state;
     switch (type)
     {
-    case TOKEN_THIS_DESC_UPPER_FIRST:
-        state = STRING_CASE_UPPER_FIRST;
-        break;
-    case TOKEN_THIS_DESC_LOWER_FIRST:
-        state = STRING_CASE_LOWER_FIRST;
-        break;
-    case TOKEN_THIS_DESC_UPPER_ALL:
-        state = STRING_CASE_UPPER_ALL;
-        break;
-    case TOKEN_THIS_DESC_LOWER_ALL:
-        state = STRING_CASE_LOWER_ALL;
-        break;
+    case TOKEN_THIS_DESC_UPPER_FIRST: state = STRING_CASE_UPPER_FIRST; break;
+    case TOKEN_THIS_DESC_LOWER_FIRST: state = STRING_CASE_LOWER_FIRST; break;
+    case TOKEN_THIS_DESC_UPPER_ALL: state = STRING_CASE_UPPER_ALL; break;
+    case TOKEN_THIS_DESC_LOWER_ALL: state = STRING_CASE_LOWER_ALL; break;
     default:
     {
         errorMsg("Got unexpected token type to `compileDescriptionWithState`.");
@@ -964,9 +914,7 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
 
     switch (token->type)
     {
-    case TOKEN_THIS_KEY:
-        stringAppendString(dest, &to->key.repr);
-        break;
+    case TOKEN_THIS_KEY: stringAppendString(dest, &to->key.repr); break;
     case TOKEN_THIS_DESC:
     {
         if (!stringIsEmpty(&to->description)) stringAppendString(dest, &to->description);
@@ -983,24 +931,49 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
         }
         break;
     }
-    case TOKEN_INDEX:
-        stringAppendUInt32(compiler->arena, dest, index);
-        break;
-    case TOKEN_INDEX_ONE:
-        stringAppendUInt32(compiler->arena, dest, index + 1);
-        break;
+    case TOKEN_INDEX: stringAppendUInt32(compiler->arena, dest, index); break;
+    case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); break;
     case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-    case TOKEN_DESCRIPTION:
-        stringAppendEscString(dest, token->start, token->length);
-        break;
+    case TOKEN_DESCRIPTION: stringAppendEscString(dest, token->start, token->length); break;
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
-    case TOKEN_COMMAND:
-        stringAppend(dest, token->start, token->length);
+    case TOKEN_COMMAND: stringAppend(dest, token->start, token->length); break;
+    case TOKEN_USER_VAR:
+    {
+        bool found = false;
+        forEach(compiler->userVars, const UserVar, var)
+        {
+            if (strncmp(var->key, token->start, token->length) == 0)
+            {
+                stringAppendCString(dest, var->value);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            // Work around errorAt bug by using simpler error message
+            compiler->hadError = true;
+            fprintf(
+                stderr,
+                "%s:%u:%u: error: Undefined variable '%%(",
+                compiler->scanner->filepath,
+                token->line,
+                token->column
+            );
+            fwrite(token->start, 1, token->length, stderr);
+            fprintf(stderr, ")'. Use :var \"");
+            fwrite(token->start, 1, token->length, stderr);
+            fprintf(stderr, "\" \"value\" to define it.\n");
+        }
+
         break;
+    }
     default:
     {
-        errorMsg("Got unexpected token when compiling token array: '%s'.",
-                 tokenGetLiteral(token->type));
+        errorMsg(
+            "Got unexpected token when compiling token array: '%s'.", tokenGetLiteral(token->type)
+        );
         break;
     }
     }
@@ -1029,8 +1002,9 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
         /* Key */
         keyCopy(&chord->key, &keyChord->key);
         /* Description */
-        compileStringFromTokens(compiler, &chord->desc, keyChord, &keyChord->description,
-                                iter.index);
+        compileStringFromTokens(
+            compiler, &chord->desc, keyChord, &keyChord->description, iter.index
+        );
         /* Hooks */
         compileStringFromTokens(compiler, &chord->before, keyChord, &keyChord->before, iter.index);
         compileStringFromTokens(compiler, &chord->after, keyChord, &keyChord->after, iter.index);
@@ -1157,6 +1131,7 @@ initCompiler(Compiler* compiler, Menu* menu, char* source, const char* filepath)
     compiler->dest = NULL;
     compiler->chords = NULL;
     compiler->arena = &menu->arena;
+    compiler->userVars = &menu->userVars;
     compiler->delimiter = menu->delimiter;
     compiler->source = source;
     compiler->delimiterLen = strlen(menu->delimiter);

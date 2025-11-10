@@ -15,8 +15,8 @@
 #include "common/stack.h"
 
 /* local includes */
-#include "preprocessor.h"
 #include "debug.h"
+#include "preprocessor.h"
 #include "scanner.h"
 #include "token.h"
 
@@ -124,14 +124,11 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
 
 static void
 handleIncludeMacro(
-    Menu* menu,
-    Scanner* scanner,
-    Array* result,
-    Token* includeFile,
-    Stack* stack,
-    Arena* arena
-) {
-    assert(menu), assert(scanner), assert(result), assert(includeFile), assert(stack), assert(arena);
+    Menu* menu, Scanner* scanner, Array* result, Token* includeFile, Stack* stack, Arena* arena
+)
+{
+    assert(menu), assert(scanner), assert(result), assert(includeFile), assert(stack),
+        assert(arena);
 
     /* currently pointing at the 'i' in ':include', so take off one. */
     const char* sourcePath = scanner->filepath;
@@ -147,9 +144,7 @@ handleIncludeMacro(
     Array includeResult = ARRAY_INIT(char);
 
     /* Get the path to the included file */
-    includeFilePath = getAbsolutePath(
-        includeFile->start, includeFile->length, sourcePath
-    );
+    includeFilePath = getAbsolutePath(includeFile->start, includeFile->length, sourcePath);
     if (!includeFilePath)
     {
         errorMsg("Failed to get the included file path.");
@@ -161,8 +156,11 @@ handleIncludeMacro(
     {
         printf(
             "%s:%u:%u: wk does not support circular includes: ':include \"%.*s\"'.\n",
-            sourcePath, includeFile->line, includeFile->column,
-            (int)includeFile->length, includeFile->start
+            sourcePath,
+            includeFile->line,
+            includeFile->column,
+            (int)includeFile->length,
+            includeFile->start
         );
         if (menu->debug) disassembleIncludeStack(stack);
         scanner->hadError = true;
@@ -199,10 +197,6 @@ handleIncludeMacro(
 
     /* Append the result. */
     arrayAppendN(result, ARRAY_AS(&includeResult, char), arrayLength(&includeResult));
-    /* if (!arrayIsEmpty(&includeResult)) */
-    /* { */
-    /*     arrayAppendN(result, ARRAY_AS(&includeResult, char), arrayLength(&includeResult) - 1); */
-    /* } */
 
 fail:
     free(includeFilePath);
@@ -212,14 +206,70 @@ fail:
 }
 
 static void
+handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* arena)
+{
+    assert(menu), assert(scanner), assert(keyToken), assert(key), assert(arena);
+
+    if (keyToken->length == 0)
+    {
+        tokenErrorAt(keyToken, scanner->filepath, "Variable name cannot be empty.");
+        scanner->hadError = true;
+        return;
+    }
+
+    if (memchr(keyToken->start, ')', keyToken->length))
+    {
+        tokenErrorAt(
+            keyToken,
+            scanner->filepath,
+            "Variable name contains ')',"
+            "it will not match the expected key during interpolation: '%.*s'.",
+            keyToken->length,
+            keyToken->start
+        );
+        scanner->hadError = true;
+        return;
+    }
+
+    scannerMakeCurrent(scanner);
+
+    Token valueToken = {0};
+    scannerGetTokenForPreprocessor(scanner, &valueToken, SCANNER_WANTS_DESCRIPTION);
+
+    if (valueToken.type != TOKEN_DESCRIPTION)
+    {
+        tokenErrorAt(
+            &valueToken,
+            scanner->filepath,
+            "Expected variable value as a string. Got '%.*s'.",
+            valueToken.length,
+            valueToken.start
+        );
+        scanner->hadError = true;
+        return;
+    }
+
+    char* value = arenaCopyCString(arena, valueToken.start, valueToken.length);
+
+    forEach(&menu->userVars, UserVar, var)
+    {
+        if (strcmp(var->key, key) == 0)
+        {
+            var->key = key;
+            var->value = value;
+            return;
+        }
+    }
+
+    UserVar newVar = {.key = key, .value = value};
+    arrayAppend(&menu->userVars, &newVar);
+}
+
+static void
 handleMacroWithStringArg(
-    Menu* menu,
-    Scanner* scanner,
-    Token* token,
-    Array* arr,
-    Stack* stack,
-    Arena* arena
-) {
+    Menu* menu, Scanner* scanner, Token* token, Array* arr, Stack* stack, Arena* arena
+)
+{
     assert(menu), assert(scanner), assert(token), assert(arr), assert(stack), assert(arena);
 
     scannerMakeCurrent(scanner);
@@ -229,10 +279,13 @@ handleMacroWithStringArg(
     if (result.type != TOKEN_DESCRIPTION)
     {
         tokenErrorAt(
-            token, scanner->filepath,
+            token,
+            scanner->filepath,
             "Expect string argument to macro. Got '%.*s'.",
-            token->length, token->start,
-            result.length, result.start
+            token->length,
+            token->start,
+            result.length,
+            result.start
         );
         scanner->hadError = true;
         return;
@@ -259,11 +312,10 @@ handleMacroWithStringArg(
     case TOKEN_FONT: menu->font = arg; break;
     case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
     case TOKEN_INCLUDE: handleIncludeMacro(menu, scanner, arr, &result, stack, arena); break;
+    case TOKEN_VAR: handleVarMacro(menu, scanner, &result, arg, arena); break;
     default:
     {
-        errorMsg(
-            "Got an unexpected token to function `handleMacroWithStringArg`."
-        );
+        errorMsg("Got an unexpected token to function `handleMacroWithStringArg`.");
         scanner->hadError = true;
         break;
     }
@@ -289,9 +341,7 @@ handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
     case TOKEN_BORDER_RADIUS: menu->borderRadius = value; return;
     default:
     {
-        errorMsg(
-            "Got an unexpected token to function `handleSwitchWithNumberArg`."
-        );
+        errorMsg("Got an unexpected token to function `handleSwitchWithNumberArg`.");
         scanner->hadError = true;
         return;
     }
@@ -299,10 +349,13 @@ handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
 
 fail:
     tokenErrorAt(
-        token, scanner->filepath,
+        token,
+        scanner->filepath,
         "Expect double argument to macro. Got '%.*s'.",
-        token->length, token->start,
-        result.length, result.start
+        token->length,
+        token->start,
+        result.length,
+        result.start
     );
     scanner->hadError = true;
     return;
@@ -328,9 +381,7 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
     case TOKEN_MENU_GAP: menu->menuGap = value; return;
     default:
     {
-        errorMsg(
-            "Got an unexpected token to function `handleSwitchWithInt32Arg`."
-        );
+        errorMsg("Got an unexpected token to function `handleSwitchWithInt32Arg`.");
         scanner->hadError = true;
         return;
     }
@@ -338,10 +389,13 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
 
 fail:
     tokenErrorAt(
-        token, scanner->filepath,
+        token,
+        scanner->filepath,
         "Expect integer argument to macro. Got '%.*s'.",
-        token->length, token->start,
-        result.length, result.start
+        token->length,
+        token->start,
+        result.length,
+        result.start
     );
     scanner->hadError = true;
     return;
@@ -370,9 +424,7 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
     case TOKEN_MENU_DELAY: menu->delay = value; return;
     default:
     {
-        errorMsg(
-            "Got an unexpected token to function `handleSwitchWithUint32Arg`."
-        );
+        errorMsg("Got an unexpected token to function `handleSwitchWithUint32Arg`.");
         scanner->hadError = true;
         return;
     }
@@ -380,10 +432,13 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
 
 fail:
     tokenErrorAt(
-        token, scanner->filepath,
+        token,
+        scanner->filepath,
         "Expect unsigned integer argument to macro. Got '%.*s'.",
-        token->length, token->start,
-        result.length, result.start
+        token->length,
+        token->start,
+        result.length,
+        result.start
     );
     scanner->hadError = true;
     return;
@@ -413,7 +468,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     Array result = ARRAY_INIT(char);
 
     char* absoluteFilePath = getAbsolutePath(filepath, strlen(filepath), ".");
-    FilePath pathEntry = { .path = absoluteFilePath };
+    FilePath pathEntry = {.path = absoluteFilePath};
     stackPush(stack, &pathEntry);
     if (menu->debug)
     {
@@ -468,6 +523,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         case TOKEN_FONT:
         case TOKEN_IMPLICIT_ARRAY_KEYS:
         case TOKEN_INCLUDE:
+        case TOKEN_VAR:
         {
             handleMacroWithStringArg(menu, &scanner, &token, &result, stack, arena);
             break;
@@ -476,10 +532,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         /* Handle error */
         case TOKEN_ERROR:
         {
-            tokenErrorAt(
-                &token, scanner.filepath,
-                "%s", token.message
-            );
+            tokenErrorAt(&token, scanner.filepath, "%s", token.message);
             scanner.hadError = true;
             break;
         }
@@ -490,8 +543,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
                 /* DEBUG HERE */
             }
             tokenErrorAt(
-                &token, scanner.filepath,
-                "Got unexpected token during preprocessor parsing."
+                &token, scanner.filepath, "Got unexpected token during preprocessor parsing."
             );
             scanner.hadError = true;
             break;
@@ -525,8 +577,11 @@ preprocessorRun(Menu* menu, Array* source, const char* filepath)
 
     Stack stack = STACK_INIT(FilePath);
     Array result = preprocessorRunImpl(menu, source, filepath, &stack, &menu->arena);
-    while (!stackIsEmpty(&stack)) popFilePath(&stack);
+    while (!stackIsEmpty(&stack))
+    {
+        popFilePath(&stack);
+    }
     stackFree(&stack);
-    arrayAppend(&result, "");
+    if (!arrayIsEmpty(&result)) arrayAppend(&result, "");
     return result;
 }

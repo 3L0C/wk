@@ -16,6 +16,7 @@ result-*
 
 # Development
 compile_commands.json
+tests/logs/*
 
 # Dot dirs
 .*/

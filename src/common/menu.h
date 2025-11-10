@@ -61,6 +61,12 @@ typedef struct
 
 typedef struct
 {
+    const char* key;
+    const char* value;
+} UserVar;
+
+typedef struct
+{
     const char* delimiter;
     const char* shell;
     const char* font;
@@ -77,7 +83,8 @@ typedef struct
     } client;
     struct timespec timer;
     CleanupFP cleanupfp;
-    Array  compiledKeyChords;
+    Array userVars;
+    Array compiledKeyChords;
     Array* builtinKeyChords;
     Array* keyChords;
     Array* keyChordsHead;
@@ -85,8 +92,8 @@ typedef struct
     Arena arena;
 
     uint32_t maxCols;
-    int32_t  menuWidth;
-    int32_t  menuGap;
+    int32_t menuWidth;
+    int32_t menuGap;
     uint32_t wpadding;
     uint32_t hpadding;
     int32_t tablePadding;

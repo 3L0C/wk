@@ -34,6 +34,7 @@ enum
     TOKEN_SHELL,
     TOKEN_FONT,
     TOKEN_IMPLICIT_ARRAY_KEYS,
+    TOKEN_VAR,
 
     /* switch macros */
     TOKEN_DEBUG,
@@ -64,6 +65,7 @@ enum
     TOKEN_THIS_DESC_LOWER_FIRST,
     TOKEN_THIS_DESC_UPPER_ALL,
     TOKEN_THIS_DESC_LOWER_ALL,
+    TOKEN_USER_VAR,
 
     /* hooks */
     TOKEN_BEFORE,

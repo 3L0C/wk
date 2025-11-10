@@ -63,6 +63,7 @@ menuFree(Menu* menu)
     assert(menu);
 
     keyChordArrayFree(&menu->compiledKeyChords);
+    arrayFree(&menu->userVars);
     arenaFree(&menu->arena);
 }
 
@@ -103,7 +104,8 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
     menuHandleCommand(menu, keyChord);
     menuSpawn(menu, &keyChord->after, chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
-    return chordFlagIsActive(keyChord->flags, FLAG_KEEP) ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
+    return chordFlagIsActive(keyChord->flags, FLAG_KEEP) ? MENU_STATUS_RUNNING
+                                                         : MENU_STATUS_EXIT_OK;
 }
 
 static MenuStatus
@@ -226,6 +228,7 @@ menuInit(Menu* menu, Array* keyChords)
     menu->client.tryScript = false;
     menu->client.script = ARRAY_INIT(char);
     clock_gettime(CLOCK_MONOTONIC, &menu->timer);
+    menu->userVars = ARRAY_INIT(UserVar);
     menu->compiledKeyChords = ARRAY_INIT(KeyChord);
     menu->builtinKeyChords = keyChords;
     menu->keyChords = keyChords;
@@ -263,10 +266,9 @@ menuIsDelayed(Menu* menu)
     static struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    long elapsedTime = (
-        ((now.tv_sec - menu->timer.tv_sec) * 1000) +
-        ((now.tv_nsec - menu->timer.tv_nsec) / 1000000)
-    );
+    long elapsedTime =
+        (((now.tv_sec - menu->timer.tv_sec) * 1000) +
+         ((now.tv_nsec - menu->timer.tv_nsec) / 1000000));
 
     bool result = elapsedTime < menu->delay;
     if (!result) menu->delay = 0;
@@ -284,7 +286,8 @@ usage(void)
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
         "    -d, --debug                Print debug information.\n"
-        "    -u, --uwsm                 Wrap commands with `uwsm app -- cmd [args ...]` (Wayland).\n"
+        "    -u, --uwsm                 Wrap commands with `uwsm app -- cmd [args ...]` "
+        "(Wayland).\n"
         "    -D, --delay INT            Delay the popup menu by INT milliseconds from\n"
         "                               startup/last keypress (default 1000 ms).\n"
         "    -t, --top                  Position menu at top of screen.\n"
@@ -359,45 +362,45 @@ getNum(double* num)
 void
 menuParseArgs(Menu* menu, int* argc, char*** argv)
 {
-#define GET_ARG(arg)        ((*arg)[(optind == 1 ? optind : optind - 1)])
+#define GET_ARG(arg) ((*arg)[(optind == 1 ? optind : optind - 1)])
 
     assert(menu), assert(argc), assert(argv);
 
     int opt = '\0';
     static struct option longOpts[] = {
         /*                  no argument                 */
-        { "help",           no_argument,        0, 'h' },
-        { "version",        no_argument,        0, 'v' },
-        { "debug",          no_argument,        0, 'd' },
-        { "uwsm",           no_argument,        0, 'u' },
-        { "top",            no_argument,        0, 't' },
-        { "bottom",         no_argument,        0, 'b' },
-        { "script",         no_argument,        0, 's' },
-        { "sort",           no_argument,        0, 'S' },
+        {"help",          no_argument,       0, 'h'  },
+        {"version",       no_argument,       0, 'v'  },
+        {"debug",         no_argument,       0, 'd'  },
+        {"uwsm",          no_argument,       0, 'u'  },
+        {"top",           no_argument,       0, 't'  },
+        {"bottom",        no_argument,       0, 'b'  },
+        {"script",        no_argument,       0, 's'  },
+        {"sort",          no_argument,       0, 'S'  },
         /*                  required argument           */
-        { "delay",          required_argument,  0, 'D' },
-        { "max-columns",    required_argument,  0, 'm' },
-        { "press",          required_argument,  0, 'p' },
-        { "transpile",      required_argument,  0, 'T' },
-        { "key-chords",     required_argument,  0, 'k' },
-        { "menu-width",     required_argument,  0, 'w' },
-        { "menu-gap",       required_argument,  0, 'g' },
-        { "border-width",   required_argument,  0, 0x090 },
-        { "border-radius",  required_argument,  0, 0x091 },
-        { "wpadding",       required_argument,  0, 0x092 },
-        { "hpadding",       required_argument,  0, 0x093 },
-        { "table-padding",  required_argument,  0, 0x094 },
-        { "fg",             required_argument,  0, 0x095 },
-        { "fg-key",         required_argument,  0, 0x096 },
-        { "fg-delimiter",   required_argument,  0, 0x097 },
-        { "fg-prefix",      required_argument,  0, 0x098 },
-        { "fg-chord",       required_argument,  0, 0x099 },
-        { "bg",             required_argument,  0, 0x100 },
-        { "bd",             required_argument,  0, 0x101 },
-        { "shell",          required_argument,  0, 0x102 },
-        { "font",           required_argument,  0, 0x103 },
-        { "implicit-keys",  required_argument,  0, 0x104 },
-        { 0, 0, 0, 0 }
+        {"delay",         required_argument, 0, 'D'  },
+        {"max-columns",   required_argument, 0, 'm'  },
+        {"press",         required_argument, 0, 'p'  },
+        {"transpile",     required_argument, 0, 'T'  },
+        {"key-chords",    required_argument, 0, 'k'  },
+        {"menu-width",    required_argument, 0, 'w'  },
+        {"menu-gap",      required_argument, 0, 'g'  },
+        {"border-width",  required_argument, 0, 0x090},
+        {"border-radius", required_argument, 0, 0x091},
+        {"wpadding",      required_argument, 0, 0x092},
+        {"hpadding",      required_argument, 0, 0x093},
+        {"table-padding", required_argument, 0, 0x094},
+        {"fg",            required_argument, 0, 0x095},
+        {"fg-key",        required_argument, 0, 0x096},
+        {"fg-delimiter",  required_argument, 0, 0x097},
+        {"fg-prefix",     required_argument, 0, 0x098},
+        {"fg-chord",      required_argument, 0, 0x099},
+        {"bg",            required_argument, 0, 0x100},
+        {"bd",            required_argument, 0, 0x101},
+        {"shell",         required_argument, 0, 0x102},
+        {"font",          required_argument, 0, 0x103},
+        {"implicit-keys", required_argument, 0, 0x104},
+        {0,               0,                 0, 0    }
     };
 
     /* Don't let 'getopt' print errors. */
@@ -413,7 +416,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         {
         /* no argument */
         case 'h': usage(); exit(EXIT_FAILURE);
-        case 'v': puts("wk v"VERSION); exit(EXIT_SUCCESS);
+        case 'v': puts("wk v" VERSION); exit(EXIT_SUCCESS);
         case 'd': menu->debug = true; break;
         case 'u': menu->uwsmWrapper = true; break;
         case 't': menu->position = MENU_POS_TOP; break;
@@ -573,7 +576,10 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             usage();
             errorMsg("'%s' requires an argument but none given.", GET_ARG(argv));
             exit(EXIT_FAILURE);
-        default: usage(); exit(EXIT_FAILURE); break;
+        default:
+            usage();
+            exit(EXIT_FAILURE);
+            break;
         }
     }
 
@@ -604,7 +610,8 @@ menuSetColor(Menu* menu, const char* color, MenuColor colorType)
 {
     assert(menu), assert(colorType < MENU_COLOR_LAST);
 
-    if (!menuHexColorInitColor(&menu->colors[colorType], color)) warnMsg("Invalid color string: '%s'.", color);
+    if (!menuHexColorInitColor(&menu->colors[colorType], color))
+        warnMsg("Invalid color string: '%s'.", color);
 }
 
 static MenuStatus
@@ -613,7 +620,7 @@ spawnSync(const char* shell, const char* cmd)
     assert(shell), assert(cmd);
 
     setsid();
-    char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL, NULL };
+    char* exec[] = {strdup(shell), "-c", strdup(cmd), NULL, NULL};
     if (!exec[0])
     {
         errorMsg("Could not duplicate shell string: '%s'.", shell);
@@ -742,4 +749,3 @@ menuTryStdin(Menu* menu)
     arrayAppend(scriptArray, "");
     return n == -1 && feof(stdin);
 }
-

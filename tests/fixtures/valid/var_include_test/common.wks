@@ -1,0 +1,3 @@
+# Common key chords that use variables
+a "Screenshot (%(cmd))" +write %{{echo %(cmd) screenshot.png}}
+b "Process (%(cmd))" +write %{{echo %(cmd) process}}

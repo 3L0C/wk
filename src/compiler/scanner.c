@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
 
 /* common includes */
 #include "common/common.h"
@@ -36,8 +36,8 @@ scannerInit(Scanner* scanner, const char* source, const char* filepath)
     scanner->hadError = false;
 }
 
-static void
-scannerClone(Scanner* scanner, Scanner* clone)
+void
+scannerClone(const Scanner* scanner, Scanner* clone)
 {
     assert(scanner), assert(clone);
 
@@ -82,7 +82,10 @@ updateLineAndColumn(Scanner* scanner, char c)
 
     switch (c)
     {
-    case '\n': scanner->line++; scanner->column = 0; break;
+    case '\n':
+        scanner->line++;
+        scanner->column = 0;
+        break;
     default: scanner->column++; break;
     }
 }
@@ -181,12 +184,13 @@ skipWhitespace(Scanner* scanner)
         switch (c)
         {
         case '\n': /* FALLTHROUGH */
-        case ' ' :
+        case ' ':
         case '\r':
         case '\t': advance(scanner); break;
         case '#':
         {
-            while (peek(scanner) != '\n' && !scannerIsAtEnd(scanner)) advance(scanner);
+            while (peek(scanner) != '\n' && !scannerIsAtEnd(scanner))
+                advance(scanner);
             break;
         }
         default: scannerMakeCurrent(scanner); return;
@@ -214,12 +218,14 @@ seekToCharType(Scanner* scanner, CharType charType)
     {
     case CHAR_TYPE_WHITESPACE:
     {
-        while (!scannerIsAtEnd(scanner) && !isspace(peek(scanner))) advance(scanner);
+        while (!scannerIsAtEnd(scanner) && !isspace(peek(scanner)))
+            advance(scanner);
         return !scannerIsAtEnd(scanner);
     }
     case CHAR_TYPE_INTERP_END:
     {
-        while (!scannerIsAtEnd(scanner) && peek(scanner) != ')') advance(scanner);
+        while (!scannerIsAtEnd(scanner) && peek(scanner) != ')')
+            advance(scanner);
         return peek(scanner) == ')';
     }
     default: return false;
@@ -242,18 +248,23 @@ scanHook(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (peekStart(scanner))
     {
-    case 'a': if (isKeyword(scanner, 1, 4, "fter")) result = TOKEN_AFTER; break;
-    case 'b': if (isKeyword(scanner, 1, 5, "efore")) result = TOKEN_BEFORE; break;
+    case 'a':
+        if (isKeyword(scanner, 1, 4, "fter")) result = TOKEN_AFTER;
+        break;
+    case 'b':
+        if (isKeyword(scanner, 1, 5, "efore")) result = TOKEN_BEFORE;
+        break;
     case 's':
     {
         if (isKeyword(scanner, 1, 10, "ync-before")) result = TOKEN_SYNC_BEFORE;
-        if (isKeyword(scanner, 1, 9,  "ync-after")) result = TOKEN_SYNC_AFTER;
+        if (isKeyword(scanner, 1, 9, "ync-after")) result = TOKEN_SYNC_AFTER;
         break;
     }
     default: break;
     }
 
-    if (result == TOKEN_ERROR) return tokenMakeError(scanner, token, "Got unexpected hook keyword.");
+    if (result == TOKEN_ERROR)
+        return tokenMakeError(scanner, token, "Got unexpected hook keyword.");
     return tokenMake(scanner, token, result);
 }
 
@@ -273,30 +284,50 @@ scanFlag(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (peekStart(scanner))
     {
-    case 'k': if (isKeyword(scanner, 1, 3, "eep")) result = TOKEN_KEEP; break;
-    case 'c': if (isKeyword(scanner, 1, 4, "lose")) result = TOKEN_CLOSE; break;
-    case 'd': if (isKeyword(scanner, 1, 5, "eflag")) result = TOKEN_DEFLAG; break;
-    case 'e': if (isKeyword(scanner, 1, 6, "xecute")) result = TOKEN_EXECUTE; break;
+    case 'k':
+        if (isKeyword(scanner, 1, 3, "eep")) result = TOKEN_KEEP;
+        break;
+    case 'c':
+        if (isKeyword(scanner, 1, 4, "lose")) result = TOKEN_CLOSE;
+        break;
+    case 'd':
+        if (isKeyword(scanner, 1, 5, "eflag")) result = TOKEN_DEFLAG;
+        break;
+    case 'e':
+        if (isKeyword(scanner, 1, 6, "xecute")) result = TOKEN_EXECUTE;
+        break;
     case 'i':
     {
-        if (isKeyword(scanner, 1, 6, "nherit")) result = TOKEN_INHERIT;
-        else if (isKeyword(scanner, 1, 5, "gnore")) result = TOKEN_IGNORE;
-        else if (isKeyword(scanner, 1, 10, "gnore-sort")) result = TOKEN_IGNORE_SORT;
+        if (isKeyword(scanner, 1, 6, "nherit"))
+            result = TOKEN_INHERIT;
+        else if (isKeyword(scanner, 1, 5, "gnore"))
+            result = TOKEN_IGNORE;
+        else if (isKeyword(scanner, 1, 10, "gnore-sort"))
+            result = TOKEN_IGNORE_SORT;
         break;
     }
     case 'n':
     {
-        if (isKeyword(scanner, 1, 8, "o-before")) result = TOKEN_NO_BEFORE;
-        else if (isKeyword(scanner, 1, 7, "o-after")) result = TOKEN_NO_AFTER;
+        if (isKeyword(scanner, 1, 8, "o-before"))
+            result = TOKEN_NO_BEFORE;
+        else if (isKeyword(scanner, 1, 7, "o-after"))
+            result = TOKEN_NO_AFTER;
         break;
     }
-    case 'u': if (isKeyword(scanner, 1, 5, "nhook")) result = TOKEN_UNHOOK; break;
-    case 'w': if (isKeyword(scanner, 1, 4, "rite")) result = TOKEN_WRITE; break;
-    case 's': if (isKeyword(scanner, 1, 11, "ync-command")) result = TOKEN_SYNC_CMD; break;
+    case 'u':
+        if (isKeyword(scanner, 1, 5, "nhook")) result = TOKEN_UNHOOK;
+        break;
+    case 'w':
+        if (isKeyword(scanner, 1, 4, "rite")) result = TOKEN_WRITE;
+        break;
+    case 's':
+        if (isKeyword(scanner, 1, 11, "ync-command")) result = TOKEN_SYNC_CMD;
+        break;
     default: break;
     }
 
-    if (result == TOKEN_ERROR) return tokenMakeError(scanner, token, "Got unexpected flag keyword.");
+    if (result == TOKEN_ERROR)
+        return tokenMakeError(scanner, token, "Got unexpected flag keyword.");
     return tokenMake(scanner, token, result);
 }
 
@@ -313,57 +344,87 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (peekStart(scanner))
     {
-    case 'd':
-    {
-        if (isKeyword(scanner, 1, 4, "ebug")) result = TOKEN_DEBUG;
-        else if (isKeyword(scanner, 1, 4, "elay")) result = TOKEN_MENU_DELAY;
-        break;
-    }
-    case 'i':
-    {
-        if (isKeyword(scanner, 1, 6, "nclude")) result = TOKEN_INCLUDE;
-        else if (isKeyword(scanner, 1, 18, "mplicit-array-keys")) result = TOKEN_IMPLICIT_ARRAY_KEYS;
-        break;
-    }
-    case 't': if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP; break;
     case 'b':
     {
-        if (isKeyword(scanner, 1, 5, "ottom")) result = TOKEN_BOTTOM;
-        else if (isKeyword(scanner, 1, 11, "order-width")) result = TOKEN_BORDER_WIDTH;
-        else if (isKeyword(scanner, 1, 12, "order-radius")) result = TOKEN_BORDER_RADIUS;
-        else if (isKeyword(scanner, 1, 1, "g")) result = TOKEN_BACKGROUND_COLOR;
-        else if (isKeyword(scanner, 1, 1, "d")) result = TOKEN_BORDER_COLOR;
+        if (isKeyword(scanner, 1, 5, "ottom"))
+            result = TOKEN_BOTTOM;
+        else if (isKeyword(scanner, 1, 11, "order-width"))
+            result = TOKEN_BORDER_WIDTH;
+        else if (isKeyword(scanner, 1, 12, "order-radius"))
+            result = TOKEN_BORDER_RADIUS;
+        else if (isKeyword(scanner, 1, 1, "g"))
+            result = TOKEN_BACKGROUND_COLOR;
+        else if (isKeyword(scanner, 1, 1, "d"))
+            result = TOKEN_BORDER_COLOR;
+        break;
+    }
+    case 'd':
+    {
+        if (isKeyword(scanner, 1, 4, "ebug"))
+            result = TOKEN_DEBUG;
+        else if (isKeyword(scanner, 1, 4, "elay"))
+            result = TOKEN_MENU_DELAY;
+        break;
+    }
+    case 'f':
+    {
+        if (isKeyword(scanner, 1, 1, "g"))
+            result = TOKEN_FOREGROUND_COLOR;
+        else if (isKeyword(scanner, 1, 5, "g-key"))
+            result = TOKEN_FOREGROUND_KEY_COLOR;
+        else if (isKeyword(scanner, 1, 11, "g-delimiter"))
+            result = TOKEN_FOREGROUND_DELIMITER_COLOR;
+        else if (isKeyword(scanner, 1, 8, "g-prefix"))
+            result = TOKEN_FOREGROUND_PREFIX_COLOR;
+        else if (isKeyword(scanner, 1, 7, "g-chord"))
+            result = TOKEN_FOREGROUND_CHORD_COLOR;
+        else if (isKeyword(scanner, 1, 3, "ont"))
+            result = TOKEN_FONT;
+        break;
+    }
+    case 'h':
+        if (isKeyword(scanner, 1, 13, "eight-padding")) result = TOKEN_HEIGHT_PADDING;
+        break;
+    case 'i':
+    {
+        if (isKeyword(scanner, 1, 6, "nclude"))
+            result = TOKEN_INCLUDE;
+        else if (isKeyword(scanner, 1, 18, "mplicit-array-keys"))
+            result = TOKEN_IMPLICIT_ARRAY_KEYS;
         break;
     }
     case 'm':
     {
-        if (isKeyword(scanner, 1, 10, "ax-columns")) result = TOKEN_MAX_COLUMNS;
-        else if (isKeyword(scanner, 1, 9, "enu-width")) result = TOKEN_MENU_WIDTH;
-        else if (isKeyword(scanner, 1, 7, "enu-gap")) result = TOKEN_MENU_GAP;
-        break;
-    }
-    case 'w': if (isKeyword(scanner, 1, 12, "idth-padding")) result = TOKEN_WIDTH_PADDING; break;
-    case 'h': if (isKeyword(scanner, 1, 13, "eight-padding")) result = TOKEN_HEIGHT_PADDING; break;
-    case 'f':
-    {
-        if (isKeyword(scanner, 1, 1, "g")) result = TOKEN_FOREGROUND_COLOR;
-        else if (isKeyword(scanner, 1, 5, "g-key")) result = TOKEN_FOREGROUND_KEY_COLOR;
-        else if (isKeyword(scanner, 1, 11, "g-delimiter")) result = TOKEN_FOREGROUND_DELIMITER_COLOR;
-        else if (isKeyword(scanner, 1, 8, "g-prefix")) result = TOKEN_FOREGROUND_PREFIX_COLOR;
-        else if (isKeyword(scanner, 1, 7, "g-chord")) result = TOKEN_FOREGROUND_CHORD_COLOR;
-        else if (isKeyword(scanner, 1, 3, "ont")) result = TOKEN_FONT;
+        if (isKeyword(scanner, 1, 10, "ax-columns"))
+            result = TOKEN_MAX_COLUMNS;
+        else if (isKeyword(scanner, 1, 9, "enu-width"))
+            result = TOKEN_MENU_WIDTH;
+        else if (isKeyword(scanner, 1, 7, "enu-gap"))
+            result = TOKEN_MENU_GAP;
         break;
     }
     case 's':
     {
-        if (isKeyword(scanner, 1, 4, "hell")) result = TOKEN_SHELL;
-        else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_SORT;
+        if (isKeyword(scanner, 1, 4, "hell"))
+            result = TOKEN_SHELL;
+        else if (isKeyword(scanner, 1, 3, "ort"))
+            result = TOKEN_SORT;
         break;
     }
+    case 't':
+        if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP;
+        break;
+    case 'v':
+        if (isKeyword(scanner, 1, 2, "ar")) result = TOKEN_VAR;
+        break;
+    case 'w':
+        if (isKeyword(scanner, 1, 12, "idth-padding")) result = TOKEN_WIDTH_PADDING;
+        break;
     default: break;
     }
 
-    if (result == TOKEN_ERROR) return tokenMakeError(scanner, token, "Got unexpected preprocessor command.");
+    if (result == TOKEN_ERROR)
+        return tokenMakeError(scanner, token, "Got unexpected preprocessor command.");
     return tokenMake(scanner, token, result);
 }
 
@@ -387,23 +448,37 @@ getInterpolationType(Scanner* scanner)
     /* Switch on start of keyword */
     switch (peekStart(&clone))
     {
-    case 'k': if (isKeyword(&clone, 1, 2, "ey")) return TOKEN_THIS_KEY; break;
+    case 'k':
+        if (isKeyword(&clone, 1, 2, "ey")) return TOKEN_THIS_KEY;
+        break;
     case 'i':
     {
-        if (isKeyword(&clone, 1, 4, "ndex")) return TOKEN_INDEX;
-        else if (isKeyword(&clone, 1, 6, "ndex+1")) return TOKEN_INDEX_ONE;
+        if (isKeyword(&clone, 1, 4, "ndex"))
+            return TOKEN_INDEX;
+        else if (isKeyword(&clone, 1, 6, "ndex+1"))
+            return TOKEN_INDEX_ONE;
         break;
     }
     case 'd':
     {
-        if (isKeyword(&clone, 1, 3, "esc")) return TOKEN_THIS_DESC;
-        else if (isKeyword(&clone, 1, 4, "esc^")) return TOKEN_THIS_DESC_UPPER_FIRST;
-        else if (isKeyword(&clone, 1, 4, "esc,")) return TOKEN_THIS_DESC_LOWER_FIRST;
-        else if (isKeyword(&clone, 1, 5, "esc^^")) return TOKEN_THIS_DESC_UPPER_ALL;
-        else if (isKeyword(&clone, 1, 5, "esc,,")) return TOKEN_THIS_DESC_LOWER_ALL;
+        if (isKeyword(&clone, 1, 3, "esc"))
+            return TOKEN_THIS_DESC;
+        else if (isKeyword(&clone, 1, 4, "esc^"))
+            return TOKEN_THIS_DESC_UPPER_FIRST;
+        else if (isKeyword(&clone, 1, 4, "esc,"))
+            return TOKEN_THIS_DESC_LOWER_FIRST;
+        else if (isKeyword(&clone, 1, 5, "esc^^"))
+            return TOKEN_THIS_DESC_UPPER_ALL;
+        else if (isKeyword(&clone, 1, 5, "esc,,"))
+            return TOKEN_THIS_DESC_LOWER_ALL;
         break;
     }
     default: break;
+    }
+
+    if (!scannerIsAtEnd(&clone) && peek(&clone) == ')')
+    {
+        return TOKEN_USER_VAR;
     }
 
     return TOKEN_ERROR;
@@ -447,8 +522,7 @@ scanDescription(Scanner* scanner, Token* token, bool allowInterpolation)
             case TOKEN_THIS_DESC_LOWER_ALL:
             {
                 return tokenMakeError(
-                    scanner, token,
-                    "Cannot interpolate the description within the description."
+                    scanner, token, "Cannot interpolate the description within the description."
                 );
             }
             /* Not an interpolation */
@@ -563,7 +637,9 @@ checkSpecialType(Scanner* scanner, Token* token)
     for (size_t i = SPECIAL_KEY_NONE; i < SPECIAL_KEY_LAST; i++)
     {
         const char* repr = specialKeyGetRepr(i);
-        if (isKeyword(scanner, 0, strlen(repr + 0), repr + 0)) /* Check the whole token, not n - 1 */
+        if (isKeyword(
+                scanner, 0, strlen(repr + 0), repr + 0
+            )) /* Check the whole token, not n - 1 */
         {
             token->special = i;
             return TOKEN_SPECIAL_KEY;
@@ -594,7 +670,8 @@ scanKey(Scanner* scanner, Token* token, char c)
     if (isUtf8MultiByteStartByte(c))
     {
         /* NOTE scanning multi byte character */
-        while (isUtf8ContByte(peek(scanner))) c = advance(scanner);
+        while (isUtf8ContByte(peek(scanner)))
+            c = advance(scanner);
     }
     else
     {
@@ -616,8 +693,7 @@ scanInterpolation(Scanner* scanner, Token* token)
     if (!seekToCharType(scanner, CHAR_TYPE_INTERP_END))
     {
         return tokenMakeError(
-            scanner, token,
-            "Internal error. Got invalid call to `scanInterpolation`."
+            scanner, token, "Internal error. Got invalid call to `scanInterpolation`."
         );
     }
 
@@ -646,11 +722,13 @@ scanDouble(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
 
-    while (isDigit(peek(scanner))) advance(scanner);
+    while (isDigit(peek(scanner)))
+        advance(scanner);
     if (peek(scanner) == '.')
     {
         advance(scanner);
-        while (isDigit(peek(scanner))) advance(scanner);
+        while (isDigit(peek(scanner)))
+            advance(scanner);
     }
 
     return tokenMake(scanner, token, TOKEN_DOUBLE);
@@ -661,7 +739,8 @@ scanInteger(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
 
-    while (isDigit(peek(scanner))) advance(scanner);
+    while (isDigit(peek(scanner)))
+        advance(scanner);
 
     return tokenMake(scanner, token, TOKEN_INTEGER);
 }
@@ -671,7 +750,8 @@ scanUnsignedInteger(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
 
-    while (isDigit(peek(scanner))) advance(scanner);
+    while (isDigit(peek(scanner)))
+        advance(scanner);
 
     return tokenMake(scanner, token, TOKEN_UNSIGNED_INTEGER);
 }
@@ -730,10 +810,7 @@ scannerGetTokenForCompiler(Scanner* scanner, Token* token)
 
         if (match(scanner, delim) && !match(scanner, delim))
         {
-            return tokenMakeError(
-                scanner, token,
-                "Expected delimiter after '%'."
-            );
+            return tokenMakeError(scanner, token, "Expected delimiter after '%'.");
         }
 
         scanner->state = SCANNER_STATE_COMMAND;
@@ -800,8 +877,10 @@ scannerGetTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
                 while (!scannerIsAtEnd(scanner))
                 {
                     char e = advance(scanner);
-                    if (e == '\\') advance(scanner);
-                    else if (e == '\"') break;
+                    if (e == '\\')
+                        advance(scanner);
+                    else if (e == '\"')
+                        break;
                 }
                 break;
             }
@@ -811,8 +890,7 @@ scannerGetTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
         default:
         {
             /* Do nothing if scanner not searching for number. */
-            if (flag != SCANNER_WANTS_DOUBLE &&
-                flag != SCANNER_WANTS_INTEGER &&
+            if (flag != SCANNER_WANTS_DOUBLE && flag != SCANNER_WANTS_INTEGER &&
                 flag != SCANNER_WANTS_UNSIGNED_INTEGER)
             {
                 break;

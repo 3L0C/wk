@@ -1,0 +1,3 @@
+# Test empty variable key error
+:var "" "value"
+a "Test" +write %{{echo test}}
