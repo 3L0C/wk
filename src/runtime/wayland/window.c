@@ -20,8 +20,8 @@
 #include "runtime/cairo.h"
 
 /* local includes */
-#include "wayland.h"
 #include "debug.h"
+#include "wayland.h"
 #include "window.h"
 #include "wlr-layer-shell-unstable-v1.h"
 
@@ -75,7 +75,7 @@ osCreateAnonymousFile(off_t size)
         return -1;
     }
 
-    char* ts = (path[strlen(path) - 1] == '/') ? "" : "/" ;
+    char* ts = (path[strlen(path) - 1] == '/') ? "" : "/";
     size_t len = snprintf(NULL, 0, "%s%s%s", path, ts, template) + 1; /* +1 for null byte '\0' */
     char* name = ALLOCATE(char, len);
     if (!name) return -1;
@@ -132,7 +132,8 @@ createBuffer(
     int32_t height,
     uint32_t format,
     int32_t scale,
-    CairoPaint* paint)
+    CairoPaint* paint
+)
 {
     assert(shm), assert(buffer), assert(paint);
 
@@ -173,9 +174,8 @@ createBuffer(
 
     wl_buffer_add_listener(buffer->buffer, &bufferListener, buffer);
 
-    cairo_surface_t* surface = cairo_image_surface_create_for_data(
-        data, CAIRO_FORMAT_ARGB32, width, height, stride
-    );
+    cairo_surface_t* surface =
+        cairo_image_surface_create_for_data(data, CAIRO_FORMAT_ARGB32, width, height, stride);
     if (!surface) goto fail;
 
     buffer->cairo.scale = scale;
@@ -220,11 +220,15 @@ nextBuffer(WaylandWindow* window)
         destroyBuffer(buffer);
     }
 
-    if (!buffer->buffer &&
-        !createBuffer(
-            window->shm, buffer, window->width * window->scale, window->height * window->scale,
-            WL_SHM_FORMAT_ARGB8888, window->scale, &window->paint
-        ))
+    if (!buffer->buffer && !createBuffer(
+                               window->shm,
+                               buffer,
+                               window->width * window->scale,
+                               window->height * window->scale,
+                               WL_SHM_FORMAT_ARGB8888,
+                               window->scale,
+                               &window->paint
+                           ))
     {
         return NULL;
     }
@@ -353,7 +357,6 @@ resizeWinGap(WaylandWindow* window, Menu* menu)
     }
 }
 
-
 static void
 resizeWindow(WaylandWindow* window, Menu* menu)
 {
@@ -417,7 +420,10 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
     wl_surface_attach(window->surface, buffer->buffer, 0, 0);
     wl_surface_commit(window->surface);
     buffer->busy = true;
-    window->renderPending = menuIsDelayed(menu);
+
+    /* Always clear renderPending after render, re-schedule if still delayed */
+    window->renderPending = false;
+    if (menuIsDelayed(menu)) windowScheduleRender(window);
 
     return true;
 }
@@ -442,7 +448,8 @@ layerSurfaceConfigure(
     struct zwlr_layer_surface_v1* layerSurface,
     uint32_t serial,
     uint32_t width,
-    uint32_t height)
+    uint32_t height
+)
 {
     WaylandWindow* window = data;
     window->width = width;
@@ -477,7 +484,7 @@ getWindowHeight(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    return cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);;
+    return cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);
 }
 
 void
@@ -495,7 +502,9 @@ windowSetOverlap(WaylandWindow* window, struct wl_display* display, bool overlap
 {
     assert(window);
 
-    zwlr_layer_surface_v1_set_exclusive_zone(window->layerSurface, overlap ? -1 : 0); /* or ... -overlap */
+    zwlr_layer_surface_v1_set_exclusive_zone(
+        window->layerSurface, overlap ? -1 : 0
+    ); /* or ... -overlap */
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
 }
@@ -508,16 +517,16 @@ windowCreate(
     struct wl_output* wlOutput,
     struct zwlr_layer_shell_v1* layerShell,
     struct wl_surface* surface,
-    Menu* menu)
+    Menu* menu
+)
 {
     assert(window), assert(menu);
 
     if (!layerShell) return false;
 
     enum zwlr_layer_shell_v1_layer layer = ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY;
-    window->layerSurface = zwlr_layer_shell_v1_get_layer_surface(
-        layerShell, surface, wlOutput, layer, "menu"
-    );
+    window->layerSurface =
+        zwlr_layer_shell_v1_get_layer_surface(layerShell, surface, wlOutput, layer, "menu");
 
     if (!window->layerSurface) return false;
 
@@ -540,4 +549,3 @@ windowCreate(
 
     return true;
 }
-

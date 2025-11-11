@@ -270,10 +270,7 @@ menuIsDelayed(Menu* menu)
         (((now.tv_sec - menu->timer.tv_sec) * 1000) +
          ((now.tv_nsec - menu->timer.tv_nsec) / 1000000));
 
-    bool result = elapsedTime < menu->delay;
-    if (!result) menu->delay = 0;
-
-    return result;
+    return elapsedTime < menu->delay;
 }
 
 static void

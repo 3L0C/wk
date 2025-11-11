@@ -18,8 +18,8 @@
 #include "common/array.h"
 #include "common/common.h"
 #include "common/debug.h"
-#include "common/menu.h"
 #include "common/key_chord.h"
+#include "common/menu.h"
 #include "common/string.h"
 
 /* local includes */
@@ -118,10 +118,11 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     cairo_surface_destroy(surface);
 
     menu->cellHeight = (rect.height + menu->hpadding * 2);
-    // Calculate table padding for height calculation - if -1, use cell padding, otherwise use the specified value
-    uint32_t tablePadding = (menu->tablePadding == -1) ?
-                              menu->hpadding :
-                              (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    // Calculate table padding for height calculation - if -1, use cell padding, otherwise use the
+    // specified value
+    uint32_t tablePadding = (menu->tablePadding == -1)
+                                ? menu->hpadding
+                                : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
     height = menu->cellHeight * menu->rows + (tablePadding * 2) + (menu->borderWidth * 2);
     return height > maxHeight ? maxHeight : height;
 }
@@ -291,7 +292,7 @@ drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw, int ell
     int textw;
     int texth;
     uint32_t truncatedWidth = 0;
-    char buffer[len + 1]; /* +1 for null byte '\0' */
+    char buffer[len + 1];          /* +1 for null byte '\0' */
     memcpy(buffer, text, len + 1); /* +1 to copy null byte '\0' */
 
     pango_layout_set_text(layout, buffer, len);
@@ -304,9 +305,11 @@ drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw, int ell
     size_t right = len;
     while (left < right)
     {
-        while (left < right && isUtf8ContByte(buffer[left])) left++;
+        while (left < right && isUtf8ContByte(buffer[left]))
+            left++;
         size_t mid = (left + right) / 2;
-        while (mid > left && !isUtf8StartByte(buffer[mid])) mid--;
+        while (mid > left && !isUtf8StartByte(buffer[mid]))
+            mid--;
 
         pango_layout_set_text(layout, buffer, mid);
         pango_layout_get_pixel_size(layout, &textw, &texth);
@@ -330,7 +333,8 @@ drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw, int ell
     len = truncatedWidth == cellw ? left : left - 1;
     if (truncatedWidth != cellw && len)
     {
-        while (len && !isUtf8StartByte(buffer[len])) len--;
+        while (len && !isUtf8StartByte(buffer[len]))
+            len--;
     }
 
     memcpy(buffer + len, "...", 4);
@@ -346,7 +350,8 @@ drawText(
     uint32_t* x,
     uint32_t* y,
     int ellipsisWidth
-) {
+)
+{
     assert(cr), assert(layout), assert(text), assert(cellw), assert(x), assert(y);
     if (*cellw == 0) return false;
     if ((uint32_t)ellipsisWidth > *cellw) return false;
@@ -380,7 +385,8 @@ drawString(
     uint32_t* x,
     uint32_t* y,
     int ellipsisWidth
-) {
+)
+{
     assert(cr), assert(layout), assert(string), assert(cellw), assert(x), assert(y);
 
     char buffer[string->length + 1];
@@ -398,7 +404,8 @@ drawKeyModText(
     uint32_t* x,
     uint32_t* y,
     int ellipsisWidth
-) {
+)
+{
     assert(cr), assert(paint), assert(layout), assert(key), assert(cellw), assert(x), assert(y);
     if (!setSourceRgba(cr, paint, MENU_COLOR_KEY)) return false;
     if (!modifierHasAnyActive(key->mods)) return true;
@@ -433,7 +440,8 @@ drawKeyText(
     uint32_t* x,
     uint32_t* y,
     int ellipsisWidth
-) {
+)
+{
     assert(cr), assert(paint), assert(layout), assert(string), assert(cellw), assert(x), assert(y);
     if (!setSourceRgba(cr, paint, MENU_COLOR_KEY)) return false;
 
@@ -450,8 +458,10 @@ drawDelimiterText(
     uint32_t* x,
     uint32_t* y,
     int ellipsisWidth
-) {
-    assert(cr), assert(paint), assert(layout), assert(delimiter), assert(cellw), assert(x), assert(y);
+)
+{
+    assert(cr), assert(paint), assert(layout), assert(delimiter), assert(cellw), assert(x),
+        assert(y);
     if (!setSourceRgba(cr, paint, MENU_COLOR_DELIMITER)) return false;
 
     return drawText(cr, layout, delimiter, cellw, x, y, ellipsisWidth);
@@ -467,12 +477,14 @@ drawDescriptionText(
     uint32_t* x,
     uint32_t* y,
     int ellipsisWidth
-) {
-    assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x), assert(y);
+)
+{
+    assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x),
+        assert(y);
     if (!setSourceRgba(
-            cr, paint,
-            arrayIsEmpty(&keyChord->keyChords) ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX
-        )) return false;
+            cr, paint, arrayIsEmpty(&keyChord->keyChords) ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX
+        ))
+        return false;
 
     return drawString(cr, layout, &keyChord->description, cellw, x, y, ellipsisWidth);
 }
@@ -488,8 +500,9 @@ drawHintText(
     uint32_t x,
     uint32_t y,
     int ellipsisWidth
-) {
-    assert(cr), assert(paint),assert(layout), assert(delimiter), assert(keyChord);
+)
+{
+    assert(cr), assert(paint), assert(layout), assert(delimiter), assert(keyChord);
 
     if (!drawKeyModText(cr, paint, layout, &keyChord->key, &cellw, &x, &y, ellipsisWidth)) return;
     if (!drawKeyText(cr, paint, layout, &keyChord->key.repr, &cellw, &x, &y, ellipsisWidth)) return;
@@ -499,13 +512,9 @@ drawHintText(
 
 static bool
 drawGrid(
-    cairo_t* cr,
-    CairoPaint* paint,
-    Menu* menu,
-    uint32_t width,
-    uint32_t height,
-    DrawingContext* ctx
-) {
+    cairo_t* cr, CairoPaint* paint, Menu* menu, uint32_t width, uint32_t height, DrawingContext* ctx
+)
+{
     assert(cr), assert(paint), assert(menu);
 
     if (menu->borderWidth * 2 >= width)
@@ -514,12 +523,12 @@ drawGrid(
         return false;
     }
 
-    uint32_t tablePaddingX = (menu->tablePadding == -1) ?
-                             menu->wpadding :
-                             (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
-    uint32_t tablePaddingY = (menu->tablePadding == -1) ?
-                             menu->hpadding :
-                             (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    uint32_t tablePaddingX = (menu->tablePadding == -1)
+                                 ? menu->wpadding
+                                 : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    uint32_t tablePaddingY = (menu->tablePadding == -1)
+                                 ? menu->hpadding
+                                 : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
     uint32_t startx = menu->borderWidth + tablePaddingX;
     uint32_t starty = menu->borderWidth + tablePaddingY;
     uint32_t rows = menu->rows;
@@ -528,9 +537,9 @@ drawGrid(
     uint32_t hpadding = menu->hpadding;
     uint32_t totalTablePadding = tablePaddingX + tablePaddingY;
     uint32_t borderWidthTotal = menu->borderWidth * 2;
-    uint32_t availableWidth = (totalTablePadding > (width - borderWidthTotal)) ?
-                              0 :
-                              width - borderWidthTotal - totalTablePadding;
+    uint32_t availableWidth = (totalTablePadding > (width - borderWidthTotal))
+                                  ? 0
+                                  : width - borderWidthTotal - totalTablePadding;
     uint32_t cellWidth = (availableWidth > 0) ? availableWidth / cols : 0;
     uint32_t cellHeight = menu->cellHeight;
     uint32_t count = menu->keyChords->length;
@@ -544,7 +553,9 @@ drawGrid(
 
     if (menu->debug)
     {
-        disassembleGrid(startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count);
+        disassembleGrid(
+            startx, starty, rows, cols, wpadding, hpadding, cellWidth, cellHeight, count
+        );
         disassembleKeyChordArrayShallow(menu->keyChords);
     }
 
@@ -605,6 +616,9 @@ cairoPaint(Cairo* cairo, Menu* menu)
     if (menu->debug) disassembleMenu(menu);
     if (arrayIsEmpty(menu->keyChords)) return false;
     if (menuIsDelayed(menu)) return true;
+
+    /* Clear delay after first successful render */
+    if (menu->delay) menu->delay = 0;
 
     uint32_t width = menu->width;
     uint32_t height = menu->height / cairo->scale;
