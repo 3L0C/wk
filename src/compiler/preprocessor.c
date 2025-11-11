@@ -22,19 +22,20 @@
 
 typedef struct
 {
-    char* path;
+    char* path;          /* Constructed path (preserves symlinks) for relative includes */
+    char* canonicalPath; /* Canonical path (resolved symlinks) for duplicate detection */
 } FilePath;
 
 static Array preprocessorRunImpl(Menu*, Array*, const char*, Stack*, Arena*);
 
 static bool
-fileIsInIncludeStack(Stack* stack, const char* filepath)
+fileIsInIncludeStack(Stack* stack, const char* canonicalPath)
 {
-    assert(stack), assert(filepath);
+    assert(stack), assert(canonicalPath);
 
     forEach(stack, FilePath, entry)
     {
-        if (strcmp(entry->path, filepath) == 0) return true;
+        if (entry->canonicalPath && strcmp(entry->canonicalPath, canonicalPath) == 0) return true;
     }
 
     return false;
@@ -110,16 +111,23 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
 
     arrayAppendN(&includeFilePath, filepath, len);
     arrayAppend(&includeFilePath, "");
-    char* realPath = realpath(ARRAY_AS(&includeFilePath, char), NULL);
-    if (!realPath)
+
+    char* constructedPath = ARRAY_AS(&includeFilePath, char);
+
+    /* Verify the file exists without resolving symlinks */
+    FILE* f = fopen(constructedPath, "r");
+    if (!f)
     {
-        warnMsg("Could not get the realpath for file: '%.*s'.", len, filepath);
+        warnMsg("Could not open file: '%.*s'.", len, filepath);
         arrayFree(&includeFilePath);
         return NULL;
     }
+    fclose(f);
 
+    /* Return the constructed path (preserving symlink structure) */
+    char* result = strdup(constructedPath);
     arrayFree(&includeFilePath);
-    return realPath;
+    return result;
 }
 
 static void
@@ -152,7 +160,16 @@ handleIncludeMacro(
         return;
     }
 
-    if (fileIsInIncludeStack(stack, includeFilePath))
+    /* Resolve canonical path for circular include detection */
+    char* canonicalIncludePath = realpath(includeFilePath, NULL);
+    if (!canonicalIncludePath)
+    {
+        warnMsg("Could not get the canonical path for file: '%s'.", includeFilePath);
+        /* Continue with the constructed path if canonicalization fails */
+        canonicalIncludePath = strdup(includeFilePath);
+    }
+
+    if (fileIsInIncludeStack(stack, canonicalIncludePath))
     {
         printf(
             "%s:%u:%u: wk does not support circular includes: ':include \"%.*s\"'.\n",
@@ -164,8 +181,11 @@ handleIncludeMacro(
         );
         if (menu->debug) disassembleIncludeStack(stack);
         scanner->hadError = true;
+        free(canonicalIncludePath);
         goto fail;
     }
+
+    free(canonicalIncludePath);
 
     /* Try to read the included file */
     includeSource = readFile(includeFilePath);
@@ -453,6 +473,7 @@ popFilePath(Stack* stack)
 
     FilePath* entry = STACK_PEEK(stack, FilePath);
     free(entry->path);
+    free(entry->canonicalPath);
     stackPop(stack);
 }
 
@@ -468,7 +489,14 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     Array result = ARRAY_INIT(char);
 
     char* absoluteFilePath = getAbsolutePath(filepath, strlen(filepath), ".");
-    FilePath pathEntry = {.path = absoluteFilePath};
+    char* canonicalFilePath = realpath(absoluteFilePath ? absoluteFilePath : filepath, NULL);
+    if (!canonicalFilePath)
+    {
+        /* If canonicalization fails, use the constructed path */
+        canonicalFilePath = strdup(absoluteFilePath ? absoluteFilePath : filepath);
+    }
+
+    FilePath pathEntry = {.path = absoluteFilePath, .canonicalPath = canonicalFilePath};
     stackPush(stack, &pathEntry);
     if (menu->debug)
     {
