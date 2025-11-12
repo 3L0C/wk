@@ -103,8 +103,8 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
 {
     assert(filepath), assert(sourcePath);
 
-    size_t baseLen = getBaseDirLength(sourcePath);
-    Array includeFilePath = ARRAY_INIT(char);
+    size_t baseLen         = getBaseDirLength(sourcePath);
+    Array  includeFilePath = ARRAY_INIT(char);
 
     /* If filepath is not absolute and source path is not in the PWD add base path */
     if (*filepath != '/' && baseLen > 0) arrayAppendN(&includeFilePath, sourcePath, baseLen);
@@ -132,8 +132,12 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
 
 static void
 handleIncludeMacro(
-    Menu* menu, Scanner* scanner, Array* result, Token* includeFile, Stack* stack, Arena* arena
-)
+    Menu*    menu,
+    Scanner* scanner,
+    Array*   result,
+    Token*   includeFile,
+    Stack*   stack,
+    Arena*   arena)
 {
     assert(menu), assert(scanner), assert(result), assert(includeFile), assert(stack),
         assert(arena);
@@ -148,8 +152,8 @@ handleIncludeMacro(
     }
 
     char* includeFilePath = NULL;
-    Array includeSource = ARRAY_INIT(char);
-    Array includeResult = ARRAY_INIT(char);
+    Array includeSource   = ARRAY_INIT(char);
+    Array includeResult   = ARRAY_INIT(char);
 
     /* Get the path to the included file */
     includeFilePath = getAbsolutePath(includeFile->start, includeFile->length, sourcePath);
@@ -177,8 +181,7 @@ handleIncludeMacro(
             includeFile->line,
             includeFile->column,
             (int)includeFile->length,
-            includeFile->start
-        );
+            includeFile->start);
         if (menu->debug) disassembleIncludeStack(stack);
         scanner->hadError = true;
         free(canonicalIncludePath);
@@ -200,8 +203,7 @@ handleIncludeMacro(
     if (strcmp(ARRAY_AS(&includeSource, char), scanner->head) == 0)
     {
         errorMsg(
-            "Included file appears to be the same as the source file. Cannot `:include` self."
-        );
+            "Included file appears to be the same as the source file. Cannot `:include` self.");
         scanner->hadError = true;
         goto fail;
     }
@@ -245,15 +247,14 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
             "Variable name contains ')',"
             "it will not match the expected key during interpolation: '%.*s'.",
             keyToken->length,
-            keyToken->start
-        );
+            keyToken->start);
         scanner->hadError = true;
         return;
     }
 
     scannerMakeCurrent(scanner);
 
-    Token valueToken = {0};
+    Token valueToken = { 0 };
     scannerGetTokenForPreprocessor(scanner, &valueToken, SCANNER_WANTS_DESCRIPTION);
 
     if (valueToken.type != TOKEN_DESCRIPTION)
@@ -263,8 +264,7 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
             scanner->filepath,
             "Expected variable value as a string. Got '%.*s'.",
             valueToken.length,
-            valueToken.start
-        );
+            valueToken.start);
         scanner->hadError = true;
         return;
     }
@@ -275,26 +275,30 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
     {
         if (strcmp(var->key, key) == 0)
         {
-            var->key = key;
+            var->key   = key;
             var->value = value;
             return;
         }
     }
 
-    UserVar newVar = {.key = key, .value = value};
+    UserVar newVar = { .key = key, .value = value };
     arrayAppend(&menu->userVars, &newVar);
 }
 
 static void
 handleMacroWithStringArg(
-    Menu* menu, Scanner* scanner, Token* token, Array* arr, Stack* stack, Arena* arena
-)
+    Menu*    menu,
+    Scanner* scanner,
+    Token*   token,
+    Array*   arr,
+    Stack*   stack,
+    Arena*   arena)
 {
     assert(menu), assert(scanner), assert(token), assert(arr), assert(stack), assert(arena);
 
     scannerMakeCurrent(scanner);
 
-    Token result = {0};
+    Token result = { 0 };
     scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DESCRIPTION);
     if (result.type != TOKEN_DESCRIPTION)
     {
@@ -305,8 +309,7 @@ handleMacroWithStringArg(
             token->length,
             token->start,
             result.length,
-            result.start
-        );
+            result.start);
         scanner->hadError = true;
         return;
     }
@@ -349,7 +352,7 @@ handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
 
     scannerMakeCurrent(scanner);
 
-    Token result = {0};
+    Token result = { 0 };
     scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DOUBLE);
     if (result.type != TOKEN_DOUBLE) goto fail;
 
@@ -375,8 +378,7 @@ fail:
         token->length,
         token->start,
         result.length,
-        result.start
-    );
+        result.start);
     scanner->hadError = true;
     return;
 }
@@ -388,7 +390,7 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
 
     scannerMakeCurrent(scanner);
 
-    Token result = {0};
+    Token result = { 0 };
     scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_INTEGER);
     if (result.type != TOKEN_INTEGER) goto fail;
 
@@ -415,8 +417,7 @@ fail:
         token->length,
         token->start,
         result.length,
-        result.start
-    );
+        result.start);
     scanner->hadError = true;
     return;
 }
@@ -428,7 +429,7 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
 
     scannerMakeCurrent(scanner);
 
-    Token result = {0};
+    Token result = { 0 };
     scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_UNSIGNED_INTEGER);
     if (result.type != TOKEN_UNSIGNED_INTEGER) goto fail;
 
@@ -458,8 +459,7 @@ fail:
         token->length,
         token->start,
         result.length,
-        result.start
-    );
+        result.start);
     scanner->hadError = true;
     return;
 }
@@ -482,13 +482,13 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
 {
     assert(menu), assert(source), assert(stack), assert(arena);
 
-    Scanner scanner = {0};
+    Scanner scanner = { 0 };
     scannerInit(&scanner, ARRAY_AS(source, char), filepath);
     const char* scannerStart = scanner.head;
 
     Array result = ARRAY_INIT(char);
 
-    char* absoluteFilePath = getAbsolutePath(filepath, strlen(filepath), ".");
+    char* absoluteFilePath  = getAbsolutePath(filepath, strlen(filepath), ".");
     char* canonicalFilePath = realpath(absoluteFilePath ? absoluteFilePath : filepath, NULL);
     if (!canonicalFilePath)
     {
@@ -496,7 +496,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         canonicalFilePath = strdup(absoluteFilePath ? absoluteFilePath : filepath);
     }
 
-    FilePath pathEntry = {.path = absoluteFilePath, .canonicalPath = canonicalFilePath};
+    FilePath pathEntry = { .path = absoluteFilePath, .canonicalPath = canonicalFilePath };
     stackPush(stack, &pathEntry);
     if (menu->debug)
     {
@@ -508,7 +508,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     {
         if (scanner.hadError) goto fail;
 
-        Token token = {0};
+        Token token = { 0 };
         scannerGetTokenForPreprocessor(&scanner, &token, SCANNER_WANTS_MACRO);
         if (token.type == TOKEN_EOF) break;
         if (menu->debug) disassembleSingleToken(&token);
@@ -571,8 +571,9 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
                 /* DEBUG HERE */
             }
             tokenErrorAt(
-                &token, scanner.filepath, "Got unexpected token during preprocessor parsing."
-            );
+                &token,
+                scanner.filepath,
+                "Got unexpected token during preprocessor parsing.");
             scanner.hadError = true;
             break;
         }
@@ -603,7 +604,7 @@ preprocessorRun(Menu* menu, Array* source, const char* filepath)
 {
     assert(menu), assert(source);
 
-    Stack stack = STACK_INIT(FilePath);
+    Stack stack  = STACK_INIT(FilePath);
     Array result = preprocessorRunImpl(menu, source, filepath, &stack, &menu->arena);
     while (!stackIsEmpty(&stack))
     {

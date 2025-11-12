@@ -14,62 +14,62 @@
 typedef uint8_t TouchEventMask;
 enum
 {
-    TOUCH_EVENT_DOWN = (1 << 0),
-    TOUCH_EVENT_UP = (1 << 1),
-    TOUCH_EVENT_MOTION = (1 << 2),
-    TOUCH_EVENT_CANCEL = (1 << 3),
-    TOUCH_EVENT_SHAPE = (1 << 4),
+    TOUCH_EVENT_DOWN        = (1 << 0),
+    TOUCH_EVENT_UP          = (1 << 1),
+    TOUCH_EVENT_MOTION      = (1 << 2),
+    TOUCH_EVENT_CANCEL      = (1 << 3),
+    TOUCH_EVENT_SHAPE       = (1 << 4),
     TOUCH_EVENT_ORIENTATION = (1 << 5),
 };
 
 typedef uint8_t PointerEventMask;
 enum
 {
-    POINTER_EVENT_ENTER = (1 << 0),
-    POINTER_EVENT_LEAVE = (1 << 1),
-    POINTER_EVENT_MOTION = (1 << 2),
-    POINTER_EVENT_BUTTON = (1 << 3),
-    POINTER_EVENT_AXIS = (1 << 4),
-    POINTER_EVENT_AXIS_SOURCE = (1 << 5),
-    POINTER_EVENT_AXIS_STOP = (1 << 6),
+    POINTER_EVENT_ENTER         = (1 << 0),
+    POINTER_EVENT_LEAVE         = (1 << 1),
+    POINTER_EVENT_MOTION        = (1 << 2),
+    POINTER_EVENT_BUTTON        = (1 << 3),
+    POINTER_EVENT_AXIS          = (1 << 4),
+    POINTER_EVENT_AXIS_SOURCE   = (1 << 5),
+    POINTER_EVENT_AXIS_STOP     = (1 << 6),
     POINTER_EVENT_AXIS_DISCRETE = (1 << 7),
 };
 
 typedef struct
 {
-    struct xkb_state* state;
+    struct xkb_state*   state;
     struct xkb_context* context;
-    struct xkb_keymap* keymap;
-    xkb_mod_mask_t masks[MASK_LAST];
-    uint32_t depressedMods;
-    uint32_t latchedMods;
-    uint32_t lockedMods;
-    uint32_t group;
+    struct xkb_keymap*  keymap;
+    xkb_mod_mask_t      masks[MASK_LAST];
+    uint32_t            depressedMods;
+    uint32_t            latchedMods;
+    uint32_t            lockedMods;
+    uint32_t            group;
 } Xkb;
 
 typedef struct
 {
-    uint32_t eventMask;
+    uint32_t   eventMask;
     wl_fixed_t surfaceX;
     wl_fixed_t surfaceY;
-    uint32_t button;
-    uint32_t state;
-    uint32_t time;
-    uint32_t serial;
+    uint32_t   button;
+    uint32_t   state;
+    uint32_t   time;
+    uint32_t   serial;
     struct
     {
-        bool valid;
+        bool       valid;
         wl_fixed_t value;
-        int32_t discrete;
+        int32_t    discrete;
     } axes[2];
     uint32_t axisSource;
 } PointerEvent;
 
 typedef struct
 {
-    bool valid;
-    int32_t id;
-    uint32_t eventMask;
+    bool       valid;
+    int32_t    id;
+    uint32_t   eventMask;
     wl_fixed_t surfaceX;
     wl_fixed_t surfaceY;
     wl_fixed_t surfaceStartX;
@@ -81,9 +81,9 @@ typedef struct
 
 typedef struct
 {
-    uint32_t time;
-    uint32_t serial;
-    uint16_t active;
+    uint32_t   time;
+    uint32_t   serial;
+    uint16_t   active;
     TouchPoint points[2];
 } TouchEvent;
 
@@ -91,20 +91,20 @@ typedef struct
 {
     int* repeatFd;
 
-    struct wl_seat* seat;
+    struct wl_seat*     seat;
     struct wl_keyboard* keyboard;
-    struct wl_pointer* pointer;
-    struct wl_touch* touch;
-    PointerEvent pointerEvent;
-    TouchEvent touchEvent;
-    Xkb xkb;
+    struct wl_pointer*  pointer;
+    struct wl_touch*    touch;
+    PointerEvent        pointerEvent;
+    TouchEvent          touchEvent;
+    Xkb                 xkb;
 
     xkb_keysym_t keysym;
-    uint32_t code;
-    uint32_t modifiers;
+    uint32_t     code;
+    uint32_t     modifiers;
 
     xkb_keysym_t repeatKeysym;
-    uint32_t repeatKey;
+    uint32_t     repeatKey;
 
     struct
     {
@@ -129,16 +129,16 @@ typedef struct
 typedef struct
 {
     struct wl_output* output;
-    struct wl_list link;
-    uint32_t width;
-    uint32_t height;
-    int scale;
-    char* name;
+    struct wl_list    link;
+    uint32_t          width;
+    uint32_t          height;
+    int               scale;
+    char*             name;
 } Output;
 
 typedef struct
 {
-    Output* output;
+    Output*        output;
     struct wl_list link;
 } SurfaceOutput;
 
@@ -150,17 +150,17 @@ typedef struct Wayland
         int32_t repeat;
     } fds;
 
-    struct wl_display* display;
-    struct wl_registry* registry;
-    struct wl_compositor* compositor;
-    struct wl_list outputs;
-    Output* selectedOutput;
-    struct wl_seat* seat;
+    struct wl_display*          display;
+    struct wl_registry*         registry;
+    struct wl_compositor*       compositor;
+    struct wl_list              outputs;
+    Output*                     selectedOutput;
+    struct wl_seat*             seat;
     struct zwlr_layer_shell_v1* layerShell;
-    struct wl_shm* shm;
-    Input input;
-    struct wl_list windows;
-    uint32_t formats;
+    struct wl_shm*              shm;
+    Input                       input;
+    struct wl_list              windows;
+    uint32_t                    formats;
 } Wayland;
 
 void waylandFree(Wayland* wayland);

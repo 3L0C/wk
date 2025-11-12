@@ -36,7 +36,7 @@ preprocessSource(Menu* menu, Array* source, const char* filepath)
 static int
 compileSource(Menu* menu, Compiler* compiler, Array* source, const char* filepath)
 {
-    assert(menu),assert(compiler), assert(source), assert(filepath);
+    assert(menu), assert(compiler), assert(source), assert(filepath);
 
     char* src = ARENA_ADOPT_ARRAY(&menu->arena, source, char);
     initCompiler(compiler, menu, src, filepath);
@@ -53,7 +53,7 @@ runMenu(Menu* menu)
 {
     assert(menu);
 
-    int result = EX_SOFTWARE;
+    int        result = EX_SOFTWARE;
     MenuStatus status = MENU_STATUS_RUNNING;
 
     /* Pre-press keys */
@@ -92,8 +92,8 @@ runSource(Menu* menu, Array* source, const char* filepath)
     if (arrayIsEmpty(&processedSource)) return EX_DATAERR;
 
     /* Begin compilation */
-    Compiler compiler = {0};
-    int result = compileSource(menu, &compiler, &processedSource, filepath);
+    Compiler compiler = { 0 };
+    int      result   = compileSource(menu, &compiler, &processedSource, filepath);
     if (result != EX_OK)
     {
         errorMsg("Could not compile `wks` file: '%s'.", filepath);
@@ -117,8 +117,8 @@ transpileWksFile(Menu* menu)
     Array processedSource = preprocessSource(menu, &source, menu->client.transpile);
     if (arrayIsEmpty(&processedSource)) return EX_DATAERR;
 
-    Compiler compiler = {0};
-    int result = compileSource(menu, &compiler, &processedSource, menu->client.transpile);
+    Compiler compiler = { 0 };
+    int      result   = compileSource(menu, &compiler, &processedSource, menu->client.transpile);
     if (result != EX_OK) return result;
 
     /* Well formed file, write to stdout. */
@@ -177,7 +177,7 @@ main(int argc, char** argv)
 {
     int result = EX_SOFTWARE;
 
-    Menu menu = {0};
+    Menu menu = { 0 };
     menuInit(&menu, &builtinKeyChords);
     menuParseArgs(&menu, &argc, &argv);
 

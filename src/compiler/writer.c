@@ -71,8 +71,7 @@ writeChordsHeader(void)
         "        .special = (_special) \\\n"
         "    }\n"
         "\n"
-        "static const char BUILTIN_SOURCE[] = "
-    );
+        "static const char BUILTIN_SOURCE[] = ");
 }
 
 static void
@@ -82,7 +81,7 @@ writeEscString(const String* string)
     if (stringIsEmpty(string)) return;
 
     StringIterator iter = stringIteratorMake(string);
-    char c = '\0';
+    char           c    = '\0';
     while ((c = stringIteratorNext(&iter)) != '\0')
     {
         switch (c)
@@ -273,8 +272,7 @@ writeChordsFooter(void)
     printf(
         ";\n"
         "\n"
-        "#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n"
-    );
+        "#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n");
 }
 
 void

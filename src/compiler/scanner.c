@@ -24,16 +24,16 @@ scannerInit(Scanner* scanner, const char* source, const char* filepath)
 {
     assert(scanner), assert(source);
 
-    scanner->head = source;
-    scanner->start = source;
-    scanner->current = source;
-    scanner->filepath = filepath;
-    scanner->line = 1;
-    scanner->column = 0;
-    scanner->state = SCANNER_STATE_NORMAL;
+    scanner->head          = source;
+    scanner->start         = source;
+    scanner->current       = source;
+    scanner->filepath      = filepath;
+    scanner->line          = 1;
+    scanner->column        = 0;
+    scanner->state         = SCANNER_STATE_NORMAL;
     scanner->previousState = SCANNER_STATE_NORMAL;
-    scanner->interpType = TOKEN_EMPTY;
-    scanner->hadError = false;
+    scanner->interpType    = TOKEN_EMPTY;
+    scanner->hadError      = false;
 }
 
 void
@@ -41,16 +41,16 @@ scannerClone(const Scanner* scanner, Scanner* clone)
 {
     assert(scanner), assert(clone);
 
-    clone->head = scanner->head;
-    clone->start = scanner->start;
-    clone->current = scanner->current;
-    clone->filepath = scanner->filepath;
-    clone->line = scanner->line;
-    clone->column = scanner->column;
-    clone->hadError = scanner->hadError;
-    clone->state = scanner->state;
+    clone->head          = scanner->head;
+    clone->start         = scanner->start;
+    clone->current       = scanner->current;
+    clone->filepath      = scanner->filepath;
+    clone->line          = scanner->line;
+    clone->column        = scanner->column;
+    clone->hadError      = scanner->hadError;
+    clone->state         = scanner->state;
     clone->previousState = scanner->previousState;
-    clone->interpType = scanner->interpType;
+    clone->interpType    = scanner->interpType;
 }
 
 void
@@ -148,13 +148,13 @@ tokenMake(const Scanner* scanner, Token* token, const TokenType type)
 {
     assert(scanner), assert(token);
 
-    token->type = type;
-    token->start = scanner->start;
+    token->type   = type;
+    token->start  = scanner->start;
     token->length = (int)(scanner->current - scanner->start);
-    token->line = scanner->line;
+    token->line   = scanner->line;
     token->column = scanner->column;
     /* error */
-    token->message = token->start;
+    token->message       = token->start;
     token->messageLength = token->length;
 }
 
@@ -163,13 +163,13 @@ tokenMakeError(const Scanner* scanner, Token* token, const char* message)
 {
     assert(scanner), assert(token);
 
-    token->type = TOKEN_ERROR;
-    token->start = scanner->start;
+    token->type   = TOKEN_ERROR;
+    token->start  = scanner->start;
     token->length = (int)(scanner->current - scanner->start);
-    token->line = scanner->line;
+    token->line   = scanner->line;
     token->column = scanner->column;
     /* error */
-    token->message = message;
+    token->message       = message;
     token->messageLength = (int)strlen(message);
 }
 
@@ -205,8 +205,7 @@ isKeyword(Scanner* scanner, int start, int length, const char* rest)
 
     return (
         scanner->current - scanner->start == start + length &&
-        memcmp(scanner->start + start, rest, length) == 0
-    );
+        memcmp(scanner->start + start, rest, length) == 0);
 }
 
 static bool
@@ -433,7 +432,7 @@ getInterpolationType(Scanner* scanner)
 {
     assert(scanner);
 
-    Scanner clone = {0};
+    Scanner clone = { 0 };
     scannerClone(scanner, &clone);
 
     if (match(&clone, '%') && !match(&clone, '('))
@@ -522,8 +521,9 @@ scanDescription(Scanner* scanner, Token* token, bool allowInterpolation)
             case TOKEN_THIS_DESC_LOWER_ALL:
             {
                 return tokenMakeError(
-                    scanner, token, "Cannot interpolate the description within the description."
-                );
+                    scanner,
+                    token,
+                    "Cannot interpolate the description within the description.");
             }
             /* Not an interpolation */
             case TOKEN_ERROR: break;
@@ -531,7 +531,7 @@ scanDescription(Scanner* scanner, Token* token, bool allowInterpolation)
             default:
             {
                 scanner->previousState = SCANNER_STATE_DESCRIPTION;
-                scanner->state = SCANNER_STATE_INTERPOLATION;
+                scanner->state         = SCANNER_STATE_INTERPOLATION;
                 tokenMake(scanner, token, TOKEN_DESC_INTERP);
                 consume(scanner, '%');
                 consume(scanner, '(');
@@ -598,7 +598,7 @@ scanCommand(Scanner* scanner, Token* token, char delim, bool allowInterpolation)
             default:
             {
                 scanner->previousState = SCANNER_STATE_COMMAND;
-                scanner->state = SCANNER_STATE_INTERPOLATION;
+                scanner->state         = SCANNER_STATE_INTERPOLATION;
                 tokenMake(scanner, token, TOKEN_COMM_INTERP);
                 consume(scanner, '%');
                 consume(scanner, '(');
@@ -638,8 +638,10 @@ checkSpecialType(Scanner* scanner, Token* token)
     {
         const char* repr = specialKeyGetRepr(i);
         if (isKeyword(
-                scanner, 0, strlen(repr + 0), repr + 0
-            )) /* Check the whole token, not n - 1 */
+                scanner,
+                0,
+                strlen(repr + 0),
+                repr + 0)) /* Check the whole token, not n - 1 */
         {
             token->special = i;
             return TOKEN_SPECIAL_KEY;
@@ -693,8 +695,9 @@ scanInterpolation(Scanner* scanner, Token* token)
     if (!seekToCharType(scanner, CHAR_TYPE_INTERP_END))
     {
         return tokenMakeError(
-            scanner, token, "Internal error. Got invalid call to `scanInterpolation`."
-        );
+            scanner,
+            token,
+            "Internal error. Got invalid call to `scanInterpolation`.");
     }
 
     /* Restore previous state to keep scanning for description or command. */

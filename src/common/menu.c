@@ -154,15 +154,15 @@ menuHexColorInitColor(MenuHexColor* hexColor, const char* color)
     assert(hexColor), assert(color);
 
     unsigned int r, g, b, a = 255;
-    int count = sscanf(color, "#%2x%2x%2x%2x", &r, &g, &b, &a);
+    int          count = sscanf(color, "#%2x%2x%2x%2x", &r, &g, &b, &a);
 
     if (count != 3 && count != 4) return false;
 
     hexColor->hex = color;
-    hexColor->r = r;
-    hexColor->g = g;
-    hexColor->b = b;
-    hexColor->a = a;
+    hexColor->r   = r;
+    hexColor->g   = g;
+    hexColor->b   = b;
+    hexColor->a   = a;
 
     return true;
 }
@@ -216,44 +216,44 @@ menuInit(Menu* menu, Array* keyChords)
 {
     assert(menu);
 
-    menu->delimiter = delimiter;
-    menu->shell = shell;
-    menu->font = font;
+    menu->delimiter         = delimiter;
+    menu->shell             = shell;
+    menu->font              = font;
     menu->implicitArrayKeys = implicitArrayKeys;
-    menu->borderRadius = borderRadius;
+    menu->borderRadius      = borderRadius;
     menuHexColorInitColors(menu->colors);
-    menu->client.keys = NULL;
+    menu->client.keys      = NULL;
     menu->client.transpile = NULL;
-    menu->client.wksFile = NULL;
+    menu->client.wksFile   = NULL;
     menu->client.tryScript = false;
-    menu->client.script = ARRAY_INIT(char);
+    menu->client.script    = ARRAY_INIT(char);
     clock_gettime(CLOCK_MONOTONIC, &menu->timer);
-    menu->userVars = ARRAY_INIT(UserVar);
+    menu->userVars          = ARRAY_INIT(UserVar);
     menu->compiledKeyChords = ARRAY_INIT(KeyChord);
-    menu->builtinKeyChords = keyChords;
-    menu->keyChords = keyChords;
-    menu->keyChordsHead = keyChords;
-    menu->cleanupfp = NULL;
-    menu->xp = NULL;
+    menu->builtinKeyChords  = keyChords;
+    menu->keyChords         = keyChords;
+    menu->keyChordsHead     = keyChords;
+    menu->cleanupfp         = NULL;
+    menu->xp                = NULL;
     arenaInit(&menu->arena);
 
-    menu->maxCols = maxCols;
-    menu->menuWidth = menuWidth;
-    menu->menuGap = menuGap;
-    menu->wpadding = widthPadding;
-    menu->hpadding = heightPadding;
-    menu->cellHeight = 0;
-    menu->rows = 0;
-    menu->cols = 0;
-    menu->width = 0;
-    menu->height = 0;
+    menu->maxCols     = maxCols;
+    menu->menuWidth   = menuWidth;
+    menu->menuGap     = menuGap;
+    menu->wpadding    = widthPadding;
+    menu->hpadding    = heightPadding;
+    menu->cellHeight  = 0;
+    menu->rows        = 0;
+    menu->cols        = 0;
+    menu->width       = 0;
+    menu->height      = 0;
     menu->borderWidth = borderWidth;
-    menu->delay = delay;
+    menu->delay       = delay;
 
-    menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
-    menu->debug = false;
-    menu->sort = false;
-    menu->dirty = true;
+    menu->position    = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
+    menu->debug       = false;
+    menu->sort        = false;
+    menu->dirty       = true;
     menu->uwsmWrapper = uwsmWrapper;
 }
 
@@ -327,8 +327,7 @@ usage(void)
         "    --implicit-keys STRING     Set implicit keys to STRING (default 'asdfghjkl;').\n"
         "\n"
         "run `man 1 wk` for more info on each option.\n",
-        stderr
-    );
+        stderr);
 }
 
 static bool
@@ -363,41 +362,41 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
 
     assert(menu), assert(argc), assert(argv);
 
-    int opt = '\0';
+    int                  opt        = '\0';
     static struct option longOpts[] = {
         /*                  no argument                 */
-        {"help",          no_argument,       0, 'h'  },
-        {"version",       no_argument,       0, 'v'  },
-        {"debug",         no_argument,       0, 'd'  },
-        {"uwsm",          no_argument,       0, 'u'  },
-        {"top",           no_argument,       0, 't'  },
-        {"bottom",        no_argument,       0, 'b'  },
-        {"script",        no_argument,       0, 's'  },
-        {"sort",          no_argument,       0, 'S'  },
+        { "help",          no_argument,       0, 'h'   },
+        { "version",       no_argument,       0, 'v'   },
+        { "debug",         no_argument,       0, 'd'   },
+        { "uwsm",          no_argument,       0, 'u'   },
+        { "top",           no_argument,       0, 't'   },
+        { "bottom",        no_argument,       0, 'b'   },
+        { "script",        no_argument,       0, 's'   },
+        { "sort",          no_argument,       0, 'S'   },
         /*                  required argument           */
-        {"delay",         required_argument, 0, 'D'  },
-        {"max-columns",   required_argument, 0, 'm'  },
-        {"press",         required_argument, 0, 'p'  },
-        {"transpile",     required_argument, 0, 'T'  },
-        {"key-chords",    required_argument, 0, 'k'  },
-        {"menu-width",    required_argument, 0, 'w'  },
-        {"menu-gap",      required_argument, 0, 'g'  },
-        {"border-width",  required_argument, 0, 0x090},
-        {"border-radius", required_argument, 0, 0x091},
-        {"wpadding",      required_argument, 0, 0x092},
-        {"hpadding",      required_argument, 0, 0x093},
-        {"table-padding", required_argument, 0, 0x094},
-        {"fg",            required_argument, 0, 0x095},
-        {"fg-key",        required_argument, 0, 0x096},
-        {"fg-delimiter",  required_argument, 0, 0x097},
-        {"fg-prefix",     required_argument, 0, 0x098},
-        {"fg-chord",      required_argument, 0, 0x099},
-        {"bg",            required_argument, 0, 0x100},
-        {"bd",            required_argument, 0, 0x101},
-        {"shell",         required_argument, 0, 0x102},
-        {"font",          required_argument, 0, 0x103},
-        {"implicit-keys", required_argument, 0, 0x104},
-        {0,               0,                 0, 0    }
+        { "delay",         required_argument, 0, 'D'   },
+        { "max-columns",   required_argument, 0, 'm'   },
+        { "press",         required_argument, 0, 'p'   },
+        { "transpile",     required_argument, 0, 'T'   },
+        { "key-chords",    required_argument, 0, 'k'   },
+        { "menu-width",    required_argument, 0, 'w'   },
+        { "menu-gap",      required_argument, 0, 'g'   },
+        { "border-width",  required_argument, 0, 0x090 },
+        { "border-radius", required_argument, 0, 0x091 },
+        { "wpadding",      required_argument, 0, 0x092 },
+        { "hpadding",      required_argument, 0, 0x093 },
+        { "table-padding", required_argument, 0, 0x094 },
+        { "fg",            required_argument, 0, 0x095 },
+        { "fg-key",        required_argument, 0, 0x096 },
+        { "fg-delimiter",  required_argument, 0, 0x097 },
+        { "fg-prefix",     required_argument, 0, 0x098 },
+        { "fg-chord",      required_argument, 0, 0x099 },
+        { "bg",            required_argument, 0, 0x100 },
+        { "bd",            required_argument, 0, 0x101 },
+        { "shell",         required_argument, 0, 0x102 },
+        { "font",          required_argument, 0, 0x103 },
+        { "implicit-keys", required_argument, 0, 0x104 },
+        { 0,               0,                 0, 0     }
     };
 
     /* Don't let 'getopt' print errors. */
@@ -617,7 +616,7 @@ spawnSync(const char* shell, const char* cmd)
     assert(shell), assert(cmd);
 
     setsid();
-    char* exec[] = {strdup(shell), "-c", strdup(cmd), NULL, NULL};
+    char* exec[] = { strdup(shell), "-c", strdup(cmd), NULL, NULL };
     if (!exec[0])
     {
         errorMsg("Could not duplicate shell string: '%s'.", shell);
@@ -668,12 +667,12 @@ menuSpawn(const Menu* menu, const String* cmd, bool sync)
     if (child == 0)
     {
         if (menu->xp && menu->cleanupfp) menu->cleanupfp(menu->xp);
-        const char* uwsm_prefix = "uwsm app -- ";
-        size_t uwsm_prefix_len = strlen(uwsm_prefix);
+        const char* uwsm_prefix     = "uwsm app -- ";
+        size_t      uwsm_prefix_len = strlen(uwsm_prefix);
 
         /* Calculate buffer size: command length + null terminator + optional prefix */
         size_t buffer_len = cmd->length + 1 + (menu->uwsmWrapper ? uwsm_prefix_len : 0);
-        char buffer[buffer_len];
+        char   buffer[buffer_len];
 
         if (menu->uwsmWrapper)
         {
@@ -734,8 +733,8 @@ menuTryStdin(Menu* menu)
 
     Array* scriptArray = &menu->client.script;
 
-    char* line = NULL;
-    size_t lineCapacity = 0;
+    char*   line         = NULL;
+    size_t  lineCapacity = 0;
     ssize_t n;
     while ((n = getline(&line, &lineCapacity, stdin)) != -1)
     {

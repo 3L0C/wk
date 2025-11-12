@@ -14,9 +14,9 @@
 
 typedef struct Arena
 {
-    char*  buffer;
-    size_t bufferSize;
-    size_t used;
+    char*         buffer;
+    size_t        bufferSize;
+    size_t        used;
     struct Arena* prev;
 } Arena;
 

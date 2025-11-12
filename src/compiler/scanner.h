@@ -29,16 +29,16 @@ enum
 
 typedef struct
 {
-    const char* head;
-    const char* start;
-    const char* current;
-    const char* filepath;
-    size_t line;
-    size_t column;
+    const char*  head;
+    const char*  start;
+    const char*  current;
+    const char*  filepath;
+    size_t       line;
+    size_t       column;
     ScannerState state;
     ScannerState previousState;
-    TokenType interpType;
-    bool hadError;
+    TokenType    interpType;
+    bool         hadError;
 } Scanner;
 
 void scannerInit(Scanner* scanner, const char* source, const char* filepath);

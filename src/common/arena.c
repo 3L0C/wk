@@ -10,10 +10,10 @@
 void
 arenaInit(Arena* arena)
 {
-    arena->buffer = NULL;
+    arena->buffer     = NULL;
     arena->bufferSize = 0;
-    arena->used = 0;
-    arena->prev = NULL;
+    arena->used       = 0;
+    arena->prev       = NULL;
 }
 
 void*
@@ -22,8 +22,8 @@ arenaAdoptArray(Arena* arena, Array* arr)
     assert(arena), assert(arr);
     if (arrayIsEmpty(arr)) return NULL;
 
-    size_t bytes = arrayLength(arr) * arr->elementSize;
-    void* buffer = arenaAlloc(arena, bytes);
+    size_t bytes  = arrayLength(arr) * arr->elementSize;
+    void*  buffer = arenaAlloc(arena, bytes);
     memcpy(buffer, arr->data, bytes);
     arrayFree(arr);
     return buffer;
@@ -42,22 +42,23 @@ arenaAlloc(Arena* arena, size_t size)
         /* Allocate a new block */
         size_t blockSize = size > ARENA_BLOCK_SIZE ? size : ARENA_BLOCK_SIZE;
 
-        if (arena->buffer != NULL) {
+        if (arena->buffer != NULL)
+        {
             /* If we already have a buffer, create a new arena to hold the old state */
-            Arena* oldArena = (Arena*)reallocate(NULL, 0, sizeof(Arena));
-            oldArena->buffer = arena->buffer;
+            Arena* oldArena      = (Arena*)reallocate(NULL, 0, sizeof(Arena));
+            oldArena->buffer     = arena->buffer;
             oldArena->bufferSize = arena->bufferSize;
-            oldArena->used = arena->used;
-            oldArena->prev = arena->prev;
+            oldArena->used       = arena->used;
+            oldArena->prev       = arena->prev;
 
             /* Update the current arena */
             arena->prev = oldArena;
         }
 
         /* Allocate new buffer for the current arena */
-        arena->buffer = (char*)reallocate(NULL, 0, blockSize);
+        arena->buffer     = (char*)reallocate(NULL, 0, blockSize);
         arena->bufferSize = blockSize;
-        arena->used = size;
+        arena->used       = size;
 
         return arena->buffer;
     }
@@ -94,9 +95,9 @@ arenaFree(Arena* arena)
         if (prev == NULL)
         {
             /* This is the Last arena - reset it instead of freeing */
-            arena->buffer = NULL;
+            arena->buffer     = NULL;
             arena->bufferSize = 0;
-            arena->used = 0;
+            arena->used       = 0;
             return;
         }
 

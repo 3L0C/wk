@@ -2,11 +2,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/timerfd.h>
-#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 #include <wayland-util.h>
@@ -73,8 +73,10 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
     if (mapstr == MAP_FAILED) goto exit;
 
     struct xkb_keymap* keymap = xkb_keymap_new_from_string(
-        input->xkb.context, mapstr, XKB_KEYMAP_FORMAT_TEXT_V1, 0
-    );
+        input->xkb.context,
+        mapstr,
+        XKB_KEYMAP_FORMAT_TEXT_V1,
+        0);
     munmap(mapstr, size);
     close(fd);
 
@@ -95,7 +97,7 @@ keyboardHandleKeymap(void* data, struct wl_keyboard* keyboard, uint32_t format, 
     xkb_keymap_unref(input->xkb.keymap);
     xkb_state_unref(input->xkb.state);
     input->xkb.keymap = keymap;
-    input->xkb.state = state;
+    input->xkb.state  = state;
 
     for (uint32_t i = 0; i < MASK_LAST; i++)
     {
@@ -111,29 +113,29 @@ exit:
 
 static void
 keyboardHandleEnter(
-    void* data,
+    void*               data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    struct wl_surface* surface,
-    struct wl_array* keys)
+    uint32_t            serial,
+    struct wl_surface*  surface,
+    struct wl_array*    keys)
 {
     (void)data, (void)keyboard, (void)serial, (void)surface, (void)keys;
 }
 
 static void
 keyboardHandleLeave(
-    void* data,
+    void*               data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    struct wl_surface* surface)
+    uint32_t            serial,
+    struct wl_surface*  surface)
 {
     (void)keyboard, (void)serial, (void)surface;
-    Input* input = data;
-    struct itimerspec its = {
-        .it_interval.tv_sec = 0,
-        .it_interval.tv_nsec = 0,
-        .it_value.tv_sec = 0,
-        .it_value.tv_nsec = 0
+    Input*            input = data;
+    struct itimerspec its   = {
+          .it_interval.tv_sec  = 0,
+          .it_interval.tv_nsec = 0,
+          .it_value.tv_sec     = 0,
+          .it_value.tv_nsec    = 0
     };
     timerfd_settime(*input->repeatFd, 0, &its, NULL);
 }
@@ -143,14 +145,14 @@ press(Input* input, xkb_keysym_t keysym, uint32_t key, enum wl_keyboard_key_stat
 {
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
-        input->keysym = keysym;
-        input->code = key + 8;
+        input->keysym     = keysym;
+        input->code       = key + 8;
         input->keyPending = true;
     }
     else if (!input->keyPending)
     {
         input->keysym = XKB_KEY_NoSymbol;
-        input->code = 0;
+        input->code   = 0;
     }
 
     if (input->notify.key) input->notify.key(state, keysym, key);
@@ -158,15 +160,15 @@ press(Input* input, xkb_keysym_t keysym, uint32_t key, enum wl_keyboard_key_stat
 
 static void
 keyboardHandleKey(
-    void* data,
+    void*               data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t key,
-    uint32_t stateW)
+    uint32_t            serial,
+    uint32_t            time,
+    uint32_t            key,
+    uint32_t            stateW)
 {
     (void)keyboard, (void)serial, (void)time;
-    Input* input = data;
+    Input*                     input = data;
     enum wl_keyboard_key_state state = stateW;
 
     if (!input->xkb.state) return;
@@ -178,22 +180,22 @@ keyboardHandleKey(
         xkb_keymap_key_repeats(input->xkb.keymap, input->code))
     {
         struct itimerspec its = {
-            .it_interval.tv_sec = input->repeatRate.sec,
+            .it_interval.tv_sec  = input->repeatRate.sec,
             .it_interval.tv_nsec = input->repeatRate.nsec,
-            .it_value.tv_sec = input->repeatDelay.sec,
-            .it_value.tv_nsec = input->repeatDelay.nsec,
+            .it_value.tv_sec     = input->repeatDelay.sec,
+            .it_value.tv_nsec    = input->repeatDelay.nsec,
         };
         input->repeatKeysym = keysym;
-        input->repeatKey = key;
+        input->repeatKey    = key;
         timerfd_settime(*input->repeatFd, 0, &its, NULL);
     }
     else if (state == WL_KEYBOARD_KEY_STATE_RELEASED && key == input->repeatKey)
     {
         struct itimerspec its = {
-            .it_interval.tv_sec = 0,
+            .it_interval.tv_sec  = 0,
             .it_interval.tv_nsec = 0,
-            .it_value.tv_sec = 0,
-            .it_value.tv_nsec = 0
+            .it_value.tv_sec     = 0,
+            .it_value.tv_nsec    = 0
         };
         timerfd_settime(*input->repeatFd, 0, &its, NULL);
     }
@@ -201,28 +203,28 @@ keyboardHandleKey(
 
 static void
 keyboardHandleModifiers(
-    void* data,
+    void*               data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    uint32_t depressedMods,
-    uint32_t latchedMods,
-    uint32_t lockedMods,
-    uint32_t group)
+    uint32_t            serial,
+    uint32_t            depressedMods,
+    uint32_t            latchedMods,
+    uint32_t            lockedMods,
+    uint32_t            group)
 {
     (void)keyboard, (void)serial;
-    Input* input = data;
-    input->xkb.group = group;
+    Input* input             = data;
+    input->xkb.group         = group;
     input->xkb.depressedMods = depressedMods;
-    input->xkb.latchedMods = depressedMods;
-    input->xkb.lockedMods = lockedMods;
+    input->xkb.latchedMods   = depressedMods;
+    input->xkb.lockedMods    = lockedMods;
 
     if (!input->xkb.keymap) return;
 
     xkb_state_update_mask(input->xkb.state, depressedMods, latchedMods, lockedMods, 0, 0, group);
 
     xkb_mod_mask_t mask = xkb_state_serialize_mods(
-        input->xkb.state, XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED
-    );
+        input->xkb.state,
+        XKB_STATE_MODS_DEPRESSED | XKB_STATE_MODS_LATCHED);
 
     input->modifiers = 0;
     for (uint32_t i = 0; i < MASK_LAST; i++)
@@ -257,7 +259,7 @@ setRepeatInfo(Input* input, int32_t rate, int32_t delay)
 }
 
 static void
-keyboardHandleRepeatInfo(void *data, struct wl_keyboard* keyboard, int32_t rate, int32_t delay)
+keyboardHandleRepeatInfo(void* data, struct wl_keyboard* keyboard, int32_t rate, int32_t delay)
 {
     (void)keyboard;
     setRepeatInfo(data, rate, delay);
@@ -265,11 +267,11 @@ keyboardHandleRepeatInfo(void *data, struct wl_keyboard* keyboard, int32_t rate,
 
 static void
 pointerHandleAxis(
-    void* data,
+    void*              data,
     struct wl_pointer* pointer,
-    uint32_t time,
-    uint32_t axis,
-    wl_fixed_t value)
+    uint32_t           time,
+    uint32_t           axis,
+    wl_fixed_t         value)
 {
     (void)data, (void)pointer, (void)time, (void)axis, (void)value;
 }
@@ -306,17 +308,17 @@ pointerHandleAxisValue120(void* data, struct wl_pointer* pointer, uint32_t a, in
 
 static void
 pointerHandleButton(
-    void* data,
+    void*              data,
     struct wl_pointer* pointer,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t button,
-    uint32_t state)
+    uint32_t           serial,
+    uint32_t           time,
+    uint32_t           button,
+    uint32_t           state)
 {
     (void)pointer;
     Input* input = data;
     input->pointerEvent.eventMask |= POINTER_EVENT_BUTTON;
-    input->pointerEvent.time = time;
+    input->pointerEvent.time   = time;
     input->pointerEvent.serial = serial;
     input->pointerEvent.button = button;
     input->pointerEvent.state |= state;
@@ -324,12 +326,12 @@ pointerHandleButton(
 
 static void
 pointerHandleEnter(
-    void* data,
+    void*              data,
     struct wl_pointer* pointer,
-    uint32_t serial,
+    uint32_t           serial,
     struct wl_surface* surface,
-    wl_fixed_t surfaceX,
-    wl_fixed_t surfaceY)
+    wl_fixed_t         surfaceX,
+    wl_fixed_t         surfaceY)
 {
     (void)data, (void)pointer, (void)serial, (void)surface, (void)surfaceX, (void)surfaceY;
 }
@@ -342,9 +344,9 @@ pointerHandleFrame(void* data, struct wl_pointer* pointer)
 
 static void
 pointerHandleLeave(
-    void* data,
+    void*              data,
     struct wl_pointer* pointer,
-    uint32_t serial,
+    uint32_t           serial,
     struct wl_surface* surface)
 {
     (void)data, (void)pointer, (void)serial, (void)surface;
@@ -352,11 +354,11 @@ pointerHandleLeave(
 
 static void
 pointerHandleMotion(
-    void* data,
+    void*              data,
     struct wl_pointer* pointer,
-    uint32_t time,
-    wl_fixed_t surfaceX,
-    wl_fixed_t surfaceY)
+    uint32_t           time,
+    wl_fixed_t         surfaceX,
+    wl_fixed_t         surfaceY)
 {
     (void)data, (void)pointer, (void)time, (void)surfaceX, (void)surfaceY;
 }
@@ -367,11 +369,11 @@ touchHandleCancel(void* data, struct wl_touch* touch)
     (void)data, (void)touch;
 }
 
-static TouchPoint *
-getTouchPoint(Input *input, int32_t id)
+static TouchPoint*
+getTouchPoint(Input* input, int32_t id)
 {
-    TouchEvent *touch = &input->touchEvent;
-    int invalid = -1;
+    TouchEvent* touch   = &input->touchEvent;
+    int         invalid = -1;
     for (size_t i = 0; i < 2; ++i)
     {
         if (touch->points[i].id == id) invalid = i;
@@ -411,25 +413,25 @@ revalidateAllReleased(Input* input)
 
 static void
 touchHandleDown(
-    void* data,
-    struct wl_touch* touch,
-    uint32_t serial,
-    uint32_t time,
+    void*              data,
+    struct wl_touch*   touch,
+    uint32_t           serial,
+    uint32_t           time,
     struct wl_surface* surface,
-    int32_t id,
-    wl_fixed_t x,
-    wl_fixed_t y)
+    int32_t            id,
+    wl_fixed_t         x,
+    wl_fixed_t         y)
 {
-    (void) touch, (void) surface;
-    Input* input = data;
+    (void)touch, (void)surface;
+    Input*      input = data;
     TouchPoint* point = getTouchPoint(input, id);
     if (point == NULL) return;
 
-    point->valid = true;
-    point->eventMask = TOUCH_EVENT_DOWN;
-    point->surfaceX = x,
-    point->surfaceY = y;
-    input->touchEvent.time = time;
+    point->valid             = true;
+    point->eventMask         = TOUCH_EVENT_DOWN;
+    point->surfaceX          = x,
+    point->surfaceY          = y;
+    input->touchEvent.time   = time;
     input->touchEvent.serial = serial;
     input->touchEvent.active += 1;
 
@@ -445,12 +447,12 @@ touchHandleFrame(void* data, struct wl_touch* touch)
 
 static void
 touchHandleMotion(
-    void* data,
+    void*            data,
     struct wl_touch* touch,
-    uint32_t time,
-    int32_t id,
-    wl_fixed_t x,
-    wl_fixed_t y)
+    uint32_t         time,
+    int32_t          id,
+    wl_fixed_t       x,
+    wl_fixed_t       y)
 {
     (void)data, (void)touch, (void)time, (void)id, (void)x, (void)y;
 }
@@ -470,8 +472,8 @@ touchHandleShape(void* data, struct wl_touch* touch, int32_t id, wl_fixed_t majo
 static void
 touchHandleUp(void* data, struct wl_touch* touch, uint32_t serial, uint32_t time, int32_t id)
 {
-    (void) time, (void) touch, (void) serial;
-    Input* input = data;
+    (void)time, (void)touch, (void)serial;
+    Input*      input = data;
     TouchPoint* point = getTouchPoint(input, id);
     if (point == NULL) return;
 
@@ -482,36 +484,36 @@ touchHandleUp(void* data, struct wl_touch* touch, uint32_t serial, uint32_t time
 }
 
 static const struct wl_pointer_listener pointerListener = {
-    .axis = pointerHandleAxis,
-    .axis_discrete = pointerHandleAxisDiscrete,
+    .axis                    = pointerHandleAxis,
+    .axis_discrete           = pointerHandleAxisDiscrete,
     .axis_relative_direction = pointerHandleAxisRelativeDirection,
-    .axis_source = pointerHandleAxisSource,
-    .axis_stop = pointerHandleAxisStop,
-    .axis_value120 = pointerHandleAxisValue120,
-    .button = pointerHandleButton,
-    .enter = pointerHandleEnter,
-    .frame = pointerHandleFrame,
-    .leave = pointerHandleLeave,
-    .motion = pointerHandleMotion,
+    .axis_source             = pointerHandleAxisSource,
+    .axis_stop               = pointerHandleAxisStop,
+    .axis_value120           = pointerHandleAxisValue120,
+    .button                  = pointerHandleButton,
+    .enter                   = pointerHandleEnter,
+    .frame                   = pointerHandleFrame,
+    .leave                   = pointerHandleLeave,
+    .motion                  = pointerHandleMotion,
 };
 
 static const struct wl_keyboard_listener keyboardListener = {
-    .keymap = keyboardHandleKeymap,
-    .enter = keyboardHandleEnter,
-    .leave = keyboardHandleLeave,
-    .key = keyboardHandleKey,
-    .modifiers = keyboardHandleModifiers,
+    .keymap      = keyboardHandleKeymap,
+    .enter       = keyboardHandleEnter,
+    .leave       = keyboardHandleLeave,
+    .key         = keyboardHandleKey,
+    .modifiers   = keyboardHandleModifiers,
     .repeat_info = keyboardHandleRepeatInfo,
 };
 
 static const struct wl_touch_listener touchListener = {
-    .cancel = touchHandleCancel,
-    .down = touchHandleDown,
-    .frame = touchHandleFrame,
-    .motion = touchHandleMotion,
+    .cancel      = touchHandleCancel,
+    .down        = touchHandleDown,
+    .frame       = touchHandleFrame,
+    .motion      = touchHandleMotion,
     .orientation = touchHandleOrientation,
-    .shape = touchHandleShape,
-    .up = touchHandleUp,
+    .shape       = touchHandleShape,
+    .up          = touchHandleUp,
 };
 
 static void
@@ -544,10 +546,10 @@ seatHandleCapabilities(void* data, struct wl_seat* seat, enum wl_seat_capability
         !(caps & WL_SEAT_CAPABILITY_POINTER))
     {
         wl_keyboard_destroy(input->keyboard);
-        input->seat = NULL;
+        input->seat     = NULL;
         input->keyboard = NULL;
-        input->pointer = NULL;
-        input->touch = NULL;
+        input->pointer  = NULL;
+        input->touch    = NULL;
     }
 }
 
@@ -559,7 +561,7 @@ seatHandleName(void* data, struct wl_seat* seat, const char* name)
 
 static struct wl_seat_listener seatListener = {
     .capabilities = seatHandleCapabilities,
-    .name = seatHandleName,
+    .name         = seatHandleName,
 };
 
 static void
@@ -576,16 +578,16 @@ displayHandleDone(void* data, struct wl_output* output)
 
 static void
 displayHandleGeometry(
-    void* data,
+    void*             data,
     struct wl_output* output,
-    int x,
-    int y,
-    int physicalw,
-    int physicalh,
-    int subpixel,
-    const char* make,
-    const char* model,
-    int transform)
+    int               x,
+    int               y,
+    int               physicalw,
+    int               physicalh,
+    int               subpixel,
+    const char*       make,
+    const char*       model,
+    int               transform)
 {
     (void)data, (void)output, (void)x, (void)y, (void)physicalw,
         (void)physicalh, (void)subpixel, (void)make, (void)model, (void)transform;
@@ -593,12 +595,12 @@ displayHandleGeometry(
 
 static void
 displayHandleMode(
-    void* data,
+    void*             data,
     struct wl_output* wlOut,
-    uint32_t flags,
-    int width,
-    int height,
-    int refresh)
+    uint32_t          flags,
+    int               width,
+    int               height,
+    int               refresh)
 {
     (void)wlOut, (void)refresh;
 
@@ -606,7 +608,7 @@ displayHandleMode(
 
     if (flags & WL_OUTPUT_MODE_CURRENT)
     {
-        output->width = width;
+        output->width  = width;
         output->height = height;
     }
 }
@@ -631,20 +633,20 @@ displayHandleScale(void* data, struct wl_output* wlOut, int32_t scale)
 
 static const struct wl_output_listener outputListener = {
     .description = displayHandleDescription,
-    .done = displayHandleDone,
-    .geometry = displayHandleGeometry,
-    .mode = displayHandleMode,
-    .name = displayHandleName,
-    .scale = displayHandleScale,
+    .done        = displayHandleDone,
+    .geometry    = displayHandleGeometry,
+    .mode        = displayHandleMode,
+    .name        = displayHandleName,
+    .scale       = displayHandleScale,
 };
 
 static void
 registryHandleGlobal(
-    void* data,
+    void*               data,
     struct wl_registry* registry,
-    uint32_t id,
-    const char* interface,
-    uint32_t version)
+    uint32_t            id,
+    const char*         interface,
+    uint32_t            version)
 {
     (void)version;
     Wayland* wayland = data;
@@ -669,9 +671,9 @@ registryHandleGlobal(
     }
     else if (strcmp(interface, wl_output_interface.name) == 0)
     {
-        struct wl_output* wlOut = wl_registry_bind(registry, id, &wl_output_interface, 4);
-        Output* output = calloc(1, sizeof(Output));
-        output->output = wlOut;
+        struct wl_output* wlOut  = wl_registry_bind(registry, id, &wl_output_interface, 4);
+        Output*           output = calloc(1, sizeof(Output));
+        output->output           = wlOut;
         wl_list_insert(&wayland->outputs, &output->link);
         wl_output_add_listener(wlOut, &outputListener, output);
     }
@@ -684,7 +686,7 @@ registryHandleGlobalRemove(void* data, struct wl_registry* registry, uint32_t na
 }
 
 static const struct wl_registry_listener registryListener = {
-    .global = registryHandleGlobal,
+    .global        = registryHandleGlobal,
     .global_remove = registryHandleGlobalRemove,
 };
 
@@ -701,15 +703,13 @@ waylandRepeat(Wayland* wayland)
         wayland->input.notify.key(
             WL_KEYBOARD_KEY_STATE_PRESSED,
             wayland->input.repeatKeysym,
-            wayland->input.repeatKey + 8
-        );
+            wayland->input.repeatKey + 8);
     }
     press(
         &wayland->input,
         wayland->input.repeatKeysym,
         wayland->input.repeatKey,
-        WL_KEYBOARD_KEY_STATE_PRESSED
-    );
+        WL_KEYBOARD_KEY_STATE_PRESSED);
 }
 
 void

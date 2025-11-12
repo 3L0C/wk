@@ -7,8 +7,8 @@
 #include <string.h>
 
 /* local */
-#include "common.h"
 #include "array.h"
+#include "common.h"
 #include "memory.h"
 
 void
@@ -17,7 +17,7 @@ errorMsg(const char* fmt, ...)
     assert(fmt);
 
     fprintf(stderr, "[ERROR] ");
-    int len = strlen(fmt); /* 1 = '\0' */
+    int     len = strlen(fmt); /* 1 = '\0' */
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
@@ -58,7 +58,7 @@ readFile(const char* filepath)
     assert(filepath);
 
     Array result = ARRAY_INIT(char);
-    FILE* file = fopen(filepath, "rb");
+    FILE* file   = fopen(filepath, "rb");
     if (!file)
     {
         errorMsg("Could not open file '%s'.", filepath);
@@ -93,7 +93,7 @@ warnMsg(const char* fmt, ...)
     assert(fmt);
 
     fprintf(stderr, "[WARNING] ");
-    int len = strlen(fmt); /* 1 = '\0' */
+    int     len = strlen(fmt); /* 1 = '\0' */
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);

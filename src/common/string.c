@@ -16,7 +16,7 @@ stringPartAdd(String* string, const char* src, size_t length)
 {
     assert(string), assert(src);
 
-    StringPart part = {src, length};
+    StringPart part = { src, length };
     arrayAppend(&string->parts, &part);
     string->length += length;
 }
@@ -36,8 +36,8 @@ stringAppendChar(Arena* arena, String* dest, char c)
     assert(arena), assert(dest);
 
     char* buffer = ARENA_ALLOCATE(arena, char, 2);
-    buffer[0] = c;
-    buffer[1] = '\0';
+    buffer[0]    = c;
+    buffer[1]    = '\0';
     stringPartAdd(dest, buffer, 1);
 }
 
@@ -58,7 +58,8 @@ stringAppendEscString(String* dest, const char* src, size_t length)
     for (size_t i = 0; i < length; i++)
     {
         size_t start = i;
-        while (i < length && src[i] != '\\') i++;
+        while (i < length && src[i] != '\\')
+            i++;
         stringPartAdd(dest, src + start, i - start);
     }
 }
@@ -69,7 +70,7 @@ stringAppendInt32(Arena* arena, String* dest, int32_t i)
     assert(arena), assert(dest);
 
     size_t length = snprintf(NULL, 0, "%d", i);
-    char* buffer = ARENA_ALLOCATE(arena, char, length + 1);
+    char*  buffer = ARENA_ALLOCATE(arena, char, length + 1);
     snprintf(buffer, length + 1, "%d", i);
     stringPartAdd(dest, buffer, length);
 }
@@ -97,10 +98,10 @@ stringAppendStringWithState(Arena* arena, String* dest, const String* src, Strin
     case STRING_CASE_UPPER_FIRST: /* FALLTHROUGH */
     case STRING_CASE_LOWER_FIRST:
     {
-        StringPart* firstPart = ARRAY_GET(srcParts, StringPart, 0);
-        char transformed = (state == STRING_CASE_UPPER_FIRST)
-            ? toupper(*firstPart->source)
-            : tolower(*firstPart->source);
+        StringPart* firstPart   = ARRAY_GET(srcParts, StringPart, 0);
+        char        transformed = (state == STRING_CASE_UPPER_FIRST)
+                                      ? toupper(*firstPart->source)
+                                      : tolower(*firstPart->source);
         stringAppendChar(arena, dest, transformed);
 
         if (firstPart->length > 1)
@@ -121,7 +122,7 @@ stringAppendStringWithState(Arena* arena, String* dest, const String* src, Strin
     case STRING_CASE_LOWER_ALL:
     {
         char* buffer = ARENA_ALLOCATE(arena, char, src->length + 1);
-        char* ptr = buffer;
+        char* ptr    = buffer;
 
         forEach(srcParts, StringPart, part)
         {
@@ -129,8 +130,8 @@ stringAppendStringWithState(Arena* arena, String* dest, const String* src, Strin
             for (size_t j = 0; j < part->length; j++)
             {
                 *ptr++ = (state == STRING_CASE_UPPER_ALL)
-                    ? toupper(srcPtr[j])
-                    : tolower(srcPtr[j]);
+                             ? toupper(srcPtr[j])
+                             : tolower(srcPtr[j]);
             }
         }
         *ptr = '\0';
@@ -148,7 +149,7 @@ stringAppendUInt32(Arena* arena, String* dest, uint32_t i)
     assert(arena), assert(dest);
 
     size_t length = snprintf(NULL, 0, "%u", i);
-    char* buffer = ARENA_ALLOCATE(arena, char, length + 1);
+    char*  buffer = ARENA_ALLOCATE(arena, char, length + 1);
     snprintf(buffer, length + 1, "%u", i);
     stringPartAdd(dest, buffer, length);
 }
@@ -173,12 +174,12 @@ stringAppendWithState(Arena* arena, String* dest, const char* src, size_t length
     case STRING_CASE_LOWER_ALL:
     {
         char* buffer = ARENA_ALLOCATE(arena, char, length + 1);
-        char* ptr = buffer;
+        char* ptr    = buffer;
         for (size_t i = 0; i < length; i++)
         {
             *ptr++ = (state == STRING_CASE_UPPER_ALL)
-                ? toupper(*src++)
-                : tolower(*src++);
+                         ? toupper(*src++)
+                         : tolower(*src++);
         }
         *ptr = '\0';
 
@@ -195,19 +196,20 @@ stringCompare(const String* a, const String* b)
     assert(a), assert(b);
     if (a == b) return 0;
 
-    const Array* aParts = &a->parts;
-    const Array* bParts = &b->parts;
-    size_t aPartIndex = 0;
-    size_t bPartIndex = 0;
-    size_t aPartOffset = 0;
-    size_t bPartOffset = 0;
+    const Array* aParts      = &a->parts;
+    const Array* bParts      = &b->parts;
+    size_t       aPartIndex  = 0;
+    size_t       bPartIndex  = 0;
+    size_t       aPartOffset = 0;
+    size_t       bPartOffset = 0;
 
-    while (aPartIndex < aParts->length && bPartIndex < bParts->length) {
+    while (aPartIndex < aParts->length && bPartIndex < bParts->length)
+    {
         const StringPart* aPart = ARRAY_GET(aParts, StringPart, aPartIndex);
         const StringPart* bPart = ARRAY_GET(bParts, StringPart, bPartIndex);
 
         size_t cmpLength = MIN(aPart->length - aPartOffset, bPart->length - bPartOffset);
-        int cmp = memcmp(aPart->source + aPartOffset, bPart->source + bPartOffset, cmpLength);
+        int    cmp       = memcmp(aPart->source + aPartOffset, bPart->source + bPartOffset, cmpLength);
         if (cmp != 0) return cmp;
 
         aPartOffset += cmpLength;
@@ -225,9 +227,9 @@ stringCompare(const String* a, const String* b)
         }
     }
 
-    if (a->length < b->length)      return -1;
+    if (a->length < b->length) return -1;
     else if (a->length > b->length) return 1;
-    else                            return 0;
+    else return 0;
 }
 
 String
@@ -252,12 +254,12 @@ stringEquals(const String* a, const String* b)
     if (a == b) return true;
     if (a->length != b->length) return false;
 
-    const Array* aParts = &a->parts;
-    const Array* bParts = &b->parts;
-    size_t aPartIndex = 0;
-    size_t bPartIndex = 0;
-    size_t aPartOffset = 0;
-    size_t bPartOffset = 0;
+    const Array* aParts      = &a->parts;
+    const Array* bParts      = &b->parts;
+    size_t       aPartIndex  = 0;
+    size_t       bPartIndex  = 0;
+    size_t       aPartOffset = 0;
+    size_t       bPartOffset = 0;
 
     while (aPartIndex < aParts->length && bPartIndex < bParts->length)
     {
@@ -294,7 +296,7 @@ stringFree(String* string)
     assert(string);
 
     arrayFree(&string->parts);
-    string->parts = ARRAY_INIT(StringPart);
+    string->parts  = ARRAY_INIT(StringPart);
     string->length = 0;
 }
 
@@ -313,7 +315,7 @@ String
 stringInit(void)
 {
     return (String){
-        .parts = ARRAY_INIT(StringPart),
+        .parts  = ARRAY_INIT(StringPart),
         .length = 0
     };
 }
@@ -366,7 +368,6 @@ stringPrintToFile(const String* string, FILE* s)
     }
 }
 
-
 void
 stringRtrim(String* string)
 {
@@ -375,8 +376,8 @@ stringRtrim(String* string)
     size_t i = string->parts.length;
     while (i-- > 0)
     {
-        StringPart* part = ARRAY_GET(&string->parts, StringPart, i);
-        size_t newLength = part->length;
+        StringPart* part      = ARRAY_GET(&string->parts, StringPart, i);
+        size_t      newLength = part->length;
 
         while (newLength > 0 && isspace(part->source[newLength - 1]))
         {
@@ -417,7 +418,7 @@ stringWriteToBuffer(const String* string, char* buffer)
 {
     assert(string), assert(buffer);
 
-    char* ptr = buffer;
+    char*         ptr  = buffer;
     ArrayIterator iter = arrayIteratorMake(&string->parts);
     while (arrayIteratorHasNext(&iter))
     {
@@ -447,9 +448,9 @@ stringIteratorInit(const String* string, StringIterator* iter)
 {
     assert(string), assert(iter);
 
-    iter->string = string;
+    iter->string    = string;
     iter->partIndex = 0;
-    iter->offset = 0;
+    iter->offset    = 0;
 }
 
 StringIterator
@@ -458,9 +459,9 @@ stringIteratorMake(const String* string)
     assert(string);
 
     return (StringIterator){
-        .string = string,
+        .string    = string,
         .partIndex = 0,
-        .offset = 0
+        .offset    = 0
     };
 }
 
@@ -495,4 +496,3 @@ stringIteratorPeek(const StringIterator* iter)
     StringIterator tmp = *iter;
     return stringIteratorNext(&tmp);
 }
-

@@ -9,13 +9,13 @@
 #include "array.h"
 #include "common.h"
 #include "debug.h"
-#include "menu.h"
 #include "key_chord.h"
+#include "menu.h"
 #include "string.h"
 
-static const int MAX_HEADER_WIDTH = 80;
-static const int DEBUG_SPACE = 9; /* '[DEBUG] |' == 9 */
-static const char* DASHES = "-----------------------------------------------------------------------";
+static const int   MAX_HEADER_WIDTH = 80;
+static const int   DEBUG_SPACE      = 9; /* '[DEBUG] |' == 9 */
+static const char* DASHES           = "-----------------------------------------------------------------------";
 
 void
 debugMsg(bool debug, const char* fmt, ...)
@@ -25,7 +25,7 @@ debugMsg(bool debug, const char* fmt, ...)
     assert(fmt);
 
     printf("[DEBUG] ");
-    int len = strlen(fmt); /* 1 = '\0' */
+    int     len = strlen(fmt); /* 1 = '\0' */
     va_list ap;
     va_start(ap, fmt);
     vprintf(fmt, ap);
@@ -45,7 +45,7 @@ debugMsgWithIndent(int indent, const char* fmt, ...)
         printf("|    ");
     }
 
-    size_t len = strlen(fmt);
+    size_t  len = strlen(fmt);
     va_list ap;
     va_start(ap, fmt);
     vprintf(fmt, ap);
@@ -90,7 +90,7 @@ debugPrintHeader(const char* header)
     }
     else
     {
-        int leftDashes = dashCount / 2;
+        int leftDashes  = dashCount / 2;
         int rightDashes = dashCount - leftDashes;
         debugMsg(true, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
     }
@@ -113,7 +113,7 @@ debugPrintHeaderWithIndent(int indent, const char* header)
     }
     else
     {
-        int leftDashes = dashCount / 2;
+        int leftDashes  = dashCount / 2;
         int rightDashes = dashCount - leftDashes;
         debugMsgWithIndent(indent, "|%.*s %s %.*s", leftDashes, DASHES, header, rightDashes, DASHES);
     }
@@ -125,7 +125,7 @@ debugTextWithLineNumber(const char* text)
     if (!text) return;
 
     const char* current = text;
-    size_t i = 1;
+    size_t      i       = 1;
 
     while (*current != '\0')
     {
@@ -144,7 +144,7 @@ debugTextLenWithLineNumber(const char* text, size_t len)
     if (!text) return;
 
     const char* current = text;
-    size_t i = 1;
+    size_t      i       = 1;
 
     while (current < text + len)
     {
@@ -168,8 +168,15 @@ debugTextLenWithLineNumber(const char* text, size_t len)
 
 void
 disassembleGrid(
-    uint32_t startx, uint32_t starty, uint32_t rows, uint32_t cols, uint32_t wpadding,
-    uint32_t hpadding, uint32_t cellw, uint32_t cellh, uint32_t count)
+    uint32_t startx,
+    uint32_t starty,
+    uint32_t rows,
+    uint32_t cols,
+    uint32_t wpadding,
+    uint32_t hpadding,
+    uint32_t cellw,
+    uint32_t cellh,
+    uint32_t count)
 {
     debugPrintHeader("Grid");
     debugMsgWithIndent(0, "|");
@@ -192,7 +199,7 @@ disassembleHexColor(const MenuHexColor* color)
     assert(color);
 
     debugMsg(true, "|");
-    debugMsgWithIndent(0, "| %-20s '%s'", "Hex string:",  color->hex);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Hex string:", color->hex);
     debugMsgWithIndent(0, "| %-20s %#02X", "Red value:", color->r * 255);
     debugMsgWithIndent(0, "| %-20s %#02X", "Green value:", color->g * 255);
     debugMsgWithIndent(0, "| %-20s %#02X", "Blue value:", color->b * 255);
@@ -371,8 +378,7 @@ disassembleKeyChordArray(const Array* keyChords, int indent)
             debugMsgWithIndent(
                 indent,
                 "|------------ Nested KeyChords: %04u -------------",
-                arrayLength(&keyChord->keyChords)
-            );
+                arrayLength(&keyChord->keyChords));
             disassembleKeyChordArray(&keyChord->keyChords, indent + 1);
         }
         debugPrintHeaderWithIndent(indent, "");
@@ -445,9 +451,11 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %04u", "Width:", menu->width);
     debugMsgWithIndent(0, "| %-20s %04u", "Height:", menu->height);
     debugMsgWithIndent(0, "| %-20s %04u", "Border width:", menu->borderWidth);
-    debugMsgWithIndent(0, "| %-20s %s", "Window position:",
-        (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP")
-    );
+    debugMsgWithIndent(
+        0,
+        "| %-20s %s",
+        "Window position:",
+        (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP"));
     debugMsgWithIndent(0, "| %-20s %s", "Debug:", "true");
     debugMsgWithIndent(0, "| %-20s %s", "Sort:", menu->sort ? "true" : "false");
     debugMsgWithIndent(0, "| %-20s %s", "Dirty:", menu->dirty ? "true" : "false");

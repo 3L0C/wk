@@ -123,22 +123,22 @@ typedef struct
 {
     const char* start;
     const char* message;
-    size_t length;
-    size_t messageLength;
-    uint32_t line;
-    uint32_t column;
-    TokenType type;
-    SpecialKey special;
+    size_t      length;
+    size_t      messageLength;
+    uint32_t    line;
+    uint32_t    column;
+    TokenType   type;
+    SpecialKey  special;
 } Token;
 
-void tokenCopy(const Token* from, Token* to);
-void tokenErrorAt(const Token* token, const char* filepath, const char* fmt, ...);
-bool tokenGetDouble(const Token* token, double* dest, bool debug);
-bool tokenGetInt32(const Token* token, int32_t* dest, bool debug);
+void        tokenCopy(const Token* from, Token* to);
+void        tokenErrorAt(const Token* token, const char* filepath, const char* fmt, ...);
+bool        tokenGetDouble(const Token* token, double* dest, bool debug);
+bool        tokenGetInt32(const Token* token, int32_t* dest, bool debug);
 const char* tokenGetLiteral(const TokenType type);
-bool tokenGetUint32(const Token* token, uint32_t* dest, bool debug);
-void tokenInit(Token* token);
-bool tokenIsHookType(const TokenType type);
-bool tokenIsModType(const TokenType type);
+bool        tokenGetUint32(const Token* token, uint32_t* dest, bool debug);
+void        tokenInit(Token* token);
+bool        tokenIsHookType(const TokenType type);
+bool        tokenIsModType(const TokenType type);
 
 #endif /* WK_COMPILER_TOKEN_H_ */

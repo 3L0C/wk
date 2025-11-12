@@ -14,23 +14,23 @@
 #define ARRAY_GET(arr, type, index) ((type*)arrayGet((arr), (index)))
 #define ARRAY_GET_LAST(arr, type) ARRAY_GET(arr, type, arrayLastIndex(arr))
 #define ARRAY_AS(arr, type) ARRAY_GET(arr, type, 0)
-#define ARRAY_GROW(ptr, oldCapacity, newCapacity, elementSize)                                     \
+#define ARRAY_GROW(ptr, oldCapacity, newCapacity, elementSize) \
     reallocate((ptr), (elementSize) * (oldCapacity), (elementSize) * (newCapacity))
 #define ARRAY_APPEND_SLOT(arr, type) (arrayGrowForAppend(arr), ARRAY_GET_LAST(arr, type))
 #define CAPACITY_GROW(size) (size) == 0 ? 8 : (size) * 2
 #define ARRAY_ITER_NEXT(iter, type) ((type*)arrayIteratorNext(iter))
 #define ARRAY_ITER_PEEK(iter, type) ((type*)arrayIteratorPeek(iter))
-#define forRange(arr, type, var, startIdx, endIdx)                                                 \
-    for (ArrayIterator iter = arrayIteratorMakeStartingAt(arr, startIdx);                          \
-         (iter.index == (size_t)(startIdx) - 1) ? (arrayIteratorHasNext(&iter)) : false;)          \
-        for (type* var = NULL;                                                                     \
+#define forRange(arr, type, var, startIdx, endIdx)                                        \
+    for (ArrayIterator iter = arrayIteratorMakeStartingAt(arr, startIdx);                 \
+         (iter.index == (size_t)(startIdx) - 1) ? (arrayIteratorHasNext(&iter)) : false;) \
+        for (type* var = NULL;                                                            \
              (var = ARRAY_ITER_NEXT(&iter, type)) != NULL && iter.index < (size_t)(endIdx);)
 #define forEachFrom(arr, type, var, startIdx) forRange(arr, type, var, startIdx, arrayLength(arr))
 #define forEach(arr, type, var) forRange(arr, type, var, 0, arrayLength(arr))
 
 typedef struct
 {
-    void* data;
+    void*  data;
     size_t length;
     size_t capacity;
     size_t elementSize;
@@ -39,7 +39,7 @@ typedef struct
 typedef struct
 {
     const Array* arr;
-    size_t index;
+    size_t       index;
 } ArrayIterator;
 
 static inline void
@@ -50,8 +50,8 @@ arrayAppend(Array* arr, const void* value)
     if (arr->length >= arr->capacity)
     {
         const size_t oldCapacity = arr->capacity;
-        arr->capacity = CAPACITY_GROW(oldCapacity);
-        arr->data = ARRAY_GROW(arr->data, oldCapacity, arr->capacity, arr->elementSize);
+        arr->capacity            = CAPACITY_GROW(oldCapacity);
+        arr->data                = ARRAY_GROW(arr->data, oldCapacity, arr->capacity, arr->elementSize);
     }
 
     void* dest = (char*)arr->data + (arr->length * arr->elementSize);
@@ -72,7 +72,7 @@ arrayAppendN(Array* arr, const void* value, size_t n)
         size_t newCapacity = CAPACITY_GROW(oldCapacity);
         while (newCapacity < required)
             newCapacity *= 2;
-        arr->data = ARRAY_GROW(arr->data, oldCapacity, newCapacity, arr->elementSize);
+        arr->data     = ARRAY_GROW(arr->data, oldCapacity, newCapacity, arr->elementSize);
         arr->capacity = newCapacity;
     }
 
@@ -87,9 +87,9 @@ arrayFree(Array* arr)
     assert(arr);
 
     free(arr->data);
-    arr->data = NULL;
-    arr->length = 0;
-    arr->capacity = 0;
+    arr->data        = NULL;
+    arr->length      = 0;
+    arr->capacity    = 0;
     arr->elementSize = 0;
 }
 
@@ -110,8 +110,8 @@ arrayGrowForAppend(Array* arr)
     if (arr->length >= arr->capacity)
     {
         const size_t oldCapacity = arr->capacity;
-        arr->capacity = CAPACITY_GROW(oldCapacity);
-        arr->data = ARRAY_GROW(arr->data, oldCapacity, arr->capacity, arr->elementSize);
+        arr->capacity            = CAPACITY_GROW(oldCapacity);
+        arr->data                = ARRAY_GROW(arr->data, oldCapacity, arr->capacity, arr->elementSize);
     }
 
     arr->length++;
@@ -122,7 +122,12 @@ arrayInit(size_t elementSize)
 {
     assert(elementSize > 0);
 
-    return (Array){.data = NULL, .length = 0, .capacity = 0, .elementSize = elementSize};
+    return (Array){
+        .data        = NULL,
+        .length      = 0,
+        .capacity    = 0,
+        .elementSize = elementSize
+    };
 }
 
 static inline bool
@@ -142,7 +147,7 @@ arrayCopy(const Array* src)
     if (!arrayIsEmpty(src))
     {
         dest.capacity = src->length;
-        dest.data = reallocate(NULL, 0, src->elementSize * src->length);
+        dest.data     = reallocate(NULL, 0, src->elementSize * src->length);
         memcpy(dest.data, src->data, src->elementSize * src->length);
         dest.length = src->length;
     }
@@ -171,9 +176,9 @@ arrayRemove(Array* arr, size_t index)
 
     if (index < arr->length - 1)
     {
-        void* dest = (char*)arr->data + (index * arr->elementSize);
-        const void* src = (char*)arr->data + ((index + 1) * arr->elementSize);
-        size_t bytes = (arr->length - index - 1) * arr->elementSize;
+        void*       dest  = (char*)arr->data + (index * arr->elementSize);
+        const void* src   = (char*)arr->data + ((index + 1) * arr->elementSize);
+        size_t      bytes = (arr->length - index - 1) * arr->elementSize;
         memmove(dest, src, bytes);
     }
 
@@ -186,7 +191,7 @@ arraySwap(Array* arr, size_t a, size_t b)
     assert(arr), assert(a < arr->length), assert(b < arr->length);
     if (a == b) return;
 
-    char temp[arr->elementSize];
+    char  temp[arr->elementSize];
     void* elemA = arrayGet(arr, a);
     void* elemB = arrayGet(arr, b);
 
@@ -199,7 +204,7 @@ static inline void
 arrayIteratorInit(const Array* arr, ArrayIterator* iter)
 {
     assert(arr), assert(iter);
-    iter->arr = arr;
+    iter->arr   = arr;
     iter->index = (size_t)-1;
 }
 
@@ -222,7 +227,10 @@ arrayIteratorMake(const Array* arr)
 {
     assert(arr);
 
-    return (ArrayIterator){.arr = arr, .index = (size_t)-1};
+    return (ArrayIterator){
+        .arr   = arr,
+        .index = (size_t)-1
+    };
 }
 
 static inline ArrayIterator
@@ -230,7 +238,10 @@ arrayIteratorMakeStartingAt(const Array* arr, size_t start)
 {
     assert(arr);
 
-    return (ArrayIterator){.arr = arr, .index = start > 0 ? start - 1 : (size_t)-1};
+    return (ArrayIterator){
+        .arr   = arr,
+        .index = start > 0 ? start - 1 : (size_t)-1
+    };
 }
 
 static inline void*

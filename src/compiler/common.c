@@ -36,9 +36,9 @@ pressKey(Menu* menu, Scanner* scanner)
 {
     assert(menu), assert(scanner);
 
-    Key key = {0};
+    Key key = { 0 };
     keyInit(&key);
-    Token token = {0};
+    Token token = { 0 };
     tokenInit(&token);
     scannerGetTokenForCompiler(scanner, &token);
 
@@ -61,8 +61,8 @@ pressKey(Menu* menu, Scanner* scanner)
     {
         errorMsg(
             "Key does not appear to be a regular key or a special key: '%.*s'.",
-            (int)token.length, token.start
-        );
+            (int)token.length,
+            token.start);
         return MENU_STATUS_EXIT_SOFTWARE;
     }
 
@@ -109,8 +109,7 @@ pressKeys(Menu* menu, const char* keys)
     {
         errorMsg(
             "Reached end of chords but not end of keys: '%s'.",
-            (scanner.current == scanner.start) ? scanner.start : scanner.current - 1
-        );
+            (scanner.current == scanner.start) ? scanner.start : scanner.current - 1);
         return status;
     }
 

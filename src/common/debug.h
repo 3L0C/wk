@@ -7,8 +7,8 @@
 
 /* local includes */
 #include "array.h"
-#include "menu.h"
 #include "key_chord.h"
+#include "menu.h"
 
 void debugMsg(bool debug, const char* fmt, ...);
 void debugMsgWithIndent(int indent, const char* fmt, ...);

@@ -67,9 +67,11 @@ printErrorToken(const Token* token)
     debugMsg(
         true,
         "| %04zu:%04zu | %-27s | %-26.*s |",
-        token->line, token->column, "TOKEN_ERROR",
-        (int)token->length, token->start
-    );
+        token->line,
+        token->column,
+        "TOKEN_ERROR",
+        (int)token->length,
+        token->start);
 }
 
 static void
@@ -80,9 +82,11 @@ printSimpleToken(const Token* token)
     debugMsg(
         true,
         "| %04zu:%04zu | %-27s | %-26.*s |",
-        token->line, token->column, tokenGetLiteral(token->type),
-        (int)token->length, token->start
-    );
+        token->line,
+        token->column,
+        tokenGetLiteral(token->type),
+        (int)token->length,
+        token->start);
 }
 
 void

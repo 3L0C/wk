@@ -53,10 +53,10 @@ enum
 typedef struct
 {
     const char* hex;
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t a;
+    uint8_t     r;
+    uint8_t     g;
+    uint8_t     b;
+    uint8_t     a;
 } MenuHexColor;
 
 typedef struct
@@ -67,36 +67,36 @@ typedef struct
 
 typedef struct
 {
-    const char* delimiter;
-    const char* shell;
-    const char* font;
-    const char* implicitArrayKeys;
-    double borderRadius;
+    const char*  delimiter;
+    const char*  shell;
+    const char*  font;
+    const char*  implicitArrayKeys;
+    double       borderRadius;
     MenuHexColor colors[MENU_COLOR_LAST];
     struct Client
     {
         const char* keys;
         const char* transpile;
         const char* wksFile;
-        Array script;
-        bool tryScript;
+        Array       script;
+        bool        tryScript;
     } client;
     struct timespec timer;
-    CleanupFP cleanupfp;
-    Array userVars;
-    Array compiledKeyChords;
-    Array* builtinKeyChords;
-    Array* keyChords;
-    Array* keyChordsHead;
-    void* xp;
-    Arena arena;
+    CleanupFP       cleanupfp;
+    Array           userVars;
+    Array           compiledKeyChords;
+    Array*          builtinKeyChords;
+    Array*          keyChords;
+    Array*          keyChordsHead;
+    void*           xp;
+    Arena           arena;
 
     uint32_t maxCols;
-    int32_t menuWidth;
-    int32_t menuGap;
+    int32_t  menuWidth;
+    int32_t  menuGap;
     uint32_t wpadding;
     uint32_t hpadding;
-    int32_t tablePadding;
+    int32_t  tablePadding;
     uint32_t cellHeight;
     uint32_t rows;
     uint32_t cols;
@@ -106,22 +106,22 @@ typedef struct
     uint32_t delay;
 
     MenuPosition position;
-    bool debug;
-    bool sort;
-    bool dirty;
-    bool uwsmWrapper;
+    bool         debug;
+    bool         sort;
+    bool         dirty;
+    bool         uwsmWrapper;
 } Menu;
 
-int menuDisplay(Menu* menu);
-void menuFree(Menu* menu);
+int        menuDisplay(Menu* menu);
+void       menuFree(Menu* menu);
 MenuStatus menuHandleKeypress(Menu* menu, const Key* key);
-void menuInit(Menu* menu, Array* keyChords);
-bool menuIsDelayed(Menu* menu);
-void menuParseArgs(Menu* menu, int* argc, char*** argv);
-void menuResetTimer(Menu* menu);
-void menuSetColor(Menu* menu, const char* color, MenuColor colorType);
+void       menuInit(Menu* menu, Array* keyChords);
+bool       menuIsDelayed(Menu* menu);
+void       menuParseArgs(Menu* menu, int* argc, char*** argv);
+void       menuResetTimer(Menu* menu);
+void       menuSetColor(Menu* menu, const char* color, MenuColor colorType);
 MenuStatus menuSpawn(const Menu* menu, const String* cmd, bool sync);
-bool menuTryStdin(Menu* menu);
+bool       menuTryStdin(Menu* menu);
 
 bool menuStatusIsError(MenuStatus status);
 bool menuStatusIsRunning(MenuStatus status);

@@ -13,16 +13,16 @@ typedef uint16_t ChordFlag;
 enum
 {
     FLAG_NONE         = 0,
-    FLAG_KEEP         = 1 <<  0,
-    FLAG_CLOSE        = 1 <<  1,
-    FLAG_INHERIT      = 1 <<  2,
-    FLAG_IGNORE       = 1 <<  3,
-    FLAG_IGNORE_SORT  = 1 <<  4,
-    FLAG_UNHOOK       = 1 <<  5,
-    FLAG_DEFLAG       = 1 <<  6,
-    FLAG_NO_BEFORE    = 1 <<  7,
-    FLAG_NO_AFTER     = 1 <<  8,
-    FLAG_WRITE        = 1 <<  9,
+    FLAG_KEEP         = 1 << 0,
+    FLAG_CLOSE        = 1 << 1,
+    FLAG_INHERIT      = 1 << 2,
+    FLAG_IGNORE       = 1 << 3,
+    FLAG_IGNORE_SORT  = 1 << 4,
+    FLAG_UNHOOK       = 1 << 5,
+    FLAG_DEFLAG       = 1 << 6,
+    FLAG_NO_BEFORE    = 1 << 7,
+    FLAG_NO_AFTER     = 1 << 8,
+    FLAG_WRITE        = 1 << 9,
     FLAG_EXECUTE      = 1 << 10,
     FLAG_SYNC_COMMAND = 1 << 11,
     FLAG_SYNC_BEFORE  = 1 << 12,
@@ -113,32 +113,32 @@ enum
 
 typedef struct
 {
-    String repr;
-    Modifier mods;
+    String     repr;
+    Modifier   mods;
     SpecialKey special;
 } Key;
 
 typedef struct KeyChord
 {
-    Key key;
-    String description;
-    String command;
-    String before;
-    String after;
+    Key       key;
+    String    description;
+    String    command;
+    String    before;
+    String    after;
     ChordFlag flags;
-    Array keyChords;
+    Array     keyChords;
 } KeyChord;
 
 /* Helpers */
-int  chordFlagCount(ChordFlag flag);
-bool chordFlagHasAnyActive(ChordFlag flag);
+int       chordFlagCount(ChordFlag flag);
+bool      chordFlagHasAnyActive(ChordFlag flag);
 ChordFlag chordFlagInit(void);
-bool chordFlagIsActive(ChordFlag flag, ChordFlag test);
+bool      chordFlagIsActive(ChordFlag flag, ChordFlag test);
 
-int  modifierCount(Modifier mod);
-bool modifierHasAnyActive(Modifier mod);
+int      modifierCount(Modifier mod);
+bool     modifierHasAnyActive(Modifier mod);
 Modifier modifierInit(void);
-bool modifierIsActive(Modifier mod, Modifier test);
+bool     modifierIsActive(Modifier mod, Modifier test);
 
 const char* specialKeyGetLiteral(const SpecialKey special);
 const char* specialKeyGetRepr(const SpecialKey special);

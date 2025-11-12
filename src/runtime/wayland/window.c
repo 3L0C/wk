@@ -65,8 +65,8 @@ static int
 osCreateAnonymousFile(off_t size)
 {
     static const char template[] = "wk-shared-XXXXXX";
-    int fd;
-    int result;
+    int               fd;
+    int               result;
 
     const char* path = getenv("XDG_RUNTIME_DIR");
     if (!path || strlen(path) <= 0)
@@ -75,9 +75,9 @@ osCreateAnonymousFile(off_t size)
         return -1;
     }
 
-    char* ts = (path[strlen(path) - 1] == '/') ? "" : "/";
-    size_t len = snprintf(NULL, 0, "%s%s%s", path, ts, template) + 1; /* +1 for null byte '\0' */
-    char* name = ALLOCATE(char, len);
+    char*  ts   = (path[strlen(path) - 1] == '/') ? "" : "/";
+    size_t len  = snprintf(NULL, 0, "%s%s%s", path, ts, template) + 1; /* +1 for null byte '\0' */
+    char*  name = ALLOCATE(char, len);
     if (!name) return -1;
     snprintf(name, len, "%s%s%s", path, ts, template);
 
@@ -109,7 +109,7 @@ bufferRelease(void* data, struct wl_buffer* wlBuffer)
 {
     (void)wlBuffer;
     Buffer* buffer = data;
-    buffer->busy = false;
+    buffer->busy   = false;
 }
 
 static const struct wl_buffer_listener bufferListener = {
@@ -127,19 +127,18 @@ destroyBuffer(Buffer* buffer)
 static bool
 createBuffer(
     struct wl_shm* shm,
-    Buffer* buffer,
-    int32_t width,
-    int32_t height,
-    uint32_t format,
-    int32_t scale,
-    CairoPaint* paint
-)
+    Buffer*        buffer,
+    int32_t        width,
+    int32_t        height,
+    uint32_t       format,
+    int32_t        scale,
+    CairoPaint*    paint)
 {
     assert(shm), assert(buffer), assert(paint);
 
     uint32_t stride = width * 4;
-    uint32_t size = stride * height;
-    int fd = osCreateAnonymousFile(size);
+    uint32_t size   = stride * height;
+    int      fd     = osCreateAnonymousFile(size);
 
     if (fd < 0)
     {
@@ -187,8 +186,8 @@ createBuffer(
     }
 
     buffer->cairo.paint = paint;
-    buffer->width = width;
-    buffer->height = height;
+    buffer->width       = width;
+    buffer->height      = height;
     return true;
 
 fail:
@@ -227,8 +226,7 @@ nextBuffer(WaylandWindow* window)
                                window->height * window->scale,
                                WL_SHM_FORMAT_ARGB8888,
                                window->scale,
-                               &window->paint
-                           ))
+                               &window->paint))
     {
         return NULL;
     }
@@ -244,7 +242,7 @@ frameCallback(void* data, struct wl_callback* callback, uint32_t time)
     (void)time;
     WaylandWindow* window = data;
     wl_callback_destroy(callback);
-    window->framecb = NULL;
+    window->framecb       = NULL;
     window->renderPending = true;
 }
 
@@ -287,8 +285,9 @@ getThrowawaySurface(WaylandWindow* window)
     assert(window);
 
     return cairo_image_surface_create(
-        CAIRO_FORMAT_ARGB32, window->width * window->scale, window->height * window->scale
-    );
+        CAIRO_FORMAT_ARGB32,
+        window->width * window->scale,
+        window->height * window->scale);
 }
 
 static void
@@ -296,7 +295,7 @@ resizeWinWidth(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    int32_t windowWidth = menu->menuWidth;
+    int32_t  windowWidth = menu->menuWidth;
     uint32_t outputWidth = window->maxWidth;
 
     if (windowWidth < 0)
@@ -327,7 +326,7 @@ resizeWinHeight(WaylandWindow* window, Menu* menu)
     {
         /* set the height to the size of the output */
         window->windowGap = 0;
-        window->height = outputHeight;
+        window->height    = outputHeight;
     }
 }
 
@@ -336,7 +335,7 @@ resizeWinGap(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    int32_t windowGap = menu->menuGap;
+    int32_t  windowGap    = menu->menuGap;
     uint32_t outputHeight = window->maxHeight;
 
     if (windowGap < 0)
@@ -374,20 +373,27 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
     assert(window);
 
     zwlr_layer_surface_v1_set_size(
-        window->layerSurface, window->width * window->scale, window->height * window->scale
-    );
+        window->layerSurface,
+        window->width * window->scale,
+        window->height * window->scale);
     zwlr_layer_surface_v1_set_anchor(window->layerSurface, window->alignAnchor);
     if (window->position == MENU_POS_BOTTOM)
     {
         zwlr_layer_surface_v1_set_margin(
-            window->layerSurface, 0, 0, window->windowGap * window->scale, 0
-        );
+            window->layerSurface,
+            0,
+            0,
+            window->windowGap * window->scale,
+            0);
     }
     else
     {
         zwlr_layer_surface_v1_set_margin(
-            window->layerSurface, window->windowGap * window->scale, 0, 0, 0
-        );
+            window->layerSurface,
+            window->windowGap * window->scale,
+            0,
+            0,
+            0);
     }
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
@@ -409,7 +415,7 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
         return false;
     }
 
-    menu->width = buffer->width;
+    menu->width  = buffer->width;
     menu->height = buffer->height;
     window->render(&buffer->cairo, menu);
     cairo_surface_flush(buffer->cairo.surface);
@@ -444,16 +450,15 @@ windowDestroy(WaylandWindow* window)
 
 static void
 layerSurfaceConfigure(
-    void* data,
+    void*                         data,
     struct zwlr_layer_surface_v1* layerSurface,
-    uint32_t serial,
-    uint32_t width,
-    uint32_t height
-)
+    uint32_t                      serial,
+    uint32_t                      width,
+    uint32_t                      height)
 {
     WaylandWindow* window = data;
-    window->width = width;
-    window->height = height;
+    window->width         = width;
+    window->height        = height;
     zwlr_layer_surface_v1_ack_configure(layerSurface, serial);
 }
 
@@ -468,7 +473,7 @@ layerSurfaceClosed(void* data, struct zwlr_layer_surface_v1* layerSurface)
 
 static const struct zwlr_layer_surface_v1_listener layerSurfaceListener = {
     .configure = layerSurfaceConfigure,
-    .closed = layerSurfaceClosed,
+    .closed    = layerSurfaceClosed,
 };
 
 static uint32_t
@@ -503,22 +508,21 @@ windowSetOverlap(WaylandWindow* window, struct wl_display* display, bool overlap
     assert(window);
 
     zwlr_layer_surface_v1_set_exclusive_zone(
-        window->layerSurface, overlap ? -1 : 0
-    ); /* or ... -overlap */
+        window->layerSurface,
+        overlap ? -1 : 0); /* or ... -overlap */
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
 }
 
 bool
 windowCreate(
-    WaylandWindow* window,
-    struct wl_display* display,
-    struct wl_shm* shm,
-    struct wl_output* wlOutput,
+    WaylandWindow*              window,
+    struct wl_display*          display,
+    struct wl_shm*              shm,
+    struct wl_output*           wlOutput,
     struct zwlr_layer_shell_v1* layerShell,
-    struct wl_surface* surface,
-    Menu* menu
-)
+    struct wl_surface*          surface,
+    Menu*                       menu)
 {
     assert(window), assert(menu);
 
@@ -539,10 +543,11 @@ windowCreate(
     wl_display_roundtrip(display);
 
     zwlr_layer_surface_v1_set_size(
-        window->layerSurface, getWindowWidth(window), getWindowHeight(window, menu)
-    );
+        window->layerSurface,
+        getWindowWidth(window),
+        getWindowHeight(window, menu));
 
-    window->shm = shm;
+    window->shm     = shm;
     window->surface = surface;
 
     cairoInitPaint(menu, &window->paint);
