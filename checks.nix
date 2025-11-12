@@ -11,7 +11,7 @@
       clang-format = {
         enable = true;
         types_or = ["c" "c++"];
-        excludes = [".*\\.wks$"];
+        excludes = [".*\\.wks$" ".*\\.def\\.h$"];
       };
 
       # Git + General checks

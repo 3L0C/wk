@@ -3,12 +3,12 @@
 wk
 ========
 
-`wk` - Which-Key via X11 and Wayland. 
-Displays available key chords in a popup window. 
-Inspired by 
-[emacs-which-key](https://github.com/justbur/emacs-which-key), 
-[dmenu](https://tools.suckless.org/dmenu/), and 
-[bemenu](https://github.com/Cloudef/bemenu). 
+`wk` - Which-Key via X11 and Wayland.
+Displays available key chords in a popup window.
+Inspired by
+[emacs-which-key](https://github.com/justbur/emacs-which-key),
+[dmenu](https://tools.suckless.org/dmenu/), and
+[bemenu](https://github.com/Cloudef/bemenu).
 
 # Introduction
 
@@ -27,11 +27,11 @@ check out the demo series
 [here](https://youtube.com/playlist?list=PL20SXZFQEeVPi9vtnxYvMmvOfUalXBWMi&feature=shared)
 where I cover `wk` basics and beyond.
 
-# Building 
+# Building
 
-``` 
+```
 # Make wk for X11 and Wayland
-make 
+make
 
 # Make wk for X11
 make x11
@@ -39,17 +39,17 @@ make x11
 # Make wk for wayland
 make wayland
 
-# Install 
+# Install
 make clean && make && sudo make install
 ```
 
 # Dependencies
 
-- C compiler 
+- C compiler
 - sed to cleanup man files
 
 All runtime dependencies below are searched with
-`pkg-config`. 
+`pkg-config`.
 
 | Backend | Dependencies                                                  |
 |---------|---------------------------------------------------------------|
@@ -62,37 +62,37 @@ All runtime dependencies below are searched with
 Wayland is only supported by compositors that implement the
 [wlr-layer-shell](https://gitlab.freedesktop.org/wlroots/wlr-protocols/tree/master/unstable)
 protocol. Typically
-[wlroots](https://gitlab.freedesktop.org/wlroots/wlroots/)-based 
+[wlroots](https://gitlab.freedesktop.org/wlroots/wlroots/)-based
 compositors. For those not on a `wlroots`-based compositor,
-[Xwayland](https://wayland.freedesktop.org/xserver.html) 
+[Xwayland](https://wayland.freedesktop.org/xserver.html)
 does work based on my testing, but the popup menu seems to
 only display on one screen.
 
 # Usage
 
-``` 
+```
 # Display built-in key chords.
-wk 
+wk
 
 # Display menu at the top of the screen.
 wk --top
 
 # Display key chords in a `wks` file.
-wk --key-chords my_key_chords.wks 
+wk --key-chords my_key_chords.wks
 
 # Try to pre-press keys 'C-c', and 'x'. Both options work the same.
 wk --press 'C-cx'
 wk --press 'C-c x'
 
-# Transpile the key chords in a `wks` file and print a properly 
-# formated `key_chords.def.h` header to stdout. 
+# Transpile the key chords in a `wks` file and print a properly
+# formated `key_chords.def.h` header to stdout.
 wk --transpile my_key_chords.wks
 
-# Read script from stdin 
+# Read script from stdin
 printf '%s\n' 'a "Chord" %{{echo "Hello, world!"}}' | wk --script
 
 # Everything else
-wk --help 
+wk --help
 usage: wk [options]
 
 options:
@@ -142,12 +142,12 @@ options:
 run `man 1 wk` for more info on each option.
 ```
 
-# Configuration 
+# Configuration
 
 `wk` can be configured at the command line as shown in the
 above help message, or your configuration can be built into
 the binary by changing the settings in
-[config.def.h](config/config.def.h). 
+[config.def.h](config/config.def.h).
 
 # wks Files
 
@@ -176,11 +176,11 @@ This can be either a chord, prefix, or a chord array.
 The chord is the most basic example of a key chord and
 serves as a good entry point for this discussion.
 
-### Chords 
+### Chords
 
 A chord is a key chord that results in `wk` performing some
 action, like executing a command, when the trigger key is
-pressed. 
+pressed.
 
 ```
 chord -> trigger_key description keyword* command ;
@@ -196,14 +196,14 @@ now, let's break down the required parts of the chord.
 A trigger key represents the specific keypress or key
 combination that triggers a corresponding action or command.
 In a `wks` file, it is the written representation of the
-physical key(s) pressed by the user on their keyboard. 
+physical key(s) pressed by the user on their keyboard.
 
 ```
 trigger_key -> modifier* ( normal_key | special_key ) ;
 ```
 
 A trigger key is then zero or more modifiers followed by a
-normal key or a special key. 
+normal key or a special key.
 
 #### Normal Keys
 
@@ -270,7 +270,7 @@ request.
 
 As mentioned above, zero or more modifiers can be given in a
 trigger key. Modifiers can be used in `wks` files via their
-special forms. 
+special forms.
 
 | Modifier    | `wks` form |
 |-------------|------------|
@@ -298,7 +298,7 @@ changes based on the Shift key state.
 
 In such cases, using `S-a` in a `wks` file would not work as
 expected because the key will never match when the user
-presses `Shift+a`. 
+presses `Shift+a`.
 
 I am open to changing it so that `S-a` and `A` match the
 same `Shift+a` keypress, but I have yet to find a fitting
@@ -308,10 +308,10 @@ permitting this syntax for ASCII but not other character
 sets. Each has its own drawback, and I find the current
 solution to be intuitive in practice.
 
-#### Descriptions 
+#### Descriptions
 
 Descriptions provide a hint about the purpose of the chord
-or prefix. 
+or prefix.
 
 ```
 description -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
@@ -321,12 +321,12 @@ A description starts with a double quote (`"`), followed by
 zero or more escaped double quotes, non-double quote
 characters, or an interpolation and ends with a double
 quote. Aside from interpolations, a description looks like
-your typical string in many programming languages. 
+your typical string in many programming languages.
 
-#### Commands 
+#### Commands
 
 Commands are the actions executed upon completing a key
-chord sequence. 
+chord sequence.
 
 ```
 command -> '%' delimiter ( . | interpolation )* delimiter ;
@@ -383,7 +383,7 @@ almost indefinitely.  It also makes it possible to nest a
 `wks` script within a `wks` command if you want to get
 really weird.
 
-#### Basic Chord Example 
+#### Basic Chord Example
 
 Having learned a large portion of the syntax so far, we can
 create our first chord using `wks` syntax.
@@ -425,7 +425,7 @@ m "+Music"
 }
 ```
 
-### Chord Arrays 
+### Chord Arrays
 
 Chords and prefixes are standard fare in the realm of key
 chords, so what the heck is a chord array? Well, mostly
@@ -488,7 +488,7 @@ To use an explicit array begin with an open bracket (`[`)
 followed by one or more trigger keys or chord expressions.
 The array portion ends with a closing bracket (`]`) followed
 by the standard chord components, a description, zero or
-more keywords, and a command. 
+more keywords, and a command.
 
 I think an example will make things clear:
 
@@ -530,7 +530,7 @@ added flexibility. Normally, a chord requires at least a
 trigger key, a description, and a command. A chord
 expression, on the other hand, requires only a key and a
 description. Any other information will be filled in by the
-surrounding chord array. 
+surrounding chord array.
 
 Here is an example of a chord expression within a chord array:
 
@@ -563,7 +563,7 @@ interpolation -> '%(' identifier ')' ;
 
 The basic syntax for an interpolation begins with a `%(`
 delimiter followed by an identifier and closing parenthesis
-(`)`). 
+(`)`).
 
 **Note** that interpolations can only be used in
 descriptions and commands.
@@ -587,7 +587,7 @@ their corresponding metadata.
 There are only a few identifiers that can be interpolated,
 but even this small set makes `wk` more scriptable.
 
-### Keywords 
+### Keywords
 
 So far keywords have been glossed over, but they are very
 handy.
@@ -603,7 +603,7 @@ permitted.
 #### Hooks
 
 Hooks provide means of adding additional commands to a chord
-or prefix. 
+or prefix.
 
 ```
 hook -> '^' ( 'before'
@@ -617,13 +617,13 @@ the type of hook, and finally the command the hook will run.
 
 The hook type has to do with the order the command will be
 run. The `before` hooks run before the chord's command, and
-the `after` hooks run after the chord's command. 
+the `after` hooks run after the chord's command.
 
 The `sync-*` hooks relate to how `wk` runs the commands. By
 default, all commands are run asynchronously to prevent a
 command from blocking `wk`. However, if the hook must
 complete before `wk` can proceed you can use the `sync-*`
-variant to enforce this behavior. 
+variant to enforce this behavior.
 
 **Note** that a blocking command may prevent `wk` from ever
 resuming execution. In the event that this happens, users
@@ -643,7 +643,7 @@ e "+Emacs" ^before %{{xdotool set_desktop 1}}
     r "Roam" %{{emacsclient -c -a "" ~/20240101080032-startpage.org}}
 }
 
-# Without hooks 
+# Without hooks
 e "+Emacs"
 {
     o "Open" %{{xdotool set_desktop 1 ; emacsclient -c -a ""}}
@@ -663,7 +663,7 @@ factor into the discussion.
 #### Flags
 
 Flags are similar to command-line flags in that they change
-the behavior of `wk`. 
+the behavior of `wk`.
 
 ```
 flag -> '+' ( 'keep'
@@ -724,15 +724,15 @@ same way that `dmenu` and co print selections to stdout,
 this turns `wk` into a prompt for users to choose from some
 list of options with less typing.
 
-#### Inheritance 
+#### Inheritance
 
 Inheritance relates to hooks and flags given to prefixes.
 The idea is fairly simple. A hook or flag given to a prefix
 is inherited by any chord within the prefix. Nested prefixes
-do not inherit the hooks and flags given to their parent. 
+do not inherit the hooks and flags given to their parent.
 
 ```
-a "+Prefix" +write 
+a "+Prefix" +write
 {
     w "Write it!" %{{I get written!}}
     n "+Nested Prefix"
@@ -801,12 +801,12 @@ a "First?" +write %{{4}}
 b "Second?" +write %{{5}}
 ```
 
-## Preprocessor Macros 
+## Preprocessor Macros
 
 There are a number of preprocessor macros that can be used
 in `wks` files. These have a number of uses from making
 `wks` files more modular to controlling the look and feel of
-`wk`. 
+`wk`.
 
 ```
 preprocessor_macro -> ':' ( string_macro
@@ -830,7 +830,7 @@ chords if it is intended to be used as part of a script by
 making the `wk` popup window different from the builtin
 settings.
 
-### String Macros 
+### String Macros
 
 String macros require a string argument.
 
@@ -856,7 +856,7 @@ of `wk`.
 
 The `:include` macro works similarly to the `#include` macro
 found in C/C++. It allows users to bring other `wks` files
-into a single file. 
+into a single file.
 
 **Note**, self includes and recursive includes are not
 permitted and will cause an error.
@@ -882,7 +882,7 @@ m "+Music" +keep { :include "music_key_chords.wks" }
     (b "Brave")
     (c "Chrome")
     (f "Firefox")
-] "null" %{{%(desc,,)}} 
+] "null" %{{%(desc,,)}}
 
 # Mullvad-exclude prefix
 m "+Mullvad Exclude"
@@ -921,7 +921,7 @@ manner. This can be beneficial when you may want to reuse a
 restrictions  on where it can go in a file, the`:include`
 macro in a `wks` file may go literally anywhere. In the
 above example, this was given in the middle of a prefix
-without error. 
+without error.
 
 You can even do silly things like this:
 
@@ -943,7 +943,7 @@ As for file resolution, it's pretty simple. A relative path
 is assumed to be in the same directory as the file being
 executed,  and absolute paths are just that, absolute.
 
-### Switch Macros 
+### Switch Macros
 
 Switch macros are the simplest of the bunch. They are
 essentially an on switch for the corresponding menu
@@ -958,9 +958,9 @@ switch_macro -> ( 'debug'
 
 All the switch macros correspond to their cli flags for
 `wk`. See the help message or the [man](man/wk.1.org) page
-for more info. 
+for more info.
 
-### Integer Macros 
+### Integer Macros
 
 The integer macros require a positive or negative integer
 argument to the macro.
@@ -972,29 +972,29 @@ integer_macro -> ( 'menu-width'
 
 All the integer macros correspond to their cli flags for
 `wk`. See the help message or the [man](man/wk.1.org) page
-for more info. 
+for more info.
 
-### Unsigned Macros 
+### Unsigned Macros
 
 The unsigned macros require a positive integer argument to
-the macro. 
+the macro.
 
 ```
 unsigned_macro -> ( 'max-columns'
                   | 'border-width'
                   | 'width-padding'
-                  | 'height-padding' 
+                  | 'height-padding'
                   | 'delay' ) [0-9]+ ;
 ```
 
 All the unsigned macros correspond to their cli flags for
 `wk`. See the help message or the [man](man/wk.1.org) page
-for more info. 
+for more info.
 
-### Number Macros 
+### Number Macros
 
 The number macros require a positive number argument to
-the macro. 
+the macro.
 
 ```
 number_macro -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
@@ -1002,7 +1002,7 @@ number_macro -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
 
 All the number macros correspond to their cli flags for
 `wk`. See the help message or the [man](man/wk.1.org) page
-for more info. 
+for more info.
 
 ## Full documentation
 
@@ -1014,7 +1014,7 @@ break down of `wks` syntax.
 
 Additionally, there are several example files included in
 the [`examples`](examples) section for testing and
-understanding. 
+understanding.
 
 ## `wks-mode` Emacs Package
 
@@ -1023,7 +1023,7 @@ package for Emacs provides syntax highlighting, and proper
 indentation in `wks` files. I'm no elisp wizard, if you have
 any way to make that package better, please reach out.
 
-# Acknowledgments 
+# Acknowledgments
 
 This project would not be where it is without
 [dmenu](https://tools.suckless.org/dmenu/), and
@@ -1036,7 +1036,7 @@ projects that `wk` runs on either environment. `bemenu`
 especially was a life saver. The code for the Wayland
 runtime has been lightly addapted for use with `wk`. All
 credit goes to the people who work on that project for the
-code there. 
+code there.
 
 # Contributing
 

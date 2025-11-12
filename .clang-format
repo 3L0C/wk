@@ -2,26 +2,36 @@
 # wk C code formatting style
 BasedOnStyle: LLVM
 IndentWidth: 4
-ColumnLimit: 100
+ColumnLimit: 0
 PointerAlignment: Left
+Language: C
 
 # Function return type on separate line
 AlwaysBreakAfterReturnType: AllDefinitions
 
-# Allow single-line if statements
-AllowShortIfStatementsOnASingleLine: WithoutElse
-AllowShortBlocksOnASingleLine: Empty
+# Allow single-line if statements (including if-else chains)
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 
-# Brace wrapping - Allman style (braces on new lines, else on new line)
+# Brace wrapping - Allman style
 BreakBeforeBraces: Allman
 
 # Alignment
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+  PadOperators: true
 
 # Other style preferences
 SpaceAfterCStyleCast: false
 IndentCaseLabels: false
+Cpp11BracedListStyle: false
 
 # Allow compact switch case statements
 AllowShortCaseLabelsOnASingleLine: true
@@ -29,11 +39,24 @@ AllowShortCaseLabelsOnASingleLine: true
 # Preserve multi-line array/argument formatting
 BinPackArguments: false
 BinPackParameters: false
-AllowAllArgumentsOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 
 # Align struct array initializers for table-like formatting
 AlignArrayOfStructures: Left
 
 # Preserve multi-line expressions with proper indentation
-AlignAfterOpenBracket: BlockIndent
+AlignAfterOpenBracket: AlwaysBreak
+
+# Include handling - preserve manual organization
+SortIncludes: true
+
+# Additional controls
+AllowShortEnumsOnASingleLine: false
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+AlignEscapedNewlines: Left
+ReflowComments: false
+
+# Keep lines clean
+MaxEmptyLinesToKeep: 1
