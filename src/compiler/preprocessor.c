@@ -334,6 +334,7 @@ handleMacroWithStringArg(
     case TOKEN_SHELL: menu->shell = arg; break;
     case TOKEN_FONT: menu->font = arg; break;
     case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
+    case TOKEN_WRAP_CMD: menuSetWrapperCmd(menu, arg); break;
     case TOKEN_INCLUDE: handleIncludeMacro(menu, scanner, arr, &result, stack, arena); break;
     case TOKEN_VAR: handleVarMacro(menu, scanner, &result, arg, arena); break;
     default:
@@ -550,6 +551,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         case TOKEN_SHELL:
         case TOKEN_FONT:
         case TOKEN_IMPLICIT_ARRAY_KEYS:
+        case TOKEN_WRAP_CMD:
         case TOKEN_INCLUDE:
         case TOKEN_VAR:
         {

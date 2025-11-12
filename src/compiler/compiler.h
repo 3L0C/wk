@@ -22,6 +22,7 @@ typedef struct
     Arena*      arena;
     Scanner*    scanner;
     Array*      userVars;
+    Menu*       menu;
     const char* delimiter;
     char*       source;
     size_t      delimiterLen;

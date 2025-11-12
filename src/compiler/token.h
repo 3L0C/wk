@@ -35,6 +35,7 @@ enum
     TOKEN_FONT,
     TOKEN_IMPLICIT_ARRAY_KEYS,
     TOKEN_VAR,
+    TOKEN_WRAP_CMD,
 
     /* switch macros */
     TOKEN_DEBUG,
@@ -86,6 +87,8 @@ enum
     TOKEN_WRITE,
     TOKEN_EXECUTE,
     TOKEN_SYNC_CMD,
+    TOKEN_WRAP,
+    TOKEN_UNWRAP,
 
     /* literals */
     TOKEN_COMMAND,
@@ -97,6 +100,7 @@ enum
     /* interpolations */
     TOKEN_COMM_INTERP,
     TOKEN_DESC_INTERP,
+    TOKEN_WRAP_CMD_INTERP,
 
     /* mods */
     TOKEN_MOD_CTRL,

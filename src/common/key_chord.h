@@ -26,7 +26,8 @@ enum
     FLAG_EXECUTE      = 1 << 10,
     FLAG_SYNC_COMMAND = 1 << 11,
     FLAG_SYNC_BEFORE  = 1 << 12,
-    FLAG_SYNC_AFTER   = 1 << 13
+    FLAG_SYNC_AFTER   = 1 << 13,
+    FLAG_UNWRAP       = 1 << 14
 };
 
 typedef uint8_t KeyType;
@@ -125,6 +126,7 @@ typedef struct KeyChord
     String    command;
     String    before;
     String    after;
+    String    wrapperCmd;
     ChordFlag flags;
     Array     keyChords;
 } KeyChord;

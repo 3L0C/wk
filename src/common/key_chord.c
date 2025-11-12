@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
 /* local includes */
 #include "array.h"
@@ -105,7 +104,8 @@ chordFlagHasAnyActive(ChordFlag flag)
         FLAG_EXECUTE |
         FLAG_SYNC_COMMAND |
         FLAG_SYNC_BEFORE |
-        FLAG_SYNC_AFTER;
+        FLAG_SYNC_AFTER |
+        FLAG_UNWRAP;
 
     return (flag & any) != 0;
 }
@@ -266,6 +266,7 @@ keyChordCopy(const KeyChord* from, KeyChord* to)
     to->command     = from->command;
     to->before      = from->before;
     to->after       = from->after;
+    to->wrapperCmd  = from->wrapperCmd;
     to->flags       = from->flags;
     to->keyChords   = from->keyChords;
 }
@@ -280,6 +281,7 @@ keyChordFree(KeyChord* keyChord)
     stringFree(&keyChord->command);
     stringFree(&keyChord->before);
     stringFree(&keyChord->after);
+    stringFree(&keyChord->wrapperCmd);
     keyChordArrayFree(&keyChord->keyChords);
 }
 
@@ -293,6 +295,7 @@ keyChordInit(KeyChord* keyChord)
     keyChord->command     = stringInit();
     keyChord->before      = stringInit();
     keyChord->after       = stringInit();
+    keyChord->wrapperCmd  = stringInit();
     keyChord->flags       = chordFlagInit();
     keyChord->keyChords   = ARRAY_INIT(KeyChord);
 }

@@ -344,6 +344,7 @@ disassembleChordFlag(ChordFlag flag, int indent)
     if (chordFlagIsActive(flag, FLAG_SYNC_COMMAND)) printf("SYNC_COMMAND%c", getSeparator(&count, '|', '\n'));
     if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%c", getSeparator(&count, '|', '\n'));
     if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_UNWRAP)) printf("UNWRAP%c", getSeparator(&count, '|', '\n'));
 }
 
 void
@@ -451,6 +452,9 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %04u", "Width:", menu->width);
     debugMsgWithIndent(0, "| %-20s %04u", "Height:", menu->height);
     debugMsgWithIndent(0, "| %-20s %04u", "Border width:", menu->borderWidth);
+    debugMsgWithIndent(0, "| %-20s %04u", "Delay:", menu->delay);
+    debugMsgWithIndent(0, "| %-20s %s", "Wrapper Cmd:", menu->wrapperCmd);
+    debugStringWithIndent(0, "Wrapper Cmd", &menu->wrapperCmd);
     debugMsgWithIndent(
         0,
         "| %-20s %s",
@@ -459,7 +463,6 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %s", "Debug:", "true");
     debugMsgWithIndent(0, "| %-20s %s", "Sort:", menu->sort ? "true" : "false");
     debugMsgWithIndent(0, "| %-20s %s", "Dirty:", menu->dirty ? "true" : "false");
-    debugMsgWithIndent(0, "| %-20s %s", "UWSM Wrapper:", menu->uwsmWrapper ? "true" : "false");
     debugMsgWithIndent(0, "|");
     debugPrintHeader("");
     debugMsg(true, "");

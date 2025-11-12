@@ -1,0 +1,2 @@
+sync-before-hook
+main-command

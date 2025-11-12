@@ -303,7 +303,7 @@ stringFree(String* string)
 String
 stringInitFromChar(const char* src)
 {
-    assert(src);
+    if (src == NULL) return stringInit();
 
     String string = stringInit();
     size_t length = strlen(src);

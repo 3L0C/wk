@@ -474,6 +474,7 @@ drawDescriptionText(
 {
     assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x),
         assert(y);
+
     if (!setSourceRgba(
             cr,
             paint,

@@ -1,0 +1,1 @@
+global-prefix firefox google.com

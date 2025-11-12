@@ -1,0 +1,16 @@
+# Comprehensive wrapper test demonstrating %(wrap_cmd) interpolation and inheritance
+
+:wrap-cmd "global-prefix"
+
+# Test 1: %(wrap_cmd) interpolation in custom wrapper
+o "Open with wrapper" +wrap "%(wrap_cmd) firefox"
+{
+    g "Google" +write %{{google.com}}
+    n "News" +write %{{news.com}}
+}
+
+# Test 2: Child with explicit unwrap blocks inheritance
+u "Unwrapped parent" +wrap "custom-wrap"
+{
+    c "Child unwrapped" +unwrap +write %{{cmd}}
+}

@@ -131,6 +131,11 @@ run_test "tests/fixtures/valid/preprocessor_test.wks" "a" "tests/expected/prepro
 run_test "tests/fixtures/valid/preprocessor_test.wks" "p b" "tests/expected/preprocessor_test_p_b.txt"
 run_test "tests/fixtures/valid/preprocessor_test.wks" "b" "tests/expected/preprocessor_test_b.txt"
 
+# Hook tests (sync hooks only - async hooks have non-deterministic output)
+run_test "tests/fixtures/valid/hook_test.wks" "a" "tests/expected/hook_test_a.txt"
+run_test "tests/fixtures/valid/hook_test.wks" "b" "tests/expected/hook_test_b.txt"
+run_test "tests/fixtures/valid/hook_test.wks" "c" "tests/expected/hook_test_c.txt"
+
 # Sorting tests
 run_test "tests/fixtures/valid/sorted_test.wks" "a" "tests/expected/sorted_test_a.txt"
 run_test "tests/fixtures/valid/sorted_test.wks" "b" "tests/expected/sorted_test_b.txt"
@@ -158,6 +163,21 @@ run_test "tests/fixtures/valid/var_test.wks" "f" "tests/expected/var_test_f.txt"
 run_test "tests/fixtures/valid/var_include_test/main.wks" "a" "tests/expected/var_include_main_a.txt"
 run_test "tests/fixtures/valid/var_include_test/main.wks" "b" "tests/expected/var_include_main_b.txt"
 run_test "tests/fixtures/valid/var_include_test/main.wks" "c" "tests/expected/var_include_main_c.txt"
+
+# Wrapper system tests
+run_test "tests/fixtures/valid/wrapper_test.wks" "a" "tests/expected/wrapper_test_a.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "b" "tests/expected/wrapper_test_b.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "c" "tests/expected/wrapper_test_c.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "d" "tests/expected/wrapper_test_d.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "p e" "tests/expected/wrapper_test_p_e.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "f" "tests/expected/wrapper_test_f.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "g h" "tests/expected/wrapper_test_g_h.txt"
+run_test "tests/fixtures/valid/wrapper_test.wks" "g i" "tests/expected/wrapper_test_g_i.txt"
+
+# Comprehensive wrapper tests (%(wrap_cmd) interpolation + inheritance)
+run_test "tests/fixtures/valid/wrapper_comprehensive.wks" "o g" "tests/expected/wrapper_comprehensive_o_g.txt"
+run_test "tests/fixtures/valid/wrapper_comprehensive.wks" "o n" "tests/expected/wrapper_comprehensive_o_n.txt"
+run_test "tests/fixtures/valid/wrapper_comprehensive.wks" "u c" "tests/expected/wrapper_comprehensive_u_c.txt"
 
 # Duplicate key deduplication tests (last wins)
 run_test "tests/fixtures/valid/duplicate_test.wks" "a" "tests/expected/duplicate_test_a.txt"

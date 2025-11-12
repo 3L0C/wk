@@ -30,6 +30,7 @@ typedef struct
     Array     after;
     Array     chords;
     ChordFlag flags;
+    Array     wrapperCmd;
 } PseudoChord;
 
 static void pseudoChordArrayFree(Array* arr);
@@ -74,12 +75,13 @@ pseudoChordInit(PseudoChord* chord)
     assert(chord);
 
     keyInit(&chord->key);
-    chord->desc   = ARRAY_INIT(Token);
-    chord->cmd    = ARRAY_INIT(Token);
-    chord->before = ARRAY_INIT(Token);
-    chord->after  = ARRAY_INIT(Token);
-    chord->chords = ARRAY_INIT(PseudoChord);
-    chord->flags  = chordFlagInit();
+    chord->desc       = ARRAY_INIT(Token);
+    chord->cmd        = ARRAY_INIT(Token);
+    chord->before     = ARRAY_INIT(Token);
+    chord->after      = ARRAY_INIT(Token);
+    chord->chords     = ARRAY_INIT(PseudoChord);
+    chord->flags      = chordFlagInit();
+    chord->wrapperCmd = ARRAY_INIT(Token);
 }
 
 static void
@@ -92,6 +94,7 @@ pseudoChordFree(PseudoChord* chord)
     arrayFree(&chord->cmd);
     arrayFree(&chord->before);
     arrayFree(&chord->after);
+    arrayFree(&chord->wrapperCmd);
     pseudoChordArrayFree(&chord->chords);
     pseudoChordInit(chord);
 }
@@ -426,6 +429,7 @@ compileDescriptionTokens(Compiler* compiler, Array* desc)
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         case TOKEN_USER_VAR:
+        case TOKEN_WRAP_CMD_INTERP:
         case TOKEN_DESC_INTERP:
         case TOKEN_DESCRIPTION: arrayAppend(desc, token); break;
         default: errorAtCurrent(compiler, "Malfromed description."); return;
@@ -460,6 +464,7 @@ compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const ch
         case TOKEN_INDEX:
         case TOKEN_INDEX_ONE:
         case TOKEN_USER_VAR:
+        case TOKEN_WRAP_CMD_INTERP:
         case TOKEN_THIS_DESC:
         case TOKEN_THIS_DESC_UPPER_FIRST:
         case TOKEN_THIS_DESC_LOWER_FIRST:
@@ -546,6 +551,20 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
     case TOKEN_WRITE: chord->flags |= FLAG_WRITE; return true;
     case TOKEN_EXECUTE: chord->flags |= FLAG_EXECUTE; return true;
     case TOKEN_SYNC_CMD: chord->flags |= FLAG_SYNC_COMMAND; return true;
+    case TOKEN_WRAP:
+    {
+        consume(compiler, TOKEN_WRAP, "Expected ':wrap-cmd'.");
+        if (check(compiler, TOKEN_DESCRIPTION) || check(compiler, TOKEN_DESC_INTERP))
+        {
+            compileDescriptionTokens(compiler, &chord->wrapperCmd);
+        }
+        return true;
+    }
+    case TOKEN_UNWRAP:
+    {
+        chord->flags |= FLAG_UNWRAP;
+        return true;
+    }
     default: return false;
     }
 }
@@ -561,9 +580,16 @@ compileHooksAndFlags(Compiler* compiler, PseudoChord* chord)
     {
         if (!compileHook(compiler, chord, type) && !compileFlag(compiler, chord, type)) return;
 
-        /* Hooks consume their own token and their command
+        /* Hooks and the `+wrap` flag consume their own token and their argument
          * which leaves them pointing at the next token. */
-        type = tokenIsHookType(type) ? currentType(compiler) : advance(compiler);
+        if (tokenIsHookType(type) || type == TOKEN_WRAP)
+        {
+            type = currentType(compiler);
+        }
+        else
+        {
+            type = advance(compiler);
+        }
     }
 }
 
@@ -785,6 +811,15 @@ setHooksAndFlags(PseudoChord* parent, Array* children)
 
         setHooks(parent, child);
         child->flags = setFlags(parent->flags, child->flags);
+
+        /* Inherit wrapper command if child doesn't unwrap and doesn't have its own */
+        if (!chordFlagIsActive(child->flags, FLAG_UNWRAP) &&
+            arrayIsEmpty(&child->wrapperCmd) &&
+            !arrayIsEmpty(&parent->wrapperCmd))
+        {
+            child->wrapperCmd = arrayCopy(&parent->wrapperCmd);
+        }
+
         if (!arrayIsEmpty(&child->chords))
         {
             setHooksAndFlags(child, &child->chords);
@@ -943,6 +978,14 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
     }
     case TOKEN_INDEX: stringAppendUInt32(compiler->arena, dest, index); break;
     case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); break;
+    case TOKEN_WRAP_CMD_INTERP:
+    {
+        if (!stringIsEmpty(&compiler->menu->wrapperCmd))
+        {
+            stringAppendString(dest, &compiler->menu->wrapperCmd);
+        }
+        break;
+    }
     case TOKEN_DESC_INTERP: /* FALLTHROUGH */
     case TOKEN_DESCRIPTION: stringAppendEscString(dest, token->start, token->length); break;
     case TOKEN_COMM_INTERP: /* FALLTHROUGH */
@@ -962,18 +1005,16 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
 
         if (!found)
         {
-            // Work around errorAt bug by using simpler error message
-            compiler->hadError = true;
-            fprintf(
-                stderr,
-                "%s:%u:%u: error: Undefined variable '%%(",
+            tokenErrorAt(
+                token,
                 compiler->scanner->filepath,
-                token->line,
-                token->column);
-            fwrite(token->start, 1, token->length, stderr);
-            fprintf(stderr, ")'. Use :var \"");
-            fwrite(token->start, 1, token->length, stderr);
-            fprintf(stderr, "\" \"value\" to define it.\n");
+                "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
+                token->length,
+                token->start,
+                token->length,
+                token->start);
+            compiler->panicMode = true;
+            compiler->hadError  = true;
         }
 
         break;
@@ -993,7 +1034,10 @@ compileStringFromTokens(Compiler* compiler, Array* tokens, KeyChord* to, String*
 {
     assert(compiler), assert(tokens), assert(to), assert(dest);
 
-    forEach(tokens, Token, token) { compileStringFromToken(compiler, token, to, dest, index); }
+    forEach(tokens, Token, token)
+    {
+        compileStringFromToken(compiler, token, to, dest, index);
+    }
 
     stringRtrim(dest);
 }
@@ -1021,6 +1065,13 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
         compileStringFromTokens(compiler, &chord->before, keyChord, &keyChord->before, iter.index);
         compileStringFromTokens(compiler, &chord->after, keyChord, &keyChord->after, iter.index);
         keyChord->flags = chord->flags;
+        /* Wrapper */
+        compileStringFromTokens(
+            compiler,
+            &chord->wrapperCmd,
+            keyChord,
+            &keyChord->wrapperCmd,
+            iter.index);
         /* Command */
         compileStringFromTokens(compiler, &chord->cmd, keyChord, &keyChord->command, iter.index);
         if (!arrayIsEmpty(&chord->chords))
@@ -1144,6 +1195,7 @@ initCompiler(Compiler* compiler, Menu* menu, char* source, const char* filepath)
     compiler->chords       = NULL;
     compiler->arena        = &menu->arena;
     compiler->userVars     = &menu->userVars;
+    compiler->menu         = menu;
     compiler->delimiter    = menu->delimiter;
     compiler->source       = source;
     compiler->delimiterLen = strlen(menu->delimiter);

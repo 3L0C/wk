@@ -214,6 +214,7 @@ writeChordFlag(const ChordFlag flags, int indent)
         if (chordFlagIsActive(flags, FLAG_SYNC_COMMAND)) printf("FLAG_SYNC_COMMAND%c", getSeparator(&count, '|', ','));
         if (chordFlagIsActive(flags, FLAG_SYNC_BEFORE)) printf("FLAG_SYNC_BEFORE%c", getSeparator(&count, '|', ','));
         if (chordFlagIsActive(flags, FLAG_SYNC_AFTER)) printf("FLAG_SYNC_AFTER%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_UNWRAP)) printf("FLAG_UNWRAP%c", getSeparator(&count, '|', ','));
     }
 }
 

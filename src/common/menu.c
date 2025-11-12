@@ -50,7 +50,6 @@ menuDisplay(Menu* menu)
 #endif
 #ifdef WK_X11_BACKEND
     debugMsg(menu->debug, "Running on x11.");
-    menu->uwsmWrapper = false;
     return x11Run(menu);
 #endif
     errorMsg("Can only run under X11 and/or Wayland.");
@@ -78,20 +77,55 @@ menuHandlePrefix(Menu* menu, KeyChord* keyChord)
     return MENU_STATUS_DAMAGED;
 }
 
+static const String*
+getWrapper(const Menu* menu, const KeyChord* keyChord)
+{
+    assert(menu), assert(keyChord);
+
+    if (chordFlagIsActive(keyChord->flags, FLAG_UNWRAP)) return NULL;
+    if (!stringIsEmpty(&keyChord->wrapperCmd)) return &keyChord->wrapperCmd;
+    if (!stringIsEmpty(&menu->wrapperCmd)) return &menu->wrapperCmd;
+    return NULL;
+}
+
+static String
+getCmd(const Menu* menu, const KeyChord* keyChord)
+{
+    const String* wrapper = getWrapper(menu, keyChord);
+
+    String cmd = stringInit();
+
+    if (wrapper != NULL)
+    {
+        stringAppendString(&cmd, wrapper);
+        stringAppendCString(&cmd, " ");
+    }
+
+    stringAppendString(&cmd, &keyChord->command);
+
+    return cmd;
+}
+
 static void
 menuHandleCommand(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (keyChord->flags & FLAG_WRITE)
+    String cmd = getCmd(menu, keyChord);
+
+    /* Nothing to print */
+    if (cmd.length == 0) return;
+
+    if (chordFlagIsActive(keyChord->flags, FLAG_WRITE))
     {
-        char buffer[keyChord->command.length + 1];
-        stringWriteToBuffer(&keyChord->command, buffer);
+        char buffer[cmd.length + 1];
+        stringWriteToBuffer(&cmd, buffer);
+
         printf("%s\n", buffer);
         return;
     }
 
-    menuSpawn(menu, &keyChord->command, chordFlagIsActive(keyChord->flags, FLAG_SYNC_COMMAND));
+    menuSpawn(menu, keyChord, &cmd, chordFlagIsActive(keyChord->flags, FLAG_SYNC_COMMAND));
 }
 
 static MenuStatus
@@ -99,13 +133,19 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    /* TODO handle before/after write rather than always spawn */
-    menuSpawn(menu, &keyChord->before, chordFlagIsActive(keyChord->flags, FLAG_SYNC_BEFORE));
+    menuSpawn(
+        menu,
+        keyChord,
+        &keyChord->before,
+        chordFlagIsActive(keyChord->flags, FLAG_SYNC_BEFORE));
     menuHandleCommand(menu, keyChord);
-    menuSpawn(menu, &keyChord->after, chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
+    menuSpawn(
+        menu,
+        keyChord,
+        &keyChord->after,
+        chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
-    return chordFlagIsActive(keyChord->flags, FLAG_KEEP) ? MENU_STATUS_RUNNING
-                                                         : MENU_STATUS_EXIT_OK;
+    return chordFlagIsActive(keyChord->flags, FLAG_KEEP) ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
 }
 
 static MenuStatus
@@ -250,11 +290,11 @@ menuInit(Menu* menu, Array* keyChords)
     menu->borderWidth = borderWidth;
     menu->delay       = delay;
 
-    menu->position    = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
-    menu->debug       = false;
-    menu->sort        = false;
-    menu->dirty       = true;
-    menu->uwsmWrapper = uwsmWrapper;
+    menu->position   = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
+    menu->debug      = false;
+    menu->sort       = false;
+    menu->dirty      = true;
+    menu->wrapperCmd = stringInitFromChar(wrapCmd);
 }
 
 bool
@@ -283,8 +323,6 @@ usage(void)
         "    -h, --help                 Display help message and exit.\n"
         "    -v, --version              Display version number and exit.\n"
         "    -d, --debug                Print debug information.\n"
-        "    -u, --uwsm                 Wrap commands with `uwsm app -- cmd [args ...]` "
-        "(Wayland).\n"
         "    -D, --delay INT            Delay the popup menu by INT milliseconds from\n"
         "                               startup/last keypress (default 1000 ms).\n"
         "    -t, --top                  Position menu at top of screen.\n"
@@ -368,7 +406,6 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "help",          no_argument,       0, 'h'   },
         { "version",       no_argument,       0, 'v'   },
         { "debug",         no_argument,       0, 'd'   },
-        { "uwsm",          no_argument,       0, 'u'   },
         { "top",           no_argument,       0, 't'   },
         { "bottom",        no_argument,       0, 'b'   },
         { "script",        no_argument,       0, 's'   },
@@ -396,6 +433,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "shell",         required_argument, 0, 0x102 },
         { "font",          required_argument, 0, 0x103 },
         { "implicit-keys", required_argument, 0, 0x104 },
+        { "wrap-cmd",      required_argument, 0, 0x105 },
         { 0,               0,                 0, 0     }
     };
 
@@ -414,7 +452,6 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case 'h': usage(); exit(EXIT_FAILURE);
         case 'v': puts("wk v" VERSION); exit(EXIT_SUCCESS);
         case 'd': menu->debug = true; break;
-        case 'u': menu->uwsmWrapper = true; break;
         case 't': menu->position = MENU_POS_TOP; break;
         case 'b': menu->position = MENU_POS_BOTTOM; break;
         case 's': menu->client.tryScript = true; break;
@@ -563,19 +600,27 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case 0x103: menu->font = optarg; break;
         /* implicit keys */
         case 0x104: menu->implicitArrayKeys = optarg; break;
+        /* wrap-cmd */
+        case 0x105: menuSetWrapperCmd(menu, optarg); break;
         /* Errors */
         case '?':
+        {
             usage();
             errorMsg("Unrecognized option: '%s'.", GET_ARG(argv));
             exit(EXIT_FAILURE);
+        }
         case ':':
+        {
             usage();
             errorMsg("'%s' requires an argument but none given.", GET_ARG(argv));
             exit(EXIT_FAILURE);
+        }
         default:
+        {
             usage();
             exit(EXIT_FAILURE);
             break;
+        }
         }
     }
 
@@ -607,7 +652,18 @@ menuSetColor(Menu* menu, const char* color, MenuColor colorType)
     assert(menu), assert(colorType < MENU_COLOR_LAST);
 
     if (!menuHexColorInitColor(&menu->colors[colorType], color))
+    {
         warnMsg("Invalid color string: '%s'.", color);
+    }
+}
+
+void
+menuSetWrapperCmd(Menu* menu, const char* cmd)
+{
+    assert(menu);
+
+    if (!stringIsEmpty(&menu->wrapperCmd)) stringFree(&menu->wrapperCmd);
+    menu->wrapperCmd = stringInitFromChar(cmd);
 }
 
 static MenuStatus
@@ -649,7 +705,7 @@ spawnAsync(const char* shell, const char* cmd)
 }
 
 MenuStatus
-menuSpawn(const Menu* menu, const String* cmd, bool sync)
+menuSpawn(const Menu* menu, const KeyChord* keyChord, const String* cmd, bool sync)
 {
     assert(menu), assert(cmd);
 
@@ -667,24 +723,11 @@ menuSpawn(const Menu* menu, const String* cmd, bool sync)
     if (child == 0)
     {
         if (menu->xp && menu->cleanupfp) menu->cleanupfp(menu->xp);
-        const char* uwsm_prefix     = "uwsm app -- ";
-        size_t      uwsm_prefix_len = strlen(uwsm_prefix);
 
-        /* Calculate buffer size: command length + null terminator + optional prefix */
-        size_t buffer_len = cmd->length + 1 + (menu->uwsmWrapper ? uwsm_prefix_len : 0);
-        char   buffer[buffer_len];
+        if (cmd->length == 0) exit(EX_OK);
 
-        if (menu->uwsmWrapper)
-        {
-            strcpy(buffer, uwsm_prefix);
-            stringWriteToBuffer(cmd, buffer + uwsm_prefix_len);
-        }
-        else
-        {
-            stringWriteToBuffer(cmd, buffer);
-        }
-
-        printf("Running: `%s`\n", buffer);
+        char buffer[cmd->length + 1];
+        stringWriteToBuffer(cmd, buffer);
 
         if (sync)
         {

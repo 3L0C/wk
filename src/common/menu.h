@@ -104,12 +104,12 @@ typedef struct
     uint32_t height;
     uint32_t borderWidth;
     uint32_t delay;
+    String   wrapperCmd;
 
     MenuPosition position;
     bool         debug;
     bool         sort;
     bool         dirty;
-    bool         uwsmWrapper;
 } Menu;
 
 int        menuDisplay(Menu* menu);
@@ -120,7 +120,8 @@ bool       menuIsDelayed(Menu* menu);
 void       menuParseArgs(Menu* menu, int* argc, char*** argv);
 void       menuResetTimer(Menu* menu);
 void       menuSetColor(Menu* menu, const char* color, MenuColor colorType);
-MenuStatus menuSpawn(const Menu* menu, const String* cmd, bool sync);
+void       menuSetWrapperCmd(Menu* menu, const char* cmd);
+MenuStatus menuSpawn(const Menu* menu, const KeyChord* keyChord, const String* cmd, bool sync);
 bool       menuTryStdin(Menu* menu);
 
 bool menuStatusIsError(MenuStatus status);
