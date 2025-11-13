@@ -63,7 +63,8 @@ identifier         -> ( 'key'
                       | 'desc^'
                       | 'desc^^'
                       | 'desc,'
-                      | 'desc,,' );
+                      | 'desc,,'
+                      | 'wrap_cmd' );
 
 keyword            -> ( hook | flag ) ;
 
@@ -83,7 +84,9 @@ flag               -> '+' ( 'keep'
                           | 'no-after'
                           | 'write'
                           | 'execute'
-                          | 'sync-command' ) ;
+                          | 'sync-command'
+                          | 'unwrap'
+                          | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
 
 preprocessor_macro -> ':' ( string_macro
                           | switch_macro
@@ -100,7 +103,9 @@ string_macro       -> ( 'include'
                       | 'bg'
                       | 'bd'
                       | 'shell'
-                      | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
+                      | 'font'
+                      | 'wrap-cmd'
+                      | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
 
 switch_macro       -> ( 'debug'
                       | 'sort'
@@ -611,6 +616,16 @@ The following identifiers are valid within an /interpolation/:
 - *desc,,* ::
   The /description/ of the current /chord/ with the *all*
   characters downcased.
+
+- /unwrap/ ::
+  Prevent wrapping this chord, even if a global wrapper is set
+  or inherited from a parent prefix.
+
+- wrap_cmd ::
+  The value of the global wrapper command. This is defined
+  by the _:wrap-cmd_ preprocessor macro, the _--wrap-cmd_ cli
+  flag, or defined by _wrapperCmd_ in your _config.[def.]h_
+  file.
 #+end_quote
 
 ** KEYWORD
@@ -676,7 +691,9 @@ flag -> '+' ( 'keep'
             | 'no-after'
             | 'write'
             | 'execute'
-            | 'sync-command' ) ;
+            | 'sync-command'
+            | 'unwrap'
+            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
 #+end_example
 
 Flags begin with a plus character (/+/), followed by the
@@ -685,11 +702,11 @@ flag itself. Here is how each flag changes the behavior of
 
 #+begin_quote
 - /keep/ ::
-  Instead of closing after `wk` finds a matching chord, it
-  keeps the `wk` menu open.
+  Instead of closing after *wk* finds a matching chord, it
+  keeps the *wk* menu open.
 
 - /close/ ::
-  Forces the `wk` window to close. Useful when `+keep` was
+  Forces the *wk* window to close. Useful when _+keep_ was
   given to a surrounding prefix.
 
 - /inherit/ ::
@@ -711,11 +728,11 @@ flag itself. Here is how each flag changes the behavior of
   Ignore all flags from the surrounding prefix.
 
 - /no-before/ ::
-  Ignore `before` and `sync-before` hooks from the
+  Ignore _before_ and _sync-before_ hooks from the
   surrounding prefix.
 
 - /no-after/ ::
-  Ignore `after` and `sync-after` hooks from the surrounding
+  Ignore _after_ and _sync-after_ hooks from the surrounding
   prefix.
 
 - /write/ ::
@@ -723,12 +740,20 @@ flag itself. Here is how each flag changes the behavior of
 
 - /execute/ ::
   Execute the command rather than writing them to stdout.
-  Useful when `+write` was given to a surrounding prefix.
+  Useful when _+write_ was given to a surrounding prefix.
 
 - /sync-command/ ::
   Execute the command in a blocking fashion. See the note in
   *HOOK* regarding potential issues with blocking
   commands.
+
+- /wrap/ '"' ( '\\"' | [^"] | interpolation )* '"' ::
+  When given to a _prefix_, wrap chord commands with the
+  argument. Can be given to a _chord_, or _chord-array_ to wrap
+  the immediate command(s). The argument is a string that
+  supports interpolation, the same syntax as a _description_.
+  The "wrapper" is applied as _/bin/sh -c WRAPPER CMD_. See
+  *EXAMPLES* for scenarios where this is useful.
 #+end_quote
 
 See *EXAMPLES* for further discussion about flags.
@@ -772,7 +797,9 @@ string_macro -> ( 'include'
                 | 'bg-color'
                 | 'bd-color'
                 | 'shell'
-                | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
+                | 'font'
+                | 'wrap-cmd'
+                | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
 #+end_example
 
 Many of the macros here work the same as their command-line
@@ -781,24 +808,37 @@ any string macro, (e.g. *:shell "/usr/bin/env zsh"*).
 
 ** INCLUDE MACRO
 
-Out of the string macros, the /:include/ macro is not
-present as a command-line argument to *wk*​(1). This is
-because this macro has more to do with /wks/ files than the
-look and feel of *wk*​(1). The /:include/ macro works
-similarly to the /#include/ macro found in C/C++. It allows
-users to bring other /wks/ files into a single file. *NOTE*,
-self includes and recursive includes are not permitted and
-will cause an error. *NOTE*, the same file may be included
+The /:include/ macro is not present as a command-line argument
+to *wk*​(1). This is because this macro has more to do with /wks/
+files than the look and feel of *wk*​(1). The /:include/ macro
+works similarly to the /#include/ macro found in C/C++. It
+allows users to bring other /wks/ files into a single file.
+*NOTE*, self includes and recursive includes are not permitted
+and will cause an error. *NOTE*, the same file may be included
 multiple times. This is not an error, and may even be
-desirable for some users. *NOTE*, while the /#include/ macro
-in C/C++ has restrictions on where it can go in a file, the
-/:include/ macro in a /wks/ file may go literally anywhere.
-As for file resolution, it's pretty simple. A relative path
-is assumed to be in the same directory as the file being
+desirable for some users. *NOTE*, while the /#include/ macro in
+C/C++ has restrictions on where it can go in a file, the
+/:include/ macro in a /wks/ file may go literally anywhere.  As
+for file resolution, it's pretty simple. A relative path is
+assumed to be in the same directory as the file being
 processed, and absolute paths are just that, absolute.
 
 See *EXAMPLES* for a full demonstration of the /:include/
 macro.
+
+** VAR MACRO
+
+The /:var/ macro allows you to define a variable with some
+value. It takes two arguments, the first is the /key/ or
+/variable name/, and the second is the /value/ which can be an
+empty string, i.e., unset a previously defined /var/. The
+/value/ of any /var/ can be accessed through interpolation by
+using the corresponding /key/. The /key/ can contain any
+character except a closing parenthesis ('/)/'), otherwise it
+would be inaccessible through interpolation. The /key/ cannot
+shadow builtin interpolations.
+
+See *EXAMPLES* for a demonstration.
 
 ** SWITCH MACROS
 
@@ -918,6 +958,56 @@ same way that *dmenu*​(1) and co print selections to stdout,
 this turns *wk*​(1) into a prompt for users to choose from
 some list of options with less typing.
 
+** WRAPPING COMMANDS
+
+There are two classes of wrappers, globally through
+/:wrap-cmd/, /--wrap-cmd/, and /wrapperCmd/, and locally through
+the /+wrap/ flag. All take a string argument, but the flag
+supports interpolation.
+
+The global wrapper is most useful for someone using a uwsm
+managed wayland environment.  Passing /--wrap-cmd "uwsm-app
+--"/ will ensure all commands are prefixed with /uwsm-app --/
+before they are run, *or* written to stdout. The following are
+equivilant examples:
+
+#+begin_example
+# Wrapped
+:wrap-cmd "uwsm-app --"
+f "Firefox" %{{firefox}}
+
+# Unwrapped
+f "Firefox" %{{uwsm-app -- firefox}}
+#+end_example
+
+Local wrappers may be useful with or without a global
+wrapper. Here are some examples:
+
+#+begin_example
+:wrap-cmd "uwsm-app --"
+b "+Browse" +wrap "%(wrap_cmd) firefox" # include the global wrap_cmd
+{
+    g "GNU" %{{gnu.org}}
+    [
+        (y "YouTube")
+        (s "Soundcloud")
+    ] "null" %{{%(desc,,).com}}
+}
+f "+Foot" +wrap "foot -e" # just wrap with "foot -e"
+{
+    n "ncmpcpp" %{{ncmpcpp}}
+}
+#+end_example
+
+*NOTE* on wrapper precedence: When multiple wrapper definitions exist,
+the most specific takes precedence:
+
+1. Chord-level +unwrap (no wrapper)
+2. Chord-level +wrap "custom" (use custom wrapper)
+3. Inherited +wrap from parent prefix
+4. Global :wrap-cmd / --wrap-cmd / wrapperCmd
+5. No wrapper set (no wrapping)
+
 ** THE INCLUDE MACRO
 
 Here is an example of the /:include/ macro:
@@ -988,6 +1078,30 @@ example" %{{echo "You wouldn't do this right??"}}
 --------------------
 A "silly example" %{{echo "You wouldn't do this right??"}}
 #+end_example
+
+** THE VAR MACRO
+
+Here is an example of the /:var/ macro:
+
+#+begin_example
+# File main.wks
+w "+Workspace"
+{
+    [asdfghjkl] "Workspace %(index+1)" %{{%(WORKSPACE_CMD) %(index)}}
+}
+
+# File hyprland.wks
+:var "WORKSPACE_CMD" "hyprctl activateworkspace"
+:include "main.wks"
+
+# File dwm.wks
+:var "WORKSPACE_CMD" "xdotool set_desktop"
+:include "main.wks"
+#+end_example
+
+With some clever orchestration you can use vars to construct
+a more general *wk* menu, free from concern about your local
+environment.
 
 * NOTES
 

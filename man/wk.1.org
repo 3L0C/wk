@@ -67,6 +67,10 @@ of *wk*. For users looking for a more dynamic experience,
   '-1' for a gap equal to 1/10th of the screen height
   (default -1).
 
+- --wrap-cmd /STRING/ ::
+  Wrap commands with /STRING/, i.e., _/bin/sh -c STRING cmd_.
+  This does not apply to hooks (default "").
+
 - *--border-width* /INT/ ::
   Set border width to /INT/ (default 4).
 
