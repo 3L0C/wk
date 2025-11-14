@@ -64,8 +64,8 @@ key chords from a *wks*(5) file or script.
 	equal to 1/10th of the screen height (default -1).
 
 *--wrap-cmd* _STRING_
-	Wrap commands with _STRING_, i.e., _/bin/sh -c STRING cmd_. This does not
-	apply to hooks (default "").
+	Wrap all chord commands by executing them as _/bin/sh -c "STRING CMD"_
+	where CMD is the original command. This does not apply to hooks (default "").
 
 *--border-width* _INT_
 	Set border width to _INT_ (default 4).

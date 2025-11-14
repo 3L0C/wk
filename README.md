@@ -117,6 +117,9 @@ options:
     -g, --menu-gap INT         Set menu gap between top/bottom of screen to INT.
                                Set to '-1' for a gap equal to 1/10th of the
                                screen height (default -1).
+    --wrap-cmd STRING          Wrap all commands with STRING, i.e.,
+                                   /bin/sh -c STRING cmd
+                               This does not apply to hooks (default "").
     --border-width INT         Set border width to INT (default 4).
     --border-radius NUM        Set border radius to NUM degrees. 0 means no curve
                                (default 0).
@@ -138,6 +141,7 @@ options:
     --shell STRING             Set shell to STRING (default '/bin/sh').
     --font STRING              Set font to STRING. Should be a valid Pango font
                                description (default 'monospace, 14').
+    --implicit-keys STRING     Set implicit keys to STRING (default 'asdfghjkl;').
 
 run `man 1 wk` for more info on each option.
 ```
@@ -573,19 +577,20 @@ easy access to metadata about a chord. The following
 identifiers are recognized in an interpolation along with
 their corresponding metadata.
 
-| Identifier | Metadata                                                                        |
-|------------|---------------------------------------------------------------------------------|
-| `key`      | The key portion of the chord.                                                   |
-| `index`    | The base 0 index of the chord in the current scope (prefixes begin new scopes). |
-| `index+1`  | The base 1 index of the chord in the current scope (prefixes begin new scopes). |
-| `desc`     | The description of the current chord. May not be given within the description.  |
-| `desc^`    | The description of the current chord with the first character capitalized.      |
-| `desc^^`   | The description of the current chord with all characters capitalized.           |
-| `desc,`    | The description of the current chord with the first character downcased.        |
-| `desc,,`   | The description of the current chord with all characters downcased.             |
+| Identifier | Metadata                                                                             |
+|------------|--------------------------------------------------------------------------------------|
+| `key`      | The key portion of the chord.                                                        |
+| `index`    | The base 0 index of the chord in the current scope (prefixes begin new scopes).      |
+| `index+1`  | The base 1 index of the chord in the current scope (prefixes begin new scopes).      |
+| `desc`     | The description of the current chord. May not be given within the description.       |
+| `desc^`    | The description of the current chord with the first character capitalized.           |
+| `desc^^`   | The description of the current chord with all characters capitalized.                |
+| `desc,`    | The description of the current chord with the first character downcased.             |
+| `desc,,`   | The description of the current chord with all characters downcased.                  |
+| `wrap_cmd` | The globally defined `wrap_cmd`. Set through config.h, `--wrap-cmd`, or `:wrap-cmd`. |
 
-There are only a few identifiers that can be interpolated,
-but even this small set makes `wk` more scriptable.
+Variables defined through [`:var`](#preprocessor-macros) can
+also be accessed through interpolation.
 
 ### Keywords
 
@@ -677,7 +682,9 @@ flag -> '+' ( 'keep'
             | 'no-after'
             | 'write'
             | 'execute'
-            | 'sync-command' ) ;
+            | 'sync-command'
+            | 'unwrap'
+            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"') ;
 ```
 
 Flags begin with a plus character (`+`), followed by the
@@ -698,6 +705,8 @@ flag itself. Here is how each flag changes the behavior of
 | `write`        | Write commands to stdout rather than executing them.                                                                          |
 | `execute`      | Execute the command rather than writing them to stdout. Useful when `+write` was given to a surrounding prefix.               |
 | `sync-command` | Execute the command in a blocking fashion. See the note in [hooks](#hooks) regarding potential issues with blocking commands. |
+| `unwrap`       | Prevent wrapping this chord, even if a global wrapper is set or inherited from a parent prefix.                               |
+| `wrap`         | Wrap chord commands with the given string (supports interpolation). Overrides the global `wrap-cmd` setting.                  |
 
 Each flag has a time and a place but I find `+keep`, and
 `+write` to be the most useful out of the bunch.
@@ -723,6 +732,60 @@ The `+write` flag is useful for scripting purposes. In the
 same way that `dmenu` and co print selections to stdout,
 this turns `wk` into a prompt for users to choose from some
 list of options with less typing.
+
+#### Command Wrapping
+
+Command wrapping allows you to prefix all commands (or
+specific groups of commands) with a common string. This is
+useful for:
+
+- Running commands in specific environments (containers,
+  uwsm, etc.)
+- Adding environment variables
+- Prefixing with terminal emulators
+
+**Global wrapper** (applies to all chords):
+
+```
+:wrap-cmd "uwsm-app --"
+f "Firefox" %{{firefox}}
+# Executes: /bin/sh -c "uwsm-app -- firefox"
+```
+
+The above example is equivalent to:
+
+```
+f "Firefox" %{{uwsm-app -- firefox}}
+```
+
+**Local wrapper** (applies to specific prefix or chord):
+
+```
+:wrap-cmd "uwsm-app --"
+b "+Browse" +wrap "%(wrap_cmd) firefox"
+{
+    g "GNU" %{{gnu.org}}
+    [
+        (y "YouTube")
+        (s "Soundcloud")
+    ] "null" %{{%(desc,,).com}}
+}
+f "+Foot" +wrap "foot -e"
+{
+    n "ncmpcpp" %{{ncmpcpp}}
+    # Executes: /bin/sh -c "foot -e ncmpcpp"
+}
+```
+
+**Wrapper precedence** (most to least specific):
+
+1. `+unwrap` on chord (no wrapper)
+2. `+wrap "custom"` on chord
+3. `+wrap "custom"` inherited from parent prefix
+4. Global `:wrap-cmd` / `--wrap-cmd` / config.h
+5. No wrapper
+
+**Note:** Wrapping does not apply to hooks.
 
 #### Inheritance
 
@@ -840,7 +903,9 @@ string_macro -> ( 'include'
                 | 'bg-color'
                 | 'bd-color'
                 | 'shell'
-                | 'font' ) '"' ( '\\"' | [^"] )* '"' ;
+                | 'font'
+                | 'wrap-cmd'
+                | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
 ```
 
 Many of the macros here work the same as their command-line
@@ -942,6 +1007,41 @@ A "silly example" %{{echo "You wouldn't do this right??"}}
 As for file resolution, it's pretty simple. A relative path
 is assumed to be in the same directory as the file being
 executed,  and absolute paths are just that, absolute.
+
+#### The Var Macro
+
+The `:var` macro allows you to define a variable with some
+value. It takes two arguments, the first is the `key` or
+`variable name`, and the second is the `value` which can be
+an empty string, i.e., unset a previously defined `var`.
+The `value` of any `var` can be accessed through
+interpolation by using the corresponding `key`. The `key`
+can contain any character except a closing parenthesis
+('`)`'), otherwise it would be inaccessible through
+interpolation.  The `key` cannot shadow builtin
+interpolations.
+
+**Example** - Creating environment-agnostic configs:
+
+```
+# File main.wks
+w "+Workspace"
+{
+    [asdfghjkl] "Workspace %(index+1)" %{{%(WORKSPACE_CMD) %(index)}}
+}
+
+# File hyprland.wks
+:var "WORKSPACE_CMD" "hyprctl dispatch workspace"
+:include "main.wks"
+
+# File dwm.wks
+:var "WORKSPACE_CMD" "xdotool set_desktop"
+:include "main.wks"
+```
+
+With clever use of variables, you can construct general `wk`
+menus that work across different window managers or
+environments without modification.
 
 ### Switch Macros
 

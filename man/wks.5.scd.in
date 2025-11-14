@@ -631,10 +631,6 @@ The following identifiers are valid within an _interpolation_:
 *desc,,*
 	The _description_ of the current _chord_ with the *all* characters downcased.
 
-*unwrap*
-	Prevent wrapping this chord, even if a global wrapper is set or inherited
-	from a parent prefix.
-
 *wrap_cmd*
 	The value of the global wrapper command. This is defined by the _:wrap-cmd_
 	preprocessor macro, the _--wrap-cmd_ cli flag, or defined by _wrapperCmd_
@@ -747,6 +743,10 @@ how each flag changes the behavior of *wk*:
 *sync-command*
 	Execute the command in a blocking fashion. See the note in *HOOK* regarding
 	potential issues with blocking commands.
+
+*unwrap*
+	Prevent wrapping this chord, even if a global wrapper is set or inherited
+	from a parent prefix.
 
 *wrap* '"' ( '\\"' | [^"] | interpolation )\* '"'
 	When given to a prefix, wrap chord commands with the argument. Can be given
