@@ -109,6 +109,57 @@ run_error_test() {
     fi
 }
 
+run_transpile_test() {
+    local test_file="$1"
+    local expected_file="$2"
+    local test_name
+    test_name="$(basename "$test_file" .wks)"
+
+    ((TOTAL_TESTS++))
+
+    echo "==== Testing transpile for $test_name ====" | tee -a "$TEST_LOG"
+
+    local output_file="$LOG_DIR/${test_name}_transpiled.h"
+
+    # Run transpile
+    ./wk --transpile "$test_file" > "$output_file" 2>&1
+    local exit_code=$?
+
+    echo "Command: ./wk --transpile $test_file" >> "$TEST_LOG"
+    echo "Exit code: $exit_code" >> "$TEST_LOG"
+
+    # Check exit code first
+    if [[ $exit_code -ne 0 ]]; then
+        echo -e "${RED}FAIL${NC}: $test_name - Transpile failed with exit code $exit_code" | tee -a "$TEST_LOG"
+        echo "Output:" | tee -a "$TEST_LOG"
+        tee -a "$TEST_LOG" < "$output_file"
+        ((FAILURE_COUNT++))
+        return 1
+    fi
+
+    if [[ -f "$expected_file" ]]; then
+        # Compare output with expected output
+        if diff -u "$expected_file" "$output_file" >> "$TEST_LOG" 2>&1; then
+            echo -e "${GREEN}PASS${NC}: $test_name - Transpile output matches expected" | tee -a "$TEST_LOG"
+            ((SUCCESS_COUNT++))
+            return 0
+        else
+            echo -e "${RED}FAIL${NC}: $test_name - Transpile output doesn't match expected" | tee -a "$TEST_LOG"
+            echo "See $TEST_LOG for diff details" | tee -a "$TEST_LOG"
+            ((FAILURE_COUNT++))
+            return 1
+        fi
+    else
+        # If no expected file exists, create it
+        echo -e "${GREEN}PASS${NC}: $test_name - Transpile succeeded (created expected file)" | tee -a "$TEST_LOG"
+        mkdir -p "$(dirname "$expected_file")"
+        cp "$output_file" "$expected_file"
+        echo "Created new expected output file: $expected_file" | tee -a "$TEST_LOG"
+        ((SUCCESS_COUNT++))
+        return 0
+    fi
+}
+
 # Run all valid tests
 echo "Running valid tests..." | tee -a "$TEST_LOG"
 echo "======================" | tee -a "$TEST_LOG"
@@ -191,6 +242,15 @@ run_test "tests/fixtures/valid/duplicate_test.wks" "p x" "tests/expected/duplica
 run_test "tests/fixtures/valid/duplicate_test.wks" "p y" "tests/expected/duplicate_test_p_y.txt"
 run_test "tests/fixtures/valid/duplicate_test.wks" "t" "tests/expected/duplicate_test_t.txt"
 run_test "tests/fixtures/valid/duplicate_test.wks" "C-S-k" "tests/expected/duplicate_test_C_S_k.txt"
+
+# Transpile tests
+echo "Running transpile tests..." | tee -a "$TEST_LOG"
+echo "======================" | tee -a "$TEST_LOG"
+
+run_transpile_test "tests/fixtures/valid/basic_test.wks" "tests/expected/transpiled/basic_test_transpiled.h"
+run_transpile_test "tests/fixtures/valid/chord_array_test.wks" "tests/expected/transpiled/chord_array_test_transpiled.h"
+run_transpile_test "tests/fixtures/valid/preprocessor_test.wks" "tests/expected/transpiled/preprocessor_test_transpiled.h"
+run_transpile_test "tests/fixtures/valid/wrapper_test.wks" "tests/expected/transpiled/wrapper_test_transpiled.h"
 
 # Error handling tests
 echo "Running error tests..." | tee -a "$TEST_LOG"
