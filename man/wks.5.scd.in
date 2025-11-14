@@ -1,0 +1,1160 @@
+wks(5) "@VERSION@" "@DATE@"
+
+# NAME
+
+wks - A which-key source file used by the *wk*(1) program.
+
+# DESCRIPTION
+
+*wk*'s configuration files use the *wks* syntax to generate key chords.
+
+# GRAMMAR RULES
+
+The following are _ideally_ the formal grammar rules for *wks*. I have tried to
+note where behavior differs from the expectation. If anything is not behaving as
+you expect, please see *CONTACT* below to reach out.
+
+```
+key_chord          -> ( chord | prefix | chord_array ) ;
+
+chord              -> trigger_key description keyword* command ;
+
+prefix             -> trigger_key description keyword* '{' ( key_chord )+ '}' ;
+
+chord_array        -> ( implicit_array | explicit_array ) ;
+
+implicit_array     -> modifier* '...' description keyword* command ;
+
+explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
+
+chord_expression   -> '(' trigger_key description keyword* command? ')' ;
+
+trigger_key        -> modifier* ( normal_key | special_key ) ;
+
+normal_key         -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
+
+special_key        -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
+                      | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
+                      | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
+                      | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
+                      | 'Prev'    | 'Next'    | 'F'[1-35] ) \s+ ;
+
+modifier           -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+
+description        -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+
+command            -> '%' delimiter ( . | interpolation )* delimiter ;
+
+delimiter          -> ( open_delim | close_delim | ([^[{(])\1 ) ;
+
+open_delim         -> ( '{{' | '((' | '[[' ) ;
+
+close_delim        -> ( '}}' | '))' | ']]' ) ;
+
+interpolation      -> '%(' identifier ')' ;
+
+identifier         -> ( 'key'
+                      | 'index'
+                      | 'index+1'
+                      | 'desc'
+                      | 'desc^'
+                      | 'desc^^'
+                      | 'desc,'
+                      | 'desc,,'
+                      | 'wrap_cmd' );
+
+keyword            -> ( hook | flag ) ;
+
+hook               -> '^' ( 'before'
+                          | 'after'
+                          | 'sync-before'
+                          | 'sync-after' ) command ;
+
+flag               -> '+' ( 'keep'
+                          | 'close'
+                          | 'inherit'
+                          | 'ignore'
+                          | 'ignore-sort'
+                          | 'unhook'
+                          | 'deflag'
+                          | 'no-before'
+                          | 'no-after'
+                          | 'write'
+                          | 'execute'
+                          | 'sync-command'
+                          | 'unwrap'
+                          | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
+
+preprocessor_macro -> ':' ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+
+string_macro       -> ( 'include'
+                      | 'fg'
+                      | 'fg-key'
+                      | 'fg-delimiter'
+                      | 'fg-prefix'
+                      | 'fg-chord'
+                      | 'bg'
+                      | 'bd'
+                      | 'shell'
+                      | 'font'
+                      | 'wrap-cmd'
+                      | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
+
+switch_macro       -> ( 'debug'
+                      | 'sort'
+                      | 'top'
+                      | 'bottom' );
+
+integer_macro      -> ( 'menu-width'
+                      | 'menu-gap' ) '-'? [0-9]+ ;
+
+unsigned_macro     -> ( 'max-columns'
+                      | 'border-width'
+                      | 'width-padding'
+                      | 'height-padding'
+                      | 'delay' ) [0-9]+ ;
+
+number_macro       -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
+```
+
+*NOTE* in _wks_ files, comments can be added using the pound character (_#_).
+When a pound character is encountered, it signifies the start of a comment. The
+comment extends from the pound character until the end of the line. It's
+important to note that the pound character is treated as a literal character
+within _descriptions_ and _commands_ and does not indicate the start of a
+comment in those contexts.
+
+## KEY CHORD
+
+A _key chord_ is the top-level construct in the grammar and represents a
+complete key chord definition.
+
+```
+key_chord -> ( chord | prefix | chord_array ) ;
+```
+
+It can be either a _prefix_, a _chord_, or a _chord array_.
+
+## CHORD
+
+A _chord_ is a _key chord_ that results in *wk* performing some action, like
+executing a command, when the trigger key is pressed.
+
+```
+chord -> trigger_key description keyword* command ;
+```
+
+All chords must have a _trigger key_, _description_, and a _command_. Zero or
+more _keywords_ may be given between the _description_ and _command_.
+
+## TRIGGER KEY
+
+A _trigger key_ represents the specific keypress or key combination that
+triggers a corresponding action or command. In a _wks_ file, it is the written
+representation of the physical key(s) pressed by the user on their keyboard.
+
+```
+trigger_key -> modifier* ( normal_key | special_key ) ;
+```
+
+A _trigger key_ is then zero or more _modifiers_ followed by a _normal key_ or
+a _special key_.
+
+## NORMAL KEY
+
+A _normal key_ is any printable, non-whitespace, utf8 character.
+
+```
+normal_key -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
+```
+
+Certain characters have special meanings in _wks_ files. To use these characters
+as a normal key, simply precede them with a backslash (_\\_).
+
+*[*
+	Begins a _chord array_.
+
+*]*
+	Ends a _chord array_.
+
+*{*
+	Begins a _prefix_ block.
+
+*}*
+	Ends a _prefix_ block.
+
+*#*
+	Begins a comment.
+
+*"*
+	Begins and ends a _description_.
+
+*:*
+	Begins a _preprocessor macro_.
+
+*^*
+	Begins a _hook_.
+
+*+*
+	Begins a _flag_.
+
+*(*
+	Begins a _chord expression_.
+
+*)*
+	Ends a _chord expression_.
+
+All other non-whitespace, printable utf8 characters prior to a description will
+be interpreted as a normal key. Those that are whitespace or non-printable fall
+into the special key category.
+
+## SPECIAL KEY
+
+Special keys like _tab_, _escape_, _spacebar_, and _F1_ can still be used as
+trigger keys in _wks_ files via their special forms.
+
+```
+special_key -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
+               | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
+               | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
+               | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
+               | 'Prev'    | 'Next'    | 'F'[1-35] ) \s+ ;
+```
+
+Each form should indicate the special key it represents but here is a chart to
+make things explicit.
+
+*Left*
+	Left arrow
+
+*Right*
+	Right arrow
+
+*Up*
+	Up arrow
+
+*Down*
+	Down arrow
+
+*TAB*
+	Tab
+
+*SPC*
+	Space
+
+*RET*
+	Enter/Return
+
+*DEL*
+	Delete
+
+*ESC*
+	Esc
+
+*Home*
+	Home
+
+*PgUp*
+	Page up
+
+*PgDown*
+	Page down
+
+*End*
+	End
+
+*Begin*
+	Begin
+
+*F[1-35]*
+	Function keys 1 through 35.
+
+*VolDown*
+	Volume Down
+
+*VolMute*
+	Mute Vol
+
+*VolUp*
+	Volume Up
+
+*Play*
+	Play Audio
+
+*Stop*
+	Stop Audio
+
+*Prev*
+	Audio Previous
+
+*Next*
+	Audio Next
+
+In _wks_ files, whitespace is generally not significant around individual parts
+of the syntax, with one notable exception: _special keys_. When using _special
+keys_, it is required to include whitespace between the end of the special key
+and the start of the next item in the _wks_ file.
+
+If you have any additional special keys that you would like _wks_ files to
+support, please open an issue or a pull request.
+
+## MODIFIER
+
+As mentioned above, zero or more _modifiers_ can be given in a _trigger key_.
+
+```
+modifier -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+```
+
+Modifiers can be used in _wks_ files via their special forms.
+
+*C-*
+	_Control_ key
+
+*H-*
+	_Hyper_ key
+
+*M-*
+	_Meta_ key
+
+*S-*
+	_Shift_ key
+
+Modifiers act as one would expect. To match the keypress _Control+c_ use the
+form _C-c_ in your _wks_ file.
+
+Among the modifiers, the Shift modifier (_S-_) has a unique behavior when used
+with _normal keys_. Due to the way normal keys are interpreted, the _S-_
+modifier is not always necessary. To determine whether _S-_ is required, it is
+recommended to test the character in a _wks_ file by typing it with and without
+the Shift key pressed.
+
+If the character is non-whitespace, printable, and the shifted and unshifted
+versions produce different output, then the _S-_ modifier is not needed. For
+instance, pressing the _a_ key with the Shift key held down produces an
+uppercase _A_. This test demonstrates that the key's output changes based on the
+Shift key state.
+
+In such cases, using _S-a_ in a _wks_ file would not work as expected because
+the key will never match when the user presses _Shift+a_.
+
+I am open to changing it so that _S-a_ and _A_ match the same _Shift+a_
+keypress, but I have yet to find a fitting solution. The ones I can think of
+either involve depending on some utf8 library, writing the code by hand, or
+permitting this syntax for ASCII but not other character sets. Each has its own
+drawback, and I find the current solution to be intuitive in practice.
+
+## DESCRIPTION
+
+A _description_ provide a hint about the purpose of the _chord_ or _prefix_.
+
+```
+description -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
+```
+
+A _description_ starts with a double quote (_"_), followed by zero or more of
+the following:
+
+*\\"*
+	Escaped double quotes.
+
+*[^"]*
+	Any non-double quote character.
+
+*interpolation*
+	An interpolation.
+
+A _description_ ends with a double quote. Aside from _interpolations_, a
+_description_ looks like your typical string in many programming languages.
+
+## COMMAND
+
+A _command_ is some action to be executed upon completing a _key chord_ sequence.
+
+```
+command -> '%' delimiter ( . | interpolation )* delimiter ;
+```
+
+A _command_ begins with the percent character (_%_) followed by a _delimiter_.
+After the _delimiter_ zero or more characters, or _interpolations_ may be given.
+A _command_ is ended with the same delimiter that followed the percent character.
+
+Because the _delimiter_ is user defined, there should be no misinterpretation of
+anything between the delimiters. This means any command given at the
+command-line should be right at home in between the delimiters.
+
+## DELIMITER
+
+A _delimiter_ acts as a start and stop marker for a _command_ in a _wks_ file.
+
+```
+delimiter   -> ( open_delim | close_delim | ([^[{(])\1 )  ;
+
+open_delim  -> ( '{{' | '((' | '[[' ) ;
+
+close_delim -> ( '}}' | '))' | ']]' ) ;
+```
+
+A _delimiter_ may be one of the following:
+
+*open_delim* or *close_delim*
+	The opening and closing delimiters are special delimiters that that have an
+	inverse match. If an opening delimiter is given then the corresponding
+	closing delimiter is required to end the command (e.g., _{{_ matches _}}_
+	and so forth).
+
+*([^[{(])\\1*
+	Any *ASCII* character that is not any opening bracket (_[_), opening brace
+	(_{_), or any opening parenthesis (_(_), given twice. *NOTE* this excludes
+	null bytes (_\\0_) as these will indicate the end of a _wks_ file or script.
+	When an arbitrary delimiter is given the same character is expected to be
+	repeated to indicate the end of a command.
+
+The _delimiter_ from one _command_ to the next may be completely different. This
+puts the burden on the user to ensure their _delimiter_ is compatible with the
+content of the command.
+
+Here are some examples of different delimiters for the same command.
+
+```
+# Commands with opening and closing delimiters
+%{{echo "hello, world"}}
+%((echo "hello, world"))
+%[[echo "hello, world"]]
+
+# Valid arbitrary delimiters
+%||echo "hello, world"||
+%%%echo "hello, world"%%
+%zzecho "hello, world"zz
+```
+
+Inspired by *sed*(1), this should keep _wks_ syntax compatible with shell
+commands, almost indefinitely. It also makes it possible to nest a _wks_ script
+within a _wks_ command if you want to get really weird.
+
+## PREFIX
+
+A _prefix_ is a special type of _key chord_ that acts as a container for other
+_key chords_. It represents an incomplete key combination that does not trigger
+a _command_ on its own.
+
+```
+prefix -> trigger_key description keyword* '{' ( key_chord )+ '}' ;
+```
+
+A _prefix_ has many of the same components as a _chord_. It begins with a
+_trigger key_, followed by a _description_, zero or more _keywords_ and then a
+block of one or more _key chords_ surrounded by an opening and closing brace
+(_{_, and _}_).
+
+*Note* that a key chord may be a _prefix_, a _chord_, or a _chord array_,
+meaning many prefixes can be nested one inside another.
+
+Here is a simple example of a prefix:
+
+```
+m "+Music"
+{
+    n "Next" %{{mpc next}}
+    p "Prev" %{{mpc prev}}
+}
+```
+
+## CHORD ARRAY
+
+_Chords_ and _prefixes_ are standard fare in the realm of key chords, so what
+the heck is a _chord array_? Well, mostly syntactic sugar so you do not have to
+repeat yourself when it comes to _chords_ that are very similar but only differ
+in slightly different ways.
+
+```
+chord_array -> ( implicit_array | explicit_array ) ;
+```
+
+A _chord array_ comes in two flavors, _implicit_ and _explicit_.
+
+## IMPLICIT ARRAY
+
+An _implicit array_ is the simplest of the two flavors. It utilizes the
+_implicitArrayKeys_ variable defined in _config.def.h_ to generate _chords_ from
+these _trigger keys_.
+
+```
+implicit_array -> modifier* '...' description keyword* command ;
+```
+
+An _implicit array_ is then zero or more modifiers, an ellipsis (_..._), a
+description, zero or more keywords, and a command. This is practially a _chord_
+in terms of its form, but in behavior an _implicit array_ generates any number
+of _chords_ from this simple syntax.
+
+As an example, say your implicit array keys are set to _h_, _j_, _k_, and _l_,
+and you have this _wks_ file:
+
+```
+... "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+```
+
+This is the equivilant _wks_ file without the use of an _implicit array_:
+
+```
+h "Switch workspace 1" %{{xdotool set_desktop 0}}
+j "Switch workspace 2" %{{xdotool set_desktop 1}}
+k "Switch workspace 3" %{{xdotool set_desktop 2}}
+l "Switch workspace 4" %{{xdotool set_desktop 3}}
+```
+
+## EXPLICIT ARRAY
+
+An _explicit array_ is most useful when the desired _chords_ are less homogeneous.
+
+```
+explicit_array -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
+```
+
+To use an _explicit array_ begin with an open bracket (_[_) followed by one or
+more _trigger keys_ or _chord expressions_. The array portion ends with a
+closing bracket (_]_) followed by the standard chord components, a description,
+zero or more keywords, and a command.
+
+I think an example will make things clear:
+
+```
+# Chord array version
+[asdfghjkl] "Switch workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+
+# Individual chords and no interpolation
+a "Switch workspace 1" %{{xdotool set_desktop 0}}
+s "Switch workspace 2" %{{xdotool set_desktop 1}}
+d "Switch workspace 3" %{{xdotool set_desktop 2}}
+f "Switch workspace 4" %{{xdotool set_desktop 3}}
+g "Switch workspace 5" %{{xdotool set_desktop 4}}
+h "Switch workspace 6" %{{xdotool set_desktop 5}}
+j "Switch workspace 7" %{{xdotool set_desktop 6}}
+k "Switch workspace 8" %{{xdotool set_desktop 7}}
+l "Switch workspace 9" %{{xdotool set_desktop 8}}
+```
+
+In this case, _explicit arrays_ are only slightly different than an _implicit
+array_. However, _explicit arrays_ support _chord expressions_ which make them
+far more flexible.
+
+## CHORD EXPRESSION
+
+Explicit arrays can be very simple with each _chord_ being only slightly
+different from one another. However, it may make sense to include chords that
+mostly fit into the _explicit array_ with some more distinct differences. For
+this situation, _chord expressions_ may be the answer.
+
+```
+chord_expression -> '(' trigger_key description keyword* command? ')' ;
+```
+
+A _chord expression_ is only valid within a _chord array_, and it is essentially
+a _chord_ wrapped in parentheses with some added flexibility. Normally, a _chord_
+requires at least a _trigger key_, a _description_, and a _command_. A _chord
+expression_, on the other hand, requires only a _trigger key_ and a
+_description_. Any other information will be filled in by the surrounding _chord
+array_.
+
+Here is an example of a chord expression within a _chord array_:
+
+```
+# With chord arrays and chord expressions
+[
+    (b "Brave")
+    (c "Mullvad Chrome" %{{mullvad-exclude chrome ~/startpage.html}})
+    x
+] "XDG-OPEN" %{{%(desc,,) ~/startpage.html}}
+
+# With chords and no interpolation
+b "Brave" %{{brave ~/startpage.html}}
+c "Mullvad Chrome" %{{mullvad-exclude chrome ~/startpage.html}}
+x "XDG-OPEN" %{{xdg-open ~/startpage.html}}
+```
+
+Admittedly, _chord expressions_ may not be that useful but they were easy to
+implement so they are here for those who want to use them.
+
+## INTERPOLATION
+
+An _interpolation_ is a means of accessing some metadata of the current _chord_
+from within a _description_ or a _command_.
+
+```
+interpolation -> '%(' identifier ')' ;
+```
+
+The basic syntax for an _interpolation_ begins with a _%(_ delimiter followed by
+an _identifier_ and closing parenthesis (_)_).
+
+## IDENTIFIER
+
+The following identifiers are valid within an _interpolation_:
+
+*key*
+	The _key_ _identifier_ corresponds to the _trigger key_ of the current
+	_chord_. This makes the most sense to use within a _chord array_ or for a
+	_chord_ that may change frequently or is not know ahead of time.
+
+*index*
+	The _index_ _identifier_ corresponds to the 0 base index of the current
+	_chord_ or _prefix_ within the current scope. *NOTE* a _prefix_ starts a
+	new scope.
+
+*index+1*
+	The _index+1_ _identifier_ corresponds to the 1 base index of the current
+	_chord_ or _prefix_ within the current scope. *NOTE* a _prefix_ starts a
+	new scope.
+
+*desc*
+	The _desc_ _identifier_ correspond to the _description_ of the current
+	_chord_ or _prefix_. The _desc_ _identifier_ may not be given within a
+	_description_. An error will be thrown in the case where this is attempted.
+
+*desc^*
+	The _description_ of the current _chord_ with the *first* character
+	capitalized.
+
+*desc^^*
+	The _description_ of the current _chord_ with the *all* characters
+	capitalized.
+
+*desc,*
+	The _description_ of the current _chord_ with the *first* character
+	downcased.
+
+*desc,,*
+	The _description_ of the current _chord_ with the *all* characters downcased.
+
+*unwrap*
+	Prevent wrapping this chord, even if a global wrapper is set or inherited
+	from a parent prefix.
+
+*wrap_cmd*
+	The value of the global wrapper command. This is defined by the _:wrap-cmd_
+	preprocessor macro, the _--wrap-cmd_ cli flag, or defined by _wrapperCmd_
+	in your _config.[def.]h_ file.
+
+## KEYWORD
+
+A _keyword_ is an optional instruction to modify the behavior of a _chord_ or
+_prefix_.
+
+```
+keyword -> ( hook | flag ) ;
+```
+
+A _keyword_ is either a _hook_ or a _flag_. Both have equal precedence, meaning
+they can be mixed up wherever they are permitted.
+
+## HOOK
+
+Hooks provide means of adding additional commands to a chord or prefix.
+
+```
+hook -> '^' ( 'before'
+            | 'after'
+            | 'sync-before'
+            | 'sync-after' ) command ;
+```
+
+A _hook_ begins with the caret character (_^_), followed by the type of _hook_,
+and finally the command the _hook_ will run.
+
+The _hook_ type has to do with the order the command will be run. The _before_
+hooks run before the chord's command, and the _after_ hooks run after the
+chord's command.
+
+The _sync-_ hooks relate to how *wk* runs the commands. By default, all commands
+are run asynchronously to prevent a command from blocking *wk*. However, if the
+hook must complete before *wk* can proceed you can use the _sync-\*_ variant to
+enforce this behavior.
+
+*NOTE* that a blocking command may prevent *wk* from ever resuming execution. In
+the event that this happens, users may need to restart their system entirely to
+regain control of their keyboard.
+
+See *EXAMPLES* for further discussion about hooks.
+
+## FLAG
+
+Flags are similar to command-line flags in that they change the behavior of *wk*.
+
+```
+flag -> '+' ( 'keep'
+            | 'close'
+            | 'inherit'
+            | 'ignore'
+            | 'ignore-sort'
+            | 'unhook'
+            | 'deflag'
+            | 'no-before'
+            | 'no-after'
+            | 'write'
+            | 'execute'
+            | 'sync-command'
+            | 'unwrap'
+            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
+```
+
+Flags begin with a plus character (_+_), followed by the flag itself. Here is
+how each flag changes the behavior of *wk*:
+
+*keep*
+	Instead of closing after *wk* finds a matching chord, it keeps the *wk* menu
+	open.
+
+*close*
+	Forces the *wk* window to close. Useful when _+keep_ was given to a
+	surrounding prefix.
+
+*inherit*
+	Causes the prefix to inherit flags and hooks from its parent. Has no effect
+	when given to a chord.
+
+*ignore*
+	Ignore all hooks and flags from the surrounding prefix. Has no effect when
+	given to a prefix.
+
+*ignore-sort*
+	Chord is ignored during sorting leaving it in it in the same position it was
+	parsed in.
+
+*unhook*
+	Ignore all hooks from the surrounding prefix.
+
+*deflag*
+	Ignore all flags from the surrounding prefix.
+
+*no-before*
+	Ignore _before_ and _sync-before_ hooks from the surrounding prefix.
+
+*no-after*
+	Ignore _after_ and _sync-after_ hooks from the surrounding prefix.
+
+*write*
+	Write commands to stdout rather than executing them.
+
+*execute*
+	Execute the command rather than writing them to stdout. Useful when _+write_
+	was given to a surrounding prefix.
+
+*sync-command*
+	Execute the command in a blocking fashion. See the note in *HOOK* regarding
+	potential issues with blocking commands.
+
+*wrap* '"' ( '\\"' | [^"] | interpolation )\* '"'
+	When given to a prefix, wrap chord commands with the argument. Can be given
+	to a chord, or chord-array to wrap the immediate command(s). The argument is
+	a string that supports interpolation, the same syntax as a description. The
+	"wrapper" is applied as "/bin/sh -c WRAPPER CMD". See *EXAMPLES* for
+	scenarios where this is useful.
+
+See *EXAMPLES* for further discussion about flags.
+
+## PREPROCESSOR MACROS
+
+There are a number of preprocessor macros that can be used in _wks_ files. These
+have a number of uses from making _wks_ files more modular to controlling the
+look and feel of *wk*(1).
+
+```
+preprocessor_macro -> ':' ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+```
+
+A preprocessor macro begins with the colon character (_:_) followed by a
+specific macro form.
+
+The majority of macros correspond to the command-line arguments that *wk*(1)
+supports. When given, these override anything given at the command-line. They
+are here to provide a baked-in alternative to the command-line versions making
+it easy to simply run the _wks_ file and get the desired look and feel without
+having to give the same arguments each time. It can also help distinguish the
+purpose of the key chords if it is intended to be used as part of a script by
+making the *wk*(1) popup window different from the builtin settings.
+
+## STRING MACROS
+
+String macros require a string argument.
+
+```
+string_macro -> ( 'include'
+                | 'fg-color'
+                | 'bg-color'
+                | 'bd-color'
+                | 'shell'
+                | 'font'
+                | 'wrap-cmd'
+                | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
+```
+
+Many of the macros here work the same as their command-line counterparts. Simply
+use *:MACRO "ARGUMENT"* to make use of any string macro, (e.g. *:shell
+"/usr/bin/env zsh"*).
+
+## INCLUDE MACRO
+
+The _:include_ macro is not present as a command-line argument to *wk*(1). This
+is because this macro has more to do with _wks_ files than the look and feel of
+*wk*(1). The _:include_ macro works similarly to the _#include_ macro found in
+C/C++. It allows users to bring other _wks_ files into a single file. *NOTE*,
+self includes and recursive includes are not permitted and will cause an error.
+*NOTE*, the same file may be included multiple times. This is not an error, and
+may even be desirable for some users. *NOTE*, while the _#include_ macro in
+C/C++ has restrictions on where it can go in a file, the _:include_ macro in a
+_wks_ file may go literally anywhere. As for file resolution, it's pretty
+simple. A relative path is assumed to be in the same directory as the file being
+processed, and absolute paths are just that, absolute.
+
+See *EXAMPLES* for a full demonstration of the _:include_ macro.
+
+## VAR MACRO
+
+The _:var_ macro allows you to define a variable with some value. It takes two
+arguments, the first is the _key_ or _variable name_, and the second is the
+_value_ which can be an empty string, i.e., unset a previously defined _var_.
+The _value_ of any _var_ can be accessed through interpolation by using the
+corresponding _key_. The _key_ can contain any character except a closing
+parenthesis ('_)_'), otherwise it would be inaccessible through interpolation.
+The _key_ cannot shadow builtin interpolations.
+
+See *EXAMPLES* for a demonstration.
+
+## SWITCH MACROS
+
+Switch macros are the simplest of the bunch. They are essentially an on switch
+for the corresponding menu settings.
+
+```
+switch_macro -> ( 'debug'
+                | 'sort'
+                | 'top'
+                | 'bottom' );
+```
+
+All the switch macros correspond to their cli flags for *wk*(1).
+
+## INTEGER MACROS
+
+The integer macros require a positive or negative integer argument to the macro.
+
+```
+integer_macro -> ( 'menu-width'
+                 | 'menu-gap' ) '-'? [0-9]+ ;
+```
+
+All the integer macros correspond to their cli flags for *wk*(1).
+
+## UNSIGNED MACROS
+
+The unsigned macros require a positive integer argument to the macro.
+
+```
+unsigned_macro -> ( 'max-columns'
+                  | 'border-width'
+                  | 'width-padding'
+                  | 'height-padding'
+                  | 'delay' ) [0-9]+ ;
+```
+
+All the unsigned macros correspond to their cli flags for *wk*(1).
+
+## NUMBER MACROS
+
+The number macros require a positive number argument to the macro.
+
+```
+number_macro -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
+```
+
+All the number macros correspond to their cli flags for *wk*(1).
+
+# EXAMPLES
+
+## HOOKS
+
+Users can certainly chain commands together the same way one would chain
+commands in a regular shell, but hooks help to reduce repetition. They also make
+more sense in the context of prefixes.
+
+```
+# With hooked prefix
+e "+Emacs" ^before %{{xdotool set_desktop 1}}
+{
+    o "Open" %{{emacsclient -c -a ""}}
+    r "Roam" %{{emacsclient -c -a "" ~/20240101080032-startpage.org}}
+}
+
+# Without hooks
+e "+Emacs"
+{
+    o "Open" %{{xdotool set_desktop 1 ; emacsclient -c -a ""}}
+    r "Roam" %{{xdotool set_desktop 1 ; emacsclient -c -a "" ~/20240101080032-startpage.org}}
+}
+```
+
+As you can see, this helps to cut down on repetition, but it also helps enforce
+a workflow rule without the need to setup desktop environment rules and such.
+
+This example also hints at the idea of inheritance as the hook was given to a
+prefix and not to individual chords. This topic is covered after introducing
+flags as these also factor into the discussion.
+
+## FLAGS
+
+Each flag has a time and a place but I find _+keep_, and _+write_ to be the most
+useful out of the bunch.
+
+The _+keep_ flag can turn _wk_ into a hydra of sorts. I use this to control
+music playback on my system like this:
+
+```
+m "+Music" +keep
+{
+    c "Clear mpc" %{{mpc clear}}
+    d "Display Song" %{{songinfo}}
+    h "Seek -5" %{{mpc seek "-5"}}
+    l "Seek +5" %{{mpc seek "+5"}}
+    n "Next song" %{{mpc next}}
+    p "Prev song" %{{mpc prev}}
+    o "Open mpc" +close %{{st -e ncmpcpp}}
+    y "Playlist" +close %{{st -e ncmpcpp --screen playlist}}
+}
+```
+
+The _+write_ flag is useful for scripting purposes. In the same way that
+*dmenu*(1) and co print selections to stdout, this turns *wk*(1) into a prompt
+for users to choose from some list of options with less typing.
+
+## WRAPPING COMMANDS
+
+There are two classes of wrappers, globally through _:wrap-cmd_, _--wrap-cmd_,
+and _wrapperCmd_, and locally through the _+wrap_ flag. All take a string
+argument, but the flag supports interpolation.
+
+The global wrapper is most useful for someone using a uwsm managed wayland
+environment. Passing _--wrap-cmd "uwsm-app --"_ will ensure all commands are
+prefixed with _uwsm-app --_ before they are run, *or* written to stdout. The
+following are equivilant examples:
+
+```
+# Wrapped
+:wrap-cmd "uwsm-app --"
+f "Firefox" %{{firefox}}
+
+# Unwrapped
+f "Firefox" %{{uwsm-app -- firefox}}
+```
+
+Local wrappers may be useful with or without a global wrapper. Here are some
+examples:
+
+```
+:wrap-cmd "uwsm-app --"
+b "+Browse" +wrap "%(wrap_cmd) firefox" # include the global wrap_cmd
+{
+    g "GNU" %{{gnu.org}}
+    [
+        (y "YouTube")
+        (s "Soundcloud")
+    ] "null" %{{%(desc,,).com}}
+}
+f "+Foot" +wrap "foot -e" # just wrap with "foot -e"
+{
+    n "ncmpcpp" %{{ncmpcpp}}
+}
+```
+
+*NOTE* on wrapper precedence: When multiple wrapper definitions exist, the most
+specific takes precedence:
+
+	1. Chord-level +unwrap (no wrapper)
+	2. Chord-level +wrap "custom" (use custom wrapper)
+	3. Inherited +wrap from parent prefix
+	4. Global :wrap-cmd / --wrap-cmd / wrapperCmd
+	5. No wrapper set (no wrapping)
+
+## THE INCLUDE MACRO
+
+Here is an example of the _:include_ macro:
+
+```
+# File main.wks
+---------------
+# Browser prefix
+b "+Browser" { :include "browser_key_chords.wks" }
+# Emacs prefix
+e "+Emacs" ^before %{{xdotool set_desktop 1}} { :include "emacs_key_chords.wks" }
+# Music prefix
+m "+Music" +keep { :include "music_key_chords.wks" }
+
+# File browser_key_chords.wks
+-----------------------------
+[
+    (b "Brave")
+    (c "Chrome")
+    (f "Firefox")
+] "null" %{{%(desc,,)}}
+
+# Mullvad-exclude prefix
+m "+Mullvad Exclude"
+{
+    [
+        (b "Brave")
+        (c "Chrome")
+        (f "Firefox")
+    ] "null" %{{mullvad-exclude %(desc_)}}
+}
+
+# File emacs_key_chords.wks
+---------------------------
+b "Open blank" %{{emacsclient -c -a ""}}
+p "+Projects"
+{
+    w "wk" %{{emacs "~/Projects/wk"}}
+}
+
+# File music_key_chords.wks
+---------------------------
+c "Clear mpc" %{{mpc clear}}
+d "Display song" %{{songinfo}}
+h "Seek -5s" %{{mpc seek "-5"}}
+l "Seek +5s" %{{mpc seek "+5"}}
+n "Next song" %{{mpc next}}
+p "Prev song" %{{mpc prev}}
+o "Open mpc" +close %{{st -e ncmpcpp}}
+```
+
+This allows users to create key chords in a more modular manner. This can be
+beneficial when you may want to reuse a _wks_ file in a different context than
+your main key chords.
+
+You can even do silly things like this:
+
+```
+# File part_one.wks
+-------------------
+A "silly :include "part_two.wks"
+
+# File part_two.wks
+-------------------
+example" %{{echo "You wouldn't do this right??"}}
+
+# Resulting wks file
+--------------------
+A "silly example" %{{echo "You wouldn't do this right??"}}
+```
+
+## THE VAR MACRO
+
+Here is an example of the _:var_ macro:
+
+```
+# File main.wks
+w "+Workspace"
+{
+    [asdfghjkl] "Workspace %(index+1)" %{{%(WORKSPACE_CMD) %(index)}}
+}
+
+# File hyprland.wks
+:var "WORKSPACE_CMD" "hyprctl activateworkspace"
+:include "main.wks"
+
+# File dwm.wks
+:var "WORKSPACE_CMD" "xdotool set_desktop"
+:include "main.wks"
+```
+
+With some clever orchestration you can use vars to construct a more general *wk*
+menu, free from concern about your local environment.
+
+# NOTES
+
+## INHERITANCE
+
+Inheritance relates to hooks and flags given to prefixes. The idea is fairly
+simple. A hook or flag given to a prefix is inherited by any chord within the
+prefix. Nested prefixes do not inherit the hooks and flags given to their parent.
+
+```
+a "+Prefix" +write
+{
+    w "Write it!" %{{I get written!}}
+    n "+Nested Prefix"
+    {
+        r "Run it!" %{{echo "I get run!"}}
+    }
+}
+```
+
+In the above example, the key chord *a w* causes *I get written!* to be printed
+to stdout. The key chord *a n r* runs the command *echo "I get run!"*.
+
+To force a nested prefix to inherit from its parent the _+inherit_ flag must be
+given. Additionally, if the prefix only wishes to inherit certain hooks or flags
+additional flags may be given to ignore unwanted behavior.
+
+## SORTING
+
+Key chords will be sorted when processing a _wks_ file if the *--sort* flag is
+passed to *wk*. This has knock-on effects with index interpolations (often for
+chord arrays). A _wks_ file like this will produce different results sorted vs
+unsorted (the default).
+
+```
+# Base file
+[neio] "Switch %(index+1)" %{{xdotool set_desktop %(index)}}
+b "Second?" +write %{{%(index)}}
+a "First?" +write %{{%(index)}}
+
+# Unsorted result
+n "Switch 1" %{{xdotool set_desktop 0}}
+e "Switch 2" %{{xdotool set_desktop 1}}
+i "Switch 3" %{{xdotool set_desktop 2}}
+o "Switch 4" %{{xdotool set_desktop 3}}
+b "Second?" +write %{{4}}
+a "First?" +write %{{5}}
+
+# Sorted result
+a "First?" +write %{{0}}
+b "Second?" +write %{{1}}
+e "Switch 3" %{{xdotool set_desktop 2}}
+i "Switch 4" %{{xdotool set_desktop 3}}
+n "Switch 5" %{{xdotool set_desktop 4}}
+o "Switch 6" %{{xdotool set_desktop 5}}
+```
+
+To avoid this you can add the _+ignore-sort_ flag to any key chord to ensure the
+value of the index interpolations.
+
+```
+# Base file
+[neio] "Switch %(index+1)" +ignore-sort %{{xdotool set_desktop %(index)}}
+b "Second?" +write %{{%(index)}}
+a "First?" +write %{{%(index)}}
+
+# Sorted with `+ignore-sort` result
+e "Switch 1" %{{xdotool set_desktop 0}}
+i "Switch 2" %{{xdotool set_desktop 1}}
+n "Switch 3" %{{xdotool set_desktop 2}}
+o "Switch 4" %{{xdotool set_desktop 3}}
+a "First?" +write %{{4}}
+b "Second?" +write %{{5}}
+```
+
+## BUG REPORTS
+
+Please see *wk*(1) *BUG REPORTS* for info on reporting bugs.
+
+# AUTHORS
+
+3L0C <dotbox at mailbox.org>

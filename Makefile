@@ -1,6 +1,7 @@
 # Package info
 NAME         := wk
 VERSION      := 0.1.3
+DATE         := $(shell date '+%Y-%m-%d')
 
 # Tools
 PKG_CONFIG   ?= pkg-config
@@ -39,7 +40,7 @@ WAY_HDRS     := $(WAY_DIR)/wlr-layer-shell-unstable-v1.h
 WAY_FILES    := $(WAY_SRCS) $(WAY_HDRS)
 WAY_OBJS     := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
 					$(wildcard $(WAY_DIR)/*.c) $(WAY_SRCS))
-MAN_FILES    := $(wildcard $(MAN_DIR)/*.man)
+MAN_FILES    := $(MAN_DIR)/wk.1 $(MAN_DIR)/wks.5
 
 # Flags
 CFLAGS       := -Wall -Wextra -Werror -Wno-unused-parameter -DVERSION=\"$(VERSION)\" -MMD -MP \
@@ -171,19 +172,25 @@ $(WAY_DIR)/wlr-layer-shell-unstable-v1.h: $(WAY_DIR)/wlr-layer-shell-unstable-v1
 $(WAY_DIR)/wlr-layer-shell-unstable-v1.c: $(WAY_DIR)/wlr-layer-shell-unstable-v1.xml
 	wayland-scanner private-code < $^ > $@
 
-# Manfile generation and cleanup
-$(MAN_DIR)/%.1: $(MAN_DIR)/%.1.man
-	cp -f $< $@
-	sh clean_man_files.sh "General Commands Manual" "$@"
+# Generate .scd files from templates with version and date substitution
+$(MAN_DIR)/%.1.scd: $(MAN_DIR)/%.1.scd.in
+	sed -e 's:@VERSION@:$(VERSION):g' -e 's:@DATE@:$(DATE):g' < $< > $@
 
-$(MAN_DIR)/%.5: $(MAN_DIR)/%.5.man
-	cp -f $< $@
-	sh clean_man_files.sh "File Formats Manual" "$@"
+$(MAN_DIR)/%.5.scd: $(MAN_DIR)/%.5.scd.in
+	sed -e 's:@VERSION@:$(VERSION):g' -e 's:@DATE@:$(DATE):g' < $< > $@
+
+# Manfile generation from scdoc
+$(MAN_DIR)/%.1: $(MAN_DIR)/%.1.scd
+	scdoc < $< > $@
+
+$(MAN_DIR)/%.5: $(MAN_DIR)/%.5.scd
+	scdoc < $< > $@
 
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(NAME)
-	rm -f $(MAN_FILES:.man=)
+	rm -f $(MAN_DIR)/*.scd
+	rm -f $(MAN_FILES)
 	rm -f $(WAY_FILES)
 
 dist: clean
@@ -192,7 +199,7 @@ dist: clean
 	tar -czf $(NAME)-$(VERSION).tar.gz $(NAME)-$(VERSION)
 	rm -rf $(NAME)-$(VERSION)
 
-install: $(BUILD_DIR)/$(NAME) $(MAN_FILES:.man=)
+install: $(BUILD_DIR)/$(NAME) $(MAN_FILES)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f $(NAME) $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/$(NAME)
@@ -202,7 +209,7 @@ install: $(BUILD_DIR)/$(NAME) $(MAN_FILES:.man=)
 		chmod 644 $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
 	done
 
-man: $(MAN_FILES:.man=)
+man: $(MAN_FILES)
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)
@@ -210,6 +217,6 @@ uninstall:
 		rm -f $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
 	done
 
-.PHONY: all debug x11 wayland debug-x11 debug-wayland clean dist install uninstall test
+.PHONY: all debug x11 wayland debug-x11 debug-wayland clean dist install uninstall test man
 
 -include $(OBJECTS:.o=.d) $(COMM_OBJS:.o=.d) $(COMP_OBJS:.o=.d) $(RUN_OBJS:.o=.d) $(X11_OBJS:.o=.d) $(WAY_OBJS:.o=.d)

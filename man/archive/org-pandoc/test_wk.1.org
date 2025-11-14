@@ -1,0 +1,65 @@
+#+title: WK
+
+#+date: April 9, 2024
+
+* NAME
+wk - which-key via X11 and Wayland, inspired by *dmenu* and *bemenu*
+respectively.
+
+* SYNOPSIS
+*wk* [options]
+
+* DESCRIPTION
+*wk* provides visual feedback when executing user defined key-chords.
+
+* OPTIONS
+- *-h, --help* :: Print help message and exit.
+
+- *-v, --version* :: Display version number and exit.
+
+- *-d, --debug* :: Print debug information.
+
+- *-t, --top* :: Position window at top of screen.
+
+- *-b, --bottom* :: Position window at bottom of screen.
+
+- *-s, --script* :: Read script from stdin to use as chords.
+
+- *-m, --max-columns* /NUM/ :: Set maximum columns to NUM.
+
+- *-p, --press* /KEY(s)/ :: Press KEY(s) before dispalying window.
+
+- *-T, --transpile* /FILE/ :: Transpile FILE to valid 'chords.h' syntax
+  and print to stdout.
+
+- *-c, --chords* /FILE/ :: Use FILE for chords rather than those in
+  'chords.h'.
+
+- *-w, --width* /NUM/ :: Set window width to NUM.
+
+- *-g, --gap* /NUM/ :: Set window gap between top/bottom of screen. Set
+  to '-1' for a gap 1/10th the size of your screen height.
+
+- *--border-width* /NUM/ :: Set border width to NUM.
+
+- *--wpadding* /NUM/ :: Set left and right padding around hint text to
+  NUM.
+
+- *--hpadding* /NUM/ :: Set up and down padding around hint text to NUM.
+
+- *--fg* /COLOR/ :: Set window foreground to COLOR (e.g., '#F1CD39').
+
+- *--bg* /COLOR/ :: Set window background to COLOR (e.g., '#F1CD39').
+
+- *--bd* /COLOR/ :: Set window border to COLOR (e.g., '#F1CD39').
+
+- *--shell* /STRING/ :: Set shell to /STRING/ (e.g., '/bin/sh').
+
+- *--font* /FONT STRING/ :: Set font to /FONT STRING/. Should be a valid
+  Pango font description (e.g., 'monospace, M+ 1c, ..., 16').
+
+* SEE ALSO
+*wks*​(5)
+
+* AUTHORS
+3L0C.

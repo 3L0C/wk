@@ -46,7 +46,7 @@ make clean && make && sudo make install
 # Dependencies
 
 - C compiler
-- sed to cleanup man files
+- scdoc to generate man pages
 
 All runtime dependencies below are searched with
 `pkg-config`.
@@ -957,7 +957,7 @@ switch_macro -> ( 'debug'
 ```
 
 All the switch macros correspond to their cli flags for
-`wk`. See the help message or the [man](man/wk.1.org) page
+`wk`. See the help message or the [man](man/wk.1.scd) page
 for more info.
 
 ### Integer Macros
@@ -971,7 +971,7 @@ integer_macro -> ( 'menu-width'
 ```
 
 All the integer macros correspond to their cli flags for
-`wk`. See the help message or the [man](man/wk.1.org) page
+`wk`. See the help message or the [man](man/wk.1.scd) page
 for more info.
 
 ### Unsigned Macros
@@ -988,7 +988,7 @@ unsigned_macro -> ( 'max-columns'
 ```
 
 All the unsigned macros correspond to their cli flags for
-`wk`. See the help message or the [man](man/wk.1.org) page
+`wk`. See the help message or the [man](man/wk.1.scd) page
 for more info.
 
 ### Number Macros
@@ -1001,13 +1001,13 @@ number_macro -> ( 'border-radius' ) '-'? [0-9]+ ( '.' [0-9]* )? ;
 ```
 
 All the number macros correspond to their cli flags for
-`wk`. See the help message or the [man](man/wk.1.org) page
+`wk`. See the help message or the [man](man/wk.1.scd) page
 for more info.
 
 ## Full documentation
 
 The above should serve as a solid introduction to `wks` file
-syntax. The [man](man/wks.5.org) page for `wks` files
+syntax. The [man](man/wks.5.scd) page for `wks` files
 contains the same information. When `wk` is installed,
 simply run `man 5 wks` to get refrence examples and a full
 break down of `wks` syntax.
