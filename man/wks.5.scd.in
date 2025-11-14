@@ -632,8 +632,8 @@ The following identifiers are valid within an _interpolation_:
 	The _description_ of the current _chord_ with the *all* characters downcased.
 
 *wrap_cmd*
-	The value of the global wrapper command. This is defined by the _:wrap-cmd_
-	preprocessor macro, the _--wrap-cmd_ cli flag, or defined by _wrapperCmd_
+	The value of the global wrap command. This is defined by the _:wrap-cmd_
+	preprocessor macro, the _--wrap-cmd_ cli flag, or defined by _wrapCmd_
 	in your _config.[def.]h_ file.
 
 ## KEYWORD
@@ -745,14 +745,14 @@ how each flag changes the behavior of *wk*:
 	potential issues with blocking commands.
 
 *unwrap*
-	Prevent wrapping this chord, even if a global wrapper is set or inherited
+	Prevent wrapping this chord, even if a global wrap is set or inherited
 	from a parent prefix.
 
 *wrap* '"' ( '\\"' | [^"] | interpolation )\* '"'
 	When given to a prefix, wrap chord commands with the argument. Can be given
 	to a chord, or chord-array to wrap the immediate command(s). The argument is
 	a string that supports interpolation, the same syntax as a description. The
-	"wrapper" is applied as "/bin/sh -c WRAPPER CMD". See *EXAMPLES* for
+	"wrap" is applied as "/bin/sh -c WRAP CMD". See *EXAMPLES* for
 	scenarios where this is useful.
 
 See *EXAMPLES* for further discussion about flags.
@@ -937,11 +937,11 @@ for users to choose from some list of options with less typing.
 
 ## WRAPPING COMMANDS
 
-There are two classes of wrappers, globally through _:wrap-cmd_, _--wrap-cmd_,
-and _wrapperCmd_, and locally through the _+wrap_ flag. All take a string
+There are two classes of wraps, globally through _:wrap-cmd_, _--wrap-cmd_,
+and _wrapCmd_, and locally through the _+wrap_ flag. All take a string
 argument, but the flag supports interpolation.
 
-The global wrapper is most useful for someone using a uwsm managed wayland
+The global wrap is most useful for someone using a uwsm managed wayland
 environment. Passing _--wrap-cmd "uwsm-app --"_ will ensure all commands are
 prefixed with _uwsm-app --_ before they are run, *or* written to stdout. The
 following are equivilant examples:
@@ -955,7 +955,7 @@ f "Firefox" %{{firefox}}
 f "Firefox" %{{uwsm-app -- firefox}}
 ```
 
-Local wrappers may be useful with or without a global wrapper. Here are some
+Local wraps may be useful with or without a global wrap. Here are some
 examples:
 
 ```
@@ -974,13 +974,13 @@ f "+Foot" +wrap "foot -e" # just wrap with "foot -e"
 }
 ```
 
-*NOTE* on wrapper precedence: When multiple wrapper definitions exist, the most
+*NOTE* on wrap precedence: When multiple wrap definitions exist, the most
 specific takes precedence:
 
-	1. Chord-level +unwrap (no wrapper)
-	2. Chord-level +wrap "custom" (use custom wrapper)
+	1. Chord-level +unwrap (no wrap)
+	2. Chord-level +wrap "custom" (use custom wrap)
 	3. Inherited +wrap from parent prefix
-	4. Global :wrap-cmd / --wrap-cmd / wrapperCmd
+	4. Global :wrap-cmd / --wrap-cmd / wrapCmd
 	5. No wrapper set (no wrapping)
 
 ## THE INCLUDE MACRO

@@ -30,7 +30,7 @@ typedef struct
     Array     after;
     Array     chords;
     ChordFlag flags;
-    Array     wrapperCmd;
+    Array     wrapCmd;
 } PseudoChord;
 
 static void pseudoChordArrayFree(Array* arr);
@@ -75,13 +75,13 @@ pseudoChordInit(PseudoChord* chord)
     assert(chord);
 
     keyInit(&chord->key);
-    chord->desc       = ARRAY_INIT(Token);
-    chord->cmd        = ARRAY_INIT(Token);
-    chord->before     = ARRAY_INIT(Token);
-    chord->after      = ARRAY_INIT(Token);
-    chord->chords     = ARRAY_INIT(PseudoChord);
-    chord->flags      = chordFlagInit();
-    chord->wrapperCmd = ARRAY_INIT(Token);
+    chord->desc    = ARRAY_INIT(Token);
+    chord->cmd     = ARRAY_INIT(Token);
+    chord->before  = ARRAY_INIT(Token);
+    chord->after   = ARRAY_INIT(Token);
+    chord->chords  = ARRAY_INIT(PseudoChord);
+    chord->flags   = chordFlagInit();
+    chord->wrapCmd = ARRAY_INIT(Token);
 }
 
 static void
@@ -94,7 +94,7 @@ pseudoChordFree(PseudoChord* chord)
     arrayFree(&chord->cmd);
     arrayFree(&chord->before);
     arrayFree(&chord->after);
-    arrayFree(&chord->wrapperCmd);
+    arrayFree(&chord->wrapCmd);
     pseudoChordArrayFree(&chord->chords);
     pseudoChordInit(chord);
 }
@@ -556,7 +556,7 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
         consume(compiler, TOKEN_WRAP, "Expected ':wrap-cmd'.");
         if (check(compiler, TOKEN_DESCRIPTION) || check(compiler, TOKEN_DESC_INTERP))
         {
-            compileDescriptionTokens(compiler, &chord->wrapperCmd);
+            compileDescriptionTokens(compiler, &chord->wrapCmd);
         }
         return true;
     }
@@ -814,10 +814,10 @@ setHooksAndFlags(PseudoChord* parent, Array* children)
 
         /* Inherit wrapper command if child doesn't unwrap and doesn't have its own */
         if (!chordFlagIsActive(child->flags, FLAG_UNWRAP) &&
-            arrayIsEmpty(&child->wrapperCmd) &&
-            !arrayIsEmpty(&parent->wrapperCmd))
+            arrayIsEmpty(&child->wrapCmd) &&
+            !arrayIsEmpty(&parent->wrapCmd))
         {
-            child->wrapperCmd = arrayCopy(&parent->wrapperCmd);
+            child->wrapCmd = arrayCopy(&parent->wrapCmd);
         }
 
         if (!arrayIsEmpty(&child->chords))
@@ -980,9 +980,9 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
     case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); break;
     case TOKEN_WRAP_CMD_INTERP:
     {
-        if (!stringIsEmpty(&compiler->menu->wrapperCmd))
+        if (!stringIsEmpty(&compiler->menu->wrapCmd))
         {
-            stringAppendString(dest, &compiler->menu->wrapperCmd);
+            stringAppendString(dest, &compiler->menu->wrapCmd);
         }
         break;
     }
@@ -1068,9 +1068,9 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
         /* Wrapper */
         compileStringFromTokens(
             compiler,
-            &chord->wrapperCmd,
+            &chord->wrapCmd,
             keyChord,
-            &keyChord->wrapperCmd,
+            &keyChord->wrapCmd,
             iter.index);
         /* Command */
         compileStringFromTokens(compiler, &chord->cmd, keyChord, &keyChord->command, iter.index);

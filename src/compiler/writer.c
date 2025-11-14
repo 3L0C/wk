@@ -34,41 +34,50 @@ writeChordsHeader(void)
         "#include \"src/common/key_chord.h\"\n"
         "#include \"src/common/string.h\"\n"
         "\n"
-        "#define ARRAY(T, _len, ...) (Array){ \\\n"
-        "    .data = (T[]){ __VA_ARGS__ }, \\\n"
-        "    .length = (_len), \\\n"
-        "    .capacity = (_len), \\\n"
-        "    .elementSize = sizeof(T) \\\n"
-        "}\n"
-        "#define EMPTY_ARRAY(T) (Array){ \\\n"
-        "    .data = NULL, \\\n"
-        "    .length = 0, \\\n"
-        "    .capacity = 0, \\\n"
-        "    .elementSize = sizeof(T) \\\n"
-        "}\n"
-        "#define STRING(_offset, _len) (String){ \\\n"
-        "    .parts = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \\\n"
-        "    .length = (_len) \\\n"
-        "}\n"
-        "#define EMPTY_STRING (String){ \\\n"
-        "    .parts = EMPTY_ARRAY(StringPart), \\\n"
-        "    .length = 0 \\\n"
-        "}\n"
-        "#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _flags, _chords) \\\n"
-        "    (KeyChord){ \\\n"
-        "        .key         = (_key), \\\n"
-        "        .description = (_desc), \\\n"
-        "        .command     = (_cmd), \\\n"
-        "        .before      = (_before), \\\n"
-        "        .after       = (_after), \\\n"
-        "        .flags       = (_flags), \\\n"
-        "        .keyChords   = (_chords) \\\n"
+        "#define ARRAY(T, _len, ...)                  \\\n"
+        "    (Array)                                  \\\n"
+        "    {                                        \\\n"
+        "        .data        = (T[]){ __VA_ARGS__ }, \\\n"
+        "        .length      = (_len),               \\\n"
+        "        .capacity    = (_len),               \\\n"
+        "        .elementSize = sizeof(T)             \\\n"
         "    }\n"
-        "#define KEY(_offset, _len, _mods, _special) \\\n"
-        "    (Key){ \\\n"
+        "#define EMPTY_ARRAY(T)           \\\n"
+        "    (Array)                      \\\n"
+        "    {                            \\\n"
+        "        .data        = NULL,     \\\n"
+        "        .length      = 0,        \\\n"
+        "        .capacity    = 0,        \\\n"
+        "        .elementSize = sizeof(T) \\\n"
+        "    }\n"
+        "#define STRING(_offset, _len)                                                                       \\\n"
+        "    (String)                                                                                        \\\n"
+        "    {                                                                                               \\\n"
+        "        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \\\n"
+        "        .length = (_len)                                                                            \\\n"
+        "    }\n"
+        "#define EMPTY_STRING (String){         \\\n"
+        "    .parts  = EMPTY_ARRAY(StringPart), \\\n"
+        "    .length = 0                        \\\n"
+        "}\n"
+        "#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _flags, _chords) \\\n"
+        "    (KeyChord)                                                                    \\\n"
+        "    {                                                                             \\\n"
+        "        .key         = (_key),                                                    \\\n"
+        "        .description = (_desc),                                                   \\\n"
+        "        .command     = (_cmd),                                                    \\\n"
+        "        .before      = (_before),                                                 \\\n"
+        "        .after       = (_after),                                                  \\\n"
+        "        .wrapCmd     = (_wrap_cmd),                                               \\\n"
+        "        .flags       = (_flags),                                                  \\\n"
+        "        .keyChords   = (_chords)                                                  \\\n"
+        "    }\n"
+        "#define KEY(_offset, _len, _mods, _special)   \\\n"
+        "    (Key)                                     \\\n"
+        "    {                                         \\\n"
         "        .repr    = STRING((_offset), (_len)), \\\n"
-        "        .mods    = (_mods), \\\n"
-        "        .special = (_special) \\\n"
+        "        .mods    = (_mods),                   \\\n"
+        "        .special = (_special)                 \\\n"
         "    }\n"
         "\n"
         "static const char BUILTIN_SOURCE[] = ");
@@ -106,6 +115,7 @@ writeBuiltinSourceImpl(const Array* arr)
         writeEscString(&keyChord->command);
         writeEscString(&keyChord->before);
         writeEscString(&keyChord->after);
+        writeEscString(&keyChord->wrapCmd);
         if (!arrayIsEmpty(&keyChord->keyChords)) writeBuiltinSourceImpl(&keyChord->keyChords);
     }
 }
@@ -123,7 +133,7 @@ writeBuiltinSource(const Array* arr)
 static void
 writetKeyChordsDeclaration(void)
 {
-    printf("static Array builtinKeyChords = ");
+    printf("static Array builtinKeyChords =\n    ");
 }
 
 static void
@@ -136,10 +146,14 @@ writeModifier(const Modifier mods, int indent)
     else
     {
         int count = modifierCount(mods);
-        if (modifierIsActive(mods, MOD_CTRL)) printf("MOD_CTRL%c", getSeparator(&count, '|', ','));
-        if (modifierIsActive(mods, MOD_META)) printf("MOD_META%c", getSeparator(&count, '|', ','));
-        if (modifierIsActive(mods, MOD_HYPER)) printf("MOD_HYPER%c", getSeparator(&count, '|', ','));
-        if (modifierIsActive(mods, MOD_SHIFT)) printf("MOD_SHIFT%c", getSeparator(&count, '|', ','));
+        if (modifierIsActive(mods, MOD_CTRL))
+            printf("MOD_CTRL%s", getSeparator(&count, " | ", ","));
+        if (modifierIsActive(mods, MOD_META))
+            printf("MOD_META%s", getSeparator(&count, " | ", ","));
+        if (modifierIsActive(mods, MOD_HYPER))
+            printf("MOD_HYPER%s", getSeparator(&count, " | ", ","));
+        if (modifierIsActive(mods, MOD_SHIFT))
+            printf("MOD_SHIFT%s", getSeparator(&count, " | ", ","));
     }
     printf(" ");
 }
@@ -200,21 +214,36 @@ writeChordFlag(const ChordFlag flags, int indent)
     else
     {
         int count = chordFlagCount(flags);
-        if (chordFlagIsActive(flags, FLAG_KEEP)) printf("FLAG_KEEP%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_CLOSE)) printf("FLAG_CLOSE%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_INHERIT)) printf("FLAG_INHERIT%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_IGNORE)) printf("FLAG_IGNORE%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_IGNORE_SORT)) printf("FLAG_IGNORE_SORT%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_UNHOOK)) printf("FLAG_UNHOOK%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_DEFLAG)) printf("FLAG_DEFLAG%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_NO_BEFORE)) printf("FLAG_NO_BEFORE%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_NO_AFTER)) printf("FLAG_NO_AFTER%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_WRITE)) printf("FLAG_WRITE%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_EXECUTE)) printf("FLAG_EXECUTE%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_SYNC_COMMAND)) printf("FLAG_SYNC_COMMAND%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_SYNC_BEFORE)) printf("FLAG_SYNC_BEFORE%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_SYNC_AFTER)) printf("FLAG_SYNC_AFTER%c", getSeparator(&count, '|', ','));
-        if (chordFlagIsActive(flags, FLAG_UNWRAP)) printf("FLAG_UNWRAP%c", getSeparator(&count, '|', ','));
+        if (chordFlagIsActive(flags, FLAG_KEEP))
+            printf("FLAG_KEEP%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_CLOSE))
+            printf("FLAG_CLOSE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_INHERIT))
+            printf("FLAG_INHERIT%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_IGNORE))
+            printf("FLAG_IGNORE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_IGNORE_SORT))
+            printf("FLAG_IGNORE_SORT%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_UNHOOK))
+            printf("FLAG_UNHOOK%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_DEFLAG))
+            printf("FLAG_DEFLAG%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_NO_BEFORE))
+            printf("FLAG_NO_BEFORE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_NO_AFTER))
+            printf("FLAG_NO_AFTER%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_WRITE))
+            printf("FLAG_WRITE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_EXECUTE))
+            printf("FLAG_EXECUTE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_SYNC_COMMAND))
+            printf("FLAG_SYNC_COMMAND%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_SYNC_BEFORE))
+            printf("FLAG_SYNC_BEFORE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_SYNC_AFTER))
+            printf("FLAG_SYNC_AFTER%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_UNWRAP))
+            printf("FLAG_UNWRAP%s", getSeparator(&count, " | ", ","));
     }
 }
 
@@ -246,9 +275,9 @@ writeChord(const KeyChord* keyChord, int indent)
     writeString(&keyChord->command, indent + 1);
     writeString(&keyChord->before, indent + 1);
     writeString(&keyChord->after, indent + 1);
+    writeString(&keyChord->wrapCmd, indent + 1);
     writeChordFlag(keyChord->flags, indent + 1);
     writePrefix(&keyChord->keyChords, indent + 1);
-    writeNewlineWithIndent(indent);
     printf(")");
 }
 
@@ -257,23 +286,17 @@ writeKeyChords(const Array* arr, int indent)
 {
     assert(arr);
 
-    printf("ARRAY(KeyChord, %zu,", arr->length);
+    printf("ARRAY(");
+    writeNewlineWithIndent(indent + 1);
+    printf("KeyChord,");
+    writeNewlineWithIndent(indent + 1);
+    printf("%zu,", arr->length);
     forEach(arr, KeyChord, keyChord)
     {
         writeChord(keyChord, indent + 1);
         if (iter.index < arr->length - 1) printf(",");
     }
-    writeNewlineWithIndent(indent);
     printf(")");
-}
-
-static void
-writeChordsFooter(void)
-{
-    printf(
-        ";\n"
-        "\n"
-        "#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n");
 }
 
 void
@@ -284,6 +307,6 @@ writeBuiltinKeyChordsHeaderFile(const Array* keyChords)
     writeChordsHeader();
     writeBuiltinSource(keyChords);
     writetKeyChordsDeclaration();
-    writeKeyChords(keyChords, 0);
-    writeChordsFooter();
+    writeKeyChords(keyChords, 1);
+    printf(";\n\n#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n");
 }

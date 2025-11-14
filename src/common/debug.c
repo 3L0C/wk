@@ -269,10 +269,10 @@ disassembleMod(const Modifier mod, int indent)
     }
 
     int count = modifierCount(mod);
-    if (modifierIsActive(mod, MOD_CTRL)) printf("CTRL%c", getSeparator(&count, '|', '\n'));
-    if (modifierIsActive(mod, MOD_META)) printf("ALT%c", getSeparator(&count, '|', '\n'));
-    if (modifierIsActive(mod, MOD_HYPER)) printf("HYPER%c", getSeparator(&count, '|', '\n'));
-    if (modifierIsActive(mod, MOD_SHIFT)) printf("SHIFT%c", getSeparator(&count, '|', '\n'));
+    if (modifierIsActive(mod, MOD_CTRL)) printf("CTRL%s", getSeparator(&count, "|", "\n"));
+    if (modifierIsActive(mod, MOD_META)) printf("ALT%s", getSeparator(&count, "|", "\n"));
+    if (modifierIsActive(mod, MOD_HYPER)) printf("HYPER%s", getSeparator(&count, "|", "\n"));
+    if (modifierIsActive(mod, MOD_SHIFT)) printf("SHIFT%s", getSeparator(&count, "|", "\n"));
 }
 
 static void
@@ -331,20 +331,20 @@ disassembleChordFlag(ChordFlag flag, int indent)
     }
 
     int count = chordFlagCount(flag);
-    if (chordFlagIsActive(flag, FLAG_KEEP)) printf("KEEP%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_CLOSE)) printf("CLOSE%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_INHERIT)) printf("INHERIT%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_IGNORE)) printf("IGNORE%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_UNHOOK)) printf("UNHOOK%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_DEFLAG)) printf("DEFLAG%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_NO_BEFORE)) printf("NO_BEFORE%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_NO_AFTER)) printf("NO_AFTER%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_WRITE)) printf("WRITE%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_EXECUTE)) printf("EXECUTE%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_SYNC_COMMAND)) printf("SYNC_COMMAND%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%c", getSeparator(&count, '|', '\n'));
-    if (chordFlagIsActive(flag, FLAG_UNWRAP)) printf("UNWRAP%c", getSeparator(&count, '|', '\n'));
+    if (chordFlagIsActive(flag, FLAG_KEEP)) printf("KEEP%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_CLOSE)) printf("CLOSE%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_INHERIT)) printf("INHERIT%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_IGNORE)) printf("IGNORE%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_UNHOOK)) printf("UNHOOK%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_DEFLAG)) printf("DEFLAG%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_NO_BEFORE)) printf("NO_BEFORE%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_NO_AFTER)) printf("NO_AFTER%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_WRITE)) printf("WRITE%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_EXECUTE)) printf("EXECUTE%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_SYNC_COMMAND)) printf("SYNC_COMMAND%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_UNWRAP)) printf("UNWRAP%s", getSeparator(&count, "|", "\n"));
 }
 
 void
@@ -453,8 +453,8 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %04u", "Height:", menu->height);
     debugMsgWithIndent(0, "| %-20s %04u", "Border width:", menu->borderWidth);
     debugMsgWithIndent(0, "| %-20s %04u", "Delay:", menu->delay);
-    debugMsgWithIndent(0, "| %-20s %s", "Wrapper Cmd:", menu->wrapperCmd);
-    debugStringWithIndent(0, "Wrapper Cmd", &menu->wrapperCmd);
+    debugMsgWithIndent(0, "| %-20s %s", "Wrap Cmd:", menu->wrapCmd);
+    debugStringWithIndent(0, "Wrap Cmd", &menu->wrapCmd);
     debugMsgWithIndent(
         0,
         "| %-20s %s",

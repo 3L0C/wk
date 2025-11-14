@@ -83,8 +83,8 @@ getWrapper(const Menu* menu, const KeyChord* keyChord)
     assert(menu), assert(keyChord);
 
     if (chordFlagIsActive(keyChord->flags, FLAG_UNWRAP)) return NULL;
-    if (!stringIsEmpty(&keyChord->wrapperCmd)) return &keyChord->wrapperCmd;
-    if (!stringIsEmpty(&menu->wrapperCmd)) return &menu->wrapperCmd;
+    if (!stringIsEmpty(&keyChord->wrapCmd)) return &keyChord->wrapCmd;
+    if (!stringIsEmpty(&menu->wrapCmd)) return &menu->wrapCmd;
     return NULL;
 }
 
@@ -290,11 +290,11 @@ menuInit(Menu* menu, Array* keyChords)
     menu->borderWidth = borderWidth;
     menu->delay       = delay;
 
-    menu->position   = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
-    menu->debug      = false;
-    menu->sort       = false;
-    menu->dirty      = true;
-    menu->wrapperCmd = stringInitFromChar(wrapCmd);
+    menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
+    menu->debug    = false;
+    menu->sort     = false;
+    menu->dirty    = true;
+    menu->wrapCmd  = stringInitFromChar(wrapCmd);
 }
 
 bool
@@ -604,7 +604,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         /* implicit keys */
         case 0x104: menu->implicitArrayKeys = optarg; break;
         /* wrap-cmd */
-        case 0x105: menuSetWrapperCmd(menu, optarg); break;
+        case 0x105: menuSetWrapCmd(menu, optarg); break;
         /* Errors */
         case '?':
         {
@@ -661,12 +661,12 @@ menuSetColor(Menu* menu, const char* color, MenuColor colorType)
 }
 
 void
-menuSetWrapperCmd(Menu* menu, const char* cmd)
+menuSetWrapCmd(Menu* menu, const char* cmd)
 {
     assert(menu);
 
-    if (!stringIsEmpty(&menu->wrapperCmd)) stringFree(&menu->wrapperCmd);
-    menu->wrapperCmd = stringInitFromChar(cmd);
+    if (!stringIsEmpty(&menu->wrapCmd)) stringFree(&menu->wrapCmd);
+    menu->wrapCmd = stringInitFromChar(cmd);
 }
 
 static MenuStatus

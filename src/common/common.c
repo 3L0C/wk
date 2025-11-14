@@ -26,8 +26,8 @@ errorMsg(const char* fmt, ...)
     fputc((fmt[len - 1] == ':' ? ' ' : '\n'), stderr);
 }
 
-char
-getSeparator(int* count, char a, char b)
+const char*
+getSeparator(int* count, const char* a, const char* b)
 {
     assert(count);
 
