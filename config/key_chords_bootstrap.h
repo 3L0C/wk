@@ -6,7 +6,6 @@
 /* common includes */
 #include "src/common/array.h"
 #include "src/common/key_chord.h"
-#include "src/common/string.h"
 
 #define EMPTY_ARRAY(T)           \
     (Array)                      \

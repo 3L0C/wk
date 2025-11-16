@@ -1,6 +1,0 @@
-a "Open Applications" %{{ echo "Opening applications..." }}
-b "Browse" {
-    f "Firefox" %{{ firefox }}
-    c "Chrome" %{{ google-chrome }}
-}
-t "Terminal" %{{ alacritty }}
