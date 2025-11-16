@@ -843,6 +843,14 @@ scannerGetTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
 
     tokenInit(token);
 
+    /* Handle scanner state for interpolations, descriptions, and commands */
+    switch (scanner->state)
+    {
+    case SCANNER_STATE_DESCRIPTION: return scanDescription(scanner, token, true);
+    case SCANNER_STATE_INTERPOLATION: return scanInterpolation(scanner, token);
+    default: break;
+    }
+
     while (!scannerIsAtEnd(scanner))
     {
         char c = advance(scanner);
@@ -887,7 +895,7 @@ scannerGetTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
                 break;
             }
             scannerMakeCurrent(scanner);
-            return scanDescription(scanner, token, false);
+            return scanDescription(scanner, token, true);
         }
         default:
         {

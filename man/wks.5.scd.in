@@ -51,9 +51,9 @@ open_delim         -> ( '{{' | '((' | '[[' ) ;
 
 close_delim        -> ( '}}' | '))' | ']]' ) ;
 
-interpolation      -> '%(' identifier ')' ;
+interpolation      -> '%(' ( chord_metadata | user_variable ) ')' ;
 
-identifier         -> ( 'key'
+chord_metadata     -> ( 'key'
                       | 'index'
                       | 'index+1'
                       | 'desc'
@@ -62,6 +62,8 @@ identifier         -> ( 'key'
                       | 'desc,'
                       | 'desc,,'
                       | 'wrap_cmd' );
+
+user_variable      -> [^)]+ ;
 
 keyword            -> ( hook | flag ) ;
 
@@ -102,7 +104,7 @@ string_macro       -> ( 'include'
                       | 'shell'
                       | 'font'
                       | 'wrap-cmd'
-                      | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
+                      | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
 
 switch_macro       -> ( 'debug'
                       | 'sort'
@@ -582,19 +584,44 @@ implement so they are here for those who want to use them.
 
 ## INTERPOLATION
 
-An _interpolation_ is a means of accessing some metadata of the current _chord_
-from within a _description_ or a _command_.
+An _interpolation_ is a means of accessing chord metadata or user-defined
+variables from within a _description_, _command_, or _preprocessor macro
+argument_.
 
 ```
-interpolation -> '%(' identifier ')' ;
+interpolation -> '%(' ( chord_metadata | user_variable ) ')' ;
 ```
 
 The basic syntax for an _interpolation_ begins with a _%(_ delimiter followed by
-an _identifier_ and closing parenthesis (_)_).
+either a _chord_metadata_ identifier or a _user_variable_ name, and closing
+parenthesis (_)_).
 
-## IDENTIFIER
+There are two types of interpolations with different scopes:
 
-The following identifiers are valid within an _interpolation_:
+*Chord Metadata Interpolations*
+	Built-in identifiers providing access to metadata about the current chord.
+	These are only valid in _descriptions_ and _commands_.
+
+*User Variable Interpolations*
+	User-defined variables created with the _:var_ preprocessor macro. These can
+	be used in _descriptions_, _commands_, and _preprocessor macro arguments_.
+
+## CHORD METADATA
+
+The following built-in identifiers provide access to chord metadata and are only
+valid within _descriptions_ and _commands_:
+
+```
+chord_metadata -> ( 'key'
+                  | 'index'
+                  | 'index+1'
+                  | 'desc'
+                  | 'desc^'
+                  | 'desc^^'
+                  | 'desc,'
+                  | 'desc,,'
+                  | 'wrap_cmd' );
+```
 
 *key*
 	The _key_ _identifier_ corresponds to the _trigger key_ of the current
@@ -635,6 +662,25 @@ The following identifiers are valid within an _interpolation_:
 	The value of the global wrap command. This is defined by the _:wrap-cmd_
 	preprocessor macro, the _--wrap-cmd_ cli flag, or defined by _wrapCmd_
 	in your _config.[def.]h_ file.
+
+## USER VARIABLE
+
+User-defined variables created with the _:var_ preprocessor macro can be
+accessed through interpolation:
+
+```
+user_variable -> [^)]+ ;
+```
+
+Unlike _chord_metadata_, user variables can be used in three contexts:
+
+- Descriptions
+- Commands
+- Preprocessor macro arguments (_:font_, _:fg-\*_, _:bg_, _:bd_, _:shell_, _:wrap-cmd_, _:include_, and in _:var_ itself)
+
+This enables powerful meta-programming capabilities such as meta-variables
+(variables with computed names) and dynamic configuration values. See *VAR
+MACRO* and *EXAMPLES* for demonstrations.
 
 ## KEYWORD
 
@@ -822,12 +868,86 @@ See *EXAMPLES* for a full demonstration of the _:include_ macro.
 The _:var_ macro allows you to define a variable with some value. It takes two
 arguments, the first is the _key_ or _variable name_, and the second is the
 _value_ which can be an empty string, i.e., unset a previously defined _var_.
-The _value_ of any _var_ can be accessed through interpolation by using the
-corresponding _key_. The _key_ can contain any character except a closing
-parenthesis ('_)_'), otherwise it would be inaccessible through interpolation.
-The _key_ cannot shadow builtin interpolations.
 
-See *EXAMPLES* for a demonstration.
+*NOTE* Both arguments now support variable interpolation, enabling meta-variables
+(variables with computed names) and variables that reference other variables.
+
+The _key_ can contain any character except a closing parenthesis ('_)_'),
+otherwise it would be inaccessible through interpolation. The _key_ cannot
+shadow builtin chord metadata identifiers.
+
+*BASIC VARIABLES*
+
+The simplest use is defining a variable and using it in chord descriptions or
+commands:
+
+```
+:var "WORKSPACE_CMD" "hyprctl dispatch workspace"
+[asdfghjkl] "Workspace %(index+1)" %{{%(WORKSPACE_CMD) %(index)}}
+```
+
+*META-VARIABLES*
+
+Variable names support interpolation, enabling variables with computed names:
+
+```
+# Variable name from another variable
+:var "key_name" "GREETING"
+:var "%(key_name)" "Hello, World!"
+
+# Multi-part variable names
+:var "prefix" "MY"
+:var "suffix" "VAR"
+:var "%(prefix)_%(suffix)" "success"
+```
+
+*NOTE* Variables used in the name must be defined before the _:var_ directive.
+
+*VARIABLES REFERENCING VARIABLES*
+
+Variable values can reference other variables:
+
+```
+:var "original" "first"
+:var "derived" "%(original)"  # derived = "first"
+
+:var "base" "foo"
+:var "extended" "%(base)_bar"  # extended = "foo_bar"
+```
+
+Variables are resolved at definition time, so referenced variables must be
+defined first.
+
+*VARIABLES IN PREPROCESSOR DIRECTIVES*
+
+All preprocessor macros that take string arguments support variable
+interpolation:
+
+```
+# Color scheme
+:var "r" "ff"
+:var "g" "00"
+:var "b" "00"
+:fg "#%(r)%(g)%(b)"
+
+# Font configuration
+:var "font_name" "Monospace"
+:var "font_size" "12"
+:font "%(font_name), %(font_size)"
+```
+
+*VARIABLE RESOLUTION ORDER*
+
+Variables are resolved at definition time in a single pass:
+
+1. Variable names are resolved first (meta-variables)
+2. Variable values are then resolved
+3. Undefined variables in either context cause an error
+
+This prevents circular references but requires that variables be defined before
+they are used.
+
+See *EXAMPLES* for more demonstrations.
 
 ## SWITCH MACROS
 
@@ -1076,6 +1196,106 @@ w "+Workspace"
 
 With some clever orchestration you can use vars to construct a more general *wk*
 menu, free from concern about your local environment.
+
+## VARIABLES IN PREPROCESSOR DIRECTIVES
+
+All preprocessor macros that take string arguments now support variable
+interpolation, enabling powerful meta-programming capabilities:
+
+*META-VARIABLES*
+
+Variables with computed names:
+
+```
+# Variable name from another variable
+:var "key_name" "GREETING"
+:var "%(key_name)" "Hello, World!"
+a "Say hello" %{{echo %(GREETING)}}
+
+# Multi-part variable names
+:var "prefix" "MY"
+:var "suffix" "CONFIG"
+:var "%(prefix)_%(suffix)" "value"
+b "Test" %{{echo %(MY_CONFIG)}}
+```
+
+*COLOR SCHEME COMPOSITION*
+
+Build colors dynamically from components:
+
+```
+# RGB components
+:var "r" "ff"
+:var "g" "5c"
+:var "b" "57"
+
+# Compose colors from components
+:fg "#%(r)%(g)%(b)"
+:bg "#1a1b26"
+
+# Theme variables
+:var "theme" "dark"
+:var "accent_%(theme)" "#7fb4ca"
+:bd "%(accent_dark)"
+```
+
+*DYNAMIC CONFIGURATION*
+
+Configure fonts, shells, and other settings using variables:
+
+```
+# Font configuration
+:var "font_family" "JetBrains Mono"
+:var "font_size" "14"
+:var "font_style" "Bold"
+:font "%(font_family) %(font_style), %(font_size)"
+
+# Shell configuration
+:var "default_shell" "/bin/zsh"
+:shell "%(default_shell)"
+
+# Wrap command from variable
+:var "container" "flatpak run"
+:var "app_id" "org.mozilla.firefox"
+:wrap-cmd "%(container) %(app_id)"
+```
+
+*VARIABLES REFERENCING VARIABLES*
+
+Chain variable references for flexible configurations:
+
+```
+# Base paths
+:var "home" "/home/user"
+:var "config_dir" "%(home)/.config"
+:var "wk_config" "%(config_dir)/wk"
+
+# Derived values
+:var "browser_cmd" "firefox"
+:var "terminal" "alacritty"
+:var "editor_cmd" "%(terminal) -e nvim"
+
+# Use in commands
+a "Edit config" %{{%(editor_cmd) %(wk_config)/keys.wks}}
+```
+
+*ENVIRONMENT-SPECIFIC INCLUDES*
+
+Combine variables with includes for environment-specific configs:
+
+```
+# File: common.wks
+:var "env" "wayland"
+:include "%(env)_specific.wks"
+
+# File: wayland_specific.wks
+:var "launcher" "wofi"
+:var "term" "foot"
+
+# File: x11_specific.wks
+:var "launcher" "dmenu"
+:var "term" "st"
+```
 
 # NOTES
 

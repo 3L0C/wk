@@ -1,0 +1,4 @@
+# Test meta-variable name contains ')' after resolution
+:var "bad" "foo)"
+:var "%(bad)" "value"
+x "Test" +write %{{echo test}}

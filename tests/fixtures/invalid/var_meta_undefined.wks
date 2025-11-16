@@ -1,0 +1,3 @@
+# Test undefined variable in meta-variable name
+:var "%(undefined)" "value"
+x "Test" +write %{{echo test}}

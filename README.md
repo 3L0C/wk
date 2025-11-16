@@ -562,20 +562,40 @@ I have used interpolations in the last few examples without
 any explanation. Let's fix that.
 
 ```
-interpolation -> '%(' identifier ')' ;
+interpolation -> '%(' ( chord_metadata | user_variable ) ')' ;
 ```
 
 The basic syntax for an interpolation begins with a `%(`
-delimiter followed by an identifier and closing parenthesis
-(`)`).
+delimiter followed by either a chord metadata identifier or
+a user variable name, and closing parenthesis (`)`).
 
-**Note** that interpolations can only be used in
-descriptions and commands.
+There are two types of interpolations with different scopes:
 
-The basic idea of interpolation is to provide users with
-easy access to metadata about a chord. The following
-identifiers are recognized in an interpolation along with
-their corresponding metadata.
+**Chord Metadata Interpolations** - Built-in identifiers
+that provide access to metadata about the current chord.
+These are only valid in descriptions and commands.
+
+**User Variable Interpolations** - User-defined variables
+created with the `:var` preprocessor macro. These can be
+used in descriptions, commands, and preprocessor macro
+arguments.
+
+#### Chord Metadata
+
+The following built-in identifiers provide access to chord
+metadata and are only valid in descriptions and commands:
+
+```
+chord_metadata -> ( 'key'
+                  | 'index'
+                  | 'index+1'
+                  | 'desc'
+                  | 'desc^'
+                  | 'desc^^'
+                  | 'desc,'
+                  | 'desc,,'
+                  | 'wrap_cmd' ) ;
+```
 
 | Identifier | Metadata                                                                             |
 |------------|--------------------------------------------------------------------------------------|
@@ -589,8 +609,25 @@ their corresponding metadata.
 | `desc,,`   | The description of the current chord with all characters downcased.                  |
 | `wrap_cmd` | The globally defined `wrap_cmd`. Set through config.h, `--wrap-cmd`, or `:wrap-cmd`. |
 
-Variables defined through [`:var`](#preprocessor-macros) can
-also be accessed through interpolation.
+#### User Variables
+
+User-defined variables created with the [`:var`](#the-var-macro)
+preprocessor macro can be accessed through interpolation:
+
+```
+user_variable -> [^)]+ ;
+```
+
+Unlike chord metadata, user variables can be used in three
+contexts:
+- Descriptions
+- Commands
+- Preprocessor macro arguments (`:font`, `:fg-*`, `:bg`, `:bd`, `:shell`, `:wrap-cmd`, `:include`, and in `:var` itself)
+
+This enables powerful meta-programming capabilities such as
+meta-variables (variables with computed names) and dynamic
+configuration values. See [The Var Macro](#the-var-macro)
+for examples.
 
 ### Keywords
 
@@ -905,12 +942,20 @@ string_macro -> ( 'include'
                 | 'shell'
                 | 'font'
                 | 'wrap-cmd'
-                | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
+                | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
 ```
 
 Many of the macros here work the same as their command-line
-counterparts. Simply use `:MACRO "ARGUMENT"` to  make use of
+counterparts. Simply use `:MACRO "ARGUMENT"` to make use of
 any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
+
+**Note** All string macro arguments support user variable
+interpolation using the `%(variable_name)` syntax. This
+allows you to use variables defined with `:var` in any
+string macro argument, including `:include`, `:font`,
+`:fg-color`, `:bg-color`, `:bd-color`, `:shell`, and
+`:wrap-cmd`. See [The Var Macro](#the-var-macro) for
+examples of using variables in preprocessor directives.
 
 #### The Include Macro
 
@@ -1014,14 +1059,94 @@ The `:var` macro allows you to define a variable with some
 value. It takes two arguments, the first is the `key` or
 `variable name`, and the second is the `value` which can be
 an empty string, i.e., unset a previously defined `var`.
-The `value` of any `var` can be accessed through
-interpolation by using the corresponding `key`. The `key`
-can contain any character except a closing parenthesis
-('`)`'), otherwise it would be inaccessible through
-interpolation.  The `key` cannot shadow builtin
-interpolations.
 
-**Example** - Creating environment-agnostic configs:
+**Note** Both arguments support variable interpolation,
+enabling meta-variables (variables with computed names) and
+variables that reference other variables.
+
+The `key` can contain any character except a closing
+parenthesis ('`)`'), otherwise it would be inaccessible
+through interpolation. The `key` cannot shadow builtin chord
+metadata identifiers.
+
+##### Basic Variables
+
+The simplest use case is defining a variable and using it in
+chord descriptions or commands:
+
+```
+:var "WORKSPACE_CMD" "hyprctl dispatch workspace"
+[asdfghjkl] "Workspace %(index+1)" %{{%(WORKSPACE_CMD) %(index)}}
+```
+
+##### Meta-Variables
+
+Since variable names support interpolation, you can create
+variables with computed names:
+
+```
+# Variable name from another variable
+:var "key_name" "GREETING"
+:var "%(key_name)" "Hello, World!"
+a "Say hello" %{{echo %(GREETING)}}
+
+# Multi-part variable names
+:var "prefix" "MY"
+:var "suffix" "VAR"
+:var "%(prefix)_%(suffix)" "success"
+b "Test" %{{echo %(MY_VAR)}}
+```
+
+**Note** Variables used in the name must be defined before
+the `:var` directive that uses them.
+
+##### Variables Referencing Variables
+
+Variable values can reference other variables:
+
+```
+:var "original" "first"
+:var "derived" "%(original)"
+# derived now contains "first"
+
+:var "base" "foo"
+:var "extended" "%(base)_bar"
+# extended now contains "foo_bar"
+```
+
+Variables are resolved at definition time, so the referenced
+variables must be defined first.
+
+##### Variables in Preprocessor Directives
+
+All preprocessor macros that take string arguments support
+variable interpolation:
+
+```
+# Color scheme composition
+:var "r" "ff"
+:var "g" "00"
+:var "b" "00"
+:fg "#%(r)%(g)%(b)"
+
+# Font configuration
+:var "font_name" "Monospace"
+:var "font_size" "12"
+:font "%(font_name), %(font_size)"
+
+# Shell configuration
+:var "shell_path" "/bin/bash"
+:shell "%(shell_path)"
+
+# Wrap command
+:var "wrapper" "uwsm-app --"
+:wrap-cmd "%(wrapper)"
+```
+
+##### Environment-Agnostic Configurations
+
+Variables enable writing configuration files that work
+across different environments:
 
 ```
 # File main.wks
@@ -1042,6 +1167,16 @@ w "+Workspace"
 With clever use of variables, you can construct general `wk`
 menus that work across different window managers or
 environments without modification.
+
+##### Variable Resolution Order
+
+Variables are resolved at definition time in a single pass:
+1. Variable names are resolved first (meta-variables)
+2. Variable values are then resolved
+3. Undefined variables in either context cause an error
+
+This prevents circular references but requires that
+variables be defined before they are used.
 
 ### Switch Macros
 

@@ -13,6 +13,7 @@
 #include "common/debug.h"
 #include "common/menu.h"
 #include "common/stack.h"
+#include "common/string.h"
 
 /* local includes */
 #include "debug.h"
@@ -130,6 +131,89 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
     return result;
 }
 
+static char*
+getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char* context)
+{
+    assert(menu), assert(scanner), assert(arena), assert(firstToken), assert(context);
+
+    /* If first token is TOKEN_DESCRIPTION, there are no interpolations - return literal string */
+    if (firstToken->type == TOKEN_DESCRIPTION)
+    {
+        return arenaCopyCString(arena, firstToken->start, firstToken->length);
+    }
+
+    String result = stringInit();
+    Token  token  = { 0 };
+    tokenCopy(firstToken, &token);
+
+    while (token.type != TOKEN_DESCRIPTION)
+    {
+        switch (token.type)
+        {
+        case TOKEN_DESC_INTERP:
+        {
+            /* Literal text between interpolations */
+            stringAppend(&result, token.start, token.length);
+            break;
+        }
+        case TOKEN_USER_VAR:
+        {
+            /* Look up variable and substitute */
+            bool found = false;
+            forEach(&menu->userVars, const UserVar, var)
+            {
+                if (strncmp(var->key, token.start, token.length) == 0 &&
+                    strlen(var->key) == token.length)
+                {
+                    stringAppendCString(&result, var->value);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                tokenErrorAt(
+                    &token,
+                    scanner->filepath,
+                    "Undefined variable '%.*s' in %s. "
+                    "Variables must be defined with :var before use.",
+                    (int)token.length,
+                    token.start,
+                    context);
+                scanner->hadError = true;
+                stringFree(&result);
+                return NULL;
+            }
+            break;
+        }
+        default:
+        {
+            tokenErrorAt(
+                &token,
+                scanner->filepath,
+                "Unexpected token type in %s interpolation.",
+                context);
+            scanner->hadError = true;
+            stringFree(&result);
+            return NULL;
+        }
+        }
+
+        scannerGetTokenForPreprocessor(scanner, &token, SCANNER_WANTS_DESCRIPTION);
+    }
+
+    /* TOKEN_DESCRIPTION can have trailing literal text after the last interpolation */
+    if (token.length > 0)
+    {
+        stringAppend(&result, token.start, token.length);
+    }
+
+    char* resolved = stringToCString(arena, &result);
+    stringFree(&result);
+    return resolved;
+}
+
 static void
 handleIncludeMacro(
     Menu*    menu,
@@ -232,22 +316,25 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
 {
     assert(menu), assert(scanner), assert(keyToken), assert(key), assert(arena);
 
-    if (keyToken->length == 0)
+    /* Resolve variables in variable NAME (meta-variables) */
+    char* resolvedKey = getArg(menu, scanner, arena, keyToken, "variable name");
+    if (!resolvedKey) return; /* Error already reported */
+
+    /* Validate resolved name */
+    if (strlen(resolvedKey) == 0)
     {
-        tokenErrorAt(keyToken, scanner->filepath, "Variable name cannot be empty.");
+        tokenErrorAt(keyToken, scanner->filepath, "Variable name resolves to empty string.");
         scanner->hadError = true;
         return;
     }
 
-    if (memchr(keyToken->start, ')', keyToken->length))
+    if (strchr(resolvedKey, ')'))
     {
         tokenErrorAt(
             keyToken,
             scanner->filepath,
-            "Variable name contains ')',"
-            "it will not match the expected key during interpolation: '%.*s'.",
-            keyToken->length,
-            keyToken->start);
+            "Variable name contains ')' after resolution: '%s'.",
+            resolvedKey);
         scanner->hadError = true;
         return;
     }
@@ -257,7 +344,8 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
     Token valueToken = { 0 };
     scannerGetTokenForPreprocessor(scanner, &valueToken, SCANNER_WANTS_DESCRIPTION);
 
-    if (valueToken.type != TOKEN_DESCRIPTION)
+    if (valueToken.type != TOKEN_DESCRIPTION && valueToken.type != TOKEN_DESC_INTERP &&
+        valueToken.type != TOKEN_USER_VAR)
     {
         tokenErrorAt(
             &valueToken,
@@ -269,19 +357,21 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
         return;
     }
 
-    char* value = arenaCopyCString(arena, valueToken.start, valueToken.length);
+    /* Resolve variables in variable VALUE (variables referencing variables) */
+    char* resolvedValue = getArg(menu, scanner, arena, &valueToken, "variable value");
+    if (!resolvedValue) return; /* Error already reported */
 
     forEach(&menu->userVars, UserVar, var)
     {
-        if (strcmp(var->key, key) == 0)
+        if (strcmp(var->key, resolvedKey) == 0)
         {
-            var->key   = key;
-            var->value = value;
+            var->key   = resolvedKey;
+            var->value = resolvedValue;
             return;
         }
     }
 
-    UserVar newVar = { .key = key, .value = value };
+    UserVar newVar = { .key = resolvedKey, .value = resolvedValue };
     arrayAppend(&menu->userVars, &newVar);
 }
 
@@ -300,7 +390,8 @@ handleMacroWithStringArg(
 
     Token result = { 0 };
     scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DESCRIPTION);
-    if (result.type != TOKEN_DESCRIPTION)
+    if (result.type != TOKEN_DESCRIPTION && result.type != TOKEN_DESC_INTERP &&
+        result.type != TOKEN_USER_VAR)
     {
         tokenErrorAt(
             token,
@@ -314,29 +405,57 @@ handleMacroWithStringArg(
         return;
     }
 
-    char* arg = arenaCopyCString(arena, result.start, result.length);
-
     switch (token->type)
     {
-    case TOKEN_FOREGROUND_COLOR:
+    case TOKEN_INCLUDE:
     {
-        menuSetColor(menu, arg, MENU_COLOR_KEY);
-        menuSetColor(menu, arg, MENU_COLOR_DELIMITER);
-        menuSetColor(menu, arg, MENU_COLOR_PREFIX);
+        handleIncludeMacro(menu, scanner, arr, &result, stack, arena);
         break;
     }
-    case TOKEN_FOREGROUND_KEY_COLOR: menuSetColor(menu, arg, MENU_COLOR_KEY); break;
-    case TOKEN_FOREGROUND_DELIMITER_COLOR: menuSetColor(menu, arg, MENU_COLOR_DELIMITER); break;
-    case TOKEN_FOREGROUND_PREFIX_COLOR: menuSetColor(menu, arg, MENU_COLOR_PREFIX); break;
-    case TOKEN_FOREGROUND_CHORD_COLOR: menuSetColor(menu, arg, MENU_COLOR_CHORD); break;
-    case TOKEN_BACKGROUND_COLOR: menuSetColor(menu, arg, MENU_COLOR_BACKGROUND); break;
-    case TOKEN_BORDER_COLOR: menuSetColor(menu, arg, MENU_COLOR_BORDER); break;
-    case TOKEN_SHELL: menu->shell = arg; break;
-    case TOKEN_FONT: menu->font = arg; break;
-    case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
-    case TOKEN_WRAP_CMD: menuSetWrapCmd(menu, arg); break;
-    case TOKEN_INCLUDE: handleIncludeMacro(menu, scanner, arr, &result, stack, arena); break;
-    case TOKEN_VAR: handleVarMacro(menu, scanner, &result, arg, arena); break;
+    case TOKEN_VAR:
+    {
+        char* key = arenaCopyCString(arena, result.start, result.length);
+        handleVarMacro(menu, scanner, &result, key, arena);
+        break;
+    }
+    case TOKEN_FOREGROUND_COLOR:
+    case TOKEN_FOREGROUND_KEY_COLOR:
+    case TOKEN_FOREGROUND_DELIMITER_COLOR:
+    case TOKEN_FOREGROUND_PREFIX_COLOR:
+    case TOKEN_FOREGROUND_CHORD_COLOR:
+    case TOKEN_BACKGROUND_COLOR:
+    case TOKEN_BORDER_COLOR:
+    case TOKEN_SHELL:
+    case TOKEN_FONT:
+    case TOKEN_IMPLICIT_ARRAY_KEYS:
+    case TOKEN_WRAP_CMD:
+    {
+        char* arg = getArg(menu, scanner, arena, &result, "macro argument");
+        if (!arg) return; /* Error already reported */
+
+        switch (token->type)
+        {
+        case TOKEN_FOREGROUND_COLOR:
+            menuSetColor(menu, arg, MENU_COLOR_KEY);
+            menuSetColor(menu, arg, MENU_COLOR_DELIMITER);
+            menuSetColor(menu, arg, MENU_COLOR_PREFIX);
+            break;
+        case TOKEN_FOREGROUND_KEY_COLOR: menuSetColor(menu, arg, MENU_COLOR_KEY); break;
+        case TOKEN_FOREGROUND_DELIMITER_COLOR:
+            menuSetColor(menu, arg, MENU_COLOR_DELIMITER);
+            break;
+        case TOKEN_FOREGROUND_PREFIX_COLOR: menuSetColor(menu, arg, MENU_COLOR_PREFIX); break;
+        case TOKEN_FOREGROUND_CHORD_COLOR: menuSetColor(menu, arg, MENU_COLOR_CHORD); break;
+        case TOKEN_BACKGROUND_COLOR: menuSetColor(menu, arg, MENU_COLOR_BACKGROUND); break;
+        case TOKEN_BORDER_COLOR: menuSetColor(menu, arg, MENU_COLOR_BORDER); break;
+        case TOKEN_SHELL: menu->shell = arg; break;
+        case TOKEN_FONT: menu->font = arg; break;
+        case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
+        case TOKEN_WRAP_CMD: menuSetWrapCmd(menu, arg); break;
+        default: break;
+        }
+        break;
+    }
     default:
     {
         errorMsg("Got an unexpected token to function `handleMacroWithStringArg`.");

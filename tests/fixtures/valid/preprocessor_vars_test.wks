@@ -1,0 +1,29 @@
+# Test variable interpolation in preprocessor directives
+
+# Test 1: Variable in :font directive
+:var "font_name" "Monospace"
+:var "font_size" "12"
+:font "%(font_name), %(font_size)"
+a "Font test" +write %{{echo font}}
+
+# Test 2: Variable in :fg color directive
+:var "color" "#ff0000"
+:fg "%(color)"
+b "Color test" +write %{{echo color}}
+
+# Test 3: Variable in :shell directive
+:var "shell_path" "/bin/bash"
+:shell "%(shell_path)"
+c "Shell test" +write %{{echo shell}}
+
+# Test 4: Multiple variables in one directive
+:var "r" "ff"
+:var "g" "00"
+:var "b" "00"
+:fg "#%(r)%(g)%(b)"
+d "Multiple vars" +write %{{echo multi}}
+
+# Test 5: Variable with trailing text in directive
+:var "base_font" "Sans"
+:font "%(base_font), Bold 14"
+e "Trailing text" +write %{{echo trailing}}

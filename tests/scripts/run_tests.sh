@@ -215,6 +215,29 @@ run_test "tests/fixtures/valid/var_include_test/main.wks" "a" "tests/expected/va
 run_test "tests/fixtures/valid/var_include_test/main.wks" "b" "tests/expected/var_include_main_b.txt"
 run_test "tests/fixtures/valid/var_include_test/main.wks" "c" "tests/expected/var_include_main_c.txt"
 
+# Meta-variable tests (variable names with interpolations)
+run_test "tests/fixtures/valid/meta_var_test.wks" "a" "tests/expected/meta_var_test_a.txt"
+run_test "tests/fixtures/valid/meta_var_test.wks" "b" "tests/expected/meta_var_test_b.txt"
+run_test "tests/fixtures/valid/meta_var_test.wks" "c" "tests/expected/meta_var_test_c.txt"
+run_test "tests/fixtures/valid/meta_var_test.wks" "d" "tests/expected/meta_var_test_d.txt"
+run_test "tests/fixtures/valid/meta_var_test.wks" "e" "tests/expected/meta_var_test_e.txt"
+run_test "tests/fixtures/valid/meta_var_test.wks" "f" "tests/expected/meta_var_test_f.txt"
+
+# Preprocessor directive variable interpolation tests
+run_test "tests/fixtures/valid/preprocessor_vars_test.wks" "a" "tests/expected/preprocessor_vars_test_a.txt"
+run_test "tests/fixtures/valid/preprocessor_vars_test.wks" "b" "tests/expected/preprocessor_vars_test_b.txt"
+run_test "tests/fixtures/valid/preprocessor_vars_test.wks" "c" "tests/expected/preprocessor_vars_test_c.txt"
+run_test "tests/fixtures/valid/preprocessor_vars_test.wks" "d" "tests/expected/preprocessor_vars_test_d.txt"
+run_test "tests/fixtures/valid/preprocessor_vars_test.wks" "e" "tests/expected/preprocessor_vars_test_e.txt"
+
+# Complex variable interpolation tests
+run_test "tests/fixtures/valid/var_complex_test.wks" "a" "tests/expected/var_complex_test_a.txt"
+run_test "tests/fixtures/valid/var_complex_test.wks" "b" "tests/expected/var_complex_test_b.txt"
+run_test "tests/fixtures/valid/var_complex_test.wks" "c" "tests/expected/var_complex_test_c.txt"
+run_test "tests/fixtures/valid/var_complex_test.wks" "d" "tests/expected/var_complex_test_d.txt"
+run_test "tests/fixtures/valid/var_complex_test.wks" "e" "tests/expected/var_complex_test_e.txt"
+run_test "tests/fixtures/valid/var_complex_test.wks" "f" "tests/expected/var_complex_test_f.txt"
+
 # Wrapper system tests
 run_test "tests/fixtures/valid/wrapper_test.wks" "a" "tests/expected/wrapper_test_a.txt"
 run_test "tests/fixtures/valid/wrapper_test.wks" "b" "tests/expected/wrapper_test_b.txt"
@@ -258,8 +281,14 @@ echo "======================" | tee -a "$TEST_LOG"
 
 run_error_test "tests/fixtures/invalid/circular_include_test.wks" "tests/fixtures/invalid/circular_include_test.wks:2:35: wk does not support circular includes: ':include \"circular_include_test.wks\"'."
 run_error_test "tests/fixtures/invalid/var_undefined.wks" "Undefined variable"
-run_error_test "tests/fixtures/invalid/var_empty_key.wks" "Variable name cannot be empty"
+run_error_test "tests/fixtures/invalid/var_empty_key.wks" "Variable name resolves to empty string"
 run_error_test "tests/fixtures/invalid/var_paren_in_key.wks" "Variable name contains ')'"
+
+# Meta-variable error tests
+run_error_test "tests/fixtures/invalid/var_circular.wks" "Undefined variable"
+run_error_test "tests/fixtures/invalid/var_meta_invalid_char.wks" "Variable name contains ')'"
+run_error_test "tests/fixtures/invalid/var_meta_empty.wks" "Variable name resolves to empty string"
+run_error_test "tests/fixtures/invalid/var_meta_undefined.wks" "Undefined variable"
 
 # Print summary
 echo "" | tee -a "$TEST_LOG"
