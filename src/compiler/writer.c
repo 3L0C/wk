@@ -60,13 +60,34 @@ writeEscString(const String* string)
 }
 
 static void
+writeEscCString(const char* str)
+{
+    if (!str) return;
+
+    const char* c = str;
+    while (*c != '\0')
+    {
+        switch (*c)
+        {
+        case '\\': printf("\\\\"); break;
+        case '\"': printf("\\\""); break;
+        case '\n': printf("\\\n"); break;
+        default: printf("%c", *c); break;
+        }
+        c++;
+    }
+}
+
+static void
 writeConfigVariables(const Menu* menu)
 {
     assert(menu);
 
     /* Delimiter */
     printf("/* Delimiter when displaying chords. */\n");
-    printf("static const char* delimiter = \"%s\";\n", menu->delimiter);
+    printf("static const char* delimiter = \"");
+    writeEscCString(menu->delimiter);
+    printf("\";\n");
 
     /* Delay */
     printf("/* Delay between last keypress and first time displaying the menu. Value in milliseconds. */\n");
@@ -111,31 +132,49 @@ writeConfigVariables(const Menu* menu)
     /* Foreground colors */
     printf("/* Menu foreground color */\n");
     printf("static const char* foreground[FOREGROUND_COLOR_LAST] = {\n");
-    printf("    \"%s\", /* Key color */\n", menu->colors[MENU_COLOR_KEY].hex);
-    printf("    \"%s\", /* Delimiter color */\n", menu->colors[MENU_COLOR_DELIMITER].hex);
-    printf("    \"%s\", /* Prefix color */\n", menu->colors[MENU_COLOR_PREFIX].hex);
-    printf("    \"%s\", /* Chord color */\n", menu->colors[MENU_COLOR_CHORD].hex);
+    printf("    \"");
+    writeEscCString(menu->colors[MENU_COLOR_KEY].hex);
+    printf("\", /* Key color */\n");
+    printf("    \"");
+    writeEscCString(menu->colors[MENU_COLOR_DELIMITER].hex);
+    printf("\", /* Delimiter color */\n");
+    printf("    \"");
+    writeEscCString(menu->colors[MENU_COLOR_PREFIX].hex);
+    printf("\", /* Prefix color */\n");
+    printf("    \"");
+    writeEscCString(menu->colors[MENU_COLOR_CHORD].hex);
+    printf("\", /* Chord color */\n");
     printf("};\n");
 
     /* Background color */
     printf("/* Menu background color */\n");
-    printf("static const char* background = \"%s\";\n", menu->colors[MENU_COLOR_BACKGROUND].hex);
+    printf("static const char* background = \"");
+    writeEscCString(menu->colors[MENU_COLOR_BACKGROUND].hex);
+    printf("\";\n");
 
     /* Border color */
     printf("/* Menu border color */\n");
-    printf("static const char* border = \"%s\";\n", menu->colors[MENU_COLOR_BORDER].hex);
+    printf("static const char* border = \"");
+    writeEscCString(menu->colors[MENU_COLOR_BORDER].hex);
+    printf("\";\n");
 
     /* Shell */
     printf("/* Default shell to run chord commands with. */\n");
-    printf("static const char* shell = \"%s\";\n", menu->shell);
+    printf("static const char* shell = \"");
+    writeEscCString(menu->shell);
+    printf("\";\n");
 
     /* Font */
     printf("/* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */\n");
-    printf("static const char* font = \"%s\";\n", menu->font);
+    printf("static const char* font = \"");
+    writeEscCString(menu->font);
+    printf("\";\n");
 
     /* Implicit array keys */
     printf("/* Keys to use for chord arrays */\n");
-    printf("static const char* implicitArrayKeys = \"%s\";\n", menu->implicitArrayKeys);
+    printf("static const char* implicitArrayKeys = \"");
+    writeEscCString(menu->implicitArrayKeys);
+    printf("\";\n");
 
     /* Wrap command */
     printf("/* Command wrapper prefix. Set to NULL or \"\" to disable. Examples: \"uwsm app --\", \"firefox\", etc. */\n");

@@ -139,7 +139,11 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
     /* If first token is TOKEN_DESCRIPTION, there are no interpolations - return literal string */
     if (firstToken->type == TOKEN_DESCRIPTION)
     {
-        return arenaCopyCString(arena, firstToken->start, firstToken->length);
+        String result = stringInit();
+        stringAppendEscString(&result, firstToken->start, firstToken->length);
+        char* resolved = stringToCString(arena, &result);
+        stringFree(&result);
+        return resolved;
     }
 
     String result = stringInit();
@@ -153,7 +157,7 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
         case TOKEN_DESC_INTERP:
         {
             /* Literal text between interpolations */
-            stringAppend(&result, token.start, token.length);
+            stringAppendEscString(&result, token.start, token.length);
             break;
         }
         case TOKEN_USER_VAR:
@@ -206,7 +210,7 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
     /* TOKEN_DESCRIPTION can have trailing literal text after the last interpolation */
     if (token.length > 0)
     {
-        stringAppend(&result, token.start, token.length);
+        stringAppendEscString(&result, token.start, token.length);
     }
 
     char* resolved = stringToCString(arena, &result);
