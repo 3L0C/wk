@@ -429,6 +429,7 @@ handleMacroWithStringArg(
     case TOKEN_FONT:
     case TOKEN_IMPLICIT_ARRAY_KEYS:
     case TOKEN_WRAP_CMD:
+    case TOKEN_DELIMITER:
     {
         char* arg = getArg(menu, scanner, arena, &result, "macro argument");
         if (!arg) return; /* Error already reported */
@@ -453,6 +454,7 @@ handleMacroWithStringArg(
         case TOKEN_FONT: menu->font = arg; break;
         case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
         case TOKEN_WRAP_CMD: menuSetWrapCmd(menu, arg); break;
+        case TOKEN_DELIMITER: menu->delimiter = arg; break;
         default: break;
         }
         break;
@@ -522,6 +524,7 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
     {
     case TOKEN_MENU_WIDTH: menu->menuWidth = value; return;
     case TOKEN_MENU_GAP: menu->menuGap = value; return;
+    case TOKEN_TABLE_PADDING: menu->tablePadding = value; return;
     default:
     {
         errorMsg("Got an unexpected token to function `handleSwitchWithInt32Arg`.");
@@ -648,7 +651,8 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
 
         /* Switches with signed integer args. */
         case TOKEN_MENU_WIDTH: /* FALLTHROUGH */
-        case TOKEN_MENU_GAP: handleMacroWithInt32Arg(&scanner, menu, &token); break;
+        case TOKEN_MENU_GAP:
+        case TOKEN_TABLE_PADDING: handleMacroWithInt32Arg(&scanner, menu, &token); break;
 
         /* Switches with unsigned integer args. */
         case TOKEN_MAX_COLUMNS: /* FALLTHROUGH */
@@ -672,6 +676,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         case TOKEN_FONT:
         case TOKEN_IMPLICIT_ARRAY_KEYS:
         case TOKEN_WRAP_CMD:
+        case TOKEN_DELIMITER:
         case TOKEN_INCLUDE:
         case TOKEN_VAR:
         {

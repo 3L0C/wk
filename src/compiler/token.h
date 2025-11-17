@@ -36,6 +36,7 @@ enum
     TOKEN_IMPLICIT_ARRAY_KEYS,
     TOKEN_VAR,
     TOKEN_WRAP_CMD,
+    TOKEN_DELIMITER,
 
     /* switch macros */
     TOKEN_DEBUG,
@@ -52,6 +53,7 @@ enum
     TOKEN_BORDER_WIDTH,
     TOKEN_WIDTH_PADDING,
     TOKEN_HEIGHT_PADDING,
+    TOKEN_TABLE_PADDING,
     TOKEN_MENU_DELAY,
 
     /* number macros */

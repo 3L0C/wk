@@ -41,6 +41,7 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_SHELL]                      = "TOKEN_SHELL",
     [TOKEN_FONT]                       = "TOKEN_FONT",
     [TOKEN_IMPLICIT_ARRAY_KEYS]        = "TOKEN_IMPLICIT_ARRAY_KEYS",
+    [TOKEN_DELIMITER]                  = "TOKEN_DELIMITER",
 
     /* switch macros */
     [TOKEN_DEBUG]  = "TOKEN_DEBUG",
@@ -57,6 +58,7 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_BORDER_WIDTH]   = "TOKEN_BORDER_WIDTH",
     [TOKEN_WIDTH_PADDING]  = "TOKEN_WIDTH_PADDING",
     [TOKEN_HEIGHT_PADDING] = "TOKEN_HEIGHT_PADDING",
+    [TOKEN_TABLE_PADDING]  = "TOKEN_TABLE_PADDING",
     [TOKEN_MENU_DELAY]     = "TOKEN_MENU_DELAY",
 
     /* number macros */

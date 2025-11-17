@@ -7,8 +7,6 @@
 /* common includes */
 #include "src/common/array.h"
 #include "src/common/key_chord.h"
-
-/* menu include */
 #include "src/common/menu.h"
 
 /* Delimiter when displaying chords. */
@@ -102,7 +100,6 @@ static const char* wrapCmd = NULL;
 
 static const char BUILTIN_SOURCE[] = "";
 
-/* Non-static so it can be used from main.c */
-Array builtinKeyChords = EMPTY_ARRAY(KeyChord);
+static Array builtinKeyChords = EMPTY_ARRAY(KeyChord);
 
 #endif /* WK_CONFIG_CONFIG_H_ */

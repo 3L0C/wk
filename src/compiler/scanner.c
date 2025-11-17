@@ -366,6 +366,7 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     {
         if (isKeyword(scanner, 1, 4, "ebug")) result = TOKEN_DEBUG;
         else if (isKeyword(scanner, 1, 4, "elay")) result = TOKEN_MENU_DELAY;
+        else if (isKeyword(scanner, 1, 8, "elimiter")) result = TOKEN_DELIMITER;
         break;
     }
     case 'f':
@@ -405,6 +406,7 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     case 't':
     {
         if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP;
+        else if (isKeyword(scanner, 1, 12, "able-padding")) result = TOKEN_TABLE_PADDING;
         break;
     }
     case 'v':

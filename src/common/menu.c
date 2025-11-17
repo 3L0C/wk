@@ -277,18 +277,19 @@ menuInit(Menu* menu)
     menu->xp                = NULL;
     arenaInit(&menu->arena);
 
-    menu->maxCols     = maxCols;
-    menu->menuWidth   = menuWidth;
-    menu->menuGap     = menuGap;
-    menu->wpadding    = widthPadding;
-    menu->hpadding    = heightPadding;
-    menu->cellHeight  = 0;
-    menu->rows        = 0;
-    menu->cols        = 0;
-    menu->width       = 0;
-    menu->height      = 0;
-    menu->borderWidth = borderWidth;
-    menu->delay       = delay;
+    menu->maxCols      = maxCols;
+    menu->menuWidth    = menuWidth;
+    menu->menuGap      = menuGap;
+    menu->wpadding     = widthPadding;
+    menu->hpadding     = heightPadding;
+    menu->tablePadding = tablePadding;
+    menu->cellHeight   = 0;
+    menu->rows         = 0;
+    menu->cols         = 0;
+    menu->width        = 0;
+    menu->height       = 0;
+    menu->borderWidth  = borderWidth;
+    menu->delay        = delay;
 
     menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
     menu->debug    = false;
