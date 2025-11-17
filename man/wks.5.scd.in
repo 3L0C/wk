@@ -103,6 +103,7 @@ string_macro       -> ( 'include'
                       | 'bd'
                       | 'shell'
                       | 'font'
+                      | 'delimiter'
                       | 'wrap-cmd'
                       | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
 
@@ -112,7 +113,8 @@ switch_macro       -> ( 'debug'
                       | 'bottom' );
 
 integer_macro      -> ( 'menu-width'
-                      | 'menu-gap' ) '-'? [0-9]+ ;
+                      | 'menu-gap'
+                      | 'table-padding' ) '-'? [0-9]+ ;
 
 unsigned_macro     -> ( 'max-columns'
                       | 'border-width'
@@ -676,7 +678,7 @@ Unlike _chord_metadata_, user variables can be used in three contexts:
 
 - Descriptions
 - Commands
-- Preprocessor macro arguments (_:font_, _:fg-\*_, _:bg_, _:bd_, _:shell_, _:wrap-cmd_, _:include_, and in _:var_ itself)
+- Preprocessor macro arguments (_:font_, _:fg-\*_, _:bg_, _:bd_, _:shell_, _:delimiter_, _:wrap-cmd_, _:include_, and in _:var_ itself)
 
 This enables powerful meta-programming capabilities such as meta-variables
 (variables with computed names) and dynamic configuration values. See *VAR

@@ -996,6 +996,7 @@ string_macro -> ( 'include'
                 | 'bd-color'
                 | 'shell'
                 | 'font'
+                | 'delimiter'
                 | 'wrap-cmd'
                 | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
 ```
@@ -1008,9 +1009,9 @@ any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
 interpolation using the `%(variable_name)` syntax. This
 allows you to use variables defined with `:var` in any
 string macro argument, including `:include`, `:font`,
-`:fg-color`, `:bg-color`, `:bd-color`, `:shell`, and
-`:wrap-cmd`. See [The Var Macro](#the-var-macro) for
-examples of using variables in preprocessor directives.
+`:fg-color`, `:bg-color`, `:bd-color`, `:shell`,
+`:delimiter`, and `:wrap-cmd`. See [The Var Macro](#the-var-macro)
+for examples of using variables in preprocessor directives.
 
 #### The Include Macro
 
@@ -1257,7 +1258,8 @@ argument to the macro.
 
 ```
 integer_macro -> ( 'menu-width'
-                 | 'menu-gap' ) '-'? [0-9]+ ;
+                 | 'menu-gap'
+                 | 'table-padding' ) '-'? [0-9]+ ;
 ```
 
 All the integer macros correspond to their cli flags for
