@@ -1,7 +1,12 @@
 #ifndef WK_CONFIG_CONFIG_H_
 #define WK_CONFIG_CONFIG_H_
 
+#include <stddef.h>
 #include <stdint.h>
+
+/* common includes */
+#include "src/common/array.h"
+#include "src/common/key_chord.h"
 
 /* menu include */
 #include "src/common/menu.h"
@@ -47,5 +52,57 @@ static const char* font = "monospace, 14";
 static const char* implicitArrayKeys = "asdfghjkl;";
 /* Command wrapper prefix. Set to NULL or "" to disable. Examples: "uwsm app --", "firefox", etc. */
 static const char* wrapCmd = NULL;
+
+/* Key chord macro definitions */
+#define ARRAY(T, _len, ...)                  \
+    (Array)                                  \
+    {                                        \
+        .data        = (T[]){ __VA_ARGS__ }, \
+        .length      = (_len),               \
+        .capacity    = (_len),               \
+        .elementSize = sizeof(T)             \
+    }
+#define EMPTY_ARRAY(T)           \
+    (Array)                      \
+    {                            \
+        .data        = NULL,     \
+        .length      = 0,        \
+        .capacity    = 0,        \
+        .elementSize = sizeof(T) \
+    }
+#define STRING(_offset, _len)                                                                       \
+    (String)                                                                                        \
+    {                                                                                               \
+        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
+        .length = (_len)                                                                            \
+    }
+#define EMPTY_STRING (String){         \
+    .parts  = EMPTY_ARRAY(StringPart), \
+    .length = 0                        \
+}
+#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _flags, _chords) \
+    (KeyChord)                                                                    \
+    {                                                                             \
+        .key         = (_key),                                                    \
+        .description = (_desc),                                                   \
+        .command     = (_cmd),                                                    \
+        .before      = (_before),                                                 \
+        .after       = (_after),                                                  \
+        .wrapCmd     = (_wrap_cmd),                                               \
+        .flags       = (_flags),                                                  \
+        .keyChords   = (_chords)                                                  \
+    }
+#define KEY(_offset, _len, _mods, _special)   \
+    (Key)                                     \
+    {                                         \
+        .repr    = STRING((_offset), (_len)), \
+        .mods    = (_mods),                   \
+        .special = (_special)                 \
+    }
+
+static const char BUILTIN_SOURCE[] = "";
+
+/* Non-static so it can be used from main.c */
+Array builtinKeyChords = EMPTY_ARRAY(KeyChord);
 
 #endif /* WK_CONFIG_CONFIG_H_ */

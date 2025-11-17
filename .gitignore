@@ -29,6 +29,9 @@ tests/logs/*
 # Debugging
 *.diff
 *.log
+
+# Customization
+config/*.wks
 config/*.bak.h
 config/*template.h
 config/*template.def.h

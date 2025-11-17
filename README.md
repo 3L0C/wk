@@ -29,18 +29,67 @@ where I cover `wk` basics and beyond.
 
 # Building
 
-```
-# Make wk for X11 and Wayland
+## Make
+
+```bash
+# Make wk for X11 and Wayland (uses default or existing key chords)
 make
 
-# Make wk for X11
+# Build from wks file (transpile config/key_chords.wks and rebuild)
+# This is a three-stage bootstrapping process:
+#   1. Build wk with bootstrap key chords
+#   2. Transpile key_chords.wks using the built binary
+#   3. Rebuild wk with the transpiled key chords
+make from-wks
+
+# Make wk for X11 only
 make x11
 
-# Make wk for wayland
+# Make wk for Wayland only
 make wayland
+
+# Build from wks file for X11 only
+make from-wks-x11
+
+# Build from wks file for Wayland only
+make from-wks-wayland
 
 # Install
 make clean && make && sudo make install
+
+# Install with custom key chords from wks file
+make clean && make from-wks && sudo make install
+```
+
+## Nix
+
+```nix
+# Default: both backends with default key chords
+pkgs.wk
+
+# X11-only build (lightweight, skips Wayland dependencies)
+pkgs.wk.override { backend = "x11"; }
+
+# Wayland-only build (skips X11 dependencies)
+pkgs.wk.override { backend = "wayland"; }
+
+# Both backends with custom wks file
+pkgs.wk.override { wksFile = ./my-keychords.wks; }
+
+# X11-only with inline wks content
+pkgs.wk.override {
+  backend = "x11";
+  wksContent = ''
+    h "help" %{{echo "Help!"}}
+    q "quit" %{{echo "Quit!"}}
+  '';
+}
+
+# Wayland-only with wks file
+pkgs.wk.override {
+  backend = "wayland";
+  wksFile = ./keychords.wks;
+}
 ```
 
 # Dependencies
@@ -152,6 +201,12 @@ run `man 1 wk` for more info on each option.
 above help message, or your configuration can be built into
 the binary by changing the settings in
 [config.def.h](config/config.def.h).
+
+Key chords can be customized in two ways:
+1. **Direct editing**: Modify [config/key_chords.h](config/key_chords.h) (C code) and run `make`
+2. **From wks file**: Create [config/key_chords.wks](config/key_chords.wks) (wks syntax) and run `make from-wks`
+
+The wks approach is more powerful and recommended for complex configurations.
 
 # wks Files
 

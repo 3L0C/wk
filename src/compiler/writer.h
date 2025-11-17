@@ -3,7 +3,8 @@
 
 /* common includes */
 #include "common/array.h"
+#include "common/menu.h"
 
-void writeBuiltinKeyChordsHeaderFile(const Array* keyChords);
+void writeConfigHeaderFile(const Array* keyChords, const Menu* menu);
 
 #endif /* WK_COMPILER_WRITER_H_ */

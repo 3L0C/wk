@@ -252,7 +252,7 @@ menuHexColorInitColors(MenuHexColor* hexColors)
 }
 
 void
-menuInit(Menu* menu, Array* keyChords)
+menuInit(Menu* menu)
 {
     assert(menu);
 
@@ -270,9 +270,9 @@ menuInit(Menu* menu, Array* keyChords)
     clock_gettime(CLOCK_MONOTONIC, &menu->timer);
     menu->userVars          = ARRAY_INIT(UserVar);
     menu->compiledKeyChords = ARRAY_INIT(KeyChord);
-    menu->builtinKeyChords  = keyChords;
-    menu->keyChords         = keyChords;
-    menu->keyChordsHead     = keyChords;
+    menu->builtinKeyChords  = &builtinKeyChords;
+    menu->keyChords         = &builtinKeyChords;
+    menu->keyChordsHead     = &builtinKeyChords;
     menu->cleanupfp         = NULL;
     menu->xp                = NULL;
     arenaInit(&menu->arena);

@@ -115,7 +115,7 @@ typedef struct
 int        menuDisplay(Menu* menu);
 void       menuFree(Menu* menu);
 MenuStatus menuHandleKeypress(Menu* menu, const Key* key);
-void       menuInit(Menu* menu, Array* keyChords);
+void       menuInit(Menu* menu);
 bool       menuIsDelayed(Menu* menu);
 void       menuParseArgs(Menu* menu, int* argc, char*** argv);
 void       menuResetTimer(Menu* menu);

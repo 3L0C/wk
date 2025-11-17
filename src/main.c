@@ -16,7 +16,6 @@
 #include "compiler/compiler.h"
 #include "compiler/preprocessor.h"
 #include "compiler/writer.h"
-#include "config/key_chords.h"
 
 static Array
 preprocessSource(Menu* menu, Array* source, const char* filepath)
@@ -122,7 +121,7 @@ transpileWksFile(Menu* menu)
     if (result != EX_OK) return result;
 
     /* Well formed file, write to stdout. */
-    writeBuiltinKeyChordsHeaderFile(menu->keyChordsHead);
+    writeConfigHeaderFile(menu->keyChordsHead, menu);
 
     return result;
 }
@@ -178,7 +177,7 @@ main(int argc, char** argv)
     int result = EX_SOFTWARE;
 
     Menu menu = { 0 };
-    menuInit(&menu, &builtinKeyChords);
+    menuInit(&menu);
     menuParseArgs(&menu, &argc, &argv);
 
     if (menu.debug) disassembleMenu(&menu);

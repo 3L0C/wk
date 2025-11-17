@@ -439,6 +439,7 @@ handleMacroWithStringArg(
             menuSetColor(menu, arg, MENU_COLOR_KEY);
             menuSetColor(menu, arg, MENU_COLOR_DELIMITER);
             menuSetColor(menu, arg, MENU_COLOR_PREFIX);
+            menuSetColor(menu, arg, MENU_COLOR_CHORD);
             break;
         case TOKEN_FOREGROUND_KEY_COLOR: menuSetColor(menu, arg, MENU_COLOR_KEY); break;
         case TOKEN_FOREGROUND_DELIMITER_COLOR:

@@ -8,6 +8,7 @@
 #include "common/array.h"
 #include "common/common.h"
 #include "common/key_chord.h"
+#include "common/menu.h"
 #include "common/string.h"
 
 static size_t offset = 0;
@@ -21,19 +22,142 @@ writeNewlineWithIndent(int indent)
 }
 
 static void
-writeChordsHeader(void)
+writeConfigHeader(void)
 {
     printf(
-        "#ifndef WK_CONFIG_KEY_CHORDS_H_\n"
-        "#define WK_CONFIG_KEY_CHORDS_H_\n"
+        "#ifndef WK_CONFIG_CONFIG_H_\n"
+        "#define WK_CONFIG_CONFIG_H_\n"
         "\n"
         "#include <stddef.h>\n"
+        "#include <stdint.h>\n"
         "\n"
         "/* common includes */\n"
         "#include \"src/common/array.h\"\n"
         "#include \"src/common/key_chord.h\"\n"
+        "#include \"src/common/menu.h\"\n"
         "#include \"src/common/string.h\"\n"
-        "\n"
+        "\n");
+}
+
+static void
+writeEscString(const String* string)
+{
+    if (!string) return;
+    if (stringIsEmpty(string)) return;
+
+    StringIterator iter = stringIteratorMake(string);
+    char           c    = '\0';
+    while ((c = stringIteratorNext(&iter)) != '\0')
+    {
+        switch (c)
+        {
+        case '\\': printf("\\\\"); break;
+        case '\"': printf("\\\""); break;
+        case '\n': printf("\\\n"); break;
+        default: printf("%c", c); break;
+        }
+    }
+}
+
+static void
+writeConfigVariables(const Menu* menu)
+{
+    assert(menu);
+
+    /* Delimiter */
+    printf("/* Delimiter when displaying chords. */\n");
+    printf("static const char* delimiter = \"%s\";\n", menu->delimiter);
+
+    /* Delay */
+    printf("/* Delay between last keypress and first time displaying the menu. Value in milliseconds. */\n");
+    printf("static uint32_t delay = %u;\n", menu->delay);
+
+    /* Max columns */
+    printf("/* Max number of columns to use. */\n");
+    printf("static const uint32_t maxCols = %u;\n", menu->maxCols);
+
+    /* Menu width */
+    printf("/* Menu width. Set to '-1' for 1/2 the width of your screen. */\n");
+    printf("static const int32_t menuWidth = %d;\n", menu->menuWidth);
+
+    /* Menu gap */
+    printf("/* Menu gap between top/bottom of screen. Set to '-1' for a gap of 1/10th of the screen height. */\n");
+    printf("static const int32_t menuGap = %d;\n", menu->menuGap);
+
+    /* Width padding */
+    printf("/* X-Padding around key/description text in cells. */\n");
+    printf("static const uint32_t widthPadding = %u;\n", menu->wpadding);
+
+    /* Height padding */
+    printf("/* Y-Padding around key/description text in cells. */\n");
+    printf("static const uint32_t heightPadding = %u;\n", menu->hpadding);
+
+    /* Table padding */
+    printf("/* Additional padding between the outermost cells and the border. -1 = same as cell padding, 0 = no additional padding. */\n");
+    printf("static const int32_t tablePadding = %d;\n", menu->tablePadding);
+
+    /* Menu position */
+    printf("/* Position to place the menu. '0' = bottom; '1' = top. */\n");
+    printf("static const uint32_t menuPosition = %u;\n", (uint32_t)menu->position);
+
+    /* Border width */
+    printf("/* Menu border width */\n");
+    printf("static const uint32_t borderWidth = %u;\n", menu->borderWidth);
+
+    /* Border radius */
+    printf("/* Menu border radius. 0 means no curve */\n");
+    printf("static const double borderRadius = %g;\n", menu->borderRadius);
+
+    /* Foreground colors */
+    printf("/* Menu foreground color */\n");
+    printf("static const char* foreground[FOREGROUND_COLOR_LAST] = {\n");
+    printf("    \"%s\", /* Key color */\n", menu->colors[MENU_COLOR_KEY].hex);
+    printf("    \"%s\", /* Delimiter color */\n", menu->colors[MENU_COLOR_DELIMITER].hex);
+    printf("    \"%s\", /* Prefix color */\n", menu->colors[MENU_COLOR_PREFIX].hex);
+    printf("    \"%s\", /* Chord color */\n", menu->colors[MENU_COLOR_CHORD].hex);
+    printf("};\n");
+
+    /* Background color */
+    printf("/* Menu background color */\n");
+    printf("static const char* background = \"%s\";\n", menu->colors[MENU_COLOR_BACKGROUND].hex);
+
+    /* Border color */
+    printf("/* Menu border color */\n");
+    printf("static const char* border = \"%s\";\n", menu->colors[MENU_COLOR_BORDER].hex);
+
+    /* Shell */
+    printf("/* Default shell to run chord commands with. */\n");
+    printf("static const char* shell = \"%s\";\n", menu->shell);
+
+    /* Font */
+    printf("/* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */\n");
+    printf("static const char* font = \"%s\";\n", menu->font);
+
+    /* Implicit array keys */
+    printf("/* Keys to use for chord arrays */\n");
+    printf("static const char* implicitArrayKeys = \"%s\";\n", menu->implicitArrayKeys);
+
+    /* Wrap command */
+    printf("/* Command wrapper prefix. Set to NULL or \"\" to disable. Examples: \"uwsm app --\", \"firefox\", etc. */\n");
+    if (stringIsEmpty(&menu->wrapCmd))
+    {
+        printf("static const char* wrapCmd = NULL;\n");
+    }
+    else
+    {
+        printf("static const char* wrapCmd = \"");
+        writeEscString(&menu->wrapCmd);
+        printf("\";\n");
+    }
+
+    printf("\n");
+}
+
+static void
+writeKeyChordsDefines(void)
+{
+    printf(
+        "/* Builtin key chords */\n"
         "#define ARRAY(T, _len, ...)                  \\\n"
         "    (Array)                                  \\\n"
         "    {                                        \\\n"
@@ -79,28 +203,13 @@ writeChordsHeader(void)
         "        .mods    = (_mods),                   \\\n"
         "        .special = (_special)                 \\\n"
         "    }\n"
-        "\n"
-        "static const char BUILTIN_SOURCE[] = ");
+        "\n");
 }
 
 static void
-writeEscString(const String* string)
+writeBuiltinSourceDeclaration(void)
 {
-    if (!string) return;
-    if (stringIsEmpty(string)) return;
-
-    StringIterator iter = stringIteratorMake(string);
-    char           c    = '\0';
-    while ((c = stringIteratorNext(&iter)) != '\0')
-    {
-        switch (c)
-        {
-        case '\\': printf("\\\\"); break;
-        case '\"': printf("\\\""); break;
-        case '\n': printf("\\\n"); break;
-        default: printf("%c", c); break;
-        }
-    }
+    printf("static const char BUILTIN_SOURCE[] = ");
 }
 
 static void
@@ -131,7 +240,7 @@ writeBuiltinSource(const Array* arr)
 }
 
 static void
-writetKeyChordsDeclaration(void)
+writeKeyChordsDeclaration(void)
 {
     printf("static Array builtinKeyChords =\n    ");
 }
@@ -300,13 +409,17 @@ writeKeyChords(const Array* arr, int indent)
 }
 
 void
-writeBuiltinKeyChordsHeaderFile(const Array* keyChords)
+writeConfigHeaderFile(const Array* keyChords, const Menu* menu)
 {
     assert(keyChords);
+    assert(menu);
 
-    writeChordsHeader();
+    writeConfigHeader();
+    writeConfigVariables(menu);
+    writeKeyChordsDefines();
+    writeBuiltinSourceDeclaration();
     writeBuiltinSource(keyChords);
-    writetKeyChordsDeclaration();
+    writeKeyChordsDeclaration();
     writeKeyChords(keyChords, 1);
-    printf(";\n\n#endif /* WK_CONFIG_KEY_CHORDS_H_ */\n");
+    printf(";\n\n#endif /* WK_CONFIG_CONFIG_H_ */\n");
 }

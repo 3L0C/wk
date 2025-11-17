@@ -24,7 +24,7 @@ TEST_DIR     := ./tests
 TEST_SCRIPTS := $(TEST_DIR)/scripts
 
 # Files
-HEADERS      := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h $(CONF_DIR)/key_chords.h
+HEADERS      := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h # $(CONF_DIR)/key_chords.h
 SOURCES      := $(wildcard $(SOURCE_DIR)/*.c)
 OBJECTS      := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.o)))
 COMM_OBJS    := $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/common/%.o, \
@@ -53,9 +53,9 @@ WAY_CFLAGS   += -DWK_WAYLAND_BACKEND $(shell $(PKG_CONFIG) --cflags wayland-clie
 WAY_LDFLAGS  += $(shell $(PKG_CONFIG) --libs wayland-client xkbcommon)
 
 # Make goals
-ALL_GOALS    := all debug test
-X11_GOALS    := x11 debug-x11
-WAY_GOALS    := wayland debug-wayland
+ALL_GOALS    := all debug test from-wks
+X11_GOALS    := x11 debug-x11 from-wks-x11
+WAY_GOALS    := wayland debug-wayland from-wks-wayland
 
 # Insert implicit 'all' target
 ifeq (0,$(words $(MAKECMDGOALS)))
@@ -84,9 +84,44 @@ LDFLAGS      += $(WAY_LDFLAGS)
 endif
 
 # Targets
-all: options
-all: $(WAY_FILES)
+all: options $(WAY_FILES)
 all: $(BUILD_DIR)/$(NAME)
+
+x11: options
+x11: $(BUILD_DIR)/$(NAME)
+
+wayland: options $(WAY_FILES)
+wayland: $(BUILD_DIR)/$(NAME)
+
+# Template for from-wks builds to reduce code duplication
+# Arguments: $(1) = make target, $(2) = backend label (e.g., " (X11)")
+define from-wks-template
+	@if [ ! -f "$(CONF_DIR)/key_chords.wks" ]; then \
+		echo ""; \
+		echo "ERROR: config/key_chords.wks not found!"; \
+		echo "Please create config/key_chords.wks with your custom key chord definitions."; \
+		echo ""; \
+		exit 1; \
+	fi
+	@cp $(CONF_DIR)/config.def.h $(CONF_DIR)/config.h
+	@$(MAKE) $(1) || exit 1
+	@./$(NAME) --transpile $(CONF_DIR)/key_chords.wks > $(CONF_DIR)/config.h || { \
+		echo ""; \
+		echo "ERROR: Transpilation failed!"; \
+		echo "Please fix errors in config/key_chords.wks"; \
+		exit 1; \
+	}
+	@$(MAKE) $(1) || exit 1
+endef
+
+from-wks: options
+	$(call from-wks-template,all,)
+
+from-wks-x11: options
+	$(call from-wks-template,x11, (X11))
+
+from-wks-wayland: options
+	$(call from-wks-template,wayland, (Wayland))
 
 options:
 	@ printf "%-11s = %s\n" "CFLAGS"  "$(CFLAGS)"
@@ -98,13 +133,6 @@ options:
 	@ printf "%-11s = %s\n" "RUN_OBJS" "$(RUN_OBJS)"
 	@ printf "%-11s = %s\n" "TARGET_OBJS" "$(TARGET_OBJS)"
 
-x11: options
-x11: $(BUILD_DIR)/$(NAME)
-
-wayland: options
-wayland: $(WAY_FILES)
-wayland: $(BUILD_DIR)/$(NAME)
-
 debug: CFLAGS += -ggdb
 debug: all
 
@@ -115,8 +143,7 @@ debug-wayland: CFLAGS += -ggdb
 debug-wayland: wayland
 
 test: options
-test: $(WAY_FILES)
-test: $(BUILD_DIR)/$(NAME)
+test: all
 	@ bash $(TEST_SCRIPTS)/run_tests.sh
 
 $(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $(TARGET_OBJS)
@@ -192,6 +219,7 @@ clean:
 	rm -f $(MAN_DIR)/*.scd
 	rm -f $(MAN_FILES)
 	rm -f $(WAY_FILES)
+	rm -f $(CONF_DIR)/key_chords.h
 
 dist: clean
 	mkdir -p $(NAME)-$(VERSION)
@@ -217,6 +245,6 @@ uninstall:
 		rm -f $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
 	done
 
-.PHONY: all debug x11 wayland debug-x11 debug-wayland clean dist install uninstall test man
+.PHONY: all x11 wayland from-wks from-wks-x11 from-wks-wayland debug debug-x11 debug-wayland test clean dist install uninstall man
 
 -include $(OBJECTS:.o=.d) $(COMM_OBJS:.o=.d) $(COMP_OBJS:.o=.d) $(RUN_OBJS:.o=.d) $(X11_OBJS:.o=.d) $(WAY_OBJS:.o=.d)
