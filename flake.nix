@@ -24,6 +24,17 @@
       packages = {
         default = wk-package;
         wk = wk-package;
+
+        # Backend-specific variants
+        wk-x11 = wk-package.override { backend = "x11"; };
+        wk-wayland = wk-package.override { backend = "wayland"; };
+
+        # Debug build variant
+        wk-debug = wk-package.overrideAttrs (old: {
+          dontStrip = true;
+          separateDebugInfo = false;
+          NIX_CFLAGS_COMPILE = (old.NIX_CFLAGS_COMPILE or "") + " -ggdb -O0";
+        });
       };
 
       apps.default = {
@@ -34,8 +45,19 @@
       # Formatter for 'nix fmt'
       formatter = pkgs.alejandra;
 
-      # Pre-commit checks
-      checks = import ./checks.nix {inherit inputs pkgs;};
+      # Pre-commit checks and build variant checks
+      checks = (import ./checks.nix {inherit inputs pkgs;}) // {
+        # Build variant checks
+        package-default = wk-package;
+        package-x11 = wk-package.override { backend = "x11"; };
+        package-wayland = wk-package.override { backend = "wayland"; };
+        package-with-wks = wk-package.override {
+          wksContent = ''
+            h "help" %{{echo "test"}}
+            t "test" %{{echo "test command"}}
+          '';
+        };
+      };
 
       # Development shell
       devShells.default = import ./shell.nix {

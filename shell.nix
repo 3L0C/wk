@@ -1,13 +1,18 @@
 {
   pkgs ? import <nixpkgs> { },
-  checks,
+  checks ? {},
   ...
 }:
 let
   wk-package = pkgs.callPackage ./default.nix { };
+
+  # Make pre-commit optional to avoid circular dependencies
+  hasPreCommit = checks ? pre-commit-check;
+  preCommitPackages = if hasPreCommit then checks.pre-commit-check.enabledPackages else [];
+  preCommitHook = if hasPreCommit then checks.pre-commit-check.shellHook else "";
 in
 pkgs.mkShell {
-  buildInputs = checks.pre-commit-check.enabledPackages;
+  buildInputs = preCommitPackages;
 
   inputsFrom = [ wk-package ];
 
@@ -28,7 +33,7 @@ pkgs.mkShell {
   };
 
   shellHook = ''
-    ${checks.pre-commit-check.shellHook}
+    ${preCommitHook}
 
     echo ""
     echo "wk development environment"

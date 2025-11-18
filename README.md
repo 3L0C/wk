@@ -91,35 +91,22 @@ pkgs.wk.override {
   wksFile = ./keychords.wks;
 }
 
-# Multiple wks files with directory structure preservation
-# Use wksFile for entry point, wksFiles for dependencies
-# Directory structure is preserved relative to wksFile's directory
+# Structured configs with directories
+# Use wksFile for entry point, wksDirs to copy dependency directories
+# Directories are copied with full structure preserved
 pkgs.wk.override {
-  wksFile = ./common/main.wks;
-  wksFiles = [
-    ./common/apps/browser.wks
-    ./common/apps/terminal.wks
-    ./common/utils.wks
+  wksFile = ./wks/main.wks;
+  wksDirs = [
+    ./wks/shared    # Copied as config/shared/
+    ./wks/apps      # Copied as config/apps/
   ];
 }
-# Results in:
-#   config/key_chords.wks (your main.wks)
-#   config/apps/browser.wks
-#   config/apps/terminal.wks
-#   config/utils.wks
+# Your main.wks can use:
+#   :include "shared/utils.wks"
+#   :include "apps/browser.wks"
 
-# Multiple wks files (auto-generated main) - backward compatibility
-# Files are copied flat to config/ with auto-generated main.wks
-pkgs.wk.override {
-  wksFiles = [
-    ./base-keychords.wks
-    ./app-specific.wks
-    ./work-keychords.wks
-  ];
-}
-
-# Note: wksContent is mutually exclusive with wksFile and wksFiles
-# wksFile and wksFiles can be used together for structured configurations
+# Note: wksContent is mutually exclusive with wksFile and wksDirs
+# wksDirs requires wksFile (can't be used standalone)
 ```
 
 # Dependencies

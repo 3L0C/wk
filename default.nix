@@ -16,91 +16,72 @@
   # wks file support
   wksFile ? null,
   wksContent ? null,
-  wksFiles ? null,
+  wksDirs ? null,
 }:
 with builtins;
 with lib; let
-  version = lib.trim (readFile ./VERSION);
-
-  # Validate backend parameter
+  # Backend validation and configuration
   validBackends = ["both" "x11" "wayland"];
   backendValid = elem backend validBackends;
 
-  # Validate wks inputs - wksContent is mutually exclusive with wksFile/wksFiles
-  # but wksFile and wksFiles can work together
-  wksContentConflicts = wksContent != null && (wksFile != null || wksFiles != null);
-  wksInputsValid = !wksContentConflicts;
+  backends = {
+    hasX11 = backend == "both" || backend == "x11";
+    hasWayland = backend == "both" || backend == "wayland";
+  };
 
-  # Validate wksFiles is a non-empty list if provided
-  wksFilesValid = wksFiles == null || (isList wksFiles && length wksFiles > 0);
+  # WKS configuration and validation
+  wks = rec {
+    # Input validation
+    hasContent = wksContent != null;
+    hasFile = wksFile != null;
+    hasDirs = wksDirs != null && (isList wksDirs && length wksDirs > 0);
 
-  # Determine operating modes
-  hasWksFile = wksFile != null;
-  hasWksFiles = wksFiles != null && wksFilesValid;
-  hasWksContent = wksContent != null;
+    # Validation flags
+    contentConflicts = hasContent && (hasFile || wksDirs != null);
+    dirsRequiresFile = wksDirs != null && !hasFile;
+    dirsValid = wksDirs == null || (isList wksDirs && length wksDirs > 0);
 
-  # Base directory for relative path computation (when wksFile + wksFiles used together)
-  baseDir = if hasWksFile then dirOf wksFile else null;
+    # Determine which wks source to use
+    fileToUse =
+      if hasContent
+      then builtins.toFile "key_chords.wks" wksContent
+      else wksFile;
 
-  # Helper function to compute relative path from baseDir to file
-  getRelativePath = file: base:
-    let
-      fileStr = toString file;
-      baseStr = toString base;
-      # Ensure base ends with /
-      baseDirStr = if lib.hasSuffix "/" baseStr then baseStr else baseStr + "/";
-    in
-      if lib.hasPrefix baseDirStr fileStr
-      then lib.removePrefix baseDirStr fileStr
-      else baseNameOf file;  # Fallback to basename if not under base
+    # Whether we're using custom wks configuration
+    isCustom = fileToUse != null || hasDirs;
 
-  # Generate a main.wks that includes all files from wksFiles (for backward compat mode)
-  generatedMainWks =
-    if hasWksFiles && !hasWksFile
-    then builtins.toFile "main.wks" (
-      concatMapStringsSep "\n"
-        (f: ":include \"${baseNameOf f}\"")
-        wksFiles
-    )
-    else null;
-
-  # Determine which wks source to use
-  wksFileToUse =
-    if hasWksContent
-    then builtins.toFile "key_chords.wks" wksContent
-    else if hasWksFiles && !hasWksFile
-    then generatedMainWks
-    else wksFile;
-
-  # Whether we're using custom wks
-  usingCustomWks = wksFileToUse != null || (hasWksFile && hasWksFiles);
-
-  # Determine Make target based on backend and wks usage
-  makeTarget =
-    if usingCustomWks
-    then
-      if backend == "both"
+    # Determine Make target based on backend and wks usage
+    makeTarget =
+      if !isCustom
+      then (if backend == "both" then "all" else backend)
+      else if backend == "both"
       then "from-wks"
-      else if backend == "x11"
-      then "from-wks-x11"
-      else "from-wks-wayland"
-    else
-      if backend == "both"
-      then "all"
-      else backend;
+      else "from-wks-${backend}";
+  };
 
-  # Backend feature flags
-  hasX11 = backend == "both" || backend == "x11";
-  hasWayland = backend == "both" || backend == "wayland";
+  # Helper functions for preBuild
+  copyWksFile = file: "cp ${file} config/key_chords.wks";
+
+  copyWksDirs = dirs:
+    concatMapStringsSep "\n" (d: ''
+      cp -r ${d} config/${baseNameOf d}
+    '') dirs;
 
 in
+  # Assertions
   assert assertMsg backendValid
     "Invalid backend '${backend}'. Must be one of: ${concatStringsSep ", " validBackends}";
-  assert assertMsg wksInputsValid
-    "wksContent cannot be used with wksFile or wksFiles";
-  assert assertMsg wksFilesValid
-    "wksFiles must be a non-empty list if provided";
+  assert assertMsg (!wks.contentConflicts)
+    "wksContent cannot be used with wksFile or wksDirs";
+  assert assertMsg (!wks.dirsRequiresFile)
+    "wksDirs requires wksFile to be specified";
+  assert assertMsg wks.dirsValid
+    "wksDirs must be a non-empty list if provided";
+
   stdenv.mkDerivation (finalAttrs: {
+    pname = "wk";
+    version = lib.trim (readFile ./VERSION);
+
     src = with fileset;
       toSource {
         root = ./.;
@@ -113,26 +94,25 @@ in
           ./src
         ];
       };
-    inherit version;
-    pname = "wk";
 
     strictDeps = true;
+
     nativeBuildInputs = [
       pkg-config
       scdoc
-    ] ++ optionals hasWayland [
+    ] ++ optionals backends.hasWayland [
       wayland-scanner
     ];
 
     buildInputs = [
       cairo
       pango
-    ] ++ optionals hasWayland [
+    ] ++ optionals backends.hasWayland [
       # Wayland
       libxkbcommon
       wayland
       wayland-protocols
-    ] ++ optionals hasX11 [
+    ] ++ optionals backends.hasX11 [
       # X11
       xorg.libX11
       xorg.libXinerama
@@ -143,55 +123,49 @@ in
     makeFlags = ["PREFIX=$(out)"];
 
     # When using custom wks, copy it to config/
-    preBuild = optionalString usingCustomWks (
-      if hasWksContent then
+    preBuild = optionalString wks.isCustom (
+      if wks.hasContent then
         # Mode 1: Inline wks content
+        copyWksFile wks.fileToUse
+      else if wks.hasFile && wks.hasDirs then
+        # Mode 2: wksFile as entry point + wksDirs for dependencies
         ''
-          cp ${wksFileToUse} config/key_chords.wks
-        ''
-      else if hasWksFile && hasWksFiles then
-        # Mode 2: wksFile as entry point + wksFiles as dependencies with structure preservation
-        ''
-          # Copy main file as key_chords.wks
-          cp ${wksFile} config/key_chords.wks
-
-          # Copy dependencies preserving directory structure relative to main file's directory
-          ${concatMapStringsSep "\n" (f:
-            let relPath = getRelativePath f baseDir;
-            in ''
-              mkdir -p "config/$(dirname "${relPath}")"
-              cp ${f} "config/${relPath}"
-            '') wksFiles}
-        ''
-      else if hasWksFile then
-        # Mode 3: Single wksFile only
-        ''
-          cp ${wksFile} config/key_chords.wks
+          ${copyWksFile wksFile}
+          ${copyWksDirs wksDirs}
         ''
       else
-        # Mode 4: wksFiles only (backward compatibility - auto-generate main.wks)
-        ''
-          # Copy the generated main file
-          cp ${generatedMainWks} config/key_chords.wks
-
-          # Copy all referenced wks files flat to config/
-          ${concatMapStringsSep "\n"
-            (f: "cp ${f} config/${baseNameOf f}")
-            wksFiles}
-        ''
+        # Mode 3: Single wksFile only
+        copyWksFile wksFile
     );
 
     buildPhase = ''
       runHook preBuild
-      make ${makeTarget}
+      make ${wks.makeTarget}
       runHook postBuild
     '';
+
+    passthru = {
+      # Backend information
+      inherit backend;
+      inherit (backends) hasX11 hasWayland;
+
+      # WKS configuration info
+      isCustomWks = wks.isCustom;
+    };
 
     meta = {
       homepage = "https://github.com/3L0C/wk";
       description = "Which-Key via X11 and Wayland";
+      longDescription = ''
+        wk displays available key chords in a popup window, inspired by
+        emacs-which-key. It supports both X11 and Wayland backends with a
+        custom scripting language (wks files) for defining key chord mappings.
+        Features include nested key chord prefixes, hooks, chord arrays, and
+        comprehensive preprocessor macros for customization.
+      '';
       license = licenses.gpl3Plus;
       platforms = platforms.linux;
       mainProgram = "wk";
+      maintainers = with maintainers; [ ]; # Add your maintainer handle here
     };
   })
