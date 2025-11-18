@@ -90,6 +90,36 @@ pkgs.wk.override {
   backend = "wayland";
   wksFile = ./keychords.wks;
 }
+
+# Multiple wks files with directory structure preservation
+# Use wksFile for entry point, wksFiles for dependencies
+# Directory structure is preserved relative to wksFile's directory
+pkgs.wk.override {
+  wksFile = ./common/main.wks;
+  wksFiles = [
+    ./common/apps/browser.wks
+    ./common/apps/terminal.wks
+    ./common/utils.wks
+  ];
+}
+# Results in:
+#   config/key_chords.wks (your main.wks)
+#   config/apps/browser.wks
+#   config/apps/terminal.wks
+#   config/utils.wks
+
+# Multiple wks files (auto-generated main) - backward compatibility
+# Files are copied flat to config/ with auto-generated main.wks
+pkgs.wk.override {
+  wksFiles = [
+    ./base-keychords.wks
+    ./app-specific.wks
+    ./work-keychords.wks
+  ];
+}
+
+# Note: wksContent is mutually exclusive with wksFile and wksFiles
+# wksFile and wksFiles can be used together for structured configurations
 ```
 
 # Dependencies
