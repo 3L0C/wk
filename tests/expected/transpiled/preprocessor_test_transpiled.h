@@ -1,13 +1,58 @@
-#ifndef WK_CONFIG_KEY_CHORDS_H_
-#define WK_CONFIG_KEY_CHORDS_H_
+#ifndef WK_CONFIG_CONFIG_H_
+#define WK_CONFIG_CONFIG_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* common includes */
 #include "src/common/array.h"
 #include "src/common/key_chord.h"
+#include "src/common/menu.h"
 #include "src/common/string.h"
 
+/* Delimiter when displaying chords. */
+static const char* delimiter = "\" > \"";
+/* Delay between last keypress and first time displaying the menu. Value in milliseconds. */
+static uint32_t delay = 0;
+/* Max number of columns to use. */
+static const uint32_t maxCols = 3;
+/* Menu width. Set to '-1' for 1/2 the width of your screen. */
+static const int32_t menuWidth = 500;
+/* Menu gap between top/bottom of screen. Set to '-1' for a gap of 1/10th of the screen height. */
+static const int32_t menuGap = -1;
+/* X-Padding around key/description text in cells. */
+static const uint32_t widthPadding = 10;
+/* Y-Padding around key/description text in cells. */
+static const uint32_t heightPadding = 4;
+/* Additional padding between the outermost cells and the border. -1 = same as cell padding, 0 = no additional padding. */
+static const int32_t tablePadding = -1;
+/* Position to place the menu. '0' = bottom; '1' = top. */
+static const uint32_t menuPosition = 1;
+/* Menu border width */
+static const uint32_t borderWidth = 2;
+/* Menu border radius. 0 means no curve */
+static const double borderRadius = 15;
+/* Menu foreground color */
+static const char* foreground[FOREGROUND_COLOR_LAST] = {
+    "#ffffff", /* Key color */
+    "#ffffff", /* Delimiter color */
+    "#ffff00", /* Prefix color */
+    "#ffffff", /* Chord color */
+};
+/* Menu background color */
+static const char* background = "#123456";
+/* Menu border color */
+static const char* border = "#654321";
+/* Default shell to run chord commands with. */
+static const char* shell = "/usr/bin/zsh";
+/* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
+static const char* font = "Sans, 14";
+/* Keys to use for chord arrays */
+static const char* implicitArrayKeys = "asdfghjkl;";
+/* Command wrapper prefix. Set to NULL or "" to disable. Examples: "uwsm app --", "firefox", etc. */
+static const char* wrapCmd = NULL;
+
+/* Builtin key chords */
 #define ARRAY(T, _len, ...)                  \
     (Array)                                  \
     {                                        \
@@ -119,4 +164,4 @@ static Array builtinKeyChords =
                             FLAG_WRITE,
                             EMPTY_ARRAY(KeyChord)))))));
 
-#endif /* WK_CONFIG_KEY_CHORDS_H_ */
+#endif /* WK_CONFIG_CONFIG_H_ */

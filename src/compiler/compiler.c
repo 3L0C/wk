@@ -565,6 +565,11 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
         chord->flags |= FLAG_UNWRAP;
         return true;
     }
+    case TOKEN_ENABLE_SORT:
+    {
+        chord->flags &= ~FLAG_IGNORE_SORT;
+        return true;
+    }
     default: return false;
     }
 }
@@ -624,6 +629,11 @@ compileImplicitChordArray(Compiler* compiler, PseudoChord* dummy)
     }
 
     compileDescriptionTokens(compiler, &dummy->desc);
+
+    /* Set FLAG_IGNORE_SORT by default for implicit arrays.
+     * This is done BEFORE compileHooksAndFlags so user-provided +sort can override it. */
+    dummy->flags |= FLAG_IGNORE_SORT;
+
     compileHooksAndFlags(compiler, dummy);
     compileCommandTokens(compiler, &dummy->cmd, false, "Expected command.");
 

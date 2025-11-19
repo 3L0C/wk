@@ -331,6 +331,7 @@ scanFlag(Scanner* scanner, Token* token)
     case 's':
     {
         if (isKeyword(scanner, 1, 11, "ync-command")) result = TOKEN_SYNC_CMD;
+        else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_ENABLE_SORT;
         break;
     }
     default: break;

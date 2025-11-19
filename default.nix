@@ -37,8 +37,8 @@ with lib; let
     hasDirs = wksDirs != null && (isList wksDirs && length wksDirs > 0);
 
     # Validation flags
-    contentConflicts = hasContent && (hasFile || wksDirs != null);
-    dirsRequiresFile = wksDirs != null && !hasFile;
+    contentConflicts = hasContent && hasFile;
+    dirsRequiresEntryPoint = wksDirs != null && !(hasFile || hasContent);
     dirsValid = wksDirs == null || (isList wksDirs && length wksDirs > 0);
 
     # Determine which wks source to use
@@ -72,9 +72,9 @@ in
   assert assertMsg backendValid
     "Invalid backend '${backend}'. Must be one of: ${concatStringsSep ", " validBackends}";
   assert assertMsg (!wks.contentConflicts)
-    "wksContent cannot be used with wksFile or wksDirs";
-  assert assertMsg (!wks.dirsRequiresFile)
-    "wksDirs requires wksFile to be specified";
+    "wksContent cannot be used with wksFile";
+  assert assertMsg (!wks.dirsRequiresEntryPoint)
+    "wksDirs requires either wksFile or wksContent to be specified";
   assert assertMsg wks.dirsValid
     "wksDirs must be a non-empty list if provided";
 
@@ -124,17 +124,23 @@ in
 
     # When using custom wks, copy it to config/
     preBuild = optionalString wks.isCustom (
-      if wks.hasContent then
-        # Mode 1: Inline wks content
+      if wks.hasContent && wks.hasDirs then
+        # Mode 1: wksContent as entry point + wksDirs for dependencies
+        ''
+          ${copyWksFile wks.fileToUse}
+          ${copyWksDirs wksDirs}
+        ''
+      else if wks.hasContent then
+        # Mode 2: Inline wks content only
         copyWksFile wks.fileToUse
       else if wks.hasFile && wks.hasDirs then
-        # Mode 2: wksFile as entry point + wksDirs for dependencies
+        # Mode 3: wksFile as entry point + wksDirs for dependencies
         ''
           ${copyWksFile wksFile}
           ${copyWksDirs wksDirs}
         ''
       else
-        # Mode 3: Single wksFile only
+        # Mode 4: Single wksFile only
         copyWksFile wksFile
     );
 

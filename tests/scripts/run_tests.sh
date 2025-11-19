@@ -193,6 +193,26 @@ run_test "tests/fixtures/valid/sorted_test.wks" "b" "tests/expected/sorted_test_
 run_test "tests/fixtures/valid/sorted_with_ignore_sort_test.wks" "a" "tests/expected/sorted_with_ignore_sort_test_a.txt"
 run_test "tests/fixtures/valid/sorted_with_ignore_sort_test.wks" "b" "tests/expected/sorted_with_ignore_sort_test_b.txt"
 
+# Implicit array sorting tests
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "d" "tests/expected/implicit_array_sort_test_d.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "a" "tests/expected/implicit_array_sort_test_a.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "C-a" "tests/expected/implicit_array_sort_test_C_a.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "C-d" "tests/expected/implicit_array_sort_test_C_d.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "M-d" "tests/expected/implicit_array_sort_test_M_d.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "M-a" "tests/expected/implicit_array_sort_test_M_a.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "S-a" "tests/expected/implicit_array_sort_test_S_a.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "S-d" "tests/expected/implicit_array_sort_test_S_d.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "H-d" "tests/expected/implicit_array_sort_test_H_d.txt"
+run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "H-a" "tests/expected/implicit_array_sort_test_H_a.txt"
+
+# Implicit array prefix inheritance tests
+run_test "tests/fixtures/valid/implicit_array_prefix_test.wks" "p d" "tests/expected/implicit_array_prefix_test_p_d.txt"
+run_test "tests/fixtures/valid/implicit_array_prefix_test.wks" "p a" "tests/expected/implicit_array_prefix_test_p_a.txt"
+run_test "tests/fixtures/valid/implicit_array_prefix_test.wks" "q d" "tests/expected/implicit_array_prefix_test_q_d.txt"
+run_test "tests/fixtures/valid/implicit_array_prefix_test.wks" "q a" "tests/expected/implicit_array_prefix_test_q_a.txt"
+run_test "tests/fixtures/valid/implicit_array_prefix_test.wks" "r a" "tests/expected/implicit_array_prefix_test_r_a.txt"
+run_test "tests/fixtures/valid/implicit_array_prefix_test.wks" "r d" "tests/expected/implicit_array_prefix_test_r_d.txt"
+
 # Special keys tests
 run_test "tests/fixtures/valid/special_keys_test.wks" "TAB" "tests/expected/special_keys_test_tab.txt"
 run_test "tests/fixtures/valid/special_keys_test.wks" "ESC" "tests/expected/special_keys_test_esc.txt"

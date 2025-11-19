@@ -533,6 +533,11 @@ a command. This is practially a chord in terms of its
 form, but in behavior an implicit array generates any
 number of chords from this simple syntax.
 
+**Important:** Implicit arrays have an implicit `+ignore-sort` flag,
+meaning they remain in their original order (from `implicitArrayKeys`)
+even when `:sort` is enabled. To make them sorted, explicitly add the
+`+sort` flag.
+
 As an example, say your implicit array keys are set to `h`,
 `j`, `k`, and `l`, and you have this `wks` file:
 
@@ -549,6 +554,19 @@ j "Switch workspace 2" %{{xdotool set_desktop 1}}
 k "Switch workspace 3" %{{xdotool set_desktop 2}}
 l "Switch workspace 4" %{{xdotool set_desktop 3}}
 ```
+
+The chords are generated in the same order as `implicitArrayKeys`
+(h, j, k, l in this example). If you want them sorted alphabetically
+when using `:sort`, add the `+sort` flag:
+
+```
+:sort
+... "Switch workspace %(index+1)" +sort %{{xdotool set_desktop %(index)}}
+```
+
+This will generate chords in sorted order: h, j, k, l (which happens
+to be the same in this case, but would differ with keys in a different
+order like `jklh`).
 
 
 ### Explicit Arrays
@@ -785,6 +803,7 @@ flag -> '+' ( 'keep'
             | 'inherit'
             | 'ignore'
             | 'ignore-sort'
+            | 'sort'
             | 'unhook'
             | 'deflag'
             | 'no-before'
@@ -807,6 +826,7 @@ flag itself. Here is how each flag changes the behavior of
 | `inherit`      | Causes the prefix to inherit flags and hooks from its parent. Has no effect when given to a chord.                            |
 | `ignore`       | Ignore all hooks and flags from the surrounding prefix. Has no effect when given to a prefix.                                 |
 | `ignore-sort`  | Chord is ignored during sorting leaving it in it in the same position it was parsed in.                                       |
+| `sort`         | Unsets the `ignore-sort` flag. Primarily useful for implicit arrays (which have implicit `+ignore-sort`) or overriding inherited behavior. |
 | `unhook`       | Ignore all hooks from the surrounding prefix.                                                                                 |
 | `deflag`       | Ignore all flags from the surrounding prefix.                                                                                 |
 | `no-before`    | Ignore `before` and `sync-before` hooks from the surrounding prefix.                                                          |

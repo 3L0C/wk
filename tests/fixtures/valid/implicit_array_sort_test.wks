@@ -1,0 +1,17 @@
+:sort
+:implicit-array-keys "dcba"
+
+# Test 1: Implicit array without flags (should stay in dcba order)
+... "Test %(index+1) unsorted" +write %{{test-%(key)-%(index)}}
+
+# Test 2: Implicit array with +sort (should be sorted to abcd)
+C-... "Test %(index+1) sorted" +sort +write %{{test-%(key)-%(index)}}
+
+# Test 3: Implicit array with explicit +ignore-sort (redundant, should be dcba)
+M-... "Test %(index+1) explicit ignore" +ignore-sort +write %{{test-%(key)-%(index)}}
+
+# Test 4: Both flags, +sort wins (last one wins)
+S-... "Test %(index+1) sort wins" +ignore-sort +sort +write %{{test-%(key)-%(index)}}
+
+# Test 5: Both flags, +ignore-sort wins (last one wins)
+H-... "Test %(index+1) ignore wins" +sort +ignore-sort +write %{{test-%(key)-%(index)}}

@@ -91,6 +91,7 @@ enum
     TOKEN_SYNC_CMD,
     TOKEN_WRAP,
     TOKEN_UNWRAP,
+    TOKEN_ENABLE_SORT,
 
     /* literals */
     TOKEN_COMMAND,

@@ -77,6 +77,7 @@ flag               -> '+' ( 'keep'
                           | 'inherit'
                           | 'ignore'
                           | 'ignore-sort'
+                          | 'sort'
                           | 'unhook'
                           | 'deflag'
                           | 'no-before'
@@ -496,6 +497,10 @@ description, zero or more keywords, and a command. This is practially a _chord_
 in terms of its form, but in behavior an _implicit array_ generates any number
 of _chords_ from this simple syntax.
 
+*Important:* Implicit arrays have an implicit _+ignore-sort_ flag, meaning they
+remain in their original order (from _implicitArrayKeys_) even when _:sort_ is
+enabled. To make them sorted, explicitly add the _+sort_ flag.
+
 As an example, say your implicit array keys are set to _h_, _j_, _k_, and _l_,
 and you have this _wks_ file:
 
@@ -511,6 +516,18 @@ j "Switch workspace 2" %{{xdotool set_desktop 1}}
 k "Switch workspace 3" %{{xdotool set_desktop 2}}
 l "Switch workspace 4" %{{xdotool set_desktop 3}}
 ```
+
+The _chords_ are generated in the same order as _implicitArrayKeys_ (h, j, k, l
+in this example). If you want them sorted alphabetically when using _:sort_, add
+the _+sort_ flag:
+
+```
+:sort
+... "Switch workspace %(index+1)" +sort %{{xdotool set_desktop %(index)}}
+```
+
+This will generate _chords_ in sorted order: h, j, k, l (which happens to be the
+same in this case, but would differ with keys in a different order like _jklh_).
 
 ## EXPLICIT ARRAY
 
@@ -735,6 +752,7 @@ flag -> '+' ( 'keep'
             | 'inherit'
             | 'ignore'
             | 'ignore-sort'
+            | 'sort'
             | 'unhook'
             | 'deflag'
             | 'no-before'
@@ -768,6 +786,10 @@ how each flag changes the behavior of *wk*:
 *ignore-sort*
 	Chord is ignored during sorting leaving it in it in the same position it was
 	parsed in.
+
+*sort*
+	Unsets the _ignore-sort_ flag. Primarily useful for implicit arrays (which
+	have implicit _+ignore-sort_) or overriding inherited behavior.
 
 *unhook*
 	Ignore all hooks from the surrounding prefix.
@@ -1371,6 +1393,33 @@ n "Switch 3" %{{xdotool set_desktop 2}}
 o "Switch 4" %{{xdotool set_desktop 3}}
 a "First?" +write %{{4}}
 b "Second?" +write %{{5}}
+```
+
+*Implicit arrays* have an implicit _+ignore-sort_ flag, meaning they remain
+unsorted even when _:sort_ is enabled. To make them sorted, explicitly add
+the _+sort_ flag:
+
+```
+:sort
+:implicit-array-keys "dcba"
+
+# Implicit array (unsorted by default)
+... "Workspace %(index+1)" %{{xdotool set_desktop %(index)}}
+
+# Sorted result: d, c, b, a (original order from implicitArrayKeys)
+d "Workspace 1" %{{xdotool set_desktop 0}}
+c "Workspace 2" %{{xdotool set_desktop 1}}
+b "Workspace 3" %{{xdotool set_desktop 2}}
+a "Workspace 4" %{{xdotool set_desktop 3}}
+
+# Implicit array with +sort flag
+C-... "Workspace %(index+1)" +sort %{{xdotool set_desktop %(index)}}
+
+# Sorted result: a, b, c, d (alphabetically sorted)
+C-a "Workspace 1" %{{xdotool set_desktop 0}}
+C-b "Workspace 2" %{{xdotool set_desktop 1}}
+C-c "Workspace 3" %{{xdotool set_desktop 2}}
+C-d "Workspace 4" %{{xdotool set_desktop 3}}
 ```
 
 ## BUG REPORTS
