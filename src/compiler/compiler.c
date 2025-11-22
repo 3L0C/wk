@@ -31,6 +31,7 @@ typedef struct
     Array     chords;
     ChordFlag flags;
     Array     wrapCmd;
+    Array     title;
 } PseudoChord;
 
 static void pseudoChordArrayFree(Array* arr);
@@ -82,6 +83,7 @@ pseudoChordInit(PseudoChord* chord)
     chord->chords  = ARRAY_INIT(PseudoChord);
     chord->flags   = chordFlagInit();
     chord->wrapCmd = ARRAY_INIT(Token);
+    chord->title   = ARRAY_INIT(Token);
 }
 
 static void
@@ -95,6 +97,7 @@ pseudoChordFree(PseudoChord* chord)
     arrayFree(&chord->before);
     arrayFree(&chord->after);
     arrayFree(&chord->wrapCmd);
+    arrayFree(&chord->title);
     pseudoChordArrayFree(&chord->chords);
     pseudoChordInit(chord);
 }
@@ -551,23 +554,24 @@ compileFlag(Compiler* compiler, PseudoChord* chord, TokenType type)
     case TOKEN_WRITE: chord->flags |= FLAG_WRITE; return true;
     case TOKEN_EXECUTE: chord->flags |= FLAG_EXECUTE; return true;
     case TOKEN_SYNC_CMD: chord->flags |= FLAG_SYNC_COMMAND; return true;
+    case TOKEN_ENABLE_SORT: chord->flags &= ~FLAG_IGNORE_SORT; return true;
+    case TOKEN_UNWRAP: chord->flags |= FLAG_UNWRAP; return true;
+    case TOKEN_TITLE:
+    {
+        consume(compiler, TOKEN_TITLE, "Expected '+title'.");
+        if (check(compiler, TOKEN_DESCRIPTION) || check(compiler, TOKEN_DESC_INTERP))
+        {
+            compileDescriptionTokens(compiler, &chord->title);
+        }
+        return true;
+    }
     case TOKEN_WRAP:
     {
-        consume(compiler, TOKEN_WRAP, "Expected ':wrap-cmd'.");
+        consume(compiler, TOKEN_WRAP, "Expected '+wrap'.");
         if (check(compiler, TOKEN_DESCRIPTION) || check(compiler, TOKEN_DESC_INTERP))
         {
             compileDescriptionTokens(compiler, &chord->wrapCmd);
         }
-        return true;
-    }
-    case TOKEN_UNWRAP:
-    {
-        chord->flags |= FLAG_UNWRAP;
-        return true;
-    }
-    case TOKEN_ENABLE_SORT:
-    {
-        chord->flags &= ~FLAG_IGNORE_SORT;
         return true;
     }
     default: return false;
@@ -587,7 +591,9 @@ compileHooksAndFlags(Compiler* compiler, PseudoChord* chord)
 
         /* Hooks and the `+wrap` flag consume their own token and their argument
          * which leaves them pointing at the next token. */
-        if (tokenIsHookType(type) || type == TOKEN_WRAP)
+        if (tokenIsHookType(type) ||
+            type == TOKEN_WRAP ||
+            type == TOKEN_TITLE)
         {
             type = currentType(compiler);
         }
@@ -609,6 +615,7 @@ compileMissingKeyChordInfo(Compiler* compiler, const PseudoChord* from, PseudoCh
     if (arrayLength(&to->cmd) == 0) to->cmd = arrayCopy(&from->cmd);
     if (arrayLength(&to->before) == 0) to->before = arrayCopy(&from->before);
     if (arrayLength(&to->after) == 0) to->after = arrayCopy(&from->after);
+    if (arrayLength(&to->title) == 0) to->title = arrayCopy(&from->title);
 }
 
 static void
@@ -828,6 +835,17 @@ setHooksAndFlags(PseudoChord* parent, Array* children)
             !arrayIsEmpty(&parent->wrapCmd))
         {
             child->wrapCmd = arrayCopy(&parent->wrapCmd);
+        }
+
+        /* Inherit title if:
+         * - child is a prefix
+         * - child does not have a title
+         * - parent has a title */
+        if (!arrayIsEmpty(&child->chords) &&
+            arrayIsEmpty(&child->title) &&
+            !arrayIsEmpty(&parent->title))
+        {
+            child->title = arrayCopy(&parent->title);
         }
 
         if (!arrayIsEmpty(&child->chords))
@@ -1082,6 +1100,8 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
             keyChord,
             &keyChord->wrapCmd,
             iter.index);
+        /* Title */
+        compileStringFromTokens(compiler, &chord->title, keyChord, &keyChord->title, iter.index);
         /* Command */
         compileStringFromTokens(compiler, &chord->cmd, keyChord, &keyChord->command, iter.index);
         if (!arrayIsEmpty(&chord->chords))

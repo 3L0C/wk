@@ -87,19 +87,14 @@ calculateGrid(const uint32_t count, const uint32_t maxCols, uint32_t* rows, uint
     }
 }
 
-uint32_t
-cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
+static uint32_t
+getFontHeight(cairo_t* cr, const char* font)
 {
-    assert(menu), assert(surface);
+    assert(cr), assert(font);
 
-    uint32_t height = 0;
-
-    cairo_t*              cr       = cairo_create(surface);
+    PangoFontDescription* fontDesc = pango_font_description_from_string(font);
     PangoLayout*          layout   = pango_cairo_create_layout(cr);
-    PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
     PangoRectangle        rect;
-
-    calculateGrid(menu->keyChords->length, menu->maxCols, &menu->rows, &menu->cols);
 
     pango_layout_set_text(
         layout,
@@ -113,16 +108,39 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     /* cleanup */
     pango_font_description_free(fontDesc);
     g_object_unref(layout);
+
+    return rect.height;
+}
+
+uint32_t
+cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
+{
+    assert(menu), assert(surface);
+
+    uint32_t height = 0;
+
+    cairo_t* cr          = cairo_create(surface);
+    uint32_t cellHeight  = getFontHeight(cr, menu->font) + (menu->hpadding * 2);
+    uint32_t titleHeight = getFontHeight(cr, menu->titleFont) + (menu->hpadding * 2);
+
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
 
-    menu->cellHeight = (rect.height + menu->hpadding * 2);
-    // Calculate table padding for height calculation - if -1, use cell padding, otherwise use the
-    // specified value
+    menu->cellHeight  = cellHeight;
+    menu->titleHeight = (menu->title && strlen(menu->title) > 0) ? titleHeight : 0;
+    calculateGrid(menu->keyChords->length, menu->maxCols, &menu->rows, &menu->cols);
+
+    /* Calculate table padding for height calculation - if -1, use cell padding, otherwise use the
+     * specified value */
     uint32_t tablePadding = (menu->tablePadding == -1)
                                 ? menu->hpadding
                                 : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
-    height                = menu->cellHeight * menu->rows + (tablePadding * 2) + (menu->borderWidth * 2);
+
+    height = menu->titleHeight +
+             (menu->cellHeight * menu->rows) +
+             (tablePadding * 2) +
+             (menu->borderWidth * 2);
+
     return height > maxHeight ? maxHeight : height;
 }
 
@@ -155,6 +173,12 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
     paint->fgChord.b = (float)colors[MENU_COLOR_CHORD].b / 255.0f;
     paint->fgChord.a = (float)colors[MENU_COLOR_CHORD].a / 255.0f;
 
+    /* foreground - title */
+    paint->fgTitle.r = (float)colors[MENU_COLOR_TITLE].r / 255.0f;
+    paint->fgTitle.g = (float)colors[MENU_COLOR_TITLE].g / 255.0f;
+    paint->fgTitle.b = (float)colors[MENU_COLOR_TITLE].b / 255.0f;
+    paint->fgTitle.a = (float)colors[MENU_COLOR_TITLE].a / 255.0f;
+
     /* background */
     paint->bg.r = (float)colors[MENU_COLOR_BACKGROUND].r / 255.0f;
     paint->bg.g = (float)colors[MENU_COLOR_BACKGROUND].g / 255.0f;
@@ -174,7 +198,8 @@ cairoInitPaint(Menu* menu, CairoPaint* paint)
     assert(menu), assert(paint);
 
     cairoSetColors(paint, menu->colors);
-    paint->font = menu->font;
+    paint->font      = menu->font;
+    paint->titleFont = menu->titleFont;
 }
 
 static bool
@@ -190,6 +215,7 @@ setSourceRgba(cairo_t* cr, CairoPaint* paint, MenuColor type)
     case MENU_COLOR_DELIMITER: color = &paint->fgDelimiter; break;
     case MENU_COLOR_PREFIX: color = &paint->fgPrefix; break;
     case MENU_COLOR_CHORD: color = &paint->fgChord; break;
+    case MENU_COLOR_TITLE: color = &paint->fgTitle; break;
     case MENU_COLOR_BACKGROUND: color = &paint->bg; break;
     case MENU_COLOR_BORDER: color = &paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;
@@ -392,6 +418,51 @@ drawString(
 }
 
 static bool
+drawTitleText(
+    cairo_t*    cr,
+    CairoPaint* paint,
+    Menu*       menu,
+    uint32_t*   yOffset,
+    uint32_t    cellw,
+    uint32_t    x,
+    uint32_t    y,
+    int         ellipsisWidth)
+{
+    assert(cr), assert(paint), assert(menu), assert(yOffset);
+
+    *yOffset = 0;
+    if (!menu->title || strlen(menu->title) == 0) return true;
+
+    if (!setSourceRgba(cr, paint, MENU_COLOR_TITLE)) return false;
+
+    PangoFontDescription* fontDesc = pango_font_description_from_string(paint->titleFont);
+    PangoLayout*          layout   = pango_cairo_create_layout(cr);
+
+    pango_layout_set_font_description(layout, fontDesc);
+
+    int textw, texth;
+    pango_layout_set_text(layout, menu->title, -1);
+    pango_layout_get_pixel_size(layout, &textw, &texth);
+
+    uint32_t centeredX = x;
+    if ((uint32_t)textw < cellw)
+    {
+        centeredX = x + (cellw - (uint32_t)textw) / 2;
+    }
+
+    uint32_t titleX = centeredX;
+    uint32_t titleY = y;
+    drawText(cr, layout, menu->title, &cellw, &titleX, &titleY, ellipsisWidth);
+
+    *yOffset = texth + menu->hpadding;
+
+    pango_font_description_free(fontDesc);
+    g_object_unref(layout);
+
+    return true;
+}
+
+static bool
 drawKeyModText(
     cairo_t*     cr,
     CairoPaint*  paint,
@@ -472,8 +543,7 @@ drawDescriptionText(
     uint32_t*       y,
     int             ellipsisWidth)
 {
-    assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x),
-        assert(y);
+    assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x), assert(y);
 
     if (!setSourceRgba(
             cr,
@@ -521,28 +591,29 @@ drawGrid(
         return false;
     }
 
-    uint32_t              tablePaddingX     = (menu->tablePadding == -1)
-                                                  ? menu->wpadding
-                                                  : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
-    uint32_t              tablePaddingY     = (menu->tablePadding == -1)
-                                                  ? menu->hpadding
-                                                  : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
-    uint32_t              startx            = menu->borderWidth + tablePaddingX;
-    uint32_t              starty            = menu->borderWidth + tablePaddingY;
-    uint32_t              rows              = menu->rows;
-    uint32_t              cols              = menu->cols;
-    uint32_t              wpadding          = menu->wpadding;
-    uint32_t              hpadding          = menu->hpadding;
-    uint32_t              totalTablePadding = tablePaddingX + tablePaddingY;
-    uint32_t              borderWidthTotal  = menu->borderWidth * 2;
-    uint32_t              availableWidth    = (totalTablePadding > (width - borderWidthTotal))
-                                                  ? 0
-                                                  : width - borderWidthTotal - totalTablePadding;
-    uint32_t              cellWidth         = (availableWidth > 0) ? availableWidth / cols : 0;
-    uint32_t              cellHeight        = menu->cellHeight;
-    uint32_t              count             = menu->keyChords->length;
-    PangoLayout*          layout            = pango_cairo_create_layout(cr);
-    PangoFontDescription* fontDesc          = pango_font_description_from_string(menu->font);
+    uint32_t tablePaddingX     = (menu->tablePadding == -1)
+                                     ? menu->wpadding
+                                     : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    uint32_t tablePaddingY     = (menu->tablePadding == -1)
+                                     ? menu->hpadding
+                                     : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
+    uint32_t startx            = menu->borderWidth + tablePaddingX;
+    uint32_t starty            = menu->borderWidth + tablePaddingY;
+    uint32_t rows              = menu->rows;
+    uint32_t cols              = menu->cols;
+    uint32_t wpadding          = menu->wpadding;
+    uint32_t hpadding          = menu->hpadding;
+    uint32_t totalTablePadding = tablePaddingX + tablePaddingY;
+    uint32_t borderWidthTotal  = menu->borderWidth * 2;
+    uint32_t availableWidth    = (totalTablePadding > (width - borderWidthTotal))
+                                     ? 0
+                                     : width - borderWidthTotal - totalTablePadding;
+    uint32_t cellWidth         = (availableWidth > 0) ? availableWidth / cols : 0;
+    uint32_t cellHeight        = menu->cellHeight;
+    uint32_t count             = menu->keyChords->length;
+
+    PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
+    PangoLayout*          layout   = pango_cairo_create_layout(cr);
 
     pango_layout_set_font_description(layout, fontDesc);
     pango_font_description_free(fontDesc);
@@ -578,6 +649,24 @@ drawGrid(
         ctx->ellipsisWidth  = 0;
         ctx->ellipsisHeight = -1;
     }
+
+    uint32_t titleOffset = 0;
+
+    if (!drawTitleText(
+            cr,
+            paint,
+            menu,
+            &titleOffset,
+            (availableWidth > 0 ? availableWidth - (wpadding * 2) : 0),
+            startx,
+            starty,
+            ctx->ellipsisWidth))
+    {
+        errorMsg("Failed to draw menu title.");
+        goto fail;
+    }
+
+    starty += titleOffset;
 
     ArrayIterator   iter     = arrayIteratorMake(menu->keyChords);
     const KeyChord* keyChord = NULL;

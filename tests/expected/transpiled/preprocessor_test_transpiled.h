@@ -11,7 +11,7 @@
 #include "src/common/string.h"
 
 /* Delimiter when displaying chords. */
-static const char* delimiter = "\" > \"";
+static const char* delimiter = " -> ";
 /* Delay between last keypress and first time displaying the menu. Value in milliseconds. */
 static uint32_t delay = 0;
 /* Max number of columns to use. */
@@ -34,10 +34,11 @@ static const uint32_t borderWidth = 2;
 static const double borderRadius = 15;
 /* Menu foreground color */
 static const char* foreground[FOREGROUND_COLOR_LAST] = {
-    "#ffffff", /* Key color */
-    "#ffffff", /* Delimiter color */
-    "#ffff00", /* Prefix color */
-    "#ffffff", /* Chord color */
+    [FOREGROUND_COLOR_KEY]       = "#ffffff",
+    [FOREGROUND_COLOR_DELIMITER] = "#ffffff",
+    [FOREGROUND_COLOR_PREFIX]    = "#ffff00",
+    [FOREGROUND_COLOR_CHORD]     = "#ffffff",
+    [FOREGROUND_COLOR_TITLE]     = "#ffffff",
 };
 /* Menu background color */
 static const char* background = "#123456";
@@ -47,6 +48,8 @@ static const char* border = "#654321";
 static const char* shell = "/usr/bin/zsh";
 /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
 static const char* font = "Sans, 14";
+/* Pango font description i.e. 'Inter Nerd Font, M+ 1c, ..., 16'. */
+static const char* titleFont = "sans-serif, 16";
 /* Keys to use for chord arrays */
 static const char* implicitArrayKeys = "asdfghjkl;";
 /* Command wrapper prefix. Set to NULL or "" to disable. Examples: "uwsm app --", "firefox", etc. */
@@ -79,17 +82,18 @@ static const char* wrapCmd = NULL;
     .parts  = EMPTY_ARRAY(StringPart), \
     .length = 0                        \
 }
-#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _flags, _chords) \
-    (KeyChord)                                                                    \
-    {                                                                             \
-        .key         = (_key),                                                    \
-        .description = (_desc),                                                   \
-        .command     = (_cmd),                                                    \
-        .before      = (_before),                                                 \
-        .after       = (_after),                                                  \
-        .wrapCmd     = (_wrap_cmd),                                               \
-        .flags       = (_flags),                                                  \
-        .keyChords   = (_chords)                                                  \
+#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _title, _flags, _chords) \
+    (KeyChord)                                                                            \
+    {                                                                                     \
+        .key         = (_key),                                                            \
+        .description = (_desc),                                                           \
+        .command     = (_cmd),                                                            \
+        .before      = (_before),                                                         \
+        .after       = (_after),                                                          \
+        .wrapCmd     = (_wrap_cmd),                                                       \
+        .title       = (_title),                                                          \
+        .flags       = (_flags),                                                          \
+        .keyChords   = (_chords)                                                          \
     }
 #define KEY(_offset, _len, _mods, _special)   \
     (Key)                                     \
@@ -112,6 +116,7 @@ static Array builtinKeyChords =
             EMPTY_STRING,
             EMPTY_STRING,
             EMPTY_STRING,
+            EMPTY_STRING,
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
@@ -121,11 +126,13 @@ static Array builtinKeyChords =
             EMPTY_STRING,
             EMPTY_STRING,
             EMPTY_STRING,
+            EMPTY_STRING,
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(36, 1, MOD_NONE, SPECIAL_KEY_NONE),
             STRING(37, 8),
+            EMPTY_STRING,
             EMPTY_STRING,
             EMPTY_STRING,
             EMPTY_STRING,
@@ -141,11 +148,13 @@ static Array builtinKeyChords =
                     EMPTY_STRING,
                     EMPTY_STRING,
                     EMPTY_STRING,
+                    EMPTY_STRING,
                     FLAG_WRITE,
                     EMPTY_ARRAY(KeyChord)),
                 KEY_CHORD(
                     KEY(83, 1, MOD_NONE, SPECIAL_KEY_NONE),
                     STRING(84, 14),
+                    EMPTY_STRING,
                     EMPTY_STRING,
                     EMPTY_STRING,
                     EMPTY_STRING,
@@ -158,6 +167,7 @@ static Array builtinKeyChords =
                             KEY(98, 1, MOD_NONE, SPECIAL_KEY_NONE),
                             STRING(99, 4),
                             STRING(103, 23),
+                            EMPTY_STRING,
                             EMPTY_STRING,
                             EMPTY_STRING,
                             EMPTY_STRING,

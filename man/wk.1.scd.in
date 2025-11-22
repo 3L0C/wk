@@ -99,6 +99,16 @@ key chords from a *wks*(5) file or script.
 *--fg-chord* _COLOR_
 	Set foreground chord to COLOR (default '#DCD7BA').
 
+*--fg-title* _COLOR_
+	Set foreground title to COLOR (default '#DCD7BA').
+
+*--title* _STRING_
+	Set global title displayed above menu to STRING.
+
+*--title-font* _STRING_
+	Set title font to STRING. Should be a valid Pango font description
+	(default 'sans-serif, 16').
+
 *--bg* _COLOR_
 	Set background to COLOR (default '#181616').
 

@@ -36,12 +36,17 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_FOREGROUND_DELIMITER_COLOR] = "TOKEN_FOREGROUND_DELIMITER_COLOR",
     [TOKEN_FOREGROUND_PREFIX_COLOR]    = "TOKEN_FOREGROUND_PREFIX_COLOR",
     [TOKEN_FOREGROUND_CHORD_COLOR]     = "TOKEN_FOREGROUND_CHORD_COLOR",
+    [TOKEN_FOREGROUND_TITLE_COLOR]     = "TOKEN_FOREGROUND_TITLE_COLOR",
     [TOKEN_BACKGROUND_COLOR]           = "TOKEN_BACKGROUND_COLOR",
     [TOKEN_BORDER_COLOR]               = "TOKEN_BORDER_COLOR",
     [TOKEN_SHELL]                      = "TOKEN_SHELL",
     [TOKEN_FONT]                       = "TOKEN_FONT",
     [TOKEN_IMPLICIT_ARRAY_KEYS]        = "TOKEN_IMPLICIT_ARRAY_KEYS",
+    [TOKEN_VAR]                        = "TOKEN_VAR",
+    [TOKEN_WRAP_CMD]                   = "TOKEN_WRAP_CMD",
     [TOKEN_DELIMITER]                  = "TOKEN_DELIMITER",
+    [TOKEN_MENU_TITLE]                 = "TOKEN_MENU_TITLE",
+    [TOKEN_MENU_TITLE_FONT]            = "TOKEN_MENU_TITLE_FONT",
 
     /* switch macros */
     [TOKEN_DEBUG]  = "TOKEN_DEBUG",
@@ -73,6 +78,7 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_THIS_DESC_LOWER_FIRST] = "TOKEN_THIS_DESC_LOWER_FIRST",
     [TOKEN_THIS_DESC_UPPER_ALL]   = "TOKEN_THIS_DESC_UPPER_ALL",
     [TOKEN_THIS_DESC_LOWER_ALL]   = "TOKEN_THIS_DESC_LOWER_ALL",
+    [TOKEN_USER_VAR]              = "TOKEN_USER_VAR",
 
     /* hooks */
     [TOKEN_BEFORE]      = "TOKEN_BEFORE",
@@ -93,6 +99,10 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_WRITE]       = "TOKEN_WRITE",
     [TOKEN_EXECUTE]     = "TOKEN_EXECUTE",
     [TOKEN_SYNC_CMD]    = "TOKEN_SYNC_CMD",
+    [TOKEN_WRAP]        = "TOKEN_WRAP",
+    [TOKEN_UNWRAP]      = "TOKEN_UNWRAP",
+    [TOKEN_ENABLE_SORT] = "TOKEN_ENABLE_SORT",
+    [TOKEN_TITLE]       = "TOKEN_TITLE",
 
     /* literals */
     [TOKEN_COMMAND]          = "TOKEN_COMMAND",

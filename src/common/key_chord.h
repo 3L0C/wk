@@ -127,6 +127,7 @@ typedef struct KeyChord
     String    before;
     String    after;
     String    wrapCmd;
+    String    title;
     ChordFlag flags;
     Array     keyChords;
 } KeyChord;

@@ -334,6 +334,11 @@ scanFlag(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_ENABLE_SORT;
         break;
     }
+    case 't':
+    {
+        if (isKeyword(scanner, 1, 4, "itle")) result = TOKEN_TITLE;
+        break;
+    }
     default: break;
     }
 
@@ -377,6 +382,7 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 11, "g-delimiter")) result = TOKEN_FOREGROUND_DELIMITER_COLOR;
         else if (isKeyword(scanner, 1, 8, "g-prefix")) result = TOKEN_FOREGROUND_PREFIX_COLOR;
         else if (isKeyword(scanner, 1, 7, "g-chord")) result = TOKEN_FOREGROUND_CHORD_COLOR;
+        else if (isKeyword(scanner, 1, 7, "g-title")) result = TOKEN_FOREGROUND_TITLE_COLOR;
         else if (isKeyword(scanner, 1, 3, "ont")) result = TOKEN_FONT;
         break;
     }
@@ -407,6 +413,8 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     case 't':
     {
         if (isKeyword(scanner, 1, 2, "op")) result = TOKEN_TOP;
+        else if (isKeyword(scanner, 1, 4, "itle")) result = TOKEN_MENU_TITLE;
+        else if (isKeyword(scanner, 1, 9, "itle-font")) result = TOKEN_MENU_TITLE_FONT;
         else if (isKeyword(scanner, 1, 12, "able-padding")) result = TOKEN_TABLE_PADDING;
         break;
     }

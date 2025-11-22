@@ -16,9 +16,11 @@ typedef struct
     CairoColor  fgDelimiter;
     CairoColor  fgPrefix;
     CairoColor  fgChord;
+    CairoColor  fgTitle;
     CairoColor  bg;
     CairoColor  bd;
     const char* font;
+    const char* titleFont;
 } CairoPaint;
 
 typedef struct

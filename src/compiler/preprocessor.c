@@ -422,15 +422,18 @@ handleMacroWithStringArg(
         handleVarMacro(menu, scanner, &result, key, arena);
         break;
     }
-    case TOKEN_FOREGROUND_COLOR:
+    case TOKEN_FOREGROUND_COLOR: /* FALLTHROUGH */
     case TOKEN_FOREGROUND_KEY_COLOR:
     case TOKEN_FOREGROUND_DELIMITER_COLOR:
     case TOKEN_FOREGROUND_PREFIX_COLOR:
     case TOKEN_FOREGROUND_CHORD_COLOR:
+    case TOKEN_FOREGROUND_TITLE_COLOR:
     case TOKEN_BACKGROUND_COLOR:
     case TOKEN_BORDER_COLOR:
     case TOKEN_SHELL:
     case TOKEN_FONT:
+    case TOKEN_MENU_TITLE:
+    case TOKEN_MENU_TITLE_FONT:
     case TOKEN_IMPLICIT_ARRAY_KEYS:
     case TOKEN_WRAP_CMD:
     case TOKEN_DELIMITER:
@@ -445,17 +448,19 @@ handleMacroWithStringArg(
             menuSetColor(menu, arg, MENU_COLOR_DELIMITER);
             menuSetColor(menu, arg, MENU_COLOR_PREFIX);
             menuSetColor(menu, arg, MENU_COLOR_CHORD);
+            menuSetColor(menu, arg, MENU_COLOR_TITLE);
             break;
         case TOKEN_FOREGROUND_KEY_COLOR: menuSetColor(menu, arg, MENU_COLOR_KEY); break;
-        case TOKEN_FOREGROUND_DELIMITER_COLOR:
-            menuSetColor(menu, arg, MENU_COLOR_DELIMITER);
-            break;
+        case TOKEN_FOREGROUND_DELIMITER_COLOR: menuSetColor(menu, arg, MENU_COLOR_DELIMITER); break;
         case TOKEN_FOREGROUND_PREFIX_COLOR: menuSetColor(menu, arg, MENU_COLOR_PREFIX); break;
         case TOKEN_FOREGROUND_CHORD_COLOR: menuSetColor(menu, arg, MENU_COLOR_CHORD); break;
+        case TOKEN_FOREGROUND_TITLE_COLOR: menuSetColor(menu, arg, MENU_COLOR_TITLE); break;
         case TOKEN_BACKGROUND_COLOR: menuSetColor(menu, arg, MENU_COLOR_BACKGROUND); break;
         case TOKEN_BORDER_COLOR: menuSetColor(menu, arg, MENU_COLOR_BORDER); break;
         case TOKEN_SHELL: menu->shell = arg; break;
         case TOKEN_FONT: menu->font = arg; break;
+        case TOKEN_MENU_TITLE: menu->title = arg; break;
+        case TOKEN_MENU_TITLE_FONT: menu->titleFont = arg; break;
         case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
         case TOKEN_WRAP_CMD: menuSetWrapCmd(menu, arg); break;
         case TOKEN_DELIMITER: menu->delimiter = arg; break;
@@ -674,10 +679,13 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         case TOKEN_FOREGROUND_DELIMITER_COLOR:
         case TOKEN_FOREGROUND_PREFIX_COLOR:
         case TOKEN_FOREGROUND_CHORD_COLOR:
+        case TOKEN_FOREGROUND_TITLE_COLOR:
         case TOKEN_BACKGROUND_COLOR:
         case TOKEN_BORDER_COLOR:
         case TOKEN_SHELL:
         case TOKEN_FONT:
+        case TOKEN_MENU_TITLE:
+        case TOKEN_MENU_TITLE_FONT:
         case TOKEN_IMPLICIT_ARRAY_KEYS:
         case TOKEN_WRAP_CMD:
         case TOKEN_DELIMITER:

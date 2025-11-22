@@ -33,10 +33,11 @@ static const uint32_t borderWidth = 4;
 static const double borderRadius = 0;
 /* Menu foreground color */
 static const char* foreground[FOREGROUND_COLOR_LAST] = {
-    "#DCD7BA", /* Key color */
-    "#525259", /* Delimiter color */
-    "#AF9FC9", /* Prefix color */
-    "#DCD7BA", /* Chord color */
+    [FOREGROUND_COLOR_KEY]       = "#DCD7BA",
+    [FOREGROUND_COLOR_DELIMITER] = "#525259",
+    [FOREGROUND_COLOR_PREFIX]    = "#AF9FC9",
+    [FOREGROUND_COLOR_CHORD]     = "#DCD7BA",
+    [FOREGROUND_COLOR_TITLE]     = "#DCD7BA",
 };
 /* Menu background color */
 static const char* background = "#181616";
@@ -46,6 +47,8 @@ static const char* border = "#7FB4CA";
 static const char* shell = "/bin/sh";
 /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
 static const char* font = "monospace, 14";
+/* Pango font description i.e. 'Inter Nerd Font, M+ 1c, ..., 16'. */
+static const char* titleFont = "sans-serif, 16";
 /* Keys to use for chord arrays */
 static const char* implicitArrayKeys = "asdfghjkl;";
 /* Command wrapper prefix. Set to NULL or "" to disable. Examples: "uwsm app --", "firefox", etc. */
@@ -78,17 +81,18 @@ static const char* wrapCmd = NULL;
     .parts  = EMPTY_ARRAY(StringPart), \
     .length = 0                        \
 }
-#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _flags, _chords) \
-    (KeyChord)                                                                    \
-    {                                                                             \
-        .key         = (_key),                                                    \
-        .description = (_desc),                                                   \
-        .command     = (_cmd),                                                    \
-        .before      = (_before),                                                 \
-        .after       = (_after),                                                  \
-        .wrapCmd     = (_wrap_cmd),                                               \
-        .flags       = (_flags),                                                  \
-        .keyChords   = (_chords)                                                  \
+#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _title, _flags, _chords) \
+    (KeyChord)                                                                            \
+    {                                                                                     \
+        .key         = (_key),                                                            \
+        .description = (_desc),                                                           \
+        .command     = (_cmd),                                                            \
+        .before      = (_before),                                                         \
+        .after       = (_after),                                                          \
+        .wrapCmd     = (_wrap_cmd),                                                       \
+        .title       = (_title),                                                          \
+        .flags       = (_flags),                                                          \
+        .keyChords   = (_chords)                                                          \
     }
 #define KEY(_offset, _len, _mods, _special)   \
     (Key)                                     \

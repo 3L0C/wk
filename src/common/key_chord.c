@@ -267,6 +267,7 @@ keyChordCopy(const KeyChord* from, KeyChord* to)
     to->before      = from->before;
     to->after       = from->after;
     to->wrapCmd     = from->wrapCmd;
+    to->title       = from->title;
     to->flags       = from->flags;
     to->keyChords   = from->keyChords;
 }
@@ -282,6 +283,7 @@ keyChordFree(KeyChord* keyChord)
     stringFree(&keyChord->before);
     stringFree(&keyChord->after);
     stringFree(&keyChord->wrapCmd);
+    stringFree(&keyChord->title);
     keyChordArrayFree(&keyChord->keyChords);
 }
 
@@ -296,6 +298,7 @@ keyChordInit(KeyChord* keyChord)
     keyChord->before      = stringInit();
     keyChord->after       = stringInit();
     keyChord->wrapCmd     = stringInit();
+    keyChord->title       = stringInit();
     keyChord->flags       = chordFlagInit();
     keyChord->keyChords   = ARRAY_INIT(KeyChord);
 }

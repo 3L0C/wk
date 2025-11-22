@@ -19,6 +19,7 @@ enum
     FOREGROUND_COLOR_DELIMITER,
     FOREGROUND_COLOR_PREFIX,
     FOREGROUND_COLOR_CHORD,
+    FOREGROUND_COLOR_TITLE,
     FOREGROUND_COLOR_LAST,
 };
 
@@ -29,6 +30,7 @@ enum
     MENU_COLOR_DELIMITER,
     MENU_COLOR_PREFIX,
     MENU_COLOR_CHORD,
+    MENU_COLOR_TITLE,
     MENU_COLOR_BACKGROUND,
     MENU_COLOR_BORDER,
     MENU_COLOR_LAST
@@ -69,7 +71,9 @@ typedef struct
 {
     const char*  delimiter;
     const char*  shell;
+    const char*  title;
     const char*  font;
+    const char*  titleFont;
     const char*  implicitArrayKeys;
     double       borderRadius;
     MenuHexColor colors[MENU_COLOR_LAST];
@@ -98,6 +102,7 @@ typedef struct
     uint32_t hpadding;
     int32_t  tablePadding;
     uint32_t cellHeight;
+    uint32_t titleHeight;
     uint32_t rows;
     uint32_t cols;
     uint32_t width;

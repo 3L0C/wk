@@ -34,6 +34,30 @@
 #include "menu.h"
 #include "string.h"
 
+typedef uint8_t MenuOptArg;
+enum
+{
+    OPT_ARG_BORDER_WIDTH  = 0x090,
+    OPT_ARG_BORDER_RADIUS = 0x091,
+    OPT_ARG_WPADDING      = 0x092,
+    OPT_ARG_HPADDING      = 0x093,
+    OPT_ARG_TABLE_PADDING = 0x094,
+    OPT_ARG_FG            = 0x095,
+    OPT_ARG_FG_KEY        = 0x096,
+    OPT_ARG_FG_DELIMITER  = 0x097,
+    OPT_ARG_FG_PREFIX     = 0x098,
+    OPT_ARG_FG_CHORD      = 0x099,
+    OPT_ARG_FG_TITLE      = 0x100,
+    OPT_ARG_BG            = 0x101,
+    OPT_ARG_BD            = 0x102,
+    OPT_ARG_SHELL         = 0x103,
+    OPT_ARG_FONT          = 0x104,
+    OPT_ARG_IMPLICIT_KEYS = 0x105,
+    OPT_ARG_WRAP_CMD      = 0x106,
+    OPT_ARG_TITLE         = 0x107,
+    OPT_ARG_TITLE_FONT    = 0x108,
+};
+
 int
 menuDisplay(Menu* menu)
 {
@@ -74,6 +98,11 @@ menuHandlePrefix(Menu* menu, KeyChord* keyChord)
     debugMsg(menu->debug, "Found prefix.");
 
     menu->keyChords = &keyChord->keyChords;
+    if (!stringIsEmpty(&keyChord->title))
+    {
+        menu->title = stringToCString(&menu->arena, &keyChord->title);
+    }
+
     return MENU_STATUS_DAMAGED;
 }
 
@@ -213,22 +242,25 @@ menuHexColorInitColors(MenuHexColor* hexColors)
     assert(hexColors);
 
     static const char* defaultColors[MENU_COLOR_LAST] = {
-        "#DCD7BA", /* Key color */
-        "#525259", /* Delimiter color */
-        "#AF9FC9", /* Prefix color */
-        "#DCD7BA", /* Chord color */
-        "#181616", /* Background */
-        "#7FB4CA"  /* Border */
+        [MENU_COLOR_KEY]        = "#DCD7BA",
+        [MENU_COLOR_DELIMITER]  = "#525259",
+        [MENU_COLOR_PREFIX]     = "#AF9FC9",
+        [MENU_COLOR_CHORD]      = "#DCD7BA",
+        [MENU_COLOR_TITLE]      = "#DCD7BA",
+        [MENU_COLOR_BACKGROUND] = "#181616",
+        [MENU_COLOR_BORDER]     = "#7FB4CA",
     };
 
     const char* colors[MENU_COLOR_LAST] = {
-        foreground[FOREGROUND_COLOR_KEY],
-        foreground[FOREGROUND_COLOR_DELIMITER],
-        foreground[FOREGROUND_COLOR_PREFIX],
-        foreground[FOREGROUND_COLOR_CHORD],
-        background,
-        border
+        [MENU_COLOR_KEY]        = foreground[FOREGROUND_COLOR_KEY],
+        [MENU_COLOR_DELIMITER]  = foreground[FOREGROUND_COLOR_DELIMITER],
+        [MENU_COLOR_PREFIX]     = foreground[FOREGROUND_COLOR_PREFIX],
+        [MENU_COLOR_CHORD]      = foreground[FOREGROUND_COLOR_CHORD],
+        [MENU_COLOR_TITLE]      = foreground[FOREGROUND_COLOR_TITLE],
+        [MENU_COLOR_BACKGROUND] = background,
+        [MENU_COLOR_BORDER]     = border,
     };
+
     for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
         if (!menuHexColorInitColor(&hexColors[i], colors[i]))
@@ -243,6 +275,7 @@ menuHexColorInitColors(MenuHexColor* hexColors)
             case MENU_COLOR_CHORD: colorType = "chord"; break;
             case MENU_COLOR_BACKGROUND: colorType = "background"; break;
             case MENU_COLOR_BORDER: colorType = "border"; break;
+            case MENU_COLOR_TITLE: colorType = "title"; break;
             default: colorType = "UNKNOWN"; break;
             }
             fprintf(stderr, "setting %s to '%s'.\n", colorType, defaultColors[i]);
@@ -258,7 +291,9 @@ menuInit(Menu* menu)
 
     menu->delimiter         = delimiter;
     menu->shell             = shell;
+    menu->title             = NULL;
     menu->font              = font;
+    menu->titleFont         = titleFont;
     menu->implicitArrayKeys = implicitArrayKeys;
     menu->borderRadius      = borderRadius;
     menuHexColorInitColors(menu->colors);
@@ -284,6 +319,7 @@ menuInit(Menu* menu)
     menu->hpadding     = heightPadding;
     menu->tablePadding = tablePadding;
     menu->cellHeight   = 0;
+    menu->titleHeight  = 0;
     menu->rows         = 0;
     menu->cols         = 0;
     menu->width        = 0;
@@ -342,9 +378,6 @@ usage(void)
         "    -g, --menu-gap INT         Set menu gap between top/bottom of screen to INT.\n"
         "                               Set to '-1' for a gap equal to 1/10th of the\n"
         "                               screen height (default -1).\n"
-        "    --wrap-cmd STRING          Wrap all commands with STRING, i.e., \n"
-        "                                   /bin/sh -c STRING cmd\n"
-        "                               This does not apply to hooks (default \"\").\n"
         "    --border-width INT         Set border width to INT (default 4).\n"
         "    --border-radius NUM        Set border radius to NUM degrees. 0 means no curve\n"
         "                               (default 0).\n"
@@ -361,12 +394,19 @@ usage(void)
         "    --fg-delimiter COLOR       Set foreground delimiter to COLOR (default '#525259').\n"
         "    --fg-prefix COLOR          Set foreground prefix to COLOR (default '#AF9FC9').\n"
         "    --fg-chord COLOR           Set foreground chord to COLOR (default '#DCD7BA').\n"
+        "    --fg-title COLOR           Set foreground title to COLOR (default '#DCD7BA').\n"
         "    --bg COLOR                 Set background to COLOR (default '#181616').\n"
         "    --bd COLOR                 Set border to COLOR (default '#7FB4CA').\n"
         "    --shell STRING             Set shell to STRING (default '/bin/sh').\n"
+        "    --title STRING             Set the menu title to STRING (default '')\n"
+        "    --title-font STRING        Set title font to STRING. Should be a valid Pango font\n"
+        "                               description (default 'sans-serif, 16')\n"
         "    --font STRING              Set font to STRING. Should be a valid Pango font\n"
         "                               description (default 'monospace, 14').\n"
         "    --implicit-keys STRING     Set implicit keys to STRING (default 'asdfghjkl;').\n"
+        "    --wrap-cmd STRING          Wrap all commands with STRING, i.e., \n"
+        "                                   /bin/sh -c STRING cmd\n"
+        "                               This does not apply to hooks (default \"\").\n"
         "\n"
         "run `man 1 wk` for more info on each option.\n",
         stderr);
@@ -404,41 +444,45 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
 
     assert(menu), assert(argc), assert(argv);
 
-    int                  opt        = '\0';
+    int opt = '\0';
+
     static struct option longOpts[] = {
         /*                  no argument                 */
-        { "help",          no_argument,       0, 'h'   },
-        { "version",       no_argument,       0, 'v'   },
-        { "debug",         no_argument,       0, 'd'   },
-        { "top",           no_argument,       0, 't'   },
-        { "bottom",        no_argument,       0, 'b'   },
-        { "script",        no_argument,       0, 's'   },
-        { "sort",          no_argument,       0, 'S'   },
+        { "help",          no_argument,       0, 'h'                   },
+        { "version",       no_argument,       0, 'v'                   },
+        { "debug",         no_argument,       0, 'd'                   },
+        { "top",           no_argument,       0, 't'                   },
+        { "bottom",        no_argument,       0, 'b'                   },
+        { "script",        no_argument,       0, 's'                   },
+        { "sort",          no_argument,       0, 'S'                   },
         /*                  required argument           */
-        { "delay",         required_argument, 0, 'D'   },
-        { "max-columns",   required_argument, 0, 'm'   },
-        { "press",         required_argument, 0, 'p'   },
-        { "transpile",     required_argument, 0, 'T'   },
-        { "key-chords",    required_argument, 0, 'k'   },
-        { "menu-width",    required_argument, 0, 'w'   },
-        { "menu-gap",      required_argument, 0, 'g'   },
-        { "border-width",  required_argument, 0, 0x090 },
-        { "border-radius", required_argument, 0, 0x091 },
-        { "wpadding",      required_argument, 0, 0x092 },
-        { "hpadding",      required_argument, 0, 0x093 },
-        { "table-padding", required_argument, 0, 0x094 },
-        { "fg",            required_argument, 0, 0x095 },
-        { "fg-key",        required_argument, 0, 0x096 },
-        { "fg-delimiter",  required_argument, 0, 0x097 },
-        { "fg-prefix",     required_argument, 0, 0x098 },
-        { "fg-chord",      required_argument, 0, 0x099 },
-        { "bg",            required_argument, 0, 0x100 },
-        { "bd",            required_argument, 0, 0x101 },
-        { "shell",         required_argument, 0, 0x102 },
-        { "font",          required_argument, 0, 0x103 },
-        { "implicit-keys", required_argument, 0, 0x104 },
-        { "wrap-cmd",      required_argument, 0, 0x105 },
-        { 0,               0,                 0, 0     }
+        { "delay",         required_argument, 0, 'D'                   },
+        { "max-columns",   required_argument, 0, 'm'                   },
+        { "press",         required_argument, 0, 'p'                   },
+        { "transpile",     required_argument, 0, 'T'                   },
+        { "key-chords",    required_argument, 0, 'k'                   },
+        { "menu-width",    required_argument, 0, 'w'                   },
+        { "menu-gap",      required_argument, 0, 'g'                   },
+        { "border-width",  required_argument, 0, OPT_ARG_BORDER_WIDTH  },
+        { "border-radius", required_argument, 0, OPT_ARG_BORDER_RADIUS },
+        { "wpadding",      required_argument, 0, OPT_ARG_WPADDING      },
+        { "hpadding",      required_argument, 0, OPT_ARG_HPADDING      },
+        { "table-padding", required_argument, 0, OPT_ARG_TABLE_PADDING },
+        { "fg",            required_argument, 0, OPT_ARG_FG            },
+        { "fg-key",        required_argument, 0, OPT_ARG_FG_KEY        },
+        { "fg-delimiter",  required_argument, 0, OPT_ARG_FG_DELIMITER  },
+        { "fg-prefix",     required_argument, 0, OPT_ARG_FG_PREFIX     },
+        { "fg-chord",      required_argument, 0, OPT_ARG_FG_CHORD      },
+        { "fg-title",      required_argument, 0, OPT_ARG_FG_TITLE      },
+        { "bg",            required_argument, 0, OPT_ARG_BG            },
+        { "bd",            required_argument, 0, OPT_ARG_BD            },
+        { "shell",         required_argument, 0, OPT_ARG_SHELL         },
+        { "font",          required_argument, 0, OPT_ARG_FONT          },
+        { "implicit-keys", required_argument, 0, OPT_ARG_IMPLICIT_KEYS },
+        { "wrap-cmd",      required_argument, 0, OPT_ARG_WRAP_CMD      },
+        { "title",         required_argument, 0, OPT_ARG_TITLE         },
+        { "title-font",    required_argument, 0, OPT_ARG_TITLE_FONT    },
+        { 0,               0,                 0, 0                     }
     };
 
     /* Don't let 'getopt' print errors. */
@@ -512,8 +556,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->menuGap = n;
             break;
         }
-        /* border-width */
-        case 0x090:
+        case OPT_ARG_BORDER_WIDTH:
         {
             int n = 0;
             if (!getInt(&n))
@@ -525,8 +568,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->borderWidth = (uint32_t)n;
             break;
         }
-        /* border-radius */
-        case 0x091:
+        case OPT_ARG_BORDER_RADIUS:
         {
             double n = 0.0;
             if (!getNum(&n))
@@ -538,8 +580,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->borderRadius = n;
             break;
         }
-        /* wpadding */
-        case 0x092:
+        case OPT_ARG_WPADDING:
         {
             int n = 0;
             if (!getInt(&n))
@@ -551,8 +592,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->wpadding = (uint32_t)n;
             break;
         }
-        /* hpadding */
-        case 0x093:
+        case OPT_ARG_HPADDING:
         {
             int n = 0;
             if (!getInt(&n))
@@ -564,8 +604,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->hpadding = (uint32_t)n;
             break;
         }
-        /* table-padding */
-        case 0x094:
+        case OPT_ARG_TABLE_PADDING:
         {
             int n = 0;
             if (!getInt(&n))
@@ -577,8 +616,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->tablePadding = n;
             break;
         }
-        /* fg */
-        case 0x095:
+        case OPT_ARG_FG:
         {
             menuSetColor(menu, optarg, MENU_COLOR_KEY);
             menuSetColor(menu, optarg, MENU_COLOR_DELIMITER);
@@ -586,26 +624,19 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menuSetColor(menu, optarg, MENU_COLOR_CHORD);
             break;
         }
-        /* fg-key */
-        case 0x096: menuSetColor(menu, optarg, MENU_COLOR_KEY); break;
-        /* fg-delimiter */
-        case 0x097: menuSetColor(menu, optarg, MENU_COLOR_DELIMITER); break;
-        /* fg-prefix */
-        case 0x098: menuSetColor(menu, optarg, MENU_COLOR_PREFIX); break;
-        /* fg-chord */
-        case 0x099: menuSetColor(menu, optarg, MENU_COLOR_CHORD); break;
-        /* bg */
-        case 0x100: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
-        /* bd */
-        case 0x101: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
-        /* shell */
-        case 0x102: menu->shell = optarg; break;
-        /* font */
-        case 0x103: menu->font = optarg; break;
-        /* implicit keys */
-        case 0x104: menu->implicitArrayKeys = optarg; break;
-        /* wrap-cmd */
-        case 0x105: menuSetWrapCmd(menu, optarg); break;
+        case OPT_ARG_FG_KEY: menuSetColor(menu, optarg, MENU_COLOR_KEY); break;
+        case OPT_ARG_FG_DELIMITER: menuSetColor(menu, optarg, MENU_COLOR_DELIMITER); break;
+        case OPT_ARG_FG_PREFIX: menuSetColor(menu, optarg, MENU_COLOR_PREFIX); break;
+        case OPT_ARG_FG_CHORD: menuSetColor(menu, optarg, MENU_COLOR_CHORD); break;
+        case OPT_ARG_FG_TITLE: menuSetColor(menu, optarg, MENU_COLOR_TITLE); break;
+        case OPT_ARG_BG: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
+        case OPT_ARG_BD: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
+        case OPT_ARG_SHELL: menu->shell = optarg; break;
+        case OPT_ARG_FONT: menu->font = optarg; break;
+        case OPT_ARG_IMPLICIT_KEYS: menu->implicitArrayKeys = optarg; break;
+        case OPT_ARG_WRAP_CMD: menuSetWrapCmd(menu, optarg); break;
+        case OPT_ARG_TITLE: menu->title = optarg; break;
+        case OPT_ARG_TITLE_FONT: menu->titleFont = optarg; break;
         /* Errors */
         case '?':
         {

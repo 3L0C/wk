@@ -86,7 +86,8 @@ flag               -> '+' ( 'keep'
                           | 'execute'
                           | 'sync-command'
                           | 'unwrap'
-                          | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
+                          | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
+                          | 'title' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
 
 preprocessor_macro -> ':' ( string_macro
                           | switch_macro
@@ -100,10 +101,13 @@ string_macro       -> ( 'include'
                       | 'fg-delimiter'
                       | 'fg-prefix'
                       | 'fg-chord'
+                      | 'fg-title'
                       | 'bg'
                       | 'bd'
                       | 'shell'
                       | 'font'
+                      | 'title'
+                      | 'title-font'
                       | 'delimiter'
                       | 'wrap-cmd'
                       | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
@@ -761,7 +765,8 @@ flag -> '+' ( 'keep'
             | 'execute'
             | 'sync-command'
             | 'unwrap'
-            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
+            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
+            | 'title' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
 ```
 
 Flags begin with a plus character (_+_), followed by the flag itself. Here is
@@ -825,6 +830,12 @@ how each flag changes the behavior of *wk*:
 	"wrap" is applied as "/bin/sh -c WRAP CMD". See *EXAMPLES* for
 	scenarios where this is useful.
 
+*title* '"' ( '\\"' | [^"] | interpolation )\* '"'
+	Set a title for the chord or prefix that is displayed above the menu. The
+	argument supports interpolation, the same syntax as a description. Overrides
+	the global _--title_ setting. Empty string _""_ clears any inherited or
+	global title. Nested prefixes display their own title when specified.
+
 See *EXAMPLES* for further discussion about flags.
 
 ## PREPROCESSOR MACROS
@@ -859,10 +870,17 @@ String macros require a string argument.
 ```
 string_macro -> ( 'include'
                 | 'fg-color'
+                | 'fg-key'
+                | 'fg-delimiter'
+                | 'fg-prefix'
+                | 'fg-chord'
+                | 'fg-title'
                 | 'bg-color'
                 | 'bd-color'
                 | 'shell'
                 | 'font'
+                | 'title'
+                | 'title-font'
                 | 'wrap-cmd'
                 | 'var' '"' ( '\\"' | [^"] )* '"' ) '"' ( '\\"' | [^"] )* '"' ;
 ```

@@ -238,6 +238,11 @@ disassembleHexColors(const MenuHexColor* colors)
             debugMsg(true, "|--- Foreground Chord Color -----");
             break;
         }
+        case MENU_COLOR_TITLE:
+        {
+            debugMsg(true, "|--- Foreground Title Color -----");
+            break;
+        }
         case MENU_COLOR_BACKGROUND:
         {
             debugMsg(true, "|------- Background color -------");
@@ -447,6 +452,7 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %04u", "Width padding:", menu->wpadding);
     debugMsgWithIndent(0, "| %-20s %04u", "Height padding:", menu->hpadding);
     debugMsgWithIndent(0, "| %-20s %04u", "Cell height:", menu->cellHeight);
+    debugMsgWithIndent(0, "| %-20s %04u", "Title height:", menu->titleHeight);
     debugMsgWithIndent(0, "| %-20s %04u", "Rows:", menu->rows);
     debugMsgWithIndent(0, "| %-20s %04u", "Cols:", menu->cols);
     debugMsgWithIndent(0, "| %-20s %04u", "Width:", menu->width);

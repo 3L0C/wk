@@ -294,6 +294,7 @@ run_transpile_test "tests/fixtures/valid/basic_test.wks" "tests/expected/transpi
 run_transpile_test "tests/fixtures/valid/chord_array_test.wks" "tests/expected/transpiled/chord_array_test_transpiled.h"
 run_transpile_test "tests/fixtures/valid/preprocessor_test.wks" "tests/expected/transpiled/preprocessor_test_transpiled.h"
 run_transpile_test "tests/fixtures/valid/wrapper_test.wks" "tests/expected/transpiled/wrapper_test_transpiled.h"
+run_transpile_test "tests/fixtures/valid/title_test.wks" "tests/expected/transpiled/title_test_transpiled.h"
 
 # Error handling tests
 echo "Running error tests..." | tee -a "$TEST_LOG"

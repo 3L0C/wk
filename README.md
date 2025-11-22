@@ -202,6 +202,10 @@ options:
     --fg-delimiter COLOR       Set foreground delimiter to COLOR (default '#525259').
     --fg-prefix COLOR          Set foreground prefix to COLOR (default '#AF9FC9').
     --fg-chord COLOR           Set foreground chord to COLOR (default '#DCD7BA').
+    --fg-title COLOR           Set foreground title to COLOR (default '#DCD7BA').
+    --title STRING             Set global title displayed above menu to STRING.
+    --title-font STRING        Set title font to STRING. Should be a valid Pango
+                               font description (default 'sans-serif, 16').
     --bg COLOR                 Set background to COLOR (default '#181616').
     --bd COLOR                 Set border to COLOR (default '#7FB4CA').
     --shell STRING             Set shell to STRING (default '/bin/sh').
@@ -712,7 +716,7 @@ Unlike chord metadata, user variables can be used in three
 contexts:
 - Descriptions
 - Commands
-- Preprocessor macro arguments (`:font`, `:fg-*`, `:bg`, `:bd`, `:shell`, `:wrap-cmd`, `:include`, and in `:var` itself)
+- Preprocessor macro arguments (`:font`, `:title`, `:title-font`, `:fg-*`, `:bg`, `:bd`, `:shell`, `:wrap-cmd`, `:include`, and in `:var` itself)
 
 This enables powerful meta-programming capabilities such as
 meta-variables (variables with computed names) and dynamic
@@ -812,7 +816,8 @@ flag -> '+' ( 'keep'
             | 'execute'
             | 'sync-command'
             | 'unwrap'
-            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"') ;
+            | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
+            | 'title' '"' ( '\\"' | [^"] | interpolation )* '"') ;
 ```
 
 Flags begin with a plus character (`+`), followed by the
@@ -836,6 +841,7 @@ flag itself. Here is how each flag changes the behavior of
 | `sync-command` | Execute the command in a blocking fashion. See the note in [hooks](#hooks) regarding potential issues with blocking commands. |
 | `unwrap`       | Prevent wrapping this chord, even if a global wrapper is set or inherited from a parent prefix.                               |
 | `wrap`         | Wrap chord commands with the given string (supports interpolation). Overrides the global `wrap-cmd` setting.                  |
+| `title`        | Set a title for the chord or prefix that is displayed above the menu (supports interpolation). Overrides the global `--title` setting. |
 
 Each flag has a time and a place but I find `+keep`, and
 `+write` to be the most useful out of the bunch.
@@ -1031,8 +1037,15 @@ string_macro -> ( 'include'
                 | 'fg-color'
                 | 'bg-color'
                 | 'bd-color'
+                | 'fg-key'
+                | 'fg-delimiter'
+                | 'fg-prefix'
+                | 'fg-chord'
+                | 'fg-title'
                 | 'shell'
                 | 'font'
+                | 'title'
+                | 'title-font'
                 | 'delimiter'
                 | 'wrap-cmd'
                 | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
@@ -1046,9 +1059,11 @@ any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
 interpolation using the `%(variable_name)` syntax. This
 allows you to use variables defined with `:var` in any
 string macro argument, including `:include`, `:font`,
-`:fg-color`, `:bg-color`, `:bd-color`, `:shell`,
-`:delimiter`, and `:wrap-cmd`. See [The Var Macro](#the-var-macro)
-for examples of using variables in preprocessor directives.
+`:title-font`, `:title`, `:fg-color`, `:fg-key`,
+`:fg-delimiter`, `:fg-prefix`, `:fg-chord`, `:fg-title`,
+`:bg-color`, `:bd-color`, `:shell`, `:delimiter`, and
+`:wrap-cmd`. See [The Var Macro](#the-var-macro) for examples
+of using variables in preprocessor directives.
 
 #### The Include Macro
 
