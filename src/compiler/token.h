@@ -58,6 +58,7 @@ enum
     TOKEN_HEIGHT_PADDING,
     TOKEN_TABLE_PADDING,
     TOKEN_MENU_DELAY,
+    TOKEN_KEEP_DELAY,
 
     /* number macros */
     TOKEN_BORDER_RADIUS,

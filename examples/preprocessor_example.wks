@@ -5,3 +5,4 @@
 :top a "hello!" +write %{{echo %(desc) %(key)}}
 :menu-gap 1
 :border-width 1
+:keep-delay 100

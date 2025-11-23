@@ -576,6 +576,7 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
     case TOKEN_WIDTH_PADDING: menu->wpadding = value; return;
     case TOKEN_HEIGHT_PADDING: menu->hpadding = value; return;
     case TOKEN_MENU_DELAY: menu->delay = value; return;
+    case TOKEN_KEEP_DELAY: menu->keepDelay = value; return;
     default:
     {
         errorMsg("Got an unexpected token to function `handleSwitchWithUint32Arg`.");
@@ -668,7 +669,8 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         case TOKEN_BORDER_WIDTH:
         case TOKEN_WIDTH_PADDING:
         case TOKEN_HEIGHT_PADDING:
-        case TOKEN_MENU_DELAY: handleMacroWithUint32Arg(&scanner, menu, &token); break;
+        case TOKEN_MENU_DELAY:
+        case TOKEN_KEEP_DELAY: handleMacroWithUint32Arg(&scanner, menu, &token); break;
 
         /* Switches with double args. */
         case TOKEN_BORDER_RADIUS: handleMacroWithDoubleArg(&scanner, menu, &token); break;

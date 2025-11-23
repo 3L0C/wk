@@ -761,11 +761,35 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
         }
         case KeyPress:
         {
-            switch (keypress(window, menu, &ev.xkey))
+            /* Ungrab keyboard before processing keypress */
+            XUngrabKeyboard(window->display, CurrentTime);
+            XFlush(window->display);
+
+            MenuStatus status = keypress(window, menu, &ev.xkey);
+
+            /* Regrab keyboard if menu is still running */
+            switch (status)
             {
-            case MENU_STATUS_RUNNING: break;
+            case MENU_STATUS_RUNNING:
             case MENU_STATUS_DAMAGED:
-                if (!render(window, menu)) return EX_SOFTWARE;
+                /* Menu is still active, regrab keyboard */
+                if (XGrabKeyboard(
+                        window->display,
+                        DefaultRootWindow(window->display),
+                        True,
+                        GrabModeAsync,
+                        GrabModeAsync,
+                        CurrentTime) != GrabSuccess)
+                {
+                    cleanup(x11);
+                    errorMsg("Could not regrab keyboard after keypress.");
+                    return EX_SOFTWARE;
+                }
+
+                if (status == MENU_STATUS_DAMAGED)
+                {
+                    if (!render(window, menu)) return EX_SOFTWARE;
+                }
                 break;
             case MENU_STATUS_EXIT_OK: return EX_OK;
             case MENU_STATUS_EXIT_SOFTWARE: return EX_SOFTWARE;

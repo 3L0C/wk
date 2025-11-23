@@ -17,5 +17,6 @@
 :width-padding 10
 :height-padding 4
 :delay 0
+:keep-delay 50
 :border-radius 15
 b "Basic" +write %{{%(key) - %(desc)}}

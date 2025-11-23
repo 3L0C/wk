@@ -14,6 +14,8 @@
 static const char* delimiter = " -> ";
 /* Delay between last keypress and first time displaying the menu. Value in milliseconds. */
 static uint32_t delay = 1000;
+/* Delay in milliseconds after ungrab before command execution for +keep chords. */
+static uint32_t keepDelay = 75;
 /* Max number of columns to use. */
 static const uint32_t maxCols = 5;
 /* Menu width. Set to '-1' for 1/2 the width of your screen. */

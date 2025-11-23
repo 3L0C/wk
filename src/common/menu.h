@@ -109,6 +109,7 @@ typedef struct
     uint32_t height;
     uint32_t borderWidth;
     uint32_t delay;
+    uint32_t keepDelay;
     String   wrapCmd;
 
     MenuPosition position;

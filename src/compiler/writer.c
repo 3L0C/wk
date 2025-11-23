@@ -93,6 +93,10 @@ writeConfigVariables(const Menu* menu)
     printf("/* Delay between last keypress and first time displaying the menu. Value in milliseconds. */\n");
     printf("static uint32_t delay = %u;\n", menu->delay);
 
+    /* Keep delay */
+    printf("/* Delay in milliseconds after ungrab before command execution for +keep chords. */\n");
+    printf("static uint32_t keepDelay = %u;\n", menu->keepDelay);
+
     /* Max columns */
     printf("/* Max number of columns to use. */\n");
     printf("static const uint32_t maxCols = %u;\n", menu->maxCols);

@@ -1328,7 +1328,8 @@ unsigned_macro -> ( 'max-columns'
                   | 'border-width'
                   | 'width-padding'
                   | 'height-padding'
-                  | 'delay' ) [0-9]+ ;
+                  | 'delay'
+                  | 'keep-delay' ) [0-9]+ ;
 ```
 
 All the unsigned macros correspond to their cli flags for

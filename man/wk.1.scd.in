@@ -30,6 +30,11 @@ key chords from a *wks*(5) file or script.
 	Delay the popup menu by _INT_ milliseconds from startup or last keypress
 	(default 1000 ms).
 
+*--keep-delay* _INT_
+	Delay in milliseconds after keyboard ungrab before command execution for
+	+keep chords. Helps prevent focus-stealing issues with compositor commands
+	(default 75 ms).
+
 *-t, --top*
 	Position menu at top of screen.
 

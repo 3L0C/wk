@@ -459,6 +459,7 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %04u", "Height:", menu->height);
     debugMsgWithIndent(0, "| %-20s %04u", "Border width:", menu->borderWidth);
     debugMsgWithIndent(0, "| %-20s %04u", "Delay:", menu->delay);
+    debugMsgWithIndent(0, "| %-20s %04u", "Keep Delay:", menu->keepDelay);
     debugMsgWithIndent(0, "| %-20s %s", "Wrap Cmd:", menu->wrapCmd);
     debugStringWithIndent(0, "Wrap Cmd", &menu->wrapCmd);
     debugMsgWithIndent(

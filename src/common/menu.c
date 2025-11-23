@@ -56,6 +56,7 @@ enum
     OPT_ARG_WRAP_CMD      = 0x106,
     OPT_ARG_TITLE         = 0x107,
     OPT_ARG_TITLE_FONT    = 0x108,
+    OPT_ARG_KEEP_DELAY    = 0x109,
 };
 
 int
@@ -173,6 +174,17 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
         keyChord,
         &keyChord->after,
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
+
+    /* If chord has +keep flag and a command to execute, sleep to allow
+     * compositor to process the ungrab before the command executes */
+    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && !stringIsEmpty(&keyChord->command))
+    {
+        struct timespec sleep_duration = {
+            .tv_sec  = 0,
+            .tv_nsec = menu->keepDelay * 1000000 /* Convert ms to nanoseconds */
+        };
+        nanosleep(&sleep_duration, NULL);
+    }
 
     return chordFlagIsActive(keyChord->flags, FLAG_KEEP) ? MENU_STATUS_RUNNING : MENU_STATUS_EXIT_OK;
 }
@@ -326,6 +338,7 @@ menuInit(Menu* menu)
     menu->height       = 0;
     menu->borderWidth  = borderWidth;
     menu->delay        = delay;
+    menu->keepDelay    = keepDelay;
 
     menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
     menu->debug    = false;
@@ -362,6 +375,8 @@ usage(void)
         "    -d, --debug                Print debug information.\n"
         "    -D, --delay INT            Delay the popup menu by INT milliseconds from\n"
         "                               startup/last keypress (default 1000 ms).\n"
+        "    --keep-delay INT           Delay in milliseconds after ungrab before command\n"
+        "                               execution for +keep chords (default 75 ms).\n"
         "    -t, --top                  Position menu at top of screen.\n"
         "    -b, --bottom               Position menu at bottom of screen.\n"
         "    -s, --script               Read script from stdin to use as key chords.\n"
@@ -482,6 +497,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "wrap-cmd",      required_argument, 0, OPT_ARG_WRAP_CMD      },
         { "title",         required_argument, 0, OPT_ARG_TITLE         },
         { "title-font",    required_argument, 0, OPT_ARG_TITLE_FONT    },
+        { "keep-delay",    required_argument, 0, OPT_ARG_KEEP_DELAY    },
         { 0,               0,                 0, 0                     }
     };
 
@@ -637,6 +653,18 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case OPT_ARG_WRAP_CMD: menuSetWrapCmd(menu, optarg); break;
         case OPT_ARG_TITLE: menu->title = optarg; break;
         case OPT_ARG_TITLE_FONT: menu->titleFont = optarg; break;
+        case OPT_ARG_KEEP_DELAY:
+        {
+            int n = 0;
+            if (!getInt(&n))
+            {
+                warnMsg("Could not convert '%s' into an integer.", optarg);
+                warnMsg("Using default value for keep-delay: %u.", menu->keepDelay);
+                break;
+            }
+            menu->keepDelay = (uint32_t)n;
+            break;
+        }
         /* Errors */
         case '?':
         {

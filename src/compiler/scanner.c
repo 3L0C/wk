@@ -397,6 +397,11 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 18, "mplicit-array-keys")) result = TOKEN_IMPLICIT_ARRAY_KEYS;
         break;
     }
+    case 'k':
+    {
+        if (isKeyword(scanner, 1, 9, "eep-delay")) result = TOKEN_KEEP_DELAY;
+        break;
+    }
     case 'm':
     {
         if (isKeyword(scanner, 1, 10, "ax-columns")) result = TOKEN_MAX_COLUMNS;

@@ -404,6 +404,18 @@ makeKeyFromEvent(Wayland* wayland, Menu* menu, xkb_keysym_t* keysym, char* buffe
     return key;
 }
 
+static void
+grabKeyboard(Wayland* wayland, bool grab)
+{
+    assert(wayland);
+
+    WaylandWindow* window;
+    wl_list_for_each(window, &wayland->windows, link)
+    {
+        windowGrabKeyboard(window, wayland->display, grab);
+    }
+}
+
 static MenuStatus
 pollKey(Wayland* wayland, Menu* menu)
 {
@@ -426,9 +438,16 @@ pollKey(Wayland* wayland, Menu* menu)
         return MENU_STATUS_RUNNING;
     }
 
+    /* Ungrab keyboard before processing keypress */
+    grabKeyboard(wayland, false);
+
     MenuStatus status = menuHandleKeypress(menu, &key);
 
     keyFree(&key);
+
+    /* Regrab keyboard if menu is still running */
+    if (menuStatusIsRunning(status)) grabKeyboard(wayland, true);
+
     return status;
 }
 
@@ -566,18 +585,6 @@ setOverlap(Wayland* wayland, bool overlap)
     wl_list_for_each(window, &wayland->windows, link)
     {
         windowSetOverlap(window, wayland->display, overlap);
-    }
-}
-
-static void
-grabKeyboard(Wayland* wayland, bool grab)
-{
-    assert(wayland);
-
-    WaylandWindow* window;
-    wl_list_for_each(window, &wayland->windows, link)
-    {
-        windowGrabKeyboard(window, wayland->display, grab);
     }
 }
 
