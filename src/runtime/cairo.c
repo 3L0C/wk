@@ -551,7 +551,7 @@ drawDescriptionText(
             arrayIsEmpty(&keyChord->keyChords) ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX))
         return false;
 
-    return drawString(cr, layout, &keyChord->description, cellw, x, y, ellipsisWidth);
+    return drawString(cr, layout, keyChordGetDescriptionConst(keyChord), cellw, x, y, ellipsisWidth);
 }
 
 static void

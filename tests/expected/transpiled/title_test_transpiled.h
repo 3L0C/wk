@@ -84,18 +84,27 @@ static const char* wrapCmd = NULL;
     .parts  = EMPTY_ARRAY(StringPart), \
     .length = 0                        \
 }
-#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _title, _flags, _chords) \
-    (KeyChord)                                                                            \
-    {                                                                                     \
-        .key         = (_key),                                                            \
-        .description = (_desc),                                                           \
-        .command     = (_cmd),                                                            \
-        .before      = (_before),                                                         \
-        .after       = (_after),                                                          \
-        .wrapCmd     = (_wrap_cmd),                                                       \
-        .title       = (_title),                                                          \
-        .flags       = (_flags),                                                          \
-        .keyChords   = (_chords)                                                          \
+#define PROP_STRING(_offset, _len)                              \
+    (Property)                                                  \
+    {                                                           \
+        .type  = PROP_TYPE_STRING,                              \
+        .value = {.as_description = STRING((_offset), (_len)) } \
+    }
+#define EMPTY_PROP_STRING                          \
+    (Property)                                     \
+    {                                              \
+        .type  = PROP_TYPE_STRING,                 \
+        .value = {.as_description = EMPTY_STRING } \
+    }
+#define PROPS(...) __VA_ARGS__
+#define EMPTY_PROPS
+#define KEY_CHORD(_key, _props, _flags, _chords) \
+    (KeyChord)                                   \
+    {                                            \
+        .key       = (_key),                     \
+        .props     = { _props },                 \
+        .flags     = (_flags),                   \
+        .keyChords = (_chords)                   \
     }
 #define KEY(_offset, _len, _mods, _special)   \
     (Key)                                     \
@@ -113,256 +122,201 @@ static Array builtinKeyChords =
         22,
         KEY_CHORD(
             KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(1, 8),
-            STRING(9, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(24, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(1, 8),
+                [PROP_COMMAND]     = PROP_STRING(9, 15),
+                [PROP_TITLE]       = PROP_STRING(24, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(38, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(39, 9),
-            STRING(48, 25),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(39, 9),
+                [PROP_COMMAND]     = PROP_STRING(48, 25)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(73, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(74, 17),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(91, 12),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(74, 17),
+                [PROP_TITLE]       = PROP_STRING(91, 12)),
             FLAG_NONE,
             ARRAY(
                 KeyChord,
                 2,
                 KEY_CHORD(
                     KEY(103, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    STRING(104, 14),
-                    STRING(118, 30),
-                    EMPTY_STRING,
-                    EMPTY_STRING,
-                    EMPTY_STRING,
-                    EMPTY_STRING,
+                    PROPS(
+                        [PROP_DESCRIPTION] = PROP_STRING(104, 14),
+                        [PROP_COMMAND]     = PROP_STRING(118, 30)),
                     FLAG_WRITE,
                     EMPTY_ARRAY(KeyChord)),
                 KEY_CHORD(
                     KEY(148, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    STRING(149, 21),
-                    STRING(170, 24),
-                    EMPTY_STRING,
-                    EMPTY_STRING,
-                    EMPTY_STRING,
-                    STRING(194, 12),
+                    PROPS(
+                        [PROP_DESCRIPTION] = PROP_STRING(149, 21),
+                        [PROP_COMMAND]     = PROP_STRING(170, 24),
+                        [PROP_TITLE]       = PROP_STRING(194, 12)),
                     FLAG_WRITE,
                     EMPTY_ARRAY(KeyChord)))),
         KEY_CHORD(
             KEY(206, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(207, 8),
-            STRING(215, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(230, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(207, 8),
+                [PROP_COMMAND]     = PROP_STRING(215, 15),
+                [PROP_TITLE]       = PROP_STRING(230, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(244, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(245, 8),
-            STRING(253, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(268, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(245, 8),
+                [PROP_COMMAND]     = PROP_STRING(253, 15),
+                [PROP_TITLE]       = PROP_STRING(268, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(282, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(283, 18),
-            STRING(301, 20),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(321, 6),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(283, 18),
+                [PROP_COMMAND]     = PROP_STRING(301, 20),
+                [PROP_TITLE]       = PROP_STRING(321, 6)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(327, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(328, 8),
-            STRING(336, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(351, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(328, 8),
+                [PROP_COMMAND]     = PROP_STRING(336, 15),
+                [PROP_TITLE]       = PROP_STRING(351, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(365, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(366, 10),
-            STRING(376, 12),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(388, 11),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(366, 10),
+                [PROP_COMMAND]     = PROP_STRING(376, 12),
+                [PROP_TITLE]       = PROP_STRING(388, 11)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(399, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(400, 10),
-            STRING(410, 12),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(422, 11),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(400, 10),
+                [PROP_COMMAND]     = PROP_STRING(410, 12),
+                [PROP_TITLE]       = PROP_STRING(422, 11)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(433, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(434, 8),
-            STRING(442, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(457, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(434, 8),
+                [PROP_COMMAND]     = PROP_STRING(442, 15),
+                [PROP_TITLE]       = PROP_STRING(457, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(471, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(472, 8),
-            STRING(480, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(495, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(472, 8),
+                [PROP_COMMAND]     = PROP_STRING(480, 15),
+                [PROP_TITLE]       = PROP_STRING(495, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(509, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(510, 8),
-            STRING(518, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(533, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(510, 8),
+                [PROP_COMMAND]     = PROP_STRING(518, 15),
+                [PROP_TITLE]       = PROP_STRING(533, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(547, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(548, 8),
-            STRING(556, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(571, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(548, 8),
+                [PROP_COMMAND]     = PROP_STRING(556, 15),
+                [PROP_TITLE]       = PROP_STRING(571, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(585, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(586, 8),
-            STRING(594, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(609, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(586, 8),
+                [PROP_COMMAND]     = PROP_STRING(594, 15),
+                [PROP_TITLE]       = PROP_STRING(609, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(623, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(624, 8),
-            STRING(632, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(647, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(624, 8),
+                [PROP_COMMAND]     = PROP_STRING(632, 15),
+                [PROP_TITLE]       = PROP_STRING(647, 14)),
             FLAG_IGNORE_SORT | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(661, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(662, 8),
-            STRING(670, 10),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(680, 14),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(662, 8),
+                [PROP_COMMAND]     = PROP_STRING(670, 10),
+                [PROP_TITLE]       = PROP_STRING(680, 14)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(694, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(695, 12),
-            STRING(707, 14),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(721, 16),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(695, 12),
+                [PROP_COMMAND]     = PROP_STRING(707, 14),
+                [PROP_TITLE]       = PROP_STRING(721, 16)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(737, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(738, 13),
-            STRING(751, 14),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(765, 31),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(738, 13),
+                [PROP_COMMAND]     = PROP_STRING(751, 14),
+                [PROP_TITLE]       = PROP_STRING(765, 31)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(796, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(797, 13),
-            STRING(810, 15),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(825, 11),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(797, 13),
+                [PROP_COMMAND]     = PROP_STRING(810, 15),
+                [PROP_TITLE]       = PROP_STRING(825, 11)),
             FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(836, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(837, 15),
-            STRING(852, 11),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(863, 10),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(837, 15),
+                [PROP_COMMAND]     = PROP_STRING(852, 11),
+                [PROP_TITLE]       = PROP_STRING(863, 10)),
             FLAG_KEEP | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(873, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(874, 17),
-            STRING(891, 13),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(904, 12),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(874, 17),
+                [PROP_COMMAND]     = PROP_STRING(891, 13),
+                [PROP_TITLE]       = PROP_STRING(904, 12)),
             FLAG_DEFLAG | FLAG_WRITE,
             EMPTY_ARRAY(KeyChord)),
         KEY_CHORD(
             KEY(916, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            STRING(917, 18),
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            EMPTY_STRING,
-            STRING(935, 12),
+            PROPS(
+                [PROP_DESCRIPTION] = PROP_STRING(917, 18),
+                [PROP_TITLE]       = PROP_STRING(935, 12)),
             FLAG_NONE,
             ARRAY(
                 KeyChord,
                 1,
                 KEY_CHORD(
                     KEY(947, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    STRING(948, 18),
-                    STRING(966, 14),
-                    EMPTY_STRING,
-                    EMPTY_STRING,
-                    EMPTY_STRING,
-                    EMPTY_STRING,
+                    PROPS(
+                        [PROP_DESCRIPTION] = PROP_STRING(948, 18),
+                        [PROP_COMMAND]     = PROP_STRING(966, 14)),
                     FLAG_INHERIT | FLAG_WRITE,
                     EMPTY_ARRAY(KeyChord)))));
 

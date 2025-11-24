@@ -7,6 +7,7 @@
 
 /* Common includes */
 #include "array.h"
+#include "property.h"
 #include "string.h"
 
 typedef uint16_t ChordFlag;
@@ -122,12 +123,7 @@ typedef struct
 typedef struct KeyChord
 {
     Key       key;
-    String    description;
-    String    command;
-    String    before;
-    String    after;
-    String    wrapCmd;
-    String    title;
+    Property  props[PROP_COUNT];
     ChordFlag flags;
     Array     keyChords;
 } KeyChord;

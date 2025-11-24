@@ -990,7 +990,8 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
     case TOKEN_THIS_KEY: stringAppendString(dest, &to->key.repr); break;
     case TOKEN_THIS_DESC:
     {
-        if (!stringIsEmpty(&to->description)) stringAppendString(dest, &to->description);
+        const String* desc = keyChordGetDescriptionConst(to);
+        if (!stringIsEmpty(desc)) stringAppendString(dest, desc);
         break;
     }
     case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
@@ -998,9 +999,10 @@ compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* d
     case TOKEN_THIS_DESC_UPPER_ALL:
     case TOKEN_THIS_DESC_LOWER_ALL:
     {
-        if (!stringIsEmpty(&to->description))
+        const String* desc = keyChordGetDescriptionConst(to);
+        if (!stringIsEmpty(desc))
         {
-            compileDescriptionWithState(compiler, dest, token->type, &to->description);
+            compileDescriptionWithState(compiler, dest, token->type, desc);
         }
         break;
     }
@@ -1087,23 +1089,23 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
             compiler,
             &chord->desc,
             keyChord,
-            &keyChord->description,
+            keyChordGetDescription(keyChord),
             iter.index);
         /* Hooks */
-        compileStringFromTokens(compiler, &chord->before, keyChord, &keyChord->before, iter.index);
-        compileStringFromTokens(compiler, &chord->after, keyChord, &keyChord->after, iter.index);
+        compileStringFromTokens(compiler, &chord->before, keyChord, keyChordGetBefore(keyChord), iter.index);
+        compileStringFromTokens(compiler, &chord->after, keyChord, keyChordGetAfter(keyChord), iter.index);
         keyChord->flags = chord->flags;
         /* Wrapper */
         compileStringFromTokens(
             compiler,
             &chord->wrapCmd,
             keyChord,
-            &keyChord->wrapCmd,
+            keyChordGetWrapCmd(keyChord),
             iter.index);
         /* Title */
-        compileStringFromTokens(compiler, &chord->title, keyChord, &keyChord->title, iter.index);
+        compileStringFromTokens(compiler, &chord->title, keyChord, keyChordGetTitle(keyChord), iter.index);
         /* Command */
-        compileStringFromTokens(compiler, &chord->cmd, keyChord, &keyChord->command, iter.index);
+        compileStringFromTokens(compiler, &chord->cmd, keyChord, keyChordGetCommand(keyChord), iter.index);
         if (!arrayIsEmpty(&chord->chords))
         {
             Array* children = &chord->chords;

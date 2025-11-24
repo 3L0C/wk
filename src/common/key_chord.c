@@ -262,14 +262,15 @@ keyChordCopy(const KeyChord* from, KeyChord* to)
     assert(from), assert(to);
 
     keyCopy(&from->key, &to->key);
-    to->description = from->description;
-    to->command     = from->command;
-    to->before      = from->before;
-    to->after       = from->after;
-    to->wrapCmd     = from->wrapCmd;
-    to->title       = from->title;
-    to->flags       = from->flags;
-    to->keyChords   = from->keyChords;
+
+    /* Copy all properties */
+    for (size_t i = 0; i < PROP_COUNT; i++)
+    {
+        propertyCopy(&from->props[i], &to->props[i]);
+    }
+
+    to->flags     = from->flags;
+    to->keyChords = from->keyChords;
 }
 
 void
@@ -278,12 +279,13 @@ keyChordFree(KeyChord* keyChord)
     assert(keyChord);
 
     stringFree(&keyChord->key.repr);
-    stringFree(&keyChord->description);
-    stringFree(&keyChord->command);
-    stringFree(&keyChord->before);
-    stringFree(&keyChord->after);
-    stringFree(&keyChord->wrapCmd);
-    stringFree(&keyChord->title);
+
+    /* Free all properties */
+    for (size_t i = 0; i < PROP_COUNT; i++)
+    {
+        propertyFree(&keyChord->props[i]);
+    }
+
     keyChordArrayFree(&keyChord->keyChords);
 }
 
@@ -293,12 +295,13 @@ keyChordInit(KeyChord* keyChord)
     assert(keyChord);
 
     keyInit(&keyChord->key);
-    keyChord->description = stringInit();
-    keyChord->command     = stringInit();
-    keyChord->before      = stringInit();
-    keyChord->after       = stringInit();
-    keyChord->wrapCmd     = stringInit();
-    keyChord->title       = stringInit();
-    keyChord->flags       = chordFlagInit();
-    keyChord->keyChords   = ARRAY_INIT(KeyChord);
+
+    /* Initialize all properties based on their types */
+    for (size_t i = 0; i < PROP_COUNT; i++)
+    {
+        propertyInit(&keyChord->props[i], PROPERTY_INFO_TABLE[i].type);
+    }
+
+    keyChord->flags     = chordFlagInit();
+    keyChord->keyChords = ARRAY_INIT(KeyChord);
 }

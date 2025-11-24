@@ -219,7 +219,7 @@ clean:
 	rm -f $(MAN_DIR)/*.scd
 	rm -f $(MAN_FILES)
 	rm -f $(WAY_FILES)
-	rm -f $(CONF_DIR)/key_chords.h
+	rm -f $(CONF_DIR)/config.h
 
 dist: clean
 	mkdir -p $(NAME)-$(VERSION)

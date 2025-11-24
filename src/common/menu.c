@@ -99,9 +99,9 @@ menuHandlePrefix(Menu* menu, KeyChord* keyChord)
     debugMsg(menu->debug, "Found prefix.");
 
     menu->keyChords = &keyChord->keyChords;
-    if (!stringIsEmpty(&keyChord->title))
+    if (propIsSet(keyChord, PROP_TITLE))
     {
-        menu->title = stringToCString(&menu->arena, &keyChord->title);
+        menu->title = stringToCString(&menu->arena, keyChordGetTitleConst(keyChord));
     }
 
     return MENU_STATUS_DAMAGED;
@@ -113,7 +113,7 @@ getWrapper(const Menu* menu, const KeyChord* keyChord)
     assert(menu), assert(keyChord);
 
     if (chordFlagIsActive(keyChord->flags, FLAG_UNWRAP)) return NULL;
-    if (!stringIsEmpty(&keyChord->wrapCmd)) return &keyChord->wrapCmd;
+    if (propIsSet(keyChord, PROP_WRAP_CMD)) return keyChordGetWrapCmdConst(keyChord);
     if (!stringIsEmpty(&menu->wrapCmd)) return &menu->wrapCmd;
     return NULL;
 }
@@ -131,7 +131,7 @@ getCmd(const Menu* menu, const KeyChord* keyChord)
         stringAppendCString(&cmd, " ");
     }
 
-    stringAppendString(&cmd, &keyChord->command);
+    stringAppendString(&cmd, keyChordGetCommandConst(keyChord));
 
     return cmd;
 }
@@ -166,18 +166,18 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
     menuSpawn(
         menu,
         keyChord,
-        &keyChord->before,
+        keyChordGetBeforeConst(keyChord),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_BEFORE));
     menuHandleCommand(menu, keyChord);
     menuSpawn(
         menu,
         keyChord,
-        &keyChord->after,
+        keyChordGetAfterConst(keyChord),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
     /* If chord has +keep flag and a command to execute, sleep to allow
      * compositor to process the ungrab before the command executes */
-    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && !stringIsEmpty(&keyChord->command))
+    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && propIsSet(keyChord, PROP_COMMAND))
     {
         struct timespec sleep_duration = {
             .tv_sec  = 0,

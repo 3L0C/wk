@@ -9,7 +9,15 @@
 #include "common/common.h"
 #include "common/key_chord.h"
 #include "common/menu.h"
+#include "common/property_def.h"
 #include "common/string.h"
+
+/* Property enum name table for transpilation */
+static const char* PROPERTY_NAMES[PROP_COUNT] = {
+#define PROPERTY(id, field, accessor, typecat, ctype) [id] = #id,
+    PROPERTY_LIST
+#undef PROPERTY
+};
 
 static size_t offset = 0;
 
@@ -236,18 +244,27 @@ writeKeyChordsDefines(void)
         "    .parts  = EMPTY_ARRAY(StringPart), \\\n"
         "    .length = 0                        \\\n"
         "}\n"
-        "#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _title, _flags, _chords) \\\n"
-        "    (KeyChord)                                                                            \\\n"
-        "    {                                                                                     \\\n"
-        "        .key         = (_key),                                                            \\\n"
-        "        .description = (_desc),                                                           \\\n"
-        "        .command     = (_cmd),                                                            \\\n"
-        "        .before      = (_before),                                                         \\\n"
-        "        .after       = (_after),                                                          \\\n"
-        "        .wrapCmd     = (_wrap_cmd),                                                       \\\n"
-        "        .title       = (_title),                                                          \\\n"
-        "        .flags       = (_flags),                                                          \\\n"
-        "        .keyChords   = (_chords)                                                          \\\n"
+        "#define PROP_STRING(_offset, _len)                              \\\n"
+        "    (Property)                                                  \\\n"
+        "    {                                                           \\\n"
+        "        .type  = PROP_TYPE_STRING,                              \\\n"
+        "        .value = {.as_description = STRING((_offset), (_len)) } \\\n"
+        "    }\n"
+        "#define EMPTY_PROP_STRING                          \\\n"
+        "    (Property)                                     \\\n"
+        "    {                                              \\\n"
+        "        .type  = PROP_TYPE_STRING,                 \\\n"
+        "        .value = {.as_description = EMPTY_STRING } \\\n"
+        "    }\n"
+        "#define PROPS(...) __VA_ARGS__\n"
+        "#define EMPTY_PROPS\n"
+        "#define KEY_CHORD(_key, _props, _flags, _chords) \\\n"
+        "    (KeyChord)                                   \\\n"
+        "    {                                            \\\n"
+        "        .key       = (_key),                     \\\n"
+        "        .props     = { _props },                 \\\n"
+        "        .flags     = (_flags),                   \\\n"
+        "        .keyChords = (_chords)                   \\\n"
         "    }\n"
         "#define KEY(_offset, _len, _mods, _special)   \\\n"
         "    (Key)                                     \\\n"
@@ -273,12 +290,16 @@ writeBuiltinSourceImpl(const Array* arr)
     forEach(arr, KeyChord, keyChord)
     {
         writeEscString(&keyChord->key.repr);
-        writeEscString(&keyChord->description);
-        writeEscString(&keyChord->command);
-        writeEscString(&keyChord->before);
-        writeEscString(&keyChord->after);
-        writeEscString(&keyChord->wrapCmd);
-        writeEscString(&keyChord->title);
+
+        /* Write all string properties in order */
+        for (size_t i = 0; i < PROP_COUNT; i++)
+        {
+            if (PROPERTY_INFO_TABLE[i].type == PROP_TYPE_STRING)
+            {
+                writeEscString(&keyChord->props[i].value.as_description);
+            }
+        }
+
         if (!arrayIsEmpty(&keyChord->keyChords)) writeBuiltinSourceImpl(&keyChord->keyChords);
     }
 }
@@ -346,23 +367,6 @@ writeKey(const Key* key, int indent)
 }
 
 static void
-writeString(const String* string, int indent)
-{
-    assert(string);
-
-    writeNewlineWithIndent(indent);
-    if (stringIsEmpty(string))
-    {
-        printf("EMPTY_STRING,");
-    }
-    else
-    {
-        printf("STRING(");
-        writeOffsetAndLength(string, "),");
-    }
-}
-
-static void
 writeChordFlag(const ChordFlag flags, int indent)
 {
     writeNewlineWithIndent(indent);
@@ -407,6 +411,46 @@ writePrefix(const Array* arr, int indent)
     }
 }
 
+static bool
+propertyIsEmpty(const Property* prop)
+{
+    assert(prop);
+
+    switch (prop->type)
+    {
+    case PROP_TYPE_STRING:
+        return stringIsEmpty(&prop->value.as_description);
+    case PROP_TYPE_NONE:
+        return true;
+    default:
+        return true;
+    }
+}
+
+static void
+writePropertyDesignator(PropertyId id, const Property* prop, size_t maxNameLength)
+{
+    assert(prop);
+    assert(id < PROP_COUNT);
+
+    const char* name    = PROPERTY_NAMES[id];
+    size_t      nameLen = strlen(name);
+
+    /* Align the '=' sign by padding shorter property names */
+    printf("[%s]%*s = ", name, (int)(maxNameLength - nameLen), "");
+
+    switch (prop->type)
+    {
+    case PROP_TYPE_STRING:
+        printf("PROP_STRING(");
+        writeOffsetAndLength(&prop->value.as_description, ")");
+        break;
+    default:
+        printf("EMPTY_PROP_STRING");
+        break;
+    }
+}
+
 static void
 writeChord(const KeyChord* keyChord, int indent)
 {
@@ -415,12 +459,50 @@ writeChord(const KeyChord* keyChord, int indent)
     writeNewlineWithIndent(indent);
     printf("KEY_CHORD(");
     writeKey(&keyChord->key, indent + 1);
-    writeString(&keyChord->description, indent + 1);
-    writeString(&keyChord->command, indent + 1);
-    writeString(&keyChord->before, indent + 1);
-    writeString(&keyChord->after, indent + 1);
-    writeString(&keyChord->wrapCmd, indent + 1);
-    writeString(&keyChord->title, indent + 1);
+
+    /* Write properties (sparse - only non-empty properties) */
+    writeNewlineWithIndent(indent + 1);
+
+    /* Check if any properties are set and find max property name length for alignment */
+    bool   hasProperties = false;
+    size_t maxNameLength = 0;
+    for (size_t i = 0; i < PROP_COUNT; i++)
+    {
+        if (!propertyIsEmpty(&keyChord->props[i]))
+        {
+            hasProperties  = true;
+            size_t nameLen = strlen(PROPERTY_NAMES[i]);
+            if (nameLen > maxNameLength)
+            {
+                maxNameLength = nameLen;
+            }
+        }
+    }
+
+    if (hasProperties)
+    {
+        printf("PROPS(");
+        bool first = true;
+        for (size_t i = 0; i < PROP_COUNT; i++)
+        {
+            if (!propertyIsEmpty(&keyChord->props[i]))
+            {
+                if (!first)
+                {
+                    printf(",");
+                }
+                writeNewlineWithIndent(indent + 2);
+                writePropertyDesignator(i, &keyChord->props[i], maxNameLength);
+                first = false;
+            }
+        }
+        printf("),");
+    }
+    else
+    {
+        printf("EMPTY_PROPS,");
+    }
+
     writeChordFlag(keyChord->flags, indent + 1);
     writePrefix(&keyChord->keyChords, indent + 1);
     printf(")");
