@@ -70,8 +70,7 @@ arrayAppendN(Array* arr, const void* value, size_t n)
     {
         size_t oldCapacity = arr->capacity;
         size_t newCapacity = CAPACITY_GROW(oldCapacity);
-        while (newCapacity < required)
-            newCapacity *= 2;
+        if (newCapacity < required) newCapacity = required;
         arr->data     = ARRAY_GROW(arr->data, oldCapacity, newCapacity, arr->elementSize);
         arr->capacity = newCapacity;
     }
@@ -191,13 +190,19 @@ arraySwap(Array* arr, size_t a, size_t b)
     assert(arr), assert(a < arr->length), assert(b < arr->length);
     if (a == b) return;
 
-    char  temp[arr->elementSize];
+#define SWAP_BUFFER_SIZE 512
+    char  stackBuffer[SWAP_BUFFER_SIZE];
+    char* temp = arr->elementSize <= SWAP_BUFFER_SIZE ? stackBuffer : ALLOCATE(char, arr->elementSize);
+
     void* elemA = arrayGet(arr, a);
     void* elemB = arrayGet(arr, b);
 
     memcpy(temp, elemA, arr->elementSize);
     memcpy(elemA, elemB, arr->elementSize);
     memcpy(elemB, temp, arr->elementSize);
+
+    if (temp != stackBuffer) free(temp);
+#undef SWAP_BUFFER_SIZE
 }
 
 static inline void
