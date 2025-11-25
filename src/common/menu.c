@@ -280,7 +280,7 @@ menuPressKey(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (chordFlagIsActive(keyChord->flags, FLAG_GOTO))
+    if (propIsSet(keyChord, PROP_GOTO))
     {
         return menuHandleGoto(menu, keyChord);
     }

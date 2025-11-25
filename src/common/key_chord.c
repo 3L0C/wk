@@ -106,8 +106,7 @@ chordFlagHasAnyActive(ChordFlag flag)
         FLAG_SYNC_COMMAND |
         FLAG_SYNC_BEFORE |
         FLAG_SYNC_AFTER |
-        FLAG_UNWRAP |
-        FLAG_GOTO;
+        FLAG_UNWRAP;
 
     return (flag & any) != 0;
 }
@@ -265,10 +264,9 @@ keyChordCopy(const KeyChord* from, KeyChord* to)
 
     keyCopy(&from->key, &to->key);
 
-    /* Copy all properties */
     for (size_t i = 0; i < PROP_COUNT; i++)
     {
-        propertyCopy(&from->props[i], &to->props[i]);
+        propertyCopy(&from->props[i], &to->props[i], (PropertyId)i);
     }
 
     to->flags     = from->flags;
@@ -298,10 +296,9 @@ keyChordInit(KeyChord* keyChord)
 
     keyInit(&keyChord->key);
 
-    /* Initialize all properties based on their types */
     for (size_t i = 0; i < PROP_COUNT; i++)
     {
-        propertyInit(&keyChord->props[i], PROPERTY_INFO_TABLE[i].type);
+        propertyInit(&keyChord->props[i]);
     }
 
     keyChord->flags     = chordFlagInit();

@@ -15,31 +15,11 @@ const PropertyInfo PROPERTY_INFO_TABLE[PROP_COUNT] = {
 };
 
 void
-propertyInit(Property* prop, PropertyType type)
+propertyInit(Property* prop)
 {
     assert(prop);
-
-    prop->type = type;
-
-    switch (type)
-    {
-    case PROP_TYPE_STRING:
-        /* All string properties in the union share the same memory.
-         * We use as_description as the canonical accessor for initialization. */
-        prop->value.as_description = stringInit();
-        break;
-    case PROP_TYPE_INT:
-    case PROP_TYPE_BOOL:
-    case PROP_TYPE_COLOR:
-        memset(&prop->value, 0, sizeof(PropertyValue));
-        break;
-    case PROP_TYPE_ARRAY:
-        /* Would initialize Array type if we had array properties */
-        break;
-    default:
-        prop->type = PROP_TYPE_NONE;
-        break;
-    }
+    prop->type = PROP_TYPE_NONE;
+    memset(&prop->value, 0, sizeof(PropertyValue));
 }
 
 void
@@ -50,11 +30,7 @@ propertyFree(Property* prop)
     switch (prop->type)
     {
     case PROP_TYPE_STRING:
-        /* Free using canonical accessor */
         stringFree(&prop->value.as_description);
-        break;
-    case PROP_TYPE_ARRAY:
-        /* Would free Array if we had array properties */
         break;
     default:
         break;
@@ -63,22 +39,38 @@ propertyFree(Property* prop)
     prop->type = PROP_TYPE_NONE;
 }
 
+/* Type-specific copy macros for X-macro expansion */
+#define PROP_COPY_STRING(from, to, field) \
+    (to)->value.as_##field = stringCopy(&(from)->value.as_##field)
+
+#define PROP_COPY_INT(from, to, field) \
+    (to)->value.as_##field = (from)->value.as_##field
+
+#define PROP_COPY_BOOL(from, to, field) \
+    (to)->value.as_##field = (from)->value.as_##field
+
+#define PROP_COPY_COLOR(from, to, field) \
+    (to)->value.as_##field = (from)->value.as_##field
+
+#define PROP_COPY_ARRAY(from, to, field) \
+    (to)->value.as_##field = (from)->value.as_##field
+
 void
-propertyCopy(const Property* from, Property* to)
+propertyCopy(const Property* from, Property* to, PropertyId id)
 {
     assert(from), assert(to);
+    assert(id < PROP_COUNT);
 
     to->type = from->type;
+    if (from->type == PROP_TYPE_NONE) return;
 
-    switch (from->type)
+    switch (id)
     {
-    case PROP_TYPE_STRING:
-        /* Copy string value */
-        to->value.as_description = from->value.as_description;
-        break;
+#define PROPERTY(pid, field, accessor, typecat, ctype) \
+    case pid: PROP_COPY_##typecat(from, to, field); break;
+        PROPERTY_LIST
+#undef PROPERTY
     default:
-        /* For other types, copy the entire union */
-        to->value = from->value;
         break;
     }
 }
@@ -89,19 +81,7 @@ propIsSet(const KeyChord* chord, PropertyId id)
     assert(chord);
     assert(id < PROP_COUNT);
 
-    const Property* prop = &chord->props[id];
-
-    switch (prop->type)
-    {
-    case PROP_TYPE_STRING:
-        /* String properties are "set" if they're not empty */
-        return !stringIsEmpty(&prop->value.as_description);
-    case PROP_TYPE_NONE:
-        return false;
-    default:
-        /* Other types are "set" if type is not NONE */
-        return true;
-    }
+    return chord->props[id].type != PROP_TYPE_NONE;
 }
 
 bool
@@ -125,6 +105,7 @@ propIsEmpty(const KeyChord* chord, PropertyId id)
     void keyChordSet##accessor(KeyChord* chord, const ctype* value)  \
     {                                                                \
         assert(chord), assert(value);                                \
+        chord->props[id].type             = PROP_TYPE_##typecat;     \
         chord->props[id].value.as_##field = *value;                  \
     }
 

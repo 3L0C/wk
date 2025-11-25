@@ -468,7 +468,6 @@ compileMetaCmd(Compiler* compiler, PseudoChord* chord)
     case TOKEN_GOTO:
     {
         consume(compiler, TOKEN_GOTO, "Expected '@goto' meta command.");
-        chord->flags |= FLAG_GOTO;
         compileDescriptionTokens(compiler, &chord->gotoPath);
         return true;
     }
@@ -929,7 +928,7 @@ compilePrefix(Compiler* compiler, PseudoChord* chord)
         return;
     }
 
-    if (chordFlagIsActive(chord->flags, FLAG_GOTO))
+    if (!arrayIsEmpty(&chord->gotoPath))
     {
         errorAtCurrent(compiler, "Cannot mix @goto and prefixes.");
         pseudoChordFree(chord);
@@ -1157,14 +1156,14 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
         keyCopy(&chord->key, &keyChord->key);
         keyChord->flags = chord->flags;
 
-        /* Properties */
-#define PROPERTY(id, field, accessor, typecat, ctype) \
-    compileStringFromTokens(                          \
-        compiler,                                     \
-        &chord->field,                                \
-        keyChord,                                     \
-        keyChordGet##accessor(keyChord),              \
-        iter.index);
+        /* Properties - only set if there are tokens to compile */
+#define PROPERTY(id, field, accessor, typecat, ctype)                                  \
+    if (!arrayIsEmpty(&chord->field))                                                  \
+    {                                                                                  \
+        ctype temp = stringInit();                                                     \
+        compileStringFromTokens(compiler, &chord->field, keyChord, &temp, iter.index); \
+        keyChordSet##accessor(keyChord, &temp);                                        \
+    }
 
         PROPERTY_LIST
 

@@ -57,9 +57,9 @@ typedef struct
 extern const PropertyInfo PROPERTY_INFO_TABLE[PROP_COUNT];
 
 /* Property initialization and cleanup */
-void propertyInit(Property* prop, PropertyType type);
+void propertyInit(Property* prop);
 void propertyFree(Property* prop);
-void propertyCopy(const Property* from, Property* to);
+void propertyCopy(const Property* from, Property* to, PropertyId id);
 
 /* Property query functions */
 bool propIsSet(const KeyChord* chord, PropertyId id);

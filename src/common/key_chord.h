@@ -29,7 +29,6 @@ enum
     FLAG_SYNC_BEFORE  = 1 << 12,
     FLAG_SYNC_AFTER   = 1 << 13,
     FLAG_UNWRAP       = 1 << 14,
-    FLAG_GOTO         = 1 << 15,
 };
 
 typedef uint8_t KeyType;

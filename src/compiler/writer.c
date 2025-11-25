@@ -392,7 +392,6 @@ writeChordFlag(const ChordFlag flags, int indent)
         if (chordFlagIsActive(flags, FLAG_SYNC_BEFORE)) printf("FLAG_SYNC_BEFORE%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_SYNC_AFTER)) printf("FLAG_SYNC_AFTER%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_UNWRAP)) printf("FLAG_UNWRAP%s", getSeparator(&count, " | ", ","));
-        if (chordFlagIsActive(flags, FLAG_GOTO)) printf("FLAG_GOTO%s", getSeparator(&count, " | ", ","));
     }
 }
 
