@@ -342,7 +342,10 @@ scanFlag(Scanner* scanner, Token* token)
     default: break;
     }
 
-    if (result == TOKEN_ERROR) return tokenMakeError(scanner, token, "Got unexpected flag keyword.");
+    if (result == TOKEN_ERROR)
+    {
+        return tokenMakeError(scanner, token, "Got unexpected flag keyword.");
+    }
     return tokenMake(scanner, token, result);
 }
 
@@ -438,7 +441,36 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     }
 
     if (result == TOKEN_ERROR)
+    {
         return tokenMakeError(scanner, token, "Got unexpected preprocessor command.");
+    }
+    return tokenMake(scanner, token, result);
+}
+
+static void
+scanMetaCmd(Scanner* scanner, Token* token)
+{
+    assert(scanner), assert(token);
+
+    seekToCharType(scanner, CHAR_TYPE_WHITESPACE);
+
+    TokenType result = TOKEN_ERROR;
+
+    /* Switch on start of keyword */
+    switch (peekStart(scanner))
+    {
+    case 'g':
+    {
+        if (isKeyword(scanner, 1, 3, "oto")) result = TOKEN_GOTO;
+        break;
+    }
+    default: break;
+    }
+
+    if (result == TOKEN_ERROR)
+    {
+        return tokenMakeError(scanner, token, "Got unexpected meta command.");
+    }
     return tokenMake(scanner, token, result);
 }
 
@@ -811,10 +843,12 @@ scannerGetTokenForCompiler(Scanner* scanner, Token* token)
         return tokenMake(scanner, token, TOKEN_ELLIPSIS);
     }
 
-    /* Hooks, flags, and preprocessor commands */
+    /* Hooks, flags, meta commands, and preprocessor commands */
     case '^': scannerMakeCurrent(scanner); return scanHook(scanner, token);
     case '+': scannerMakeCurrent(scanner); return scanFlag(scanner, token);
+    /* TODO: should we detect preprocessor commands when scanning for the compiler?? */
     case ':': scannerMakeCurrent(scanner); return scanPreprocessorMacro(scanner, token);
+    case '@': scannerMakeCurrent(scanner); return scanMetaCmd(scanner, token);
 
     /* literals */
     case '\"':

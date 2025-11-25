@@ -17,23 +17,23 @@ you expect, please see *CONTACT* below to reach out.
 ```
 key_chord          -> ( chord | prefix | chord_array ) ;
 
-chord              -> trigger_key description keyword* command ;
+chord              -> trigger_key description keyword* ( command | meta_command ) ;
 
 prefix             -> trigger_key description keyword* '{' ( key_chord )+ '}' ;
 
 chord_array        -> ( implicit_array | explicit_array ) ;
 
-implicit_array     -> modifier* '...' description keyword* command ;
+implicit_array     -> modifier* '...' description keyword* ( command | meta_command ) ;
 
-explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description keyword* command ;
+explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description keyword* ( command | meta_command ) ;
 
-chord_expression   -> '(' trigger_key description keyword* command? ')' ;
+chord_expression   -> '(' trigger_key description keyword* ( command | meta_command )? ')' ;
 
 trigger_key        -> modifier* ( normal_key | special_key ) ;
 
 normal_key         -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
 
-special_key        -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
+special_key        -> ( 'Left'    | 'Right'   | 'Up'     | 'Down' | 'BS'
                       | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
                       | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
                       | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
@@ -66,6 +66,8 @@ chord_metadata     -> ( 'key'
 user_variable      -> [^)]+ ;
 
 keyword            -> ( hook | flag ) ;
+
+meta_command       -> '@' ( 'goto' description ) ;
 
 hook               -> '^' ( 'before'
                           | 'after'
@@ -839,6 +841,37 @@ how each flag changes the behavior of *wk*:
 
 See *EXAMPLES* for further discussion about flags.
 
+## META COMMAND
+
+A _meta command_ is a special directive that controls the *wk*'s menu itself
+rather than executing a shell command. Meta commands are mutually exclusive
+with _hooks_ and regular _commands_.
+
+```
+meta_command -> '@' ( 'goto' description ) ;
+```
+
+A _meta command_ begins with the at symbol (_@_) followed by the meta command
+type and its argument(s), if any.
+
+*@goto*
+	Navigates to a different location in the key chord hierarchy without
+	closing and restarting *wk*. The argument is a _description_ containing
+	the path to navigate to, following the same syntax as the *--press* flag.
+
+	- _@goto ""_ - Navigate to the root menu
+	- _@goto "w"_ - Navigate to the "w" prefix
+	- _@goto "w m"_ - Navigate through "w" then "m"
+
+	If the path leads to a _chord_ with a _command_ (not a _prefix_), that
+	command is executed.
+
+	*NOTE* that _@goto_ cannot be combined with _hooks_ (_^before_, _^after_)
+	or regular _commands_ (_%{{}}_). Circular goto chains (e.g., _a @goto "b"_
+	and _b @goto "a"_) are detected at runtime and result in an error.
+
+See *EXAMPLES* for further discussion about meta commands.
+
 ## PREPROCESSOR MACROS
 
 There are a number of preprocessor macros that can be used in _wks_ files. These
@@ -1098,6 +1131,31 @@ m "+Music" +keep
 The _+write_ flag is useful for scripting purposes. In the same way that
 *dmenu*(1) and co print selections to stdout, this turns *wk*(1) into a prompt
 for users to choose from some list of options with less typing.
+
+## META COMMANDS
+
+The _@goto_ meta command is useful for creating "hydra" menus where users can
+perform related actions and then navigate elsewhere without restarting *wk*.
+
+```
+w "+Window" +keep
+{
+    m "+Move" +keep
+    {
+        ... "Move to %(index+1)" %{{move-window %(index)}}
+        BS "Go back" @goto "w"
+        S-BS "Go home" @goto ""
+    }
+    r "+Resize" +keep +inherit
+    {
+        ... "Resize %(index+1)" %{{resize-window %(index)}}
+    }
+}
+```
+
+In this example, pressing _w m_ enters the move submenu. After moving a window,
+pressing _BS_ returns to the window prefix, while _S-BS_ returns to the root
+menu.
 
 ## WRAPPING COMMANDS
 

@@ -429,7 +429,10 @@ disassembleMenu(const Menu* menu)
     debugMsg(true, "|");
     debugMsgWithIndent(0, "| %-20s '%s'", "Delimiter:", menu->delimiter);
     debugMsgWithIndent(0, "| %-20s '%s'", "Shell:", menu->shell);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Title", menu->title);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Root Title", menu->rootTitle);
     debugMsgWithIndent(0, "| %-20s '%s'", "Font:", menu->font);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Title Font:", menu->titleFont);
     debugMsgWithIndent(0, "| %-20s '%s'", "Array Keys:", menu->implicitArrayKeys);
     debugMsgWithIndent(0, "| %-20s %04.4f", "Border Radius:", menu->borderRadius);
     disassembleHexColors(menu->colors);

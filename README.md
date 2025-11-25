@@ -320,6 +320,7 @@ special forms.
 | Space          | `SPC`      |
 | Enter/Return   | `RET`      |
 | Delete         | `DEL`      |
+| Backspace      | `BS`       |
 | Esc            | `ESC`      |
 | Home           | `Home`     |
 | Page up        | `PgUp`     |
@@ -795,6 +796,49 @@ This example also hints at the idea of inheritance as the
 hook was given to a prefix and not to individual chords.
 This topic is covered after introducing flags as these also
 factor into the discussion.
+
+#### Meta Commands
+
+Meta commands are special directives that control the menu
+itself rather than executing shell commands. They are
+mutually exclusive with hooks and regular commands.
+
+```
+meta_command -> '@' ( 'goto' description ) ;
+```
+
+##### The @goto Meta Command
+
+The `@goto` meta command navigates to a different location
+in the key chord hierarchy without closing and restarting
+`wk`. This is useful for creating "hydra" menus where users
+can perform related actions and then navigate elsewhere.
+
+```
+a "Applications" { ... }
+w "Window"
+{
+    m "Move" +keep
+    {
+        ... "Move to %(index+1)" %{{move-window %(index)}}
+        BS "Go back" @goto "w"
+        S-BS "Go home" @goto ""
+    }
+}
+```
+
+The path argument follows the same syntax as `--press`:
+- `@goto ""` - Navigate to root menu
+- `@goto "w"` - Navigate to the "w" prefix
+- `@goto "w m"` - Navigate through "w" then "m"
+
+If the path leads to a chord with a command (not a prefix),
+that command is executed.
+
+**Note:** `@goto` cannot be combined with hooks (`^before`,
+`^after`) or regular commands (`%{{}}`). Circular goto
+chains (e.g., `a @goto "b"` and `b @goto "a"`) are detected
+and result in an error.
 
 #### Flags
 

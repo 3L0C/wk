@@ -3,18 +3,30 @@
 #include <stddef.h>
 
 /* common includes */
+#include "common/array.h"
 #include "common/common.h"
-#include "common/debug.h"
 #include "common/key_chord.h"
+#include "common/string.h"
 
 /* local includes */
 #include "common.h"
-#include "common/menu.h"
-#include "common/string.h"
 #include "scanner.h"
 #include "token.h"
 
 static bool
+isMod(TokenType type)
+{
+    switch (type)
+    {
+    case TOKEN_MOD_CTRL:
+    case TOKEN_MOD_META:
+    case TOKEN_MOD_HYPER:
+    case TOKEN_MOD_SHIFT: return true;
+    default: return false;
+    }
+}
+
+static void
 addMod(Key* key, TokenType type)
 {
     assert(key);
@@ -25,93 +37,60 @@ addMod(Key* key, TokenType type)
     case TOKEN_MOD_META: key->mods |= MOD_META; break;
     case TOKEN_MOD_HYPER: key->mods |= MOD_HYPER; break;
     case TOKEN_MOD_SHIFT: key->mods |= MOD_SHIFT; break;
-    default: return false;
+    default: break;
     }
-
-    return true;
 }
 
-static MenuStatus
-pressKey(Menu* menu, Scanner* scanner)
+bool
+compileKeys(const char* keys, Array* outKeys)
 {
-    assert(menu), assert(scanner);
-
-    Key key = { 0 };
-    keyInit(&key);
-    Token token = { 0 };
-    tokenInit(&token);
-    scannerGetTokenForCompiler(scanner, &token);
-
-    while (addMod(&key, token.type))
-    {
-        scannerGetTokenForCompiler(scanner, &token);
-    }
-
-    if (token.type == TOKEN_KEY)
-    {
-        key.special = SPECIAL_KEY_NONE;
-        stringAppend(&key.repr, token.start, token.length);
-    }
-    else if (token.type == TOKEN_SPECIAL_KEY)
-    {
-        key.special = token.special;
-        stringAppendCString(&key.repr, specialKeyGetRepr(key.special));
-    }
-    else
-    {
-        errorMsg(
-            "Key does not appear to be a regular key or a special key: '%.*s'.",
-            (int)token.length,
-            token.start);
-        return MENU_STATUS_EXIT_SOFTWARE;
-    }
-
-    if (menu->debug)
-    {
-        debugMsg(menu->debug, "Trying to press key: '%.*s'.", (int)token.length, token.start);
-        disassembleKey(&key);
-    }
-
-    MenuStatus status = menuHandleKeypress(menu, &key);
-    keyFree(&key);
-
-    if (status == MENU_STATUS_EXIT_SOFTWARE)
-    {
-        errorMsg("Could not press key: '%.*s'.", (int)token.length, token.start);
-        return status;
-    }
-
-    if (status == MENU_STATUS_EXIT_OK)
-    {
-        scannerGetTokenForCompiler(scanner, &token);
-        if (token.type == TOKEN_EOF) return status;
-        return MENU_STATUS_EXIT_SOFTWARE;
-    }
-
-    return status;
-}
-
-MenuStatus
-pressKeys(Menu* menu, const char* keys)
-{
-    assert(menu), assert(keys);
+    assert(keys), assert(outKeys);
 
     Scanner scanner;
     scannerInit(&scanner, keys, "KEYS");
-    MenuStatus status = pressKey(menu, &scanner);
 
-    while (!scannerIsAtEnd(&scanner) && menuStatusIsRunning(status))
+    while (!scannerIsAtEnd(&scanner))
     {
-        status = pressKey(menu, &scanner);
+        Key key = { 0 };
+        keyInit(&key);
+
+        Token token = { 0 };
+        tokenInit(&token);
+        scannerGetTokenForCompiler(&scanner, &token);
+
+        while (isMod(token.type))
+        {
+            addMod(&key, token.type);
+            scannerGetTokenForCompiler(&scanner, &token);
+        }
+
+        if (token.type == TOKEN_KEY)
+        {
+            key.special = SPECIAL_KEY_NONE;
+            stringAppend(&key.repr, token.start, token.length);
+            arrayAppend(outKeys, &key);
+        }
+        else if (token.type == TOKEN_SPECIAL_KEY)
+        {
+            key.special = token.special;
+            stringAppendCString(&key.repr, specialKeyGetRepr(key.special));
+            arrayAppend(outKeys, &key);
+        }
+        else if (token.type == TOKEN_EOF)
+        {
+            keyFree(&key);
+            break;
+        }
+        else
+        {
+            errorMsg(
+                "Key does not appear to be a regular key or a special key: '%.*s'.",
+                (int)token.length,
+                token.start);
+            keyFree(&key);
+            return false;
+        }
     }
 
-    if (status == MENU_STATUS_EXIT_OK && *scanner.current != '\0')
-    {
-        errorMsg(
-            "Reached end of chords but not end of keys: '%s'.",
-            (scanner.current == scanner.start) ? scanner.start : scanner.current - 1);
-        return status;
-    }
-
-    return status;
+    return true;
 }

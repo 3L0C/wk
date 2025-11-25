@@ -77,6 +77,7 @@ run_test() {
 run_error_test() {
     local test_file="$1"
     local expected_error="$2"
+    local key_sequence="${3:-}"  # Optional key sequence for runtime errors
     local test_name
     test_name="$(basename "$test_file")"
 
@@ -88,11 +89,19 @@ run_error_test() {
     local output_file="$LOG_DIR/${test_name}_error_output.txt"
 
     # Run the command, expecting it to fail
-    ./wk --key-chords "$test_file" > "$output_file" 2>&1
+    if [[ -n "$key_sequence" ]]; then
+        ./wk --key-chords "$test_file" --press "$key_sequence" > "$output_file" 2>&1
+    else
+        ./wk --key-chords "$test_file" > "$output_file" 2>&1
+    fi
     local exit_code=$?
 
     # Log the command and exit code
-    echo "Command: ./wk --key-chords $test_file" >> "$TEST_LOG"
+    if [[ -n "$key_sequence" ]]; then
+        echo "Command: ./wk --key-chords $test_file --press \"$key_sequence\"" >> "$TEST_LOG"
+    else
+        echo "Command: ./wk --key-chords $test_file" >> "$TEST_LOG"
+    fi
     echo "Exit code: $exit_code" >> "$TEST_LOG"
 
     # Check for expected error
@@ -286,6 +295,14 @@ run_test "tests/fixtures/valid/duplicate_test.wks" "p y" "tests/expected/duplica
 run_test "tests/fixtures/valid/duplicate_test.wks" "t" "tests/expected/duplicate_test_t.txt"
 run_test "tests/fixtures/valid/duplicate_test.wks" "C-S-k" "tests/expected/duplicate_test_C_S_k.txt"
 
+# @goto meta command tests
+run_test "tests/fixtures/valid/goto_test.wks" "a" "tests/expected/goto_test_a.txt"
+run_test "tests/fixtures/valid/goto_test.wks" "p a" "tests/expected/goto_test_p_a.txt"
+run_test "tests/fixtures/valid/goto_test.wks" "p b a" "tests/expected/goto_test_p_b_a.txt"
+run_test "tests/fixtures/valid/goto_test.wks" "p c a" "tests/expected/goto_test_p_c_a.txt"
+run_test "tests/fixtures/valid/goto_test.wks" "g" "tests/expected/goto_test_g.txt"
+run_test "tests/fixtures/valid/goto_test.wks" "q b a" "tests/expected/goto_test_q_b_a.txt"
+
 # Transpile tests
 echo "Running transpile tests..." | tee -a "$TEST_LOG"
 echo "======================" | tee -a "$TEST_LOG"
@@ -310,6 +327,10 @@ run_error_test "tests/fixtures/invalid/var_circular.wks" "Undefined variable"
 run_error_test "tests/fixtures/invalid/var_meta_invalid_char.wks" "Variable name contains ')'"
 run_error_test "tests/fixtures/invalid/var_meta_empty.wks" "Variable name resolves to empty string"
 run_error_test "tests/fixtures/invalid/var_meta_undefined.wks" "Undefined variable"
+
+# @goto recursion error tests (runtime errors - require --press)
+run_error_test "tests/fixtures/invalid/goto_recursion_test.wks" "Infinite @goto recursion detected" "a"
+run_error_test "tests/fixtures/invalid/goto_circular_test.wks" "Infinite @goto recursion detected" "a"
 
 # Print summary
 echo "" | tee -a "$TEST_LOG"

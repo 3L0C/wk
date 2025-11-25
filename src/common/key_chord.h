@@ -28,7 +28,8 @@ enum
     FLAG_SYNC_COMMAND = 1 << 11,
     FLAG_SYNC_BEFORE  = 1 << 12,
     FLAG_SYNC_AFTER   = 1 << 13,
-    FLAG_UNWRAP       = 1 << 14
+    FLAG_UNWRAP       = 1 << 14,
+    FLAG_GOTO         = 1 << 15,
 };
 
 typedef uint8_t KeyType;
@@ -62,6 +63,7 @@ enum
     SPECIAL_KEY_SPACE,
     SPECIAL_KEY_RETURN,
     SPECIAL_KEY_DELETE,
+    SPECIAL_KEY_BS,
     SPECIAL_KEY_ESCAPE,
     SPECIAL_KEY_HOME,
     SPECIAL_KEY_PAGE_UP,

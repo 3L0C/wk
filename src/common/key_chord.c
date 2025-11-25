@@ -24,6 +24,7 @@ static const SpecialTable specialTable[SPECIAL_KEY_LAST] = {
     [SPECIAL_KEY_SPACE]          = { "SPECIAL_KEY_SPACE",          "SPC"     },
     [SPECIAL_KEY_RETURN]         = { "SPECIAL_KEY_RETURN",         "RET"     },
     [SPECIAL_KEY_DELETE]         = { "SPECIAL_KEY_DELETE",         "DEL"     },
+    [SPECIAL_KEY_BS]             = { "SPECIAL_KEY_BS",             "BS"      },
     [SPECIAL_KEY_ESCAPE]         = { "SPECIAL_KEY_ESCAPE",         "ESC"     },
     [SPECIAL_KEY_HOME]           = { "SPECIAL_KEY_HOME",           "Home"    },
     [SPECIAL_KEY_PAGE_UP]        = { "SPECIAL_KEY_PAGE_UP",        "PgUp"    },
@@ -105,7 +106,8 @@ chordFlagHasAnyActive(ChordFlag flag)
         FLAG_SYNC_COMMAND |
         FLAG_SYNC_BEFORE |
         FLAG_SYNC_AFTER |
-        FLAG_UNWRAP;
+        FLAG_UNWRAP |
+        FLAG_GOTO;
 
     return (flag & any) != 0;
 }

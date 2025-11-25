@@ -56,6 +56,7 @@ static const X11SpecialKey specialkeys[] = {
     { SPECIAL_KEY_RETURN,         XK_KP_Enter             },
     { SPECIAL_KEY_DELETE,         XK_Delete               },
     { SPECIAL_KEY_DELETE,         XK_KP_Delete            },
+    { SPECIAL_KEY_BS,             XK_BackSpace            },
     { SPECIAL_KEY_ESCAPE,         XK_Escape               },
     { SPECIAL_KEY_HOME,           XK_Home                 },
     { SPECIAL_KEY_HOME,           XK_KP_Home              },

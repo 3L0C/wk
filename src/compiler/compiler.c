@@ -12,6 +12,8 @@
 #include "common/debug.h"
 #include "common/key_chord.h"
 #include "common/menu.h"
+#include "common/property.h"
+#include "common/property_def.h"
 #include "common/stack.h"
 #include "common/string.h"
 
@@ -23,15 +25,12 @@
 
 typedef struct
 {
-    Key       key;
-    Array     desc;
-    Array     cmd;
-    Array     before;
-    Array     after;
+    Key key;
+#define PROPERTY(id, field, accessor, typecat, ctype) Array field;
+    PROPERTY_LIST
+#undef PROPERTY
     Array     chords;
     ChordFlag flags;
-    Array     wrapCmd;
-    Array     title;
 } PseudoChord;
 
 static void pseudoChordArrayFree(Array* arr);
@@ -76,14 +75,14 @@ pseudoChordInit(PseudoChord* chord)
     assert(chord);
 
     keyInit(&chord->key);
-    chord->desc    = ARRAY_INIT(Token);
-    chord->cmd     = ARRAY_INIT(Token);
-    chord->before  = ARRAY_INIT(Token);
-    chord->after   = ARRAY_INIT(Token);
-    chord->chords  = ARRAY_INIT(PseudoChord);
-    chord->flags   = chordFlagInit();
-    chord->wrapCmd = ARRAY_INIT(Token);
-    chord->title   = ARRAY_INIT(Token);
+
+    /* Properties */
+#define PROPERTY(id, field, accessor, typecat, ctype) chord->field = ARRAY_INIT(Token);
+    PROPERTY_LIST
+#undef PROPERTY
+
+    chord->chords = ARRAY_INIT(PseudoChord);
+    chord->flags  = chordFlagInit();
 }
 
 static void
@@ -92,12 +91,12 @@ pseudoChordFree(PseudoChord* chord)
     assert(chord);
 
     keyFree(&chord->key);
-    arrayFree(&chord->desc);
-    arrayFree(&chord->cmd);
-    arrayFree(&chord->before);
-    arrayFree(&chord->after);
-    arrayFree(&chord->wrapCmd);
-    arrayFree(&chord->title);
+
+    /* Properties */
+#define PROPERTY(id, field, accessor, typecat, ctype) arrayFree(&chord->field);
+    PROPERTY_LIST
+#undef PROPERTY
+
     pseudoChordArrayFree(&chord->chords);
     pseudoChordInit(chord);
 }
@@ -323,7 +322,7 @@ match(Compiler* compiler, TokenType type)
 {
     assert(compiler);
 
-    if (!compilerIsAtEnd(compiler) && !check(compiler, type)) return false;
+    if (compilerIsAtEnd(compiler) || !check(compiler, type)) return false;
     advance(compiler);
     return true;
 }
@@ -446,6 +445,44 @@ compileDescriptionTokens(Compiler* compiler, Array* desc)
 }
 
 static bool
+compileMetaCmd(Compiler* compiler, PseudoChord* chord)
+{
+    assert(compiler), assert(chord);
+    if (compiler->panicMode) return false;
+
+    if (!arrayIsEmpty(&chord->before) ||
+        !arrayIsEmpty(&chord->after))
+    {
+        errorAtCurrent(compiler, "Cannot mix meta commands and hooks.");
+        return false;
+    }
+
+    if (!arrayIsEmpty(&chord->command))
+    {
+        errorAtCurrent(compiler, "Cannot mix commands and meta commands.");
+        return false;
+    }
+
+    switch (currentType(compiler))
+    {
+    case TOKEN_GOTO:
+    {
+        consume(compiler, TOKEN_GOTO, "Expected '@goto' meta command.");
+        chord->flags |= FLAG_GOTO;
+        compileDescriptionTokens(compiler, &chord->gotoPath);
+        return true;
+    }
+    default:
+    {
+        errorAtCurrent(compiler, "Got unhandled meta command.");
+        return false;
+    }
+    }
+
+    return false;
+}
+
+static bool
 compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const char* message)
 {
     assert(compiler), assert(cmd), assert(message);
@@ -485,10 +522,36 @@ compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const ch
 }
 
 static bool
+compileCommandOrMeta(Compiler* compiler, PseudoChord* chord, bool inChordArray, const char* message)
+{
+    assert(compiler), assert(chord), assert(message);
+    if (compiler->panicMode) return false;
+
+    switch (currentType(compiler))
+    {
+    case TOKEN_GOTO: /* FALLTHROUGH */
+    {
+        return compileMetaCmd(compiler, chord);
+    }
+    default: return compileCommandTokens(compiler, &chord->command, inChordArray, message);
+    }
+
+    /* UNREACHABLE */
+    errorAtCurrent(compiler, "Got unhandled command or meta command...");
+    return false;
+}
+
+static bool
 compileHook(Compiler* compiler, PseudoChord* chord, TokenType type)
 {
     assert(compiler), assert(chord);
     if (compiler->panicMode) return false;
+
+    if (!arrayIsEmpty(&chord->gotoPath))
+    {
+        errorAtCurrent(compiler, "Cannot mix hooks and meta commands.");
+        return false;
+    }
 
     switch (type)
     {
@@ -611,8 +674,8 @@ compileMissingKeyChordInfo(Compiler* compiler, const PseudoChord* from, PseudoCh
     if (compiler->panicMode) return;
 
     if (!chordFlagHasAnyActive(to->flags)) to->flags = from->flags;
-    if (arrayLength(&to->desc) == 0) to->desc = arrayCopy(&from->desc);
-    if (arrayLength(&to->cmd) == 0) to->cmd = arrayCopy(&from->cmd);
+    if (arrayLength(&to->description) == 0) to->description = arrayCopy(&from->description);
+    if (arrayLength(&to->command) == 0) to->command = arrayCopy(&from->command);
     if (arrayLength(&to->before) == 0) to->before = arrayCopy(&from->before);
     if (arrayLength(&to->after) == 0) to->after = arrayCopy(&from->after);
     if (arrayLength(&to->title) == 0) to->title = arrayCopy(&from->title);
@@ -635,14 +698,15 @@ compileImplicitChordArray(Compiler* compiler, PseudoChord* dummy)
         return;
     }
 
-    compileDescriptionTokens(compiler, &dummy->desc);
+    compileDescriptionTokens(compiler, &dummy->description);
 
     /* Set FLAG_IGNORE_SORT by default for implicit arrays.
      * This is done BEFORE compileHooksAndFlags so user-provided +sort can override it. */
     dummy->flags |= FLAG_IGNORE_SORT;
 
     compileHooksAndFlags(compiler, dummy);
-    compileCommandTokens(compiler, &dummy->cmd, false, "Expected command.");
+    /* TODO think of a better name */
+    compileCommandOrMeta(compiler, dummy, false, "Exepected command.");
 
     forEach(&compiler->implicitKeys, const Key, key)
     {
@@ -689,9 +753,9 @@ compileChordArray(Compiler* compiler)
         {
             compileMods(compiler, &chord.key);
             compileKey(compiler, &chord.key);
-            compileDescriptionTokens(compiler, &chord.desc);
+            compileDescriptionTokens(compiler, &chord.description);
             compileHooksAndFlags(compiler, &chord);
-            compileCommandTokens(compiler, &chord.cmd, true, "Expected command.");
+            compileCommandOrMeta(compiler, &chord, true, "Expected command.");
             consume(compiler, TOKEN_RIGHT_PAREN, "Expect closing parenthesis after '('.");
         }
         else
@@ -707,9 +771,9 @@ compileChordArray(Compiler* compiler)
     PseudoChord dummy = { 0 };
     pseudoChordInit(&dummy);
 
-    compileDescriptionTokens(compiler, &dummy.desc);
+    compileDescriptionTokens(compiler, &dummy.description);
     compileHooksAndFlags(compiler, &dummy);
-    compileCommandTokens(compiler, &dummy.cmd, false, "Expected command.");
+    compileCommandOrMeta(compiler, &dummy, false, "Expected command.");
 
     /* Write chords in chord array to destination */
     forEachFrom(getDest(compiler), PseudoChord, chord, arrayStart)
@@ -732,13 +796,13 @@ compileChord(Compiler* compiler)
     compileMods(compiler, &dummy.key);
     if (match(compiler, TOKEN_ELLIPSIS)) return compileImplicitChordArray(compiler, &dummy);
     compileKey(compiler, &dummy.key);
-    compileDescriptionTokens(compiler, &dummy.desc);
+    compileDescriptionTokens(compiler, &dummy.description);
     compileHooksAndFlags(compiler, &dummy);
 
     /* Prefix */
     if (match(compiler, TOKEN_LEFT_BRACE)) return compilePrefix(compiler, &dummy);
 
-    compileCommandTokens(compiler, &dummy.cmd, false, "Expected command.");
+    compileCommandOrMeta(compiler, &dummy, false, "Expected command.");
 
     /* Check for brace after command */
     if (check(compiler, TOKEN_LEFT_BRACE))
@@ -861,6 +925,13 @@ compilePrefix(Compiler* compiler, PseudoChord* chord)
     assert(compiler), assert(chord);
     if (compiler->panicMode)
     {
+        pseudoChordFree(chord);
+        return;
+    }
+
+    if (chordFlagIsActive(chord->flags, FLAG_GOTO))
+    {
+        errorAtCurrent(compiler, "Cannot mix @goto and prefixes.");
         pseudoChordFree(chord);
         return;
     }
@@ -1084,28 +1155,21 @@ compileFromPseudoChords(Compiler* compiler, Array* dest)
         keyChordInit(keyChord);
         /* Key */
         keyCopy(&chord->key, &keyChord->key);
-        /* Description */
-        compileStringFromTokens(
-            compiler,
-            &chord->desc,
-            keyChord,
-            keyChordGetDescription(keyChord),
-            iter.index);
-        /* Hooks */
-        compileStringFromTokens(compiler, &chord->before, keyChord, keyChordGetBefore(keyChord), iter.index);
-        compileStringFromTokens(compiler, &chord->after, keyChord, keyChordGetAfter(keyChord), iter.index);
         keyChord->flags = chord->flags;
-        /* Wrapper */
-        compileStringFromTokens(
-            compiler,
-            &chord->wrapCmd,
-            keyChord,
-            keyChordGetWrapCmd(keyChord),
-            iter.index);
-        /* Title */
-        compileStringFromTokens(compiler, &chord->title, keyChord, keyChordGetTitle(keyChord), iter.index);
-        /* Command */
-        compileStringFromTokens(compiler, &chord->cmd, keyChord, keyChordGetCommand(keyChord), iter.index);
+
+        /* Properties */
+#define PROPERTY(id, field, accessor, typecat, ctype) \
+    compileStringFromTokens(                          \
+        compiler,                                     \
+        &chord->field,                                \
+        keyChord,                                     \
+        keyChordGet##accessor(keyChord),              \
+        iter.index);
+
+        PROPERTY_LIST
+
+#undef PROPERTY
+
         if (!arrayIsEmpty(&chord->chords))
         {
             Array* children = &chord->chords;

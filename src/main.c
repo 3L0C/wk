@@ -59,7 +59,7 @@ runMenu(Menu* menu)
     if (menu->client.keys)
     {
         if (menu->debug) debugMsg(true, "Trying to press key(s): '%s'.", menu->client.keys);
-        status = pressKeys(menu, menu->client.keys);
+        status = menuHandlePath(menu, menu->client.keys);
     }
 
     /* If keys were pre-pressed there may be nothing to do, or an error to report. */

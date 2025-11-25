@@ -53,6 +53,7 @@ static const WaylandSpecialKey specialkeys[] = {
     { SPECIAL_KEY_RETURN,         XKB_KEY_KP_Enter             },
     { SPECIAL_KEY_DELETE,         XKB_KEY_Delete               },
     { SPECIAL_KEY_DELETE,         XKB_KEY_KP_Delete            },
+    { SPECIAL_KEY_BS,             XKB_KEY_BackSpace            },
     { SPECIAL_KEY_ESCAPE,         XKB_KEY_Escape               },
     { SPECIAL_KEY_HOME,           XKB_KEY_Home                 },
     { SPECIAL_KEY_HOME,           XKB_KEY_KP_Home              },

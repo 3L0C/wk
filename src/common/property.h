@@ -8,6 +8,9 @@
 #include "property_def.h"
 #include "string.h"
 
+/* Forward declarations to avoid circular dependency */
+typedef struct KeyChord KeyChord;
+
 /* Property type enumeration */
 typedef enum
 {
@@ -49,9 +52,6 @@ typedef struct
     const char*  name;
     PropertyType type;
 } PropertyInfo;
-
-/* Forward declaration to avoid circular dependency */
-typedef struct KeyChord KeyChord;
 
 /* Property info table - defined in property.c */
 extern const PropertyInfo PROPERTY_INFO_TABLE[PROP_COUNT];

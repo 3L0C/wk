@@ -1,0 +1,3 @@
+# Test @goto circular chain detection
+a "Goto b" @goto "b"
+b "Goto a" @goto "a"

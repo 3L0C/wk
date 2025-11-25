@@ -32,7 +32,11 @@
 #include "debug.h"
 #include "key_chord.h"
 #include "menu.h"
+#include "stack.h"
 #include "string.h"
+
+/* compiler includes */
+#include "compiler/common.h"
 
 typedef uint8_t MenuOptArg;
 enum
@@ -105,6 +109,88 @@ menuHandlePrefix(Menu* menu, KeyChord* keyChord)
     }
 
     return MENU_STATUS_DAMAGED;
+}
+
+MenuStatus
+menuHandlePath(Menu* menu, const char* path)
+{
+    assert(menu), assert(path);
+
+    Array keys = ARRAY_INIT(Key);
+
+    if (!compileKeys(path, &keys))
+    {
+        forEach(&keys, Key, key) { keyFree(key); }
+        arrayFree(&keys);
+        return MENU_STATUS_EXIT_SOFTWARE;
+    }
+
+    MenuStatus status = MENU_STATUS_RUNNING;
+
+    forEach(&keys, Key, key)
+    {
+        if (menu->debug)
+        {
+            debugMsg(menu->debug, "Pressing key: '%s'.", stringToCString(&menu->arena, &key->repr));
+        }
+
+        status = menuHandleKeypress(menu, key);
+
+        if (!menuStatusIsRunning(status)) break;
+    }
+
+    forEach(&keys, Key, key) { keyFree(key); }
+    arrayFree(&keys);
+
+    return status;
+}
+
+static MenuStatus
+menuHandleGoto(Menu* menu, KeyChord* keyChord)
+{
+    assert(menu), assert(keyChord);
+
+    static Stack visitedChords = {
+        .data        = NULL,
+        .length      = 0,
+        .capacity    = 0,
+        .elementSize = sizeof(const KeyChord*)
+    };
+
+    forEach(&visitedChords, const KeyChord*, visited)
+    {
+        if (*visited == keyChord)
+        {
+            errorMsg("Infinite @goto recursion detected.");
+            return MENU_STATUS_EXIT_SOFTWARE;
+        }
+    }
+
+    stackPush(&visitedChords, &keyChord);
+
+    /* Reset to root */
+    menu->keyChords = menu->keyChordsHead;
+    menu->title     = menu->rootTitle;
+
+    const String* gotoPath = keyChordGetGotoConst(keyChord);
+    MenuStatus    status;
+
+    if (stringIsEmpty(gotoPath))
+    {
+        debugMsg(menu->debug, "@goto: navigating to root.");
+        status = MENU_STATUS_DAMAGED;
+    }
+    else
+    {
+        char buffer[gotoPath->length + 1];
+        stringWriteToBuffer(gotoPath, buffer);
+        debugMsg(menu->debug, "@goto: navigating to '%s'.", buffer);
+        status = menuHandlePath(menu, buffer);
+    }
+
+    stackPop(&visitedChords);
+
+    return status;
 }
 
 static const String*
@@ -194,7 +280,14 @@ menuPressKey(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (!arrayIsEmpty(&keyChord->keyChords)) return menuHandlePrefix(menu, keyChord);
+    if (chordFlagIsActive(keyChord->flags, FLAG_GOTO))
+    {
+        return menuHandleGoto(menu, keyChord);
+    }
+    if (!arrayIsEmpty(&keyChord->keyChords))
+    {
+        return menuHandlePrefix(menu, keyChord);
+    }
     return menuHandleCommands(menu, keyChord);
 }
 
@@ -304,6 +397,7 @@ menuInit(Menu* menu)
     menu->delimiter         = delimiter;
     menu->shell             = shell;
     menu->title             = NULL;
+    menu->rootTitle         = NULL;
     menu->font              = font;
     menu->titleFont         = titleFont;
     menu->implicitArrayKeys = implicitArrayKeys;
@@ -651,7 +745,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case OPT_ARG_FONT: menu->font = optarg; break;
         case OPT_ARG_IMPLICIT_KEYS: menu->implicitArrayKeys = optarg; break;
         case OPT_ARG_WRAP_CMD: menuSetWrapCmd(menu, optarg); break;
-        case OPT_ARG_TITLE: menu->title = optarg; break;
+        case OPT_ARG_TITLE: menu->title = menu->rootTitle = optarg; break;
         case OPT_ARG_TITLE_FONT: menu->titleFont = optarg; break;
         case OPT_ARG_KEEP_DELAY:
         {

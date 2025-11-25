@@ -98,6 +98,9 @@ enum
     TOKEN_ENABLE_SORT,
     TOKEN_TITLE,
 
+    /* meta commands */
+    TOKEN_GOTO,
+
     /* literals */
     TOKEN_COMMAND,
     TOKEN_DESCRIPTION,

@@ -459,7 +459,7 @@ handleMacroWithStringArg(
         case TOKEN_BORDER_COLOR: menuSetColor(menu, arg, MENU_COLOR_BORDER); break;
         case TOKEN_SHELL: menu->shell = arg; break;
         case TOKEN_FONT: menu->font = arg; break;
-        case TOKEN_MENU_TITLE: menu->title = arg; break;
+        case TOKEN_MENU_TITLE: menu->title = menu->rootTitle = arg; break;
         case TOKEN_MENU_TITLE_FONT: menu->titleFont = arg; break;
         case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
         case TOKEN_WRAP_CMD: menuSetWrapCmd(menu, arg); break;

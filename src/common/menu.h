@@ -72,6 +72,7 @@ typedef struct
     const char*  delimiter;
     const char*  shell;
     const char*  title;
+    const char*  rootTitle;
     const char*  font;
     const char*  titleFont;
     const char*  implicitArrayKeys;
@@ -121,6 +122,7 @@ typedef struct
 int        menuDisplay(Menu* menu);
 void       menuFree(Menu* menu);
 MenuStatus menuHandleKeypress(Menu* menu, const Key* key);
+MenuStatus menuHandlePath(Menu* menu, const char* path);
 void       menuInit(Menu* menu);
 bool       menuIsDelayed(Menu* menu);
 void       menuParseArgs(Menu* menu, int* argc, char*** argv);
