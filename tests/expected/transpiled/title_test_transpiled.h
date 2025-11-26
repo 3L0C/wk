@@ -114,7 +114,7 @@ static const char* wrapCmd = NULL;
         .special = (_special)                 \
     }
 
-static const char BUILTIN_SOURCE[] = "aimplicitecho \"implicit\"Implicit Titlebcommand becho \"command b executed\"cprefix with titlePrefix Titlednested commandecho \"nested command executed\"enested with own titleecho \"nested with title\"Nested Titlefimplicitecho \"implicit\"Implicit Titlehimplicitecho \"implicit\"Implicit Titleiinterpolation testecho \"interpolation\"Key: ikimplicitecho \"implicit\"Implicit Titleqarray itemecho \"array\"Array Titlerarray itemecho \"array\"Array Titlesimplicitecho \"implicit\"Implicit Titledimplicitecho \"implicit\"Implicit Titlegimplicitecho \"implicit\"Implicit Titlejimplicitecho \"implicit\"Implicit Titlelimplicitecho \"implicit\"Implicit Title;implicitecho \"implicit\"Implicit Titlexvar testecho \"var\"My Custom Textyunicode testecho \"unicode\"Title with emojizspecial charsecho \"special\"Title with quotes and backslash1override testecho \"override\"FirstSecond2title with keepecho \"keep\"Keep Title3title with deflagecho \"deflag\"Deflag Title4parent for inheritParent Title5child with inheritecho \"inherit\"";
+static const char BUILTIN_SOURCE[] = "aimplicitecho \"implicit\"Implicit Titlebcommand becho \"command b executed\"cprefix with titlePrefix Titlednested commandecho \"nested command executed\"enested with own titleecho \"nested with title\"Nested Titlefimplicitecho \"implicit\"Implicit Titlehimplicitecho \"implicit\"Implicit Titleiinterpolation testecho \"interpolation\"Key: ikimplicitecho \"implicit\"Implicit Titleqarray itemecho \"array\"Array Titlerarray itemecho \"array\"Array Titlesimplicitecho \"implicit\"Implicit Titledimplicitecho \"implicit\"Implicit Titlegimplicitecho \"implicit\"Implicit Titlejimplicitecho \"implicit\"Implicit Titlelimplicitecho \"implicit\"Implicit Title;implicitecho \"implicit\"Implicit Titlexvar testecho \"var\"My Custom Textyunicode testecho \"unicode\"Title with emojizspecial charsecho \"special\"Title with quotes and backslash1override testecho \"override\"Second2title with keepecho \"keep\"Keep Title3title with deflagecho \"deflag\"Deflag Title4parent for inheritParent Title5child with inheritecho \"inherit\"";
 
 static Array builtinKeyChords =
     ARRAY(
@@ -284,39 +284,39 @@ static Array builtinKeyChords =
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(797, 13),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(810, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(825, 11)),
+                [KC_PROP_TITLE]       = PROPERTY_STRING(825, 6)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(836, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(831, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(837, 15),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(852, 11),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(863, 10)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(832, 15),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(847, 11),
+                [KC_PROP_TITLE]       = PROPERTY_STRING(858, 10)),
             FLAG_KEEP | FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(873, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(868, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(874, 17),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(891, 13),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(904, 12)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(869, 17),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(886, 13),
+                [KC_PROP_TITLE]       = PROPERTY_STRING(899, 12)),
             FLAG_DEFLAG | FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(916, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(911, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(917, 18),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(935, 12)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(912, 18),
+                [KC_PROP_TITLE]       = PROPERTY_STRING(930, 12)),
             FLAG_NONE,
             ARRAY(
                 KeyChord,
                 1,
                 KEY_CHORD(
-                    KEY(947, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY(942, 1, MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(948, 18),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(966, 14)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(943, 18),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(961, 14)),
                     FLAG_INHERIT | FLAG_WRITE,
                     ARRAY_EMPTY(KeyChord)))));
 
