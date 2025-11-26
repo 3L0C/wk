@@ -27,6 +27,32 @@
 static void initKeyChordArrayProps(KeyChord* chord);
 static void freeKeyChordArrayProps(KeyChord* chord);
 
+/* Key categorization for emacs which-key style sorting */
+typedef enum
+{
+    KEY_CAT_SPECIAL, /* Special keys (SPC, ESC, F1, etc.) */
+    KEY_CAT_NUMBER,  /* 0-9 */
+    KEY_CAT_SYMBOL,  /* Punctuation and special characters */
+    KEY_CAT_LETTER,  /* a-z, A-Z */
+} KeyCategory;
+
+static KeyCategory
+getKeyCategory(const Key* key)
+{
+    assert(key);
+
+    /* Special keys have special != SPECIAL_KEY_NONE */
+    if (key->special != SPECIAL_KEY_NONE) return KEY_CAT_SPECIAL;
+
+    /* Get first character from repr for normal keys */
+    StringIterator iter = stringIteratorMake(&key->repr);
+    char           c    = stringIteratorPeek(&iter);
+
+    if (c >= '0' && c <= '9') return KEY_CAT_NUMBER;
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return KEY_CAT_LETTER;
+    return KEY_CAT_SYMBOL;
+}
+
 /* Helper for initializing properties as Token arrays */
 static inline void
 initPropAsTokenArray(KeyChord* chord, KeyChordPropId id)
@@ -44,18 +70,47 @@ keyChordCompareForSort(const void* a, const void* b)
     const KeyChord* aChord = (const KeyChord*)a;
     const KeyChord* bChord = (const KeyChord*)b;
 
+    /* Existing FLAG_IGNORE_SORT handling */
     if (chordFlagIsActive(aChord->flags, FLAG_IGNORE_SORT)) return 0;
     if (chordFlagIsActive(bChord->flags, FLAG_IGNORE_SORT)) return 0;
 
     const Key* aKey = &aChord->key;
     const Key* bKey = &bChord->key;
 
+    /* 1. Primary sort: by category (emacs which-key style) */
+    KeyCategory catA = getKeyCategory(aKey);
+    KeyCategory catB = getKeyCategory(bKey);
+    if (catA != catB) return (int)catA - (int)catB;
+
+    /* 2. Secondary sort: unmodified before modified */
     bool aHasMods = modifierHasAnyActive(aKey->mods);
     bool bHasMods = modifierHasAnyActive(bKey->mods);
+    if (aHasMods != bHasMods) return aHasMods ? 1 : -1;
 
-    if (aHasMods == bHasMods) return stringCompare(&aKey->repr, &bKey->repr);
-    if (aHasMods) return 1;
-    return -1;
+    /* 3. Tertiary sort: within category */
+    /* For letters: group same letters together (a, A, b, B), lowercase before uppercase */
+    if (catA == KEY_CAT_LETTER)
+    {
+        StringIterator iterA = stringIteratorMake(&aKey->repr);
+        StringIterator iterB = stringIteratorMake(&bKey->repr);
+        char           cA    = stringIteratorPeek(&iterA);
+        char           cB    = stringIteratorPeek(&iterB);
+
+        /* Compare case-insensitively first to group same letters */
+        char lowerA = (cA >= 'A' && cA <= 'Z') ? cA + 32 : cA;
+        char lowerB = (cB >= 'A' && cB <= 'Z') ? cB + 32 : cB;
+
+        if (lowerA != lowerB) return lowerA - lowerB;
+
+        /* Same letter: lowercase comes before uppercase */
+        bool aIsLower = (cA >= 'a' && cA <= 'z');
+        bool bIsLower = (cB >= 'a' && cB <= 'z');
+        if (aIsLower != bIsLower) return aIsLower ? -1 : 1;
+    }
+
+    /* Default: string comparison (alphabetical for special keys,
+     * numeric order for digits, ASCII for symbols) */
+    return stringCompare(&aKey->repr, &bKey->repr);
 }
 
 static void
