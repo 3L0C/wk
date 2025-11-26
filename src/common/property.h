@@ -3,75 +3,59 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "array.h"
 #include "property_def.h"
 #include "string.h"
 
-/* Forward declarations to avoid circular dependency */
-typedef struct KeyChord KeyChord;
-
-/* Property type enumeration */
+/* Property type enumeration - generated from PROPERTY_TYPE_LIST */
 typedef enum
 {
-    PROP_TYPE_NONE,
-    PROP_TYPE_STRING,
-    PROP_TYPE_INT,
-    PROP_TYPE_BOOL,
-    PROP_TYPE_ARRAY,
-    PROP_TYPE_COLOR
+    PROP_TYPE_NONE, /* Manually defined - represents unset/empty property */
+#define PROP_TYPE_X(name, ctype, accessor, field) PROP_TYPE_##name,
+    PROPERTY_TYPE_LIST
+#undef PROP_TYPE_X
+        PROP_TYPE_COUNT
 } PropertyType;
 
-/* Property ID enumeration - auto-generated from PROPERTY_LIST */
-typedef enum
-{
-#define PROPERTY(id, field, accessor, typecat, ctype) id,
-    PROPERTY_LIST
-#undef PROPERTY
-        PROP_COUNT /* Total number of properties */
-} PropertyId;
-
-/* Property value union - auto-generated from PROPERTY_LIST */
+/* Property value union - generated from PROPERTY_TYPE_LIST */
 typedef union
 {
-#define PROPERTY(id, field, accessor, typecat, ctype) ctype as_##field;
-    PROPERTY_LIST
-#undef PROPERTY
+#define PROP_TYPE_X(name, ctype, accessor, field) ctype field;
+    PROPERTY_TYPE_LIST
+#undef PROP_TYPE_X
 } PropertyValue;
 
-/* Property container */
+/* Property container - a generic typed value */
 typedef struct
 {
     PropertyType  type;
     PropertyValue value;
 } Property;
 
-/* Property metadata for introspection */
-typedef struct
-{
-    const char*  name;
-    PropertyType type;
-} PropertyInfo;
+/* Direct value access macro - use on Property* */
+#define PROP_VAL(prop, field) (&(prop)->value.field)
 
-/* Property info table - defined in property.c */
-extern const PropertyInfo PROPERTY_INFO_TABLE[PROP_COUNT];
+#define PROP_TYPE_X(name, ctype, accessor, field)                              \
+    static inline ctype* propertyAs##accessor(Property* prop)                  \
+    {                                                                          \
+        assert(prop);                                                          \
+        return (prop->type != PROP_TYPE_##name) ? NULL : &(prop->value.field); \
+    }
+PROPERTY_TYPE_LIST
+#undef PROP_TYPE_X
 
-/* Property initialization and cleanup */
+#define PROP_SET_TYPE(prop, name) ((prop)->type = PROP_TYPE_##name)
+
+/* Lifecycle operations */
 void propertyInit(Property* prop);
 void propertyFree(Property* prop);
-void propertyCopy(const Property* from, Property* to, PropertyId id);
+void propertyCopy(const Property* from, Property* to);
+void propertyClear(Property* prop); /* Free and set to NONE */
 
-/* Property query functions */
-bool propIsSet(const KeyChord* chord, PropertyId id);
-bool propIsEmpty(const KeyChord* chord, PropertyId id);
-
-/* Auto-generated getter/setter declarations */
-#define PROPERTY(id, field, accessor, typecat, ctype)                 \
-    ctype*       keyChordGet##accessor(KeyChord* chord);              \
-    const ctype* keyChordGet##accessor##Const(const KeyChord* chord); \
-    void         keyChordSet##accessor(KeyChord* chord, const ctype* value);
-
-PROPERTY_LIST
-#undef PROPERTY
+/* Query operations */
+bool propertyIsSet(const Property* prop);
+bool propertyIsType(const Property* prop, PropertyType type);
 
 #endif /* WK_COMMON_PROPERTY_H_ */

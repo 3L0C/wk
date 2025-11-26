@@ -1,19 +1,24 @@
 #ifndef WK_COMMON_PROPERTY_DEF_H_
 #define WK_COMMON_PROPERTY_DEF_H_
 
-/* X-Macro Property Registry
+/* X-Macro Type Registry for Property System
  *
- * NOTE: do not use 'src/common/key_chord.h' types to avoid circular dependencies.
+ * This defines the available property VALUE TYPES, not property instances.
+ * KeyChord's property slots are defined separately in key_chord_def.h.
  *
- * Format: PROPERTY(ENUM_ID, fieldName, AccessorName, TYPE_CATEGORY, CType)
+ * Format: PROP_TYPE_X(NAME, CType, Accessor, union_field)
+ * - NAME: Enum suffix (PROP_TYPE_NAME)
+ * - CType: The C type for this property type
+ * - Accessor: CamelCase name for accessor function generation
+ * - union_field: Field name in PropertyValue union (as_field)
+ *
+ * NOTE: PROP_TYPE_NONE is defined manually, not via this list.
  */
-#define PROPERTY_LIST                                                    \
-    PROPERTY(PROP_DESCRIPTION, description, Description, STRING, String) \
-    PROPERTY(PROP_COMMAND, command, Command, STRING, String)             \
-    PROPERTY(PROP_BEFORE, before, Before, STRING, String)                \
-    PROPERTY(PROP_AFTER, after, After, STRING, String)                   \
-    PROPERTY(PROP_WRAP_CMD, wrapCmd, WrapCmd, STRING, String)            \
-    PROPERTY(PROP_TITLE, title, Title, STRING, String)                   \
-    PROPERTY(PROP_GOTO, gotoPath, Goto, STRING, String)
+#define PROPERTY_TYPE_LIST                         \
+    PROP_TYPE_X(STRING, String, String, as_string) \
+    PROP_TYPE_X(INT, int32_t, Int, as_int)         \
+    PROP_TYPE_X(BOOL, bool, Bool, as_bool)         \
+    PROP_TYPE_X(COLOR, uint32_t, Color, as_color)  \
+    PROP_TYPE_X(ARRAY, Array, Array, as_array)
 
 #endif /* WK_COMMON_PROPERTY_DEF_H_ */

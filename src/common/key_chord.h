@@ -7,6 +7,7 @@
 
 /* Common includes */
 #include "array.h"
+#include "key_chord_def.h"
 #include "property.h"
 #include "string.h"
 
@@ -121,10 +122,19 @@ typedef struct
     SpecialKey special;
 } Key;
 
+/* KeyChord property slot IDs - generated from KEY_CHORD_PROP_LIST */
+typedef enum
+{
+#define KC_PROP(id, name, accessor, rt, ct) id,
+    KEY_CHORD_PROP_LIST
+#undef KC_PROP
+        KC_PROP_COUNT
+} KeyChordPropId;
+
 typedef struct KeyChord
 {
     Key       key;
-    Property  props[PROP_COUNT];
+    Property  props[KC_PROP_COUNT];
     ChordFlag flags;
     Array     keyChords;
 } KeyChord;
@@ -134,6 +144,7 @@ int       chordFlagCount(ChordFlag flag);
 bool      chordFlagHasAnyActive(ChordFlag flag);
 ChordFlag chordFlagInit(void);
 bool      chordFlagIsActive(ChordFlag flag, ChordFlag test);
+bool      chordFlagsAreDefault(ChordFlag flag);
 
 int      modifierCount(Modifier mod);
 bool     modifierHasAnyActive(Modifier mod);
@@ -149,9 +160,32 @@ void keyFree(Key* key);
 void keyInit(Key* key);
 bool keyIsEqual(const Key* a, const Key* b);
 
-void keyChordArrayFree(Array* keyChords);
+void keyChordsFree(Array* keyChords);
 void keyChordCopy(const KeyChord* from, KeyChord* to);
 void keyChordFree(KeyChord* keyChord);
 void keyChordInit(KeyChord* keyChord);
+
+/* Property slot access */
+Property*       keyChordProperty(KeyChord* chord, KeyChordPropId id);
+const Property* keyChordPropertyConst(const KeyChord* chord, KeyChordPropId id);
+PropertyType    keyChordCompileType(KeyChordPropId id);
+PropertyType    keyChordRuntimeType(KeyChordPropId id);
+
+/* Type-specific slot accessors - return NULL if prop->type doesn't match */
+#define PROP_TYPE_X(name, ctype, accessor, field)                        \
+    ctype*       keyChord##accessor(KeyChord* chord, KeyChordPropId id); \
+    const ctype* keyChord##accessor##Const(const KeyChord* chord, KeyChordPropId id);
+PROPERTY_TYPE_LIST
+#undef PROP_TYPE_X
+
+/* Query helpers */
+bool keyChordIsSet(const KeyChord* chord, KeyChordPropId id);
+
+/* Generated typed accessors - declared here, defined in key_chord.c */
+#define KC_PROP(id, name, accessor, rt, ct)            \
+    String*       keyChord##accessor(KeyChord* chord); \
+    const String* keyChord##accessor##Const(const KeyChord* chord);
+KEY_CHORD_PROP_LIST
+#undef KC_PROP
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

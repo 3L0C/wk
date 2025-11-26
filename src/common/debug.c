@@ -358,12 +358,12 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
     assert(keyChord);
 
     disassembleKeyWithoutHeader(&keyChord->key, indent);
-    debugStringWithIndent(indent, "Description:", keyChordGetDescriptionConst(keyChord));
-    debugStringWithIndent(indent, "Command:", keyChordGetCommandConst(keyChord));
-    debugStringWithIndent(indent, "Before:", keyChordGetBeforeConst(keyChord));
-    debugStringWithIndent(indent, "After:", keyChordGetAfterConst(keyChord));
-    debugStringWithIndent(indent, "Wrap Command:", keyChordGetWrapCmdConst(keyChord));
-    debugStringWithIndent(indent, "Title", keyChordGetTitleConst(keyChord));
+    debugStringWithIndent(indent, "Description:", keyChordDescriptionConst(keyChord));
+    debugStringWithIndent(indent, "Command:", keyChordCommandConst(keyChord));
+    debugStringWithIndent(indent, "Before:", keyChordBeforeConst(keyChord));
+    debugStringWithIndent(indent, "After:", keyChordAfterConst(keyChord));
+    debugStringWithIndent(indent, "Wrap Command:", keyChordWrapCmdConst(keyChord));
+    debugStringWithIndent(indent, "Title", keyChordTitleConst(keyChord));
     disassembleChordFlag(keyChord->flags, indent);
 }
 

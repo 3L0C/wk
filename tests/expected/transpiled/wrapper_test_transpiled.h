@@ -66,7 +66,7 @@ static const char* wrapCmd = "wrapper";
         .capacity    = (_len),               \
         .elementSize = sizeof(T)             \
     }
-#define EMPTY_ARRAY(T)           \
+#define ARRAY_EMPTY(T)           \
     (Array)                      \
     {                            \
         .data        = NULL,     \
@@ -80,24 +80,24 @@ static const char* wrapCmd = "wrapper";
         .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
         .length = (_len)                                                                            \
     }
-#define EMPTY_STRING (String){         \
-    .parts  = EMPTY_ARRAY(StringPart), \
+#define STRING_EMPTY (String){         \
+    .parts  = ARRAY_EMPTY(StringPart), \
     .length = 0                        \
 }
-#define PROP_STRING(_offset, _len)                              \
-    (Property)                                                  \
-    {                                                           \
-        .type  = PROP_TYPE_STRING,                              \
-        .value = {.as_description = STRING((_offset), (_len)) } \
+#define PROPERTY_STRING(_offset, _len)                     \
+    (Property)                                             \
+    {                                                      \
+        .type  = PROP_TYPE_STRING,                         \
+        .value = {.as_string = STRING((_offset), (_len)) } \
     }
-#define EMPTY_PROP_STRING                          \
-    (Property)                                     \
-    {                                              \
-        .type  = PROP_TYPE_STRING,                 \
-        .value = {.as_description = EMPTY_STRING } \
+#define PROPERTY_STRING_EMPTY                 \
+    (Property)                                \
+    {                                         \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING_EMPTY } \
     }
-#define PROPS(...) __VA_ARGS__
-#define EMPTY_PROPS
+#define PROPERTIES(...) __VA_ARGS__
+#define PROPERTIES_EMPTY
 #define KEY_CHORD(_key, _props, _flags, _chords) \
     (KeyChord)                                   \
     {                                            \
@@ -122,79 +122,79 @@ static Array builtinKeyChords =
         7,
         KEY_CHORD(
             KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(1, 9),
-                [PROP_COMMAND]     = PROP_STRING(10, 7)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 9),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(10, 7)),
             FLAG_WRITE,
-            EMPTY_ARRAY(KeyChord)),
+            ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(17, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(18, 13),
-                [PROP_COMMAND]     = PROP_STRING(31, 3)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(18, 13),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(31, 3)),
             FLAG_WRITE,
-            EMPTY_ARRAY(KeyChord)),
+            ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(34, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(35, 11),
-                [PROP_COMMAND]     = PROP_STRING(46, 3),
-                [PROP_WRAP_CMD]    = PROP_STRING(49, 6)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(35, 11),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(46, 3),
+                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(49, 6)),
             FLAG_WRITE,
-            EMPTY_ARRAY(KeyChord)),
+            ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(55, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(56, 9),
-                [PROP_COMMAND]     = PROP_STRING(65, 3)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(56, 9),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(65, 3)),
             FLAG_WRITE | FLAG_UNWRAP,
-            EMPTY_ARRAY(KeyChord)),
+            ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(68, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(69, 16)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(69, 16)),
             FLAG_UNWRAP,
             ARRAY(
                 KeyChord,
                 1,
                 KEY_CHORD(
                     KEY(85, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPS(
-                        [PROP_DESCRIPTION] = PROP_STRING(86, 21),
-                        [PROP_COMMAND]     = PROP_STRING(107, 3)),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(86, 21),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(107, 3)),
                     FLAG_WRITE,
-                    EMPTY_ARRAY(KeyChord)))),
+                    ARRAY_EMPTY(KeyChord)))),
         KEY_CHORD(
             KEY(110, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(111, 10),
-                [PROP_COMMAND]     = PROP_STRING(121, 3)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(111, 10),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(121, 3)),
             FLAG_WRITE | FLAG_UNWRAP,
-            EMPTY_ARRAY(KeyChord)),
+            ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(124, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPS(
-                [PROP_DESCRIPTION] = PROP_STRING(125, 5),
-                [PROP_WRAP_CMD]    = PROP_STRING(130, 3)),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(125, 5),
+                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(130, 3)),
             FLAG_NONE,
             ARRAY(
                 KeyChord,
                 2,
                 KEY_CHORD(
                     KEY(133, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPS(
-                        [PROP_DESCRIPTION] = PROP_STRING(134, 14),
-                        [PROP_COMMAND]     = PROP_STRING(148, 4),
-                        [PROP_WRAP_CMD]    = PROP_STRING(152, 3)),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(134, 14),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(148, 4),
+                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(152, 3)),
                     FLAG_WRITE,
-                    EMPTY_ARRAY(KeyChord)),
+                    ARRAY_EMPTY(KeyChord)),
                 KEY_CHORD(
                     KEY(155, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPS(
-                        [PROP_DESCRIPTION] = PROP_STRING(156, 13),
-                        [PROP_COMMAND]     = PROP_STRING(169, 4),
-                        [PROP_WRAP_CMD]    = PROP_STRING(173, 3)),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(156, 13),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(169, 4),
+                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(173, 3)),
                     FLAG_WRITE,
-                    EMPTY_ARRAY(KeyChord)))));
+                    ARRAY_EMPTY(KeyChord)))));
 
 #endif /* WK_CONFIG_CONFIG_H_ */

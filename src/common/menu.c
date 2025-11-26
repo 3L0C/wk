@@ -90,7 +90,7 @@ menuFree(Menu* menu)
 {
     assert(menu);
 
-    keyChordArrayFree(&menu->compiledKeyChords);
+    keyChordsFree(&menu->compiledKeyChords);
     arrayFree(&menu->userVars);
     arenaFree(&menu->arena);
 }
@@ -103,9 +103,9 @@ menuHandlePrefix(Menu* menu, KeyChord* keyChord)
     debugMsg(menu->debug, "Found prefix.");
 
     menu->keyChords = &keyChord->keyChords;
-    if (propIsSet(keyChord, PROP_TITLE))
+    if (keyChordIsSet(keyChord, KC_PROP_TITLE))
     {
-        menu->title = stringToCString(&menu->arena, keyChordGetTitleConst(keyChord));
+        menu->title = stringToCString(&menu->arena, keyChordTitleConst(keyChord));
     }
 
     return MENU_STATUS_DAMAGED;
@@ -172,7 +172,7 @@ menuHandleGoto(Menu* menu, KeyChord* keyChord)
     menu->keyChords = menu->keyChordsHead;
     menu->title     = menu->rootTitle;
 
-    const String* gotoPath = keyChordGetGotoConst(keyChord);
+    const String* gotoPath = keyChordGotoConst(keyChord);
     MenuStatus    status;
 
     if (stringIsEmpty(gotoPath))
@@ -199,7 +199,7 @@ getWrapper(const Menu* menu, const KeyChord* keyChord)
     assert(menu), assert(keyChord);
 
     if (chordFlagIsActive(keyChord->flags, FLAG_UNWRAP)) return NULL;
-    if (propIsSet(keyChord, PROP_WRAP_CMD)) return keyChordGetWrapCmdConst(keyChord);
+    if (keyChordIsSet(keyChord, KC_PROP_WRAP_CMD)) return keyChordWrapCmdConst(keyChord);
     if (!stringIsEmpty(&menu->wrapCmd)) return &menu->wrapCmd;
     return NULL;
 }
@@ -217,7 +217,7 @@ getCmd(const Menu* menu, const KeyChord* keyChord)
         stringAppendCString(&cmd, " ");
     }
 
-    stringAppendString(&cmd, keyChordGetCommandConst(keyChord));
+    stringAppendString(&cmd, keyChordCommandConst(keyChord));
 
     return cmd;
 }
@@ -252,18 +252,18 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
     menuSpawn(
         menu,
         keyChord,
-        keyChordGetBeforeConst(keyChord),
+        keyChordBeforeConst(keyChord),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_BEFORE));
     menuHandleCommand(menu, keyChord);
     menuSpawn(
         menu,
         keyChord,
-        keyChordGetAfterConst(keyChord),
+        keyChordAfterConst(keyChord),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
     /* If chord has +keep flag and a command to execute, sleep to allow
      * compositor to process the ungrab before the command executes */
-    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && propIsSet(keyChord, PROP_COMMAND))
+    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && keyChordIsSet(keyChord, KC_PROP_COMMAND))
     {
         struct timespec sleep_duration = {
             .tv_sec  = 0,
@@ -280,7 +280,7 @@ menuPressKey(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (propIsSet(keyChord, PROP_GOTO))
+    if (keyChordIsSet(keyChord, KC_PROP_GOTO))
     {
         return menuHandleGoto(menu, keyChord);
     }

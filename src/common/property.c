@@ -2,17 +2,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "key_chord.h"
+#include "common/array.h"
 #include "property.h"
 #include "string.h"
-
-/* Property info table - auto-generated from PROPERTY_LIST */
-const PropertyInfo PROPERTY_INFO_TABLE[PROP_COUNT] = {
-#define PROPERTY(id, field, accessor, typecat, ctype) \
-    [id] = { .name = #field, .type = PROP_TYPE_##typecat },
-    PROPERTY_LIST
-#undef PROPERTY
-};
 
 void
 propertyInit(Property* prop)
@@ -29,85 +21,57 @@ propertyFree(Property* prop)
 
     switch (prop->type)
     {
-    case PROP_TYPE_STRING:
-        stringFree(&prop->value.as_description);
-        break;
-    default:
-        break;
+    case PROP_TYPE_STRING: stringFree(&prop->value.as_string); break;
+    case PROP_TYPE_ARRAY: arrayFree(&prop->value.as_array); break;
+    case PROP_TYPE_NONE: /* FALLTHROUGH */
+    case PROP_TYPE_INT:
+    case PROP_TYPE_BOOL:
+    case PROP_TYPE_COLOR:
+    case PROP_TYPE_COUNT: break;
     }
 
     prop->type = PROP_TYPE_NONE;
 }
 
-/* Type-specific copy macros for X-macro expansion */
-#define PROP_COPY_STRING(from, to, field) \
-    (to)->value.as_##field = stringCopy(&(from)->value.as_##field)
-
-#define PROP_COPY_INT(from, to, field) \
-    (to)->value.as_##field = (from)->value.as_##field
-
-#define PROP_COPY_BOOL(from, to, field) \
-    (to)->value.as_##field = (from)->value.as_##field
-
-#define PROP_COPY_COLOR(from, to, field) \
-    (to)->value.as_##field = (from)->value.as_##field
-
-#define PROP_COPY_ARRAY(from, to, field) \
-    (to)->value.as_##field = (from)->value.as_##field
-
 void
-propertyCopy(const Property* from, Property* to, PropertyId id)
+propertyCopy(const Property* from, Property* to)
 {
     assert(from), assert(to);
-    assert(id < PROP_COUNT);
 
     to->type = from->type;
     if (from->type == PROP_TYPE_NONE) return;
 
-    switch (id)
+    switch (from->type)
     {
-#define PROPERTY(pid, field, accessor, typecat, ctype) \
-    case pid: PROP_COPY_##typecat(from, to, field); break;
-        PROPERTY_LIST
-#undef PROPERTY
-    default:
+    case PROP_TYPE_STRING: to->value.as_string = stringCopy(&from->value.as_string); break;
+    case PROP_TYPE_ARRAY: to->value.as_array = arrayCopy(&from->value.as_array); break;
+    case PROP_TYPE_INT: to->value.as_int = from->value.as_int; break;
+    case PROP_TYPE_BOOL: to->value.as_bool = from->value.as_bool; break;
+    case PROP_TYPE_COLOR: to->value.as_color = from->value.as_color; break;
+    case PROP_TYPE_NONE:
+    case PROP_TYPE_COUNT:
         break;
     }
 }
 
-bool
-propIsSet(const KeyChord* chord, PropertyId id)
+void
+propertyClear(Property* prop)
 {
-    assert(chord);
-    assert(id < PROP_COUNT);
+    propertyFree(prop);
+}
 
-    return chord->props[id].type != PROP_TYPE_NONE;
+/* Query operations */
+
+bool
+propertyIsSet(const Property* prop)
+{
+    assert(prop);
+    return prop->type != PROP_TYPE_NONE;
 }
 
 bool
-propIsEmpty(const KeyChord* chord, PropertyId id)
+propertyIsType(const Property* prop, PropertyType type)
 {
-    return !propIsSet(chord, id);
+    assert(prop);
+    return prop->type == type;
 }
-
-/* Auto-generated getter/setter implementations */
-#define PROPERTY(id, field, accessor, typecat, ctype)                \
-    ctype* keyChordGet##accessor(KeyChord* chord)                    \
-    {                                                                \
-        assert(chord);                                               \
-        return &chord->props[id].value.as_##field;                   \
-    }                                                                \
-    const ctype* keyChordGet##accessor##Const(const KeyChord* chord) \
-    {                                                                \
-        assert(chord);                                               \
-        return &chord->props[id].value.as_##field;                   \
-    }                                                                \
-    void keyChordSet##accessor(KeyChord* chord, const ctype* value)  \
-    {                                                                \
-        assert(chord), assert(value);                                \
-        chord->props[id].type             = PROP_TYPE_##typecat;     \
-        chord->props[id].value.as_##field = *value;                  \
-    }
-
-PROPERTY_LIST
-#undef PROPERTY

@@ -65,7 +65,7 @@ static const char* wrapCmd = NULL;
         .capacity    = (_len),               \
         .elementSize = sizeof(T)             \
     }
-#define EMPTY_ARRAY(T)           \
+#define ARRAY_EMPTY(T)           \
     (Array)                      \
     {                            \
         .data        = NULL,     \
@@ -79,8 +79,8 @@ static const char* wrapCmd = NULL;
         .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
         .length = (_len)                                                                            \
     }
-#define EMPTY_STRING (String){         \
-    .parts  = EMPTY_ARRAY(StringPart), \
+#define STRING_EMPTY (String){         \
+    .parts  = ARRAY_EMPTY(StringPart), \
     .length = 0                        \
 }
 #define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _title, _flags, _chords) \
@@ -106,6 +106,6 @@ static const char* wrapCmd = NULL;
 
 static const char BUILTIN_SOURCE[] = "";
 
-static Array builtinKeyChords = EMPTY_ARRAY(KeyChord);
+static Array builtinKeyChords = ARRAY_EMPTY(KeyChord);
 
 #endif /* WK_CONFIG_CONFIG_H_ */
