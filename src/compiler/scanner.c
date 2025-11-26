@@ -415,7 +415,6 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
     case 's':
     {
         if (isKeyword(scanner, 1, 4, "hell")) result = TOKEN_SHELL;
-        else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_SORT;
         break;
     }
     case 't':
@@ -424,6 +423,11 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 4, "itle")) result = TOKEN_MENU_TITLE;
         else if (isKeyword(scanner, 1, 9, "itle-font")) result = TOKEN_MENU_TITLE_FONT;
         else if (isKeyword(scanner, 1, 12, "able-padding")) result = TOKEN_TABLE_PADDING;
+        break;
+    }
+    case 'u':
+    {
+        if (isKeyword(scanner, 1, 7, "nsorted")) result = TOKEN_UNSORTED;
         break;
     }
     case 'v':

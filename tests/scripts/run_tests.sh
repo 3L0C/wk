@@ -196,11 +196,16 @@ run_test "tests/fixtures/valid/hook_test.wks" "a" "tests/expected/hook_test_a.tx
 run_test "tests/fixtures/valid/hook_test.wks" "b" "tests/expected/hook_test_b.txt"
 run_test "tests/fixtures/valid/hook_test.wks" "c" "tests/expected/hook_test_c.txt"
 
-# Sorting tests
+# Sorting tests (sorted by default)
 run_test "tests/fixtures/valid/sorted_test.wks" "a" "tests/expected/sorted_test_a.txt"
 run_test "tests/fixtures/valid/sorted_test.wks" "b" "tests/expected/sorted_test_b.txt"
 run_test "tests/fixtures/valid/sorted_with_ignore_sort_test.wks" "a" "tests/expected/sorted_with_ignore_sort_test_a.txt"
 run_test "tests/fixtures/valid/sorted_with_ignore_sort_test.wks" "b" "tests/expected/sorted_with_ignore_sort_test_b.txt"
+
+# Unsorted tests (:unsorted macro disables default sorting)
+run_test "tests/fixtures/valid/unsorted_test.wks" "a" "tests/expected/unsorted_test_a.txt"
+run_test "tests/fixtures/valid/unsorted_test.wks" "b" "tests/expected/unsorted_test_b.txt"
+run_test "tests/fixtures/valid/unsorted_test.wks" "c" "tests/expected/unsorted_test_c.txt"
 
 # Implicit array sorting tests
 run_test "tests/fixtures/valid/implicit_array_sort_test.wks" "d" "tests/expected/implicit_array_sort_test_d.txt"

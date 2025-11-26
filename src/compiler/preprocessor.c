@@ -655,7 +655,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         {
         /* Switches with no args. */
         case TOKEN_DEBUG: menu->debug = true; break;
-        case TOKEN_SORT: menu->sort = true; break;
+        case TOKEN_UNSORTED: menu->sort = false; break;
         case TOKEN_TOP: menu->position = MENU_POS_TOP; break;
         case TOKEN_BOTTOM: menu->position = MENU_POS_BOTTOM; break;
 

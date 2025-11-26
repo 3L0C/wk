@@ -1,4 +1,3 @@
-:sort
 :implicit-array-keys "dcba"
 
 # Prefix without flags, child implicit array should be unsorted (implicit +ignore-sort)

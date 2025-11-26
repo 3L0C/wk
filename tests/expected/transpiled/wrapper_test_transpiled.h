@@ -114,7 +114,7 @@ static const char* wrapCmd = "wrapper";
         .special = (_special)                 \
     }
 
-static const char BUILTIN_SOURCE[] = "aAuto wrapcommandbExplicit wrapcmdcCustom wrapcmdcustomdUnwrappedcmdpPrefix unwrappedeChild inherits unwrapcmdfNo wrappercmdgMultialthChild with altcmd1altiAnother childcmd2alt";
+static const char BUILTIN_SOURCE[] = "aAuto wrapcommandbExplicit wrapcmdcCustom wrapcmdcustomdUnwrappedcmdfNo wrappercmdgMultialthChild with altcmd1altiAnother childcmd2altpPrefix unwrappedeChild inherits unwrapcmd";
 
 static Array builtinKeyChords =
     ARRAY(
@@ -152,48 +152,48 @@ static Array builtinKeyChords =
         KEY_CHORD(
             KEY(68, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(69, 16)),
-            FLAG_UNWRAP,
-            ARRAY(
-                KeyChord,
-                1,
-                KEY_CHORD(
-                    KEY(85, 1, MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(86, 21),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(107, 3)),
-                    FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)))),
-        KEY_CHORD(
-            KEY(110, 1, MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(111, 10),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(121, 3)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(69, 10),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(79, 3)),
             FLAG_WRITE | FLAG_UNWRAP,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(124, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(82, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(125, 5),
-                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(130, 3)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(83, 5),
+                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(88, 3)),
             FLAG_NONE,
             ARRAY(
                 KeyChord,
                 2,
                 KEY_CHORD(
-                    KEY(133, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY(91, 1, MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(134, 14),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(148, 4),
-                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(152, 3)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(92, 14),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(106, 4),
+                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(110, 3)),
                     FLAG_WRITE,
                     ARRAY_EMPTY(KeyChord)),
                 KEY_CHORD(
-                    KEY(155, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY(113, 1, MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(156, 13),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(169, 4),
-                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(173, 3)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(114, 13),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(127, 4),
+                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(131, 3)),
+                    FLAG_WRITE,
+                    ARRAY_EMPTY(KeyChord)))),
+        KEY_CHORD(
+            KEY(134, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(135, 16)),
+            FLAG_UNWRAP,
+            ARRAY(
+                KeyChord,
+                1,
+                KEY_CHORD(
+                    KEY(151, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(152, 21),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING(173, 3)),
                     FLAG_WRITE,
                     ARRAY_EMPTY(KeyChord)))));
 

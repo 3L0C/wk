@@ -1,4 +1,3 @@
-:sort
 :implicit-array-keys "dcba"
 
 # Test 1: Implicit array without flags (should stay in dcba order)

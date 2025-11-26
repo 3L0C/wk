@@ -49,10 +49,10 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_MENU_TITLE_FONT]            = "TOKEN_MENU_TITLE_FONT",
 
     /* switch macros */
-    [TOKEN_DEBUG]  = "TOKEN_DEBUG",
-    [TOKEN_SORT]   = "TOKEN_SORT",
-    [TOKEN_TOP]    = "TOKEN_TOP",
-    [TOKEN_BOTTOM] = "TOKEN_BOTTOM",
+    [TOKEN_DEBUG]    = "TOKEN_DEBUG",
+    [TOKEN_UNSORTED] = "TOKEN_UNSORTED",
+    [TOKEN_TOP]      = "TOKEN_TOP",
+    [TOKEN_BOTTOM]   = "TOKEN_BOTTOM",
 
     /* [-]integer macros */
     [TOKEN_MENU_WIDTH] = "TOKEN_MENU_WIDTH",

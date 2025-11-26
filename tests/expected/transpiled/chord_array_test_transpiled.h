@@ -114,7 +114,7 @@ static const char* wrapCmd = NULL;
         .special = (_special)                 \
     }
 
-static const char BUILTIN_SOURCE[] = "aSwitch 1switching to 0sSwitch 2switching to 1dSwitch 3switching to 2fSwitch 4switching to 3gSwitch 5switching to 4hSwitch 6switching to 5jSwitch 7switching to 6kSwitch 8switching to 7lSwitch 9switching to 8;Switch 10switching to 9xSwitch 11switching to 10ySwitch 12switching to 11zSwitch 13switching to 12aSwitch 14switching to 13sSwitch 15switching to 14dSwitch 16switching to 15fSwitch 17switching to 16gSwitch 18switching to 17hSwitch 19switching to 18jSwitch 20switching to 19kSwitch 21switching to 20lSwitch 22switching to 21;Switch 23switching to 22";
+static const char BUILTIN_SOURCE[] = ";Switch 10switching to 9;Switch 23switching to 22aSwitch 1switching to 0dSwitch 3switching to 2fSwitch 4switching to 3gSwitch 5switching to 4hSwitch 6switching to 5jSwitch 7switching to 6kSwitch 8switching to 7lSwitch 9switching to 8sSwitch 2switching to 1xSwitch 11switching to 10ySwitch 12switching to 11zSwitch 13switching to 12aSwitch 14switching to 13dSwitch 16switching to 15fSwitch 17switching to 16gSwitch 18switching to 17hSwitch 19switching to 18jSwitch 20switching to 19kSwitch 21switching to 20lSwitch 22switching to 21sSwitch 15switching to 14";
 
 static Array builtinKeyChords =
     ARRAY(
@@ -123,78 +123,78 @@ static Array builtinKeyChords =
         KEY_CHORD(
             KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(9, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 9),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(10, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(23, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(24, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(24, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(32, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(25, 9),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(34, 15)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(46, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(49, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(47, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(55, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(50, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(58, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(69, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(72, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(70, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(78, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(73, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(81, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(92, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(95, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(93, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(101, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(96, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(104, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(115, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(118, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(116, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(124, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(119, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(127, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(138, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(141, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(139, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(147, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(142, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(150, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(161, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(164, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(162, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(170, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(165, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(173, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(184, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(187, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(185, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(193, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(188, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(196, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(207, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(210, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(208, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(217, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(211, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(219, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(231, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(233, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(232, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(241, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(234, 8),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING(242, 14)),
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
@@ -212,7 +212,7 @@ static Array builtinKeyChords =
             FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
-            KEY(306, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY(306, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(307, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(316, 15)),

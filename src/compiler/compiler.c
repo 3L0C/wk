@@ -32,21 +32,136 @@ typedef enum
     KEY_CAT_LETTER,  /* a-z, A-Z */
 } KeyCategory;
 
-static KeyCategory
-getKeyCategory(const Key* key)
+/* Sort key: precomputed values to avoid repeated computation during sort */
+typedef struct
 {
-    assert(key);
+    size_t      index;      /* Original index for stability */
+    KeyChord*   chord;      /* Pointer to the chord */
+    KeyCategory category;   /* Cached category */
+    char        firstChar;  /* First character of key repr */
+    char        lowerChar;  /* Lowercase version (for letters) */
+    bool        hasMods;    /* Whether key has modifiers */
+    bool        ignoreSort; /* FLAG_IGNORE_SORT is set */
+} SortKey;
 
-    /* Special keys have special != SPECIAL_KEY_NONE */
-    if (key->special != SPECIAL_KEY_NONE) return KEY_CAT_SPECIAL;
-
-    /* Get first character from repr for normal keys */
-    StringIterator iter = stringIteratorMake(&key->repr);
-    char           c    = stringIteratorPeek(&iter);
-
+static inline KeyCategory
+getCategoryFromChar(char c, SpecialKey special)
+{
+    if (special != SPECIAL_KEY_NONE) return KEY_CAT_SPECIAL;
     if (c >= '0' && c <= '9') return KEY_CAT_NUMBER;
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return KEY_CAT_LETTER;
     return KEY_CAT_SYMBOL;
+}
+
+static inline char
+getFirstChar(const String* repr)
+{
+    StringIterator iter = stringIteratorMake(repr);
+    return stringIteratorPeek(&iter);
+}
+
+static inline char
+toLowerChar(char c)
+{
+    return (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
+}
+
+/* Build sort key with all precomputed values */
+static SortKey
+makeSortKey(KeyChord* chord, size_t index)
+{
+    const Key* key       = &chord->key;
+    char       firstChar = getFirstChar(&key->repr);
+
+    return (SortKey){
+        .index      = index,
+        .chord      = chord,
+        .category   = getCategoryFromChar(firstChar, key->special),
+        .firstChar  = firstChar,
+        .lowerChar  = toLowerChar(firstChar),
+        .hasMods    = modifierHasAnyActive(key->mods),
+        .ignoreSort = chordFlagIsActive(chord->flags, FLAG_IGNORE_SORT)
+    };
+}
+
+/* Compare two sort keys (for sortable chords only) */
+static int
+compareSortKeys(const SortKey* a, const SortKey* b)
+{
+    /* 1. Primary sort: by category (emacs which-key style) */
+    if (a->category != b->category) return (int)a->category - (int)b->category;
+
+    /* 2. Secondary sort: unmodified before modified */
+    if (a->hasMods != b->hasMods) return a->hasMods ? 1 : -1;
+
+    /* 3. Tertiary sort: within category */
+    if (a->category == KEY_CAT_LETTER)
+    {
+        /* Compare case-insensitively first to group same letters */
+        if (a->lowerChar != b->lowerChar) return a->lowerChar - b->lowerChar;
+
+        /* Same letter: lowercase comes before uppercase */
+        bool aIsLower = (a->firstChar >= 'a' && a->firstChar <= 'z');
+        bool bIsLower = (b->firstChar >= 'a' && b->firstChar <= 'z');
+        if (aIsLower != bIsLower) return aIsLower ? -1 : 1;
+    }
+
+    /* 4. Default: string comparison */
+    int cmp = stringCompare(&a->chord->key.repr, &b->chord->key.repr);
+    if (cmp != 0) return cmp;
+
+    /* 5. Stable sort: preserve original order for equal elements */
+    return (a->index < b->index) ? -1 : (a->index > b->index) ? 1
+                                                              : 0;
+}
+
+/* Merge two sorted ranges [left, mid) and [mid, right) */
+static void
+mergeSortKeys(SortKey* keys, SortKey* temp, size_t left, size_t mid, size_t right)
+{
+    size_t i = left, j = mid, k = left;
+
+    while (i < mid && j < right)
+    {
+        /* <= for stability: prefer left element when equal */
+        if (compareSortKeys(&keys[i], &keys[j]) <= 0)
+        {
+            temp[k++] = keys[i++];
+        }
+        else
+        {
+            temp[k++] = keys[j++];
+        }
+    }
+
+    while (i < mid)
+        temp[k++] = keys[i++];
+    while (j < right)
+        temp[k++] = keys[j++];
+
+    for (size_t n = left; n < right; n++)
+        keys[n] = temp[n];
+}
+
+/* Bottom-up merge sort for stability */
+static void
+stableSortKeys(SortKey* keys, size_t n)
+{
+    if (n <= 1) return;
+
+    SortKey* temp = ALLOCATE(SortKey, n);
+
+    for (size_t width = 1; width < n; width *= 2)
+    {
+        for (size_t left = 0; left < n; left += 2 * width)
+        {
+            size_t mid   = left + width < n ? left + width : n;
+            size_t right = left + 2 * width < n ? left + 2 * width : n;
+            mergeSortKeys(keys, temp, left, mid, right);
+        }
+    }
+
+    free(temp);
 }
 
 /* Helper for initializing properties as Token arrays */
@@ -58,67 +173,106 @@ initPropAsTokenArray(KeyChord* chord, KeyChordPropId id)
     *propertyAsArray(prop) = ARRAY_INIT(Token);
 }
 
-static int
-keyChordCompareForSort(const void* a, const void* b)
-{
-    assert(a), assert(b);
-
-    const KeyChord* aChord = (const KeyChord*)a;
-    const KeyChord* bChord = (const KeyChord*)b;
-
-    /* Existing FLAG_IGNORE_SORT handling */
-    if (chordFlagIsActive(aChord->flags, FLAG_IGNORE_SORT)) return 0;
-    if (chordFlagIsActive(bChord->flags, FLAG_IGNORE_SORT)) return 0;
-
-    const Key* aKey = &aChord->key;
-    const Key* bKey = &bChord->key;
-
-    /* 1. Primary sort: by category (emacs which-key style) */
-    KeyCategory catA = getKeyCategory(aKey);
-    KeyCategory catB = getKeyCategory(bKey);
-    if (catA != catB) return (int)catA - (int)catB;
-
-    /* 2. Secondary sort: unmodified before modified */
-    bool aHasMods = modifierHasAnyActive(aKey->mods);
-    bool bHasMods = modifierHasAnyActive(bKey->mods);
-    if (aHasMods != bHasMods) return aHasMods ? 1 : -1;
-
-    /* 3. Tertiary sort: within category */
-    /* For letters: group same letters together (a, A, b, B), lowercase before uppercase */
-    if (catA == KEY_CAT_LETTER)
-    {
-        StringIterator iterA = stringIteratorMake(&aKey->repr);
-        StringIterator iterB = stringIteratorMake(&bKey->repr);
-        char           cA    = stringIteratorPeek(&iterA);
-        char           cB    = stringIteratorPeek(&iterB);
-
-        /* Compare case-insensitively first to group same letters */
-        char lowerA = (cA >= 'A' && cA <= 'Z') ? cA + 32 : cA;
-        char lowerB = (cB >= 'A' && cB <= 'Z') ? cB + 32 : cB;
-
-        if (lowerA != lowerB) return lowerA - lowerB;
-
-        /* Same letter: lowercase comes before uppercase */
-        bool aIsLower = (cA >= 'a' && cA <= 'z');
-        bool bIsLower = (cB >= 'a' && cB <= 'z');
-        if (aIsLower != bIsLower) return aIsLower ? -1 : 1;
-    }
-
-    /* Default: string comparison (alphabetical for special keys,
-     * numeric order for digits, ASCII for symbols) */
-    return stringCompare(&aKey->repr, &bKey->repr);
-}
-
+/*
+ * Stable sort for KeyChord arrays (recursive).
+ *
+ * Chords with FLAG_IGNORE_SORT preserve their relative order and position
+ * among other FLAG_IGNORE_SORT chords. Sortable chords are sorted and
+ * interleaved around the ignored chords based on their original positions.
+ *
+ * Recursively sorts nested chords within prefixes.
+ */
 static void
 keyChordArraySort(Array* chords)
 {
     assert(chords);
 
-    qsort(
-        ARRAY_AS(chords, KeyChord),
-        arrayLength(chords),
-        sizeof(KeyChord),
-        keyChordCompareForSort);
+    size_t n = arrayLength(chords);
+
+    /* Recursively sort nested chords first */
+    for (size_t i = 0; i < n; i++)
+    {
+        KeyChord* chord = ARRAY_GET(chords, KeyChord, i);
+        if (!arrayIsEmpty(&chord->keyChords))
+        {
+            keyChordArraySort(&chord->keyChords);
+        }
+    }
+
+    if (n <= 1) return;
+
+    /* Build sort keys for all chords */
+    SortKey* keys = ALLOCATE(SortKey, n);
+    for (size_t i = 0; i < n; i++)
+    {
+        keys[i] = makeSortKey(ARRAY_GET(chords, KeyChord, i), i);
+    }
+
+    /* Partition: separate sortable from ignore-sort chords */
+    size_t sortableCount = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        if (!keys[i].ignoreSort) sortableCount++;
+    }
+
+    if (sortableCount == 0)
+    {
+        /* Nothing to sort at this level */
+        free(keys);
+        return;
+    }
+
+    if (sortableCount == n)
+    {
+        /* All sortable: simple case */
+        stableSortKeys(keys, n);
+
+        /* Reorder chords in-place using a temporary buffer */
+        KeyChord* temp = ALLOCATE(KeyChord, n);
+        for (size_t i = 0; i < n; i++)
+        {
+            temp[i] = *keys[i].chord;
+        }
+        memcpy(chords->data, temp, n * sizeof(KeyChord));
+        free(temp);
+        free(keys);
+        return;
+    }
+
+    /* Mixed case: sort only sortable keys, then merge back */
+    SortKey* sortable = ALLOCATE(SortKey, sortableCount);
+    size_t   si       = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        if (!keys[i].ignoreSort) sortable[si++] = keys[i];
+    }
+
+    stableSortKeys(sortable, sortableCount);
+
+    /* Merge sorted keys back with ignored keys in original positions */
+    KeyChord* result = ALLOCATE(KeyChord, n);
+    si               = 0;
+    size_t ri        = 0;
+
+    for (size_t i = 0; i < n; i++)
+    {
+        if (keys[i].ignoreSort)
+        {
+            /* Ignored chord stays in relative position */
+            result[ri++] = *keys[i].chord;
+        }
+        else if (si < sortableCount)
+        {
+            /* Fill with next sorted chord */
+            result[ri++] = *sortable[si++].chord;
+        }
+    }
+
+    memcpy(chords->data, result, n * sizeof(KeyChord));
+
+    free(result);
+    free(sortable);
+    free(keys);
 }
 
 /* Initialize a KeyChord for compilation phase (with Token arrays in properties) */

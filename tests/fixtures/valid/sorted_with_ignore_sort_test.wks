@@ -1,4 +1,3 @@
-:sort
 [neio] "Switch %(index+1)" +ignore-sort +write %{{xdotool set_desktop %(index)}}
 b "Second?" +write %{{%(index)}}
 a "First?" +write %{{%(index)}}

@@ -43,7 +43,7 @@ enum
 
     /* switch macros */
     TOKEN_DEBUG,
-    TOKEN_SORT,
+    TOKEN_UNSORTED,
     TOKEN_TOP,
     TOKEN_BOTTOM,
 

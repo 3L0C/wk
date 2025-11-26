@@ -8,7 +8,6 @@
 :bd "#654321"
 :shell "/usr/bin/zsh"
 :font "Sans, 14"
-:sort
 :top
 :menu-width 500
 :menu-gap -1
