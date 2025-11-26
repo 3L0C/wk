@@ -1,0 +1,8 @@
+# @desc: Circular variable reference
+# @expect-error: Undefined variable
+
+# Test circular variable reference
+# Variable 'a' tries to use 'b', but 'b' is not defined yet
+:var "a" "%(b)"
+:var "b" "%(a)"
+x "Test" +write %{{echo test}}

@@ -1,0 +1,13 @@
+# @desc: Chord expression syntax
+
+# @test: "a"
+# @expect: 0
+
+# @test: "g"
+# @expect: g - special key
+
+[
+    arst
+    (g "special key" %{{%(key) - %(desc)}})
+    mnei
+] "Tag %(index+1)" +write %{{%(index)}}

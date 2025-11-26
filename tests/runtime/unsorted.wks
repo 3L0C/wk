@@ -1,0 +1,15 @@
+# @desc: Unsorted behavior (:unsort macro)
+
+# @test: "a"
+# @expect: a - First
+
+# @test: "b"
+# @expect: b - Second
+
+# @test: "c"
+# @expect: c - Third
+
+:unsorted
+b "Second" +write %{{%(key) - %(desc)}}
+a "First" +write %{{%(key) - %(desc)}}
+c "Third" +write %{{%(key) - %(desc)}}

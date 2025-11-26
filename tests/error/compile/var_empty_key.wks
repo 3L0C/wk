@@ -1,0 +1,6 @@
+# @desc: Empty variable key detection
+# @expect-error: Variable name resolves to empty string
+
+# Test empty variable key error
+:var "" "value"
+a "Test" +write %{{echo test}}

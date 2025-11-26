@@ -1,0 +1,5 @@
+# @desc: Circular include detection
+# @expect-error: does not support circular includes
+
+# This is not allowed.
+:include "circular_include_test.wks"

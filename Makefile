@@ -146,6 +146,18 @@ test: options
 test: all
 	@ bash $(TEST_SCRIPTS)/run_tests.sh
 
+test-verbose: options
+test-verbose: all
+	@ bash $(TEST_SCRIPTS)/run_tests.sh -v
+
+test-filter: options
+test-filter: all
+	@ bash $(TEST_SCRIPTS)/run_tests.sh --filter "$(FILTER)"
+
+test-update-snapshots: options
+test-update-snapshots: all
+	@ bash $(TEST_SCRIPTS)/run_tests.sh --update-snapshots
+
 $(BUILD_DIR)/$(NAME): $(OBJECTS) $(COMM_OBJS) $(COMP_OBJS) $(RUN_OBJS) $(TARGET_OBJS)
 	@ printf "%s %s %s\n" $(CC) "$@ $^" "$(CFLAGS) $(LDFLAGS)"
 	@ $(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)

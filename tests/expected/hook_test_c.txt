@@ -1,3 +1,0 @@
-sync-before
-sync-after
-main

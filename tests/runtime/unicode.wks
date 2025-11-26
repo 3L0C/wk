@@ -1,0 +1,10 @@
+# @desc: Unicode characters
+
+# @test: "👍"
+# @expect: Thumbs up
+
+# @test: "ä"
+# @expect: Umlaut
+
+ä "Umlaut" +write %{{Umlaut}}
+👍 "Thumbs up" +write %{{Thumbs up}}

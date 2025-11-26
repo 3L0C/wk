@@ -1,0 +1,5 @@
+# @desc: Undefined variable detection
+# @expect-error: Undefined variable
+
+# Test undefined variable error
+a "Test" +write %{{echo %(undefined_var)}}

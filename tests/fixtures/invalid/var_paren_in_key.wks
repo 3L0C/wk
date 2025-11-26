@@ -1,3 +1,0 @@
-# Test variable name containing ')' error
-:var "bad)" "value"
-a "Test" +write %{{echo test}}

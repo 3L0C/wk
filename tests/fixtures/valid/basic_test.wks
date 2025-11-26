@@ -1,9 +1,0 @@
-a "A chord" +write %{{Hello, world!}}
-p "A prefix" +write
-{
-    b "A chord" %{{Hello from inside prefix 'p b'}}
-    c "Another prefix" +write
-    {
-        d "Done" %{{You've reached the end!}}
-    }
-}

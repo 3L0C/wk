@@ -1,0 +1,8 @@
+# @desc: Circular @goto path detection
+
+# @test: "a"
+# @expect-error: Infinite @goto recursion detected
+
+# Test @goto circular chain detection
+a "Goto b" @goto "b"
+b "Goto a" @goto "a"

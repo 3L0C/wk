@@ -1,2 +1,0 @@
-# Test @goto infinite recursion detection
-a "Self-referential goto" @goto "a"

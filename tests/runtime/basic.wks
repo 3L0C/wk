@@ -1,0 +1,17 @@
+# @desc: Basic chord and prefix functionality
+
+# @test: "a"
+# @expect: Hello, world!
+
+# @test: "p b"
+# @expect: Hello from inside prefix 'p b'
+
+a "A chord" +write %{{Hello, world!}}
+p "A prefix" +write
+{
+    b "A chord" %{{Hello from inside prefix 'p b'}}
+    c "Another prefix" +write
+    {
+        d "Done" %{{You've reached the end!}}
+    }
+}

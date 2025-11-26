@@ -1,0 +1,7 @@
+# @desc: Meta-variable empty name
+# @expect-error: Variable name resolves to empty string
+
+# Test meta-variable name resolves to empty string
+:var "empty" ""
+:var "%(empty)" "value"
+x "Test" +write %{{echo test}}

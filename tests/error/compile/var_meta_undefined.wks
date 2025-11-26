@@ -1,0 +1,6 @@
+# @desc: Meta-variable undefined
+# @expect-error: Undefined variable
+
+# Test undefined variable in meta-variable name
+:var "%(undefined)" "value"
+x "Test" +write %{{echo test}}

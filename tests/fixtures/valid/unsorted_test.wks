@@ -1,4 +1,0 @@
-:unsorted
-b "Second" +write %{{%(key) - %(desc)}}
-a "First" +write %{{%(key) - %(desc)}}
-c "Third" +write %{{%(key) - %(desc)}}

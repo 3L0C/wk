@@ -1,0 +1,7 @@
+# @desc: Meta-variable invalid character
+# @expect-error: Variable name contains ')'
+
+# Test meta-variable name contains ')' after resolution
+:var "bad" "foo)"
+:var "%(bad)" "value"
+x "Test" +write %{{echo test}}

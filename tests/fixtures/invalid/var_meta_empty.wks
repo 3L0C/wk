@@ -1,4 +1,0 @@
-# Test meta-variable name resolves to empty string
-:var "empty" ""
-:var "%(empty)" "value"
-x "Test" +write %{{echo test}}

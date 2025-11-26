@@ -1,0 +1,6 @@
+# @desc: Invalid character in variable name
+# @expect-error: Variable name contains ')'
+
+# Test variable name containing ')' error
+:var "bad)" "value"
+a "Test" +write %{{echo test}}

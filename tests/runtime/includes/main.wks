@@ -1,0 +1,18 @@
+# @desc: Variable include tests (multi-file)
+
+# @test: "a"
+# @expect: echo maim screenshot.png
+
+# @test: "b"
+# @expect: echo maim process
+
+# @test: "c"
+# @expect: echo maim updated
+
+# Define variable then include common file
+:var "cmd" "grim"
+:include "common.wks"
+
+# Test variable redefinition after include
+:var "cmd" "maim"
+c "After redefine (%(cmd))" +write %{{echo %(cmd) updated}}

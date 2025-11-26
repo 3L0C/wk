@@ -1,2 +1,0 @@
-# Test undefined variable error
-a "Test" +write %{{echo %(undefined_var)}}

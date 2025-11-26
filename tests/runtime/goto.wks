@@ -1,0 +1,39 @@
+# @desc: @goto meta command
+
+# @test: "a"
+# @expect: echo root-a
+
+# @test: "p a"
+# @expect: echo nested-a
+
+# @test: "p b a"
+# @expect: echo root-a
+
+# @test: "p c a"
+# @expect: echo q-nested-a
+
+# @test: "g"
+# @expect: echo nested-a
+
+# @test: "q b a"
+# @expect: echo nested-a
+
+# Test @goto meta command functionality
+# Tests: goto to root, goto to prefix, goto to command
+
+a "Root command" +write %{{echo root-a}}
+
+p "Prefix"
+{
+    a "Nested command" +write %{{echo nested-a}}
+    b "Goto root" @goto ""
+    c "Goto prefix q" @goto "q"
+}
+
+q "Another prefix"
+{
+    a "Q nested" +write %{{echo q-nested-a}}
+    b "Goto p" @goto "p"
+}
+
+g "Direct goto to p a" @goto "p a"

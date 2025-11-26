@@ -1,0 +1,25 @@
+# @desc: Synchronous hook functionality
+
+# @test: "a"
+# @expect-multiline:
+# |sync-before-hook
+# |main-command
+
+# @test: "b"
+# @expect-multiline:
+# |sync-after-hook
+# |main-command
+
+# @test: "c"
+# @expect-multiline:
+# |sync-before
+# |sync-after
+# |main
+
+# Test: Hook functionality - sync-before and sync-after
+# Tests that synchronous hooks execute in the correct order
+# Note: Testing async hooks (+before/^after without sync) is avoided due to non-deterministic output ordering
+
+a "Sync before hook" ^sync-before %{{echo "sync-before-hook"}} +write %{{main-command}}
+b "Sync after hook" ^sync-after %{{echo "sync-after-hook"}} +write %{{main-command}}
+c "Both sync hooks" ^sync-before %{{echo "sync-before"}} ^sync-after %{{echo "sync-after"}} +write %{{main}}

@@ -1,7 +1,0 @@
-# Define variable then include common file
-:var "cmd" "grim"
-:include "common.wks"
-
-# Test variable redefinition after include
-:var "cmd" "maim"
-c "After redefine (%(cmd))" +write %{{echo %(cmd) updated}}

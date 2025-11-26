@@ -1,0 +1,7 @@
+# @desc: Infinite @goto recursion detection
+
+# @test: "a"
+# @expect-error: Infinite @goto recursion detected
+
+# Test @goto infinite recursion detection
+a "Self-referential goto" @goto "a"
