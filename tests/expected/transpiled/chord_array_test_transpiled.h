@@ -125,70 +125,70 @@ static Array builtinKeyChords =
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(9, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(23, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(24, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(32, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(46, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(47, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(55, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(69, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(70, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(78, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(92, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(93, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(101, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(115, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(116, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(124, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(138, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(139, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(147, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(161, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(162, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(170, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(184, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(185, 8),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(193, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(207, 1, MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(208, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(217, 14)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(231, 1, MOD_NONE, SPECIAL_KEY_NONE),
@@ -216,70 +216,70 @@ static Array builtinKeyChords =
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(307, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(316, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(331, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(332, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(341, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(356, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(357, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(366, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(381, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(382, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(391, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(406, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(407, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(416, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(431, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(432, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(441, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(456, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(457, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(466, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(481, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(482, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(491, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(506, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(507, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(516, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)),
         KEY_CHORD(
             KEY(531, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
                 [KC_PROP_DESCRIPTION] = PROPERTY_STRING(532, 9),
                 [KC_PROP_COMMAND]     = PROPERTY_STRING(541, 15)),
-            FLAG_IGNORE_SORT | FLAG_WRITE,
+            FLAG_WRITE,
             ARRAY_EMPTY(KeyChord)));
 
 #endif /* WK_CONFIG_CONFIG_H_ */

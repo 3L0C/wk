@@ -23,14 +23,6 @@
 #include "scanner.h"
 #include "token.h"
 
-/* Forward declarations */
-static void initKeyChordArrayProps(KeyChord* chord);
-static void freeKeyChordArrayProps(KeyChord* chord);
-static void compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, const String* desc);
-static bool propertyHasContent(const Property* prop);
-static void compilePropertyString(Compiler* compiler, KeyChord* chord, KeyChordPropId propId, size_t index);
-static void resolveChordTokenArrays(Compiler* compiler, KeyChord* chord, size_t sourceIndex);
-
 /* Key categorization for emacs which-key style sorting */
 typedef enum
 {
@@ -474,9 +466,73 @@ compileKey(Compiler* compiler, Key* key)
     consume(compiler, currentType(compiler), "Expected key or special.");
 }
 
+/* Initialize a property as a STRING type and return the String pointer. */
+static inline String*
+initPropertyString(KeyChord* chord, KeyChordPropId id)
+{
+    Property* prop = keyChordProperty(chord, id);
+    PROP_SET_TYPE(prop, STRING);
+    String* str = PROP_VAL(prop, as_string);
+    *str        = stringInit();
+    return str;
+}
+
+/* Helper: check if a property has content (works for both Array and String types) */
+static bool
+propertyHasContent(const Property* prop)
+{
+    if (!prop) return false;
+    switch (prop->type)
+    {
+    case PROP_TYPE_NONE: return false;
+    case PROP_TYPE_ARRAY: return !arrayIsEmpty(&prop->value.as_array);
+    case PROP_TYPE_STRING: return !stringIsEmpty(&prop->value.as_string);
+    default: return false;
+    }
+}
+
+/* Resolve common interpolation tokens shared by description, command, hook, and property compilation.
+ * Returns true if token was handled, false if caller should handle context-specific tokens. */
+static bool
+resolveInterpolationToken(Compiler* compiler, Token* token, KeyChord* chord, String* dest, size_t index)
+{
+    switch (token->type)
+    {
+    case TOKEN_THIS_KEY: stringAppendString(dest, &chord->key.repr); return true;
+    case TOKEN_INDEX: stringAppendUInt32(compiler->arena, dest, index); return true;
+    case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); return true;
+    case TOKEN_USER_VAR:
+    {
+        forEach(compiler->userVars, const UserVar, var)
+        {
+            if (strncmp(var->key, token->start, token->length) == 0)
+            {
+                stringAppendCString(dest, var->value);
+                return true;
+            }
+        }
+        tokenErrorAt(
+            token,
+            compiler->scanner->filepath,
+            "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
+            token->length,
+            token->start,
+            token->length,
+            token->start);
+        compiler->panicMode = true;
+        compiler->hadError  = true;
+        return true;
+    }
+    case TOKEN_WRAP_CMD_INTERP:
+        if (!stringIsEmpty(&compiler->menu->wrapCmd)) stringAppendString(dest, &compiler->menu->wrapCmd);
+        return true;
+    default: return false;
+    }
+}
+
 /* Immediate resolution: resolve description tokens directly to String */
 static void
-compileDescription(Compiler* compiler, KeyChord* chord, size_t index)
+compileDescriptionImmediate(Compiler* compiler, KeyChord* chord, size_t index)
 {
     assert(compiler), assert(chord);
     if (compiler->panicMode) return;
@@ -487,57 +543,19 @@ compileDescription(Compiler* compiler, KeyChord* chord, size_t index)
         return;
     }
 
-    Property* prop = keyChordProperty(chord, KC_PROP_DESCRIPTION);
-    PROP_SET_TYPE(prop, STRING);
-    String* desc = PROP_VAL(prop, as_string);
-    *desc        = stringInit();
+    String* desc = initPropertyString(chord, KC_PROP_DESCRIPTION);
 
     while (!check(compiler, TOKEN_EOF))
     {
         Token* token = currentToken(compiler);
-        switch (token->type)
+        if (!resolveInterpolationToken(compiler, token, chord, desc, index))
         {
-        case TOKEN_THIS_KEY: stringAppendString(desc, &chord->key.repr); break;
-        case TOKEN_INDEX: stringAppendUInt32(compiler->arena, desc, index); break;
-        case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, desc, index + 1); break;
-        case TOKEN_USER_VAR:
-        {
-            bool found = false;
-            forEach(compiler->userVars, const UserVar, var)
+            switch (token->type)
             {
-                if (strncmp(var->key, token->start, token->length) == 0)
-                {
-                    stringAppendCString(desc, var->value);
-                    found = true;
-                    break;
-                }
+            case TOKEN_DESC_INTERP: /* FALLTHROUGH */
+            case TOKEN_DESCRIPTION: stringAppendEscString(desc, token->start, token->length); break;
+            default: errorAtCurrent(compiler, "Malformed description."); return;
             }
-            if (!found)
-            {
-                tokenErrorAt(
-                    token,
-                    compiler->scanner->filepath,
-                    "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
-                    token->length,
-                    token->start,
-                    token->length,
-                    token->start);
-                compiler->panicMode = true;
-                compiler->hadError  = true;
-            }
-            break;
-        }
-        case TOKEN_WRAP_CMD_INTERP:
-        {
-            if (!stringIsEmpty(&compiler->menu->wrapCmd))
-            {
-                stringAppendString(desc, &compiler->menu->wrapCmd);
-            }
-            break;
-        }
-        case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-        case TOKEN_DESCRIPTION: stringAppendEscString(desc, token->start, token->length); break;
-        default: errorAtCurrent(compiler, "Malformed description."); return;
         }
         if (check(compiler, TOKEN_DESCRIPTION)) break;
         advance(compiler);
@@ -549,7 +567,7 @@ compileDescription(Compiler* compiler, KeyChord* chord, size_t index)
 
 /* Delayed resolution: store description tokens for later resolution (dummy chords) */
 static void
-compileDescriptionTokens(Compiler* compiler, Array* desc)
+compileDescriptionDelayed(Compiler* compiler, Array* desc)
 {
     assert(compiler), assert(desc);
     if (compiler->panicMode) return;
@@ -572,7 +590,7 @@ compileDescriptionTokens(Compiler* compiler, Array* desc)
         case TOKEN_WRAP_CMD_INTERP:
         case TOKEN_DESC_INTERP:
         case TOKEN_DESCRIPTION: arrayAppend(desc, token); break;
-        default: errorAtCurrent(compiler, "Malfromed description."); return;
+        default: errorAtCurrent(compiler, "Malformed description."); return;
         }
         if (check(compiler, TOKEN_DESCRIPTION)) break;
         advance(compiler);
@@ -580,6 +598,37 @@ compileDescriptionTokens(Compiler* compiler, Array* desc)
 
     consume(compiler, TOKEN_DESCRIPTION, "Expect description.");
     return;
+}
+
+/* Helper: compile description-like content to a String property (for +title/+wrap in immediate mode) */
+static void
+compilePropertyString(Compiler* compiler, KeyChord* chord, KeyChordPropId propId, size_t index)
+{
+    assert(compiler), assert(chord);
+    if (compiler->panicMode) return;
+
+    if (!check(compiler, TOKEN_DESC_INTERP) && !check(compiler, TOKEN_DESCRIPTION)) return;
+
+    String* str = initPropertyString(chord, propId);
+
+    while (!check(compiler, TOKEN_EOF))
+    {
+        Token* token = currentToken(compiler);
+        if (!resolveInterpolationToken(compiler, token, chord, str, index))
+        {
+            switch (token->type)
+            {
+            case TOKEN_DESC_INTERP: /* FALLTHROUGH */
+            case TOKEN_DESCRIPTION: stringAppendEscString(str, token->start, token->length); break;
+            default: errorAtCurrent(compiler, "Malformed property value."); return;
+            }
+        }
+        if (check(compiler, TOKEN_DESCRIPTION)) break;
+        advance(compiler);
+    }
+
+    consume(compiler, TOKEN_DESCRIPTION, "Expect property value.");
+    stringRtrim(str);
 }
 
 /* Delayed mode: compile meta command (stores tokens) */
@@ -607,7 +656,7 @@ compileMetaCmdDelayed(Compiler* compiler, KeyChord* chord)
     case TOKEN_GOTO:
     {
         consume(compiler, TOKEN_GOTO, "Expected '@goto' meta command.");
-        compileDescriptionTokens(compiler, keyChordArray(chord, KC_PROP_GOTO));
+        compileDescriptionDelayed(compiler, keyChordArray(chord, KC_PROP_GOTO));
         return true;
     }
     default:
@@ -660,9 +709,32 @@ compileMetaCmdImmediate(Compiler* compiler, KeyChord* chord, size_t index)
     return false;
 }
 
+static void
+compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, const String* desc)
+{
+    assert(compiler), assert(dest), assert(desc);
+
+    StringCase state;
+    switch (type)
+    {
+    case TOKEN_THIS_DESC_UPPER_FIRST: state = STRING_CASE_UPPER_FIRST; break;
+    case TOKEN_THIS_DESC_LOWER_FIRST: state = STRING_CASE_LOWER_FIRST; break;
+    case TOKEN_THIS_DESC_UPPER_ALL: state = STRING_CASE_UPPER_ALL; break;
+    case TOKEN_THIS_DESC_LOWER_ALL: state = STRING_CASE_LOWER_ALL; break;
+    default:
+    {
+        errorMsg("Got unexpected token type to `compileDescriptionWithState`.");
+        stringAppendString(dest, desc);
+        return;
+    }
+    }
+
+    stringAppendStringWithState(compiler->arena, dest, desc, state);
+}
+
 /* Immediate resolution: resolve command tokens directly to String */
 static bool
-compileCommand(Compiler* compiler, KeyChord* chord, size_t index, bool inChordArray, const char* message)
+compileCommandImmediate(Compiler* compiler, KeyChord* chord, size_t index, bool inChordArray, const char* message)
 {
     assert(compiler), assert(chord), assert(message);
     if (compiler->panicMode) return false;
@@ -674,75 +746,30 @@ compileCommand(Compiler* compiler, KeyChord* chord, size_t index, bool inChordAr
         return false;
     }
 
-    Property* prop = keyChordProperty(chord, KC_PROP_COMMAND);
-    PROP_SET_TYPE(prop, STRING);
-    String* cmd = PROP_VAL(prop, as_string);
-    *cmd        = stringInit();
+    String* cmd = initPropertyString(chord, KC_PROP_COMMAND);
 
     const String* desc = keyChordDescriptionConst(chord);
 
     while (!check(compiler, TOKEN_EOF))
     {
         Token* token = currentToken(compiler);
-        switch (token->type)
+        if (!resolveInterpolationToken(compiler, token, chord, cmd, index))
         {
-        case TOKEN_THIS_KEY: stringAppendString(cmd, &chord->key.repr); break;
-        case TOKEN_INDEX: stringAppendUInt32(compiler->arena, cmd, index); break;
-        case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, cmd, index + 1); break;
-        case TOKEN_USER_VAR:
-        {
-            bool found = false;
-            forEach(compiler->userVars, const UserVar, var)
+            switch (token->type)
             {
-                if (strncmp(var->key, token->start, token->length) == 0)
-                {
-                    stringAppendCString(cmd, var->value);
-                    found = true;
-                    break;
-                }
+            case TOKEN_THIS_DESC:
+                if (desc && !stringIsEmpty(desc)) stringAppendString(cmd, desc);
+                break;
+            case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
+            case TOKEN_THIS_DESC_LOWER_FIRST:
+            case TOKEN_THIS_DESC_UPPER_ALL:
+            case TOKEN_THIS_DESC_LOWER_ALL:
+                if (desc && !stringIsEmpty(desc)) compileDescriptionWithState(compiler, cmd, token->type, desc);
+                break;
+            case TOKEN_COMM_INTERP: /* FALLTHROUGH */
+            case TOKEN_COMMAND: stringAppend(cmd, token->start, token->length); break;
+            default: errorAtCurrent(compiler, "Malformed command."); return false;
             }
-            if (!found)
-            {
-                tokenErrorAt(
-                    token,
-                    compiler->scanner->filepath,
-                    "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
-                    token->length,
-                    token->start,
-                    token->length,
-                    token->start);
-                compiler->panicMode = true;
-                compiler->hadError  = true;
-            }
-            break;
-        }
-        case TOKEN_WRAP_CMD_INTERP:
-        {
-            if (!stringIsEmpty(&compiler->menu->wrapCmd))
-            {
-                stringAppendString(cmd, &compiler->menu->wrapCmd);
-            }
-            break;
-        }
-        case TOKEN_THIS_DESC:
-        {
-            if (desc && !stringIsEmpty(desc)) stringAppendString(cmd, desc);
-            break;
-        }
-        case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
-        case TOKEN_THIS_DESC_LOWER_FIRST:
-        case TOKEN_THIS_DESC_UPPER_ALL:
-        case TOKEN_THIS_DESC_LOWER_ALL:
-        {
-            if (desc && !stringIsEmpty(desc))
-            {
-                compileDescriptionWithState(compiler, cmd, token->type, desc);
-            }
-            break;
-        }
-        case TOKEN_COMM_INTERP: /* FALLTHROUGH */
-        case TOKEN_COMMAND: stringAppend(cmd, token->start, token->length); break;
-        default: errorAtCurrent(compiler, "Malformed command."); return false;
         }
         if (check(compiler, TOKEN_COMMAND)) break;
         advance(compiler);
@@ -754,7 +781,7 @@ compileCommand(Compiler* compiler, KeyChord* chord, size_t index, bool inChordAr
 
 /* Delayed resolution: store command tokens for later resolution (dummy chords) */
 static bool
-compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const char* message)
+compileCommandDelayed(Compiler* compiler, Array* cmd, bool inChordArray, const char* message)
 {
     assert(compiler), assert(cmd), assert(message);
     if (compiler->panicMode) return false;
@@ -783,7 +810,7 @@ compileCommandTokens(Compiler* compiler, Array* cmd, bool inChordArray, const ch
         case TOKEN_THIS_DESC_LOWER_ALL:
         case TOKEN_COMM_INTERP:
         case TOKEN_COMMAND: arrayAppend(cmd, token); break;
-        default: errorAtCurrent(compiler, "Malfromed command."); return false;
+        default: errorAtCurrent(compiler, "Malformed command."); return false;
         }
         if (check(compiler, TOKEN_COMMAND)) break;
         advance(compiler);
@@ -805,7 +832,7 @@ compileCommandOrMetaDelayed(Compiler* compiler, KeyChord* chord, bool inChordArr
     {
         return compileMetaCmdDelayed(compiler, chord);
     }
-    default: return compileCommandTokens(compiler, keyChordArray(chord, KC_PROP_COMMAND), inChordArray, message);
+    default: return compileCommandDelayed(compiler, keyChordArray(chord, KC_PROP_COMMAND), inChordArray, message);
     }
 
     /* UNREACHABLE */
@@ -826,7 +853,7 @@ compileCommandOrMetaImmediate(Compiler* compiler, KeyChord* chord, size_t index,
     {
         return compileMetaCmdImmediate(compiler, chord, index);
     }
-    default: return compileCommand(compiler, chord, index, inChordArray, message);
+    default: return compileCommandImmediate(compiler, chord, index, inChordArray, message);
     }
 
     /* UNREACHABLE */
@@ -852,65 +879,23 @@ compileHookBody(Compiler* compiler, KeyChord* chord, String* hook, size_t index,
     while (!check(compiler, TOKEN_EOF))
     {
         Token* token = currentToken(compiler);
-        switch (token->type)
+        if (!resolveInterpolationToken(compiler, token, chord, hook, index))
         {
-        case TOKEN_THIS_KEY: stringAppendString(hook, &chord->key.repr); break;
-        case TOKEN_INDEX: stringAppendUInt32(compiler->arena, hook, index); break;
-        case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, hook, index + 1); break;
-        case TOKEN_USER_VAR:
-        {
-            bool found = false;
-            forEach(compiler->userVars, const UserVar, var)
+            switch (token->type)
             {
-                if (strncmp(var->key, token->start, token->length) == 0)
-                {
-                    stringAppendCString(hook, var->value);
-                    found = true;
-                    break;
-                }
+            case TOKEN_THIS_DESC:
+                if (desc && !stringIsEmpty(desc)) stringAppendString(hook, desc);
+                break;
+            case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
+            case TOKEN_THIS_DESC_LOWER_FIRST:
+            case TOKEN_THIS_DESC_UPPER_ALL:
+            case TOKEN_THIS_DESC_LOWER_ALL:
+                if (desc && !stringIsEmpty(desc)) compileDescriptionWithState(compiler, hook, token->type, desc);
+                break;
+            case TOKEN_COMM_INTERP: /* FALLTHROUGH */
+            case TOKEN_COMMAND: stringAppend(hook, token->start, token->length); break;
+            default: errorAtCurrent(compiler, "Malformed hook."); return false;
             }
-            if (!found)
-            {
-                tokenErrorAt(
-                    token,
-                    compiler->scanner->filepath,
-                    "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
-                    token->length,
-                    token->start,
-                    token->length,
-                    token->start);
-                compiler->panicMode = true;
-                compiler->hadError  = true;
-            }
-            break;
-        }
-        case TOKEN_WRAP_CMD_INTERP:
-        {
-            if (!stringIsEmpty(&compiler->menu->wrapCmd))
-            {
-                stringAppendString(hook, &compiler->menu->wrapCmd);
-            }
-            break;
-        }
-        case TOKEN_THIS_DESC:
-        {
-            if (desc && !stringIsEmpty(desc)) stringAppendString(hook, desc);
-            break;
-        }
-        case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
-        case TOKEN_THIS_DESC_LOWER_FIRST:
-        case TOKEN_THIS_DESC_UPPER_ALL:
-        case TOKEN_THIS_DESC_LOWER_ALL:
-        {
-            if (desc && !stringIsEmpty(desc))
-            {
-                compileDescriptionWithState(compiler, hook, token->type, desc);
-            }
-            break;
-        }
-        case TOKEN_COMM_INTERP: /* FALLTHROUGH */
-        case TOKEN_COMMAND: stringAppend(hook, token->start, token->length); break;
-        default: errorAtCurrent(compiler, "Malformed hook."); return false;
         }
         if (check(compiler, TOKEN_COMMAND)) break;
         advance(compiler);
@@ -932,39 +917,27 @@ compileHookImmediate(Compiler* compiler, KeyChord* chord, TokenType type, size_t
     case TOKEN_BEFORE:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^before' hook.");
-        Property* prop = keyChordProperty(chord, KC_PROP_BEFORE);
-        PROP_SET_TYPE(prop, STRING);
-        String* hook = PROP_VAL(prop, as_string);
-        *hook        = stringInit();
+        String* hook = initPropertyString(chord, KC_PROP_BEFORE);
         return compileHookBody(compiler, chord, hook, index, "Expected command after '^before' hook.");
     }
     case TOKEN_AFTER:
     {
         consume(compiler, TOKEN_AFTER, "Expected '^after' hook.");
-        Property* prop = keyChordProperty(chord, KC_PROP_AFTER);
-        PROP_SET_TYPE(prop, STRING);
-        String* hook = PROP_VAL(prop, as_string);
-        *hook        = stringInit();
+        String* hook = initPropertyString(chord, KC_PROP_AFTER);
         return compileHookBody(compiler, chord, hook, index, "Expected command after '^after' hook.");
     }
     case TOKEN_SYNC_BEFORE:
     {
         consume(compiler, TOKEN_SYNC_BEFORE, "Expected '^sync-before' hook.");
         chord->flags |= FLAG_SYNC_BEFORE;
-        Property* prop = keyChordProperty(chord, KC_PROP_BEFORE);
-        PROP_SET_TYPE(prop, STRING);
-        String* hook = PROP_VAL(prop, as_string);
-        *hook        = stringInit();
+        String* hook = initPropertyString(chord, KC_PROP_BEFORE);
         return compileHookBody(compiler, chord, hook, index, "Expected command after '^sync-before' hook.");
     }
     case TOKEN_SYNC_AFTER:
     {
         consume(compiler, TOKEN_SYNC_AFTER, "Expected '^sync-after' hook.");
         chord->flags |= FLAG_SYNC_AFTER;
-        Property* prop = keyChordProperty(chord, KC_PROP_AFTER);
-        PROP_SET_TYPE(prop, STRING);
-        String* hook = PROP_VAL(prop, as_string);
-        *hook        = stringInit();
+        String* hook = initPropertyString(chord, KC_PROP_AFTER);
         return compileHookBody(compiler, chord, hook, index, "Expected command after '^sync-after' hook.");
     }
     default: return false;
@@ -989,7 +962,7 @@ compileHookDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
     case TOKEN_BEFORE:
     {
         consume(compiler, TOKEN_BEFORE, "Expected '^before' hook.");
-        return compileCommandTokens(
+        return compileCommandDelayed(
             compiler,
             keyChordArray(chord, KC_PROP_BEFORE),
             false,
@@ -998,7 +971,7 @@ compileHookDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
     case TOKEN_AFTER:
     {
         consume(compiler, TOKEN_AFTER, "Expected '^after' hook.");
-        return compileCommandTokens(
+        return compileCommandDelayed(
             compiler,
             keyChordArray(chord, KC_PROP_AFTER),
             false,
@@ -1008,7 +981,7 @@ compileHookDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
     {
         consume(compiler, TOKEN_SYNC_BEFORE, "Expected '^sync-before' hook.");
         chord->flags |= FLAG_SYNC_BEFORE;
-        return compileCommandTokens(
+        return compileCommandDelayed(
             compiler,
             keyChordArray(chord, KC_PROP_BEFORE),
             false,
@@ -1018,7 +991,7 @@ compileHookDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
     {
         consume(compiler, TOKEN_SYNC_AFTER, "Expected '^sync-after' hook.");
         chord->flags |= FLAG_SYNC_AFTER;
-        return compileCommandTokens(
+        return compileCommandDelayed(
             compiler,
             keyChordArray(chord, KC_PROP_AFTER),
             false,
@@ -1026,75 +999,6 @@ compileHookDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
     }
     default: return false;
     }
-}
-
-/* Helper: compile description-like content to a String property (for +title/+wrap in immediate mode) */
-static void
-compilePropertyString(Compiler* compiler, KeyChord* chord, KeyChordPropId propId, size_t index)
-{
-    assert(compiler), assert(chord);
-    if (compiler->panicMode) return;
-
-    if (!check(compiler, TOKEN_DESC_INTERP) && !check(compiler, TOKEN_DESCRIPTION)) return;
-
-    Property* prop = keyChordProperty(chord, propId);
-    PROP_SET_TYPE(prop, STRING);
-    String* str = PROP_VAL(prop, as_string);
-    *str        = stringInit();
-
-    while (!check(compiler, TOKEN_EOF))
-    {
-        Token* token = currentToken(compiler);
-        switch (token->type)
-        {
-        case TOKEN_THIS_KEY: stringAppendString(str, &chord->key.repr); break;
-        case TOKEN_INDEX: stringAppendUInt32(compiler->arena, str, index); break;
-        case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, str, index + 1); break;
-        case TOKEN_USER_VAR:
-        {
-            bool found = false;
-            forEach(compiler->userVars, const UserVar, var)
-            {
-                if (strncmp(var->key, token->start, token->length) == 0)
-                {
-                    stringAppendCString(str, var->value);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
-            {
-                tokenErrorAt(
-                    token,
-                    compiler->scanner->filepath,
-                    "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
-                    token->length,
-                    token->start,
-                    token->length,
-                    token->start);
-                compiler->panicMode = true;
-                compiler->hadError  = true;
-            }
-            break;
-        }
-        case TOKEN_WRAP_CMD_INTERP:
-        {
-            if (!stringIsEmpty(&compiler->menu->wrapCmd))
-            {
-                stringAppendString(str, &compiler->menu->wrapCmd);
-            }
-            break;
-        }
-        case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-        case TOKEN_DESCRIPTION: stringAppendEscString(str, token->start, token->length); break;
-        default: errorAtCurrent(compiler, "Malformed property value."); return;
-        }
-        if (check(compiler, TOKEN_DESCRIPTION)) break;
-        advance(compiler);
-    }
-
-    consume(compiler, TOKEN_DESCRIPTION, "Expect property value.");
-    stringRtrim(str);
 }
 
 /* Delayed mode: compile flag (stores tokens for +title/+wrap) */
@@ -1125,7 +1029,7 @@ compileFlagDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
         consume(compiler, TOKEN_TITLE, "Expected '+title'.");
         if (check(compiler, TOKEN_DESCRIPTION) || check(compiler, TOKEN_DESC_INTERP))
         {
-            compileDescriptionTokens(compiler, keyChordArray(chord, KC_PROP_TITLE));
+            compileDescriptionDelayed(compiler, keyChordArray(chord, KC_PROP_TITLE));
         }
         return true;
     }
@@ -1134,7 +1038,7 @@ compileFlagDelayed(Compiler* compiler, KeyChord* chord, TokenType type)
         consume(compiler, TOKEN_WRAP, "Expected '+wrap'.");
         if (check(compiler, TOKEN_DESCRIPTION) || check(compiler, TOKEN_DESC_INTERP))
         {
-            compileDescriptionTokens(compiler, keyChordArray(chord, KC_PROP_WRAP_CMD));
+            compileDescriptionDelayed(compiler, keyChordArray(chord, KC_PROP_WRAP_CMD));
         }
         return true;
     }
@@ -1268,6 +1172,83 @@ compileMissingKeyChordInfo(Compiler* compiler, const KeyChord* from, KeyChord* t
 }
 
 static void
+compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* dest, size_t index)
+{
+    assert(compiler), assert(token), assert(to), assert(dest);
+
+    if (resolveInterpolationToken(compiler, token, to, dest, index)) return;
+
+    switch (token->type)
+    {
+    case TOKEN_THIS_DESC:
+    {
+        const String* desc = keyChordDescriptionConst(to);
+        if (!stringIsEmpty(desc)) stringAppendString(dest, desc);
+        break;
+    }
+    case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
+    case TOKEN_THIS_DESC_LOWER_FIRST:
+    case TOKEN_THIS_DESC_UPPER_ALL:
+    case TOKEN_THIS_DESC_LOWER_ALL:
+    {
+        const String* desc = keyChordDescriptionConst(to);
+        if (!stringIsEmpty(desc)) compileDescriptionWithState(compiler, dest, token->type, desc);
+        break;
+    }
+    case TOKEN_DESC_INTERP: /* FALLTHROUGH */
+    case TOKEN_DESCRIPTION: stringAppendEscString(dest, token->start, token->length); break;
+    case TOKEN_COMM_INTERP: /* FALLTHROUGH */
+    case TOKEN_COMMAND: stringAppend(dest, token->start, token->length); break;
+    default:
+        errorMsg("Got unexpected token when compiling token array: '%s'.", tokenGetLiteral(token->type));
+        break;
+    }
+}
+
+static void
+compileStringFromTokens(Compiler* compiler, Array* tokens, KeyChord* to, String* dest, size_t index)
+{
+    assert(compiler), assert(tokens), assert(to), assert(dest);
+
+    forEach(tokens, Token, token)
+    {
+        compileStringFromToken(compiler, token, to, dest, index);
+    }
+
+    stringRtrim(dest);
+}
+
+/* Resolve a single chord's Token array properties to Strings with given source index */
+static void
+resolveChordTokenArrays(Compiler* compiler, KeyChord* chord, size_t sourceIndex)
+{
+    assert(compiler), assert(chord);
+
+    for (size_t i = 0; i < KC_PROP_COUNT; i++)
+    {
+        Property* prop = keyChordProperty(chord, (KeyChordPropId)i);
+        if (prop->type == PROP_TYPE_ARRAY)
+        {
+            Array* tokens = PROP_VAL(prop, as_array);
+            if (!arrayIsEmpty(tokens))
+            {
+                String result = stringInit();
+                compileStringFromTokens(compiler, tokens, chord, &result, sourceIndex);
+                arrayFree(tokens);
+                prop->type            = PROP_TYPE_STRING;
+                prop->value.as_string = result;
+            }
+            else
+            {
+                /* Empty array - just mark as unset */
+                arrayFree(tokens);
+                prop->type = PROP_TYPE_NONE;
+            }
+        }
+    }
+}
+
+static void
 compileImplicitChordArray(Compiler* compiler, KeyChord* dummy)
 {
     assert(compiler);
@@ -1284,15 +1265,9 @@ compileImplicitChordArray(Compiler* compiler, KeyChord* dummy)
         return;
     }
 
-    compileDescriptionTokens(compiler, keyChordArray(dummy, KC_PROP_DESCRIPTION));
-
-    /* /\* Set FLAG_IGNORE_SORT by default for implicit arrays. */
-    /*  * This is done BEFORE compileHooksAndFlagsDelayed so user-provided +sort can override it. *\/ */
-    /* dummy->flags |= FLAG_IGNORE_SORT; */
-
+    compileDescriptionDelayed(compiler, keyChordArray(dummy, KC_PROP_DESCRIPTION));
     compileHooksAndFlagsDelayed(compiler, dummy);
-    /* TODO think of a better name */
-    compileCommandOrMetaDelayed(compiler, dummy, false, "Exepected command.");
+    compileCommandOrMetaDelayed(compiler, dummy, false, "Expected command.");
 
     size_t scopeStart = arrayLength(compiler->dest);
     forEach(&compiler->implicitKeys, const Key, key)
@@ -1342,7 +1317,7 @@ compileChordArray(Compiler* compiler)
         {
             compileMods(compiler, &chord.key);
             compileKey(compiler, &chord.key);
-            compileDescriptionTokens(compiler, keyChordArray(&chord, KC_PROP_DESCRIPTION));
+            compileDescriptionDelayed(compiler, keyChordArray(&chord, KC_PROP_DESCRIPTION));
             compileHooksAndFlagsDelayed(compiler, &chord);
             compileCommandOrMetaDelayed(compiler, &chord, true, "Expected command.");
             consume(compiler, TOKEN_RIGHT_PAREN, "Expect closing parenthesis after '('.");
@@ -1360,7 +1335,7 @@ compileChordArray(Compiler* compiler)
     KeyChord dummy = { 0 };
     initKeyChordArrayProps(&dummy);
 
-    compileDescriptionTokens(compiler, keyChordArray(&dummy, KC_PROP_DESCRIPTION));
+    compileDescriptionDelayed(compiler, keyChordArray(&dummy, KC_PROP_DESCRIPTION));
     compileHooksAndFlagsDelayed(compiler, &dummy);
     compileCommandOrMetaDelayed(compiler, &dummy, false, "Expected command.");
 
@@ -1396,7 +1371,7 @@ compileChord(Compiler* compiler)
         freeKeyChordArrayProps(&dummy);
 
         compileKey(compiler, &chord.key);
-        compileDescription(compiler, &chord, 0);
+        compileDescriptionImmediate(compiler, &chord, 0);
         compileHooksAndFlagsImmediate(compiler, &chord, 0);
 
         /* Prefix */
@@ -1420,7 +1395,7 @@ compileChord(Compiler* compiler)
     keyChordInit(&chord);
 
     compileKey(compiler, &chord.key);
-    compileDescription(compiler, &chord, 0);
+    compileDescriptionImmediate(compiler, &chord, 0);
     compileHooksAndFlagsImmediate(compiler, &chord, 0);
 
     /* Prefix */
@@ -1436,20 +1411,6 @@ compileChord(Compiler* compiler)
     }
 
     appendToDest(compiler, &chord);
-}
-
-/* Helper: check if a property has content (works for both Array and String types) */
-static bool
-propertyHasContent(const Property* prop)
-{
-    if (!prop) return false;
-    switch (prop->type)
-    {
-    case PROP_TYPE_NONE: return false;
-    case PROP_TYPE_ARRAY: return !arrayIsEmpty(&prop->value.as_array);
-    case PROP_TYPE_STRING: return !stringIsEmpty(&prop->value.as_string);
-    default: return false;
-    }
 }
 
 /* Helper: copy property from parent to child if child's property is empty */
@@ -1687,151 +1648,6 @@ compileKeyChord(Compiler* compiler)
     else
     {
         compileChord(compiler);
-    }
-}
-
-static void
-compileDescriptionWithState(Compiler* compiler, String* dest, TokenType type, const String* desc)
-{
-    assert(compiler), assert(dest), assert(desc);
-
-    StringCase state;
-    switch (type)
-    {
-    case TOKEN_THIS_DESC_UPPER_FIRST: state = STRING_CASE_UPPER_FIRST; break;
-    case TOKEN_THIS_DESC_LOWER_FIRST: state = STRING_CASE_LOWER_FIRST; break;
-    case TOKEN_THIS_DESC_UPPER_ALL: state = STRING_CASE_UPPER_ALL; break;
-    case TOKEN_THIS_DESC_LOWER_ALL: state = STRING_CASE_LOWER_ALL; break;
-    default:
-    {
-        errorMsg("Got unexpected token type to `compileDescriptionWithState`.");
-        stringAppendString(dest, desc);
-        return;
-    }
-    }
-
-    stringAppendStringWithState(compiler->arena, dest, desc, state);
-}
-
-static void
-compileStringFromToken(Compiler* compiler, Token* token, KeyChord* to, String* dest, size_t index)
-{
-    assert(compiler), assert(token), assert(to), assert(dest);
-
-    switch (token->type)
-    {
-    case TOKEN_THIS_KEY: stringAppendString(dest, &to->key.repr); break;
-    case TOKEN_THIS_DESC:
-    {
-        const String* desc = keyChordDescriptionConst(to);
-        if (!stringIsEmpty(desc)) stringAppendString(dest, desc);
-        break;
-    }
-    case TOKEN_THIS_DESC_UPPER_FIRST: /* FALLTHROUGH */
-    case TOKEN_THIS_DESC_LOWER_FIRST:
-    case TOKEN_THIS_DESC_UPPER_ALL:
-    case TOKEN_THIS_DESC_LOWER_ALL:
-    {
-        const String* desc = keyChordDescriptionConst(to);
-        if (!stringIsEmpty(desc))
-        {
-            compileDescriptionWithState(compiler, dest, token->type, desc);
-        }
-        break;
-    }
-    case TOKEN_INDEX: stringAppendUInt32(compiler->arena, dest, index); break;
-    case TOKEN_INDEX_ONE: stringAppendUInt32(compiler->arena, dest, index + 1); break;
-    case TOKEN_WRAP_CMD_INTERP:
-    {
-        if (!stringIsEmpty(&compiler->menu->wrapCmd))
-        {
-            stringAppendString(dest, &compiler->menu->wrapCmd);
-        }
-        break;
-    }
-    case TOKEN_DESC_INTERP: /* FALLTHROUGH */
-    case TOKEN_DESCRIPTION: stringAppendEscString(dest, token->start, token->length); break;
-    case TOKEN_COMM_INTERP: /* FALLTHROUGH */
-    case TOKEN_COMMAND: stringAppend(dest, token->start, token->length); break;
-    case TOKEN_USER_VAR:
-    {
-        bool found = false;
-        forEach(compiler->userVars, const UserVar, var)
-        {
-            if (strncmp(var->key, token->start, token->length) == 0)
-            {
-                stringAppendCString(dest, var->value);
-                found = true;
-                break;
-            }
-        }
-
-        if (!found)
-        {
-            tokenErrorAt(
-                token,
-                compiler->scanner->filepath,
-                "Undefined variable '%%(%.*s)'. Use :var \"%.*s\" \"value\" to define it.",
-                token->length,
-                token->start,
-                token->length,
-                token->start);
-            compiler->panicMode = true;
-            compiler->hadError  = true;
-        }
-
-        break;
-    }
-    default:
-    {
-        errorMsg(
-            "Got unexpected token when compiling token array: '%s'.",
-            tokenGetLiteral(token->type));
-        break;
-    }
-    }
-}
-
-static void
-compileStringFromTokens(Compiler* compiler, Array* tokens, KeyChord* to, String* dest, size_t index)
-{
-    assert(compiler), assert(tokens), assert(to), assert(dest);
-
-    forEach(tokens, Token, token)
-    {
-        compileStringFromToken(compiler, token, to, dest, index);
-    }
-
-    stringRtrim(dest);
-}
-
-/* Resolve a single chord's Token array properties to Strings with given source index */
-static void
-resolveChordTokenArrays(Compiler* compiler, KeyChord* chord, size_t sourceIndex)
-{
-    assert(compiler), assert(chord);
-
-    for (size_t i = 0; i < KC_PROP_COUNT; i++)
-    {
-        Property* prop = keyChordProperty(chord, (KeyChordPropId)i);
-        if (prop->type == PROP_TYPE_ARRAY)
-        {
-            Array* tokens = PROP_VAL(prop, as_array);
-            if (!arrayIsEmpty(tokens))
-            {
-                String result = stringInit();
-                compileStringFromTokens(compiler, tokens, chord, &result, sourceIndex);
-                arrayFree(tokens);
-                prop->type            = PROP_TYPE_STRING;
-                prop->value.as_string = result;
-            }
-            else
-            {
-                /* Empty array - just mark as unset */
-                arrayFree(tokens);
-                prop->type = PROP_TYPE_NONE;
-            }
-        }
     }
 }
 
