@@ -4,8 +4,8 @@
 
 /* local includes */
 #include "arena.h"
-#include "array.h"
 #include "memory.h"
+#include "vector.h"
 
 void
 arenaInit(Arena* arena)
@@ -17,15 +17,15 @@ arenaInit(Arena* arena)
 }
 
 void*
-arenaAdoptArray(Arena* arena, Array* arr)
+arenaAdoptVector(Arena* arena, Vector* vec)
 {
-    assert(arena), assert(arr);
-    if (arrayIsEmpty(arr)) return NULL;
+    assert(arena), assert(vec);
+    if (vectorIsEmpty(vec)) return NULL;
 
-    size_t bytes  = arrayLength(arr) * arr->elementSize;
+    size_t bytes  = vectorLength(vec) * vec->elementSize;
     void*  buffer = arenaAlloc(arena, bytes);
-    memcpy(buffer, arr->data, bytes);
-    arrayFree(arr);
+    memcpy(buffer, vec->data, bytes);
+    vectorFree(vec);
     return buffer;
 }
 
@@ -36,26 +36,21 @@ arenaAlloc(Arena* arena, size_t size)
 
     size = ARENA_ALIGN(size);
 
-    /* If this allocation won't fit in the current block */
     if (arena->buffer == NULL || arena->used + size > arena->bufferSize)
     {
-        /* Allocate a new block */
         size_t blockSize = size > ARENA_BLOCK_SIZE ? size : ARENA_BLOCK_SIZE;
 
         if (arena->buffer != NULL)
         {
-            /* If we already have a buffer, create a new arena to hold the old state */
             Arena* oldArena      = (Arena*)reallocate(NULL, 0, sizeof(Arena));
             oldArena->buffer     = arena->buffer;
             oldArena->bufferSize = arena->bufferSize;
             oldArena->used       = arena->used;
             oldArena->prev       = arena->prev;
 
-            /* Update the current arena */
             arena->prev = oldArena;
         }
 
-        /* Allocate new buffer for the current arena */
         arena->buffer     = (char*)reallocate(NULL, 0, blockSize);
         arena->bufferSize = blockSize;
         arena->used       = size;
@@ -63,7 +58,6 @@ arenaAlloc(Arena* arena, size_t size)
         return arena->buffer;
     }
 
-    /* Allocation fits in current block */
     void* result = arena->buffer + arena->used;
     arena->used += size;
 
@@ -87,21 +81,24 @@ arenaFree(Arena* arena)
 {
     assert(arena);
 
+    Arena* original = arena;
+
     while (arena != NULL)
     {
         Arena* prev = arena->prev;
         reallocate(arena->buffer, arena->bufferSize, 0);
 
-        if (prev == NULL)
+        if (arena == original)
         {
-            /* This is the Last arena - reset it instead of freeing */
             arena->buffer     = NULL;
             arena->bufferSize = 0;
             arena->used       = 0;
-            return;
+            arena->prev       = NULL;
         }
-
-        reallocate(arena, sizeof(Arena), 0);
+        else
+        {
+            reallocate(arena, sizeof(Arena), 0);
+        }
         arena = prev;
     }
 }

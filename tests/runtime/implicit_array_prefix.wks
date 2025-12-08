@@ -1,39 +1,27 @@
-# @desc: Implicit array prefix inheritance
-
-# @test: "p d"
-# @expect: child-d-0
+# @desc: Implicit arrays within prefixes
 
 # @test: "p a"
 # @expect: child-a-3
 
-# @test: "q d"
-# @expect: child2-d-0
+# @test: "p d"
+# @expect: child-d-0
 
 # @test: "q a"
 # @expect: child2-a-3
 
-# @test: "r a"
-# @expect: child3-a-3
-
-# @test: "r d"
-# @expect: child3-d-0
+# @test: "q d"
+# @expect: child2-d-0
 
 :implicit-array-keys "dcba"
 
-# Prefix without flags, child implicit array should be unsorted (implicit +ignore-sort)
+# Implicit arrays are sorted alphabetically for display (dcba -> abcd)
+# but %(index) preserves the original declaration index
 p "Prefix"
 {
-    ... "Child unsorted %(index)" +write %{{child-%(key)-%(index)}}
+    ... "Child %(index)" +write %{{child-%(key)-%(index)}}
 }
 
-# Prefix with +sort flag (FLAG_IGNORE_SORT not inherited so child still unsorted)
-q "Prefix sorted" +sort
+q "Another prefix"
 {
-    ... "Child still unsorted %(index)" +write %{{child2-%(key)-%(index)}}
-}
-
-# Child with explicit +sort should override implicit +ignore-sort
-r "Prefix"
-{
-    ... "Child sorted %(index)" +sort +write %{{child3-%(key)-%(index)}}
+    ... "Child2 %(index)" +write %{{child2-%(key)-%(index)}}
 }

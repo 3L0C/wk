@@ -3,8 +3,9 @@
 
 #include <stdbool.h>
 
-#include "common/array.h"
+#include "common/arena.h"
+#include "common/vector.h"
 
-bool compileKeys(const char* keys, Array* outKeys);
+bool compileKeys(Arena* arena, const char* keys, Vector* outKeys);
 
 #endif /* WK_COMPILER_COMMON_H_ */

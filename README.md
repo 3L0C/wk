@@ -170,8 +170,7 @@ options:
     -t, --top                  Position menu at top of screen.
     -b, --bottom               Position menu at bottom of screen.
     -s, --script               Read script from stdin to use as key chords.
-    -S, --sort                 Sort key chords read from --key-chords, --script,
-                               or --transpile.
+    -U, --unsorted             Disable sorting of key chords (sorted by default).
     -m, --max-columns INT      Set the maximum menu columns to INT (defualt 5).
     -p, --press KEY(s)         Press KEY(s) before dispalying menu.
     -T, --transpile FILE       Transpile FILE to valid 'key_chords.h' syntax and
@@ -538,11 +537,6 @@ a command. This is practially a chord in terms of its
 form, but in behavior an implicit array generates any
 number of chords from this simple syntax.
 
-**Important:** Implicit arrays have an implicit `+ignore-sort` flag,
-meaning they remain in their original order (from `implicitArrayKeys`)
-even when `:sort` is enabled. To make them sorted, explicitly add the
-`+sort` flag.
-
 As an example, say your implicit array keys are set to `h`,
 `j`, `k`, and `l`, and you have this `wks` file:
 
@@ -561,17 +555,7 @@ l "Switch workspace 4" %{{xdotool set_desktop 3}}
 ```
 
 The chords are generated in the same order as `implicitArrayKeys`
-(h, j, k, l in this example). If you want them sorted alphabetically
-when using `:sort`, add the `+sort` flag:
-
-```
-:sort
-... "Switch workspace %(index+1)" +sort %{{xdotool set_desktop %(index)}}
-```
-
-This will generate chords in sorted order: h, j, k, l (which happens
-to be the same in this case, but would differ with keys in a different
-order like `jklh`).
+(h, j, k, l in this example).
 
 
 ### Explicit Arrays
@@ -850,8 +834,6 @@ flag -> '+' ( 'keep'
             | 'close'
             | 'inherit'
             | 'ignore'
-            | 'ignore-sort'
-            | 'sort'
             | 'unhook'
             | 'deflag'
             | 'no-before'
@@ -874,8 +856,6 @@ flag itself. Here is how each flag changes the behavior of
 | `close`        | Forces the `wk` window to close. Useful when `+keep` was given to a surrounding prefix.                                       |
 | `inherit`      | Causes the prefix to inherit flags and hooks from its parent. Has no effect when given to a chord.                            |
 | `ignore`       | Ignore all hooks and flags from the surrounding prefix. Has no effect when given to a prefix.                                 |
-| `ignore-sort`  | Chord is ignored during sorting leaving it in it in the same position it was parsed in.                                       |
-| `sort`         | Unsets the `ignore-sort` flag. Primarily useful for implicit arrays (which have implicit `+ignore-sort`) or overriding inherited behavior. |
 | `unhook`       | Ignore all hooks from the surrounding prefix.                                                                                 |
 | `deflag`       | Ignore all flags from the surrounding prefix.                                                                                 |
 | `no-before`    | Ignore `before` and `sync-before` hooks from the surrounding prefix.                                                          |
@@ -995,12 +975,11 @@ flags may be given to ignore unwanted behavior.
 
 #### Sorting
 
-Key chords will be sorted when processing a `wks` file if
-the `--sort` flag is passed to `wk`. This has knock-on
-effects with index interpolations (often for chord arrays).
-A `wks` file like this will produce different results sorted
-vs unsorted (the default).
-
+Key chords are sorted by default when processing a `wks`
+file. Index interpolations are resolved *before* sorting,
+so `%(index)` reflects parse order, not final sorted
+position. Sorting only changes display order, not index
+values.
 
 ```
 # Base file
@@ -1008,40 +987,22 @@ vs unsorted (the default).
 b "Second?" +write %{{%(index)}}
 a "First?" +write %{{%(index)}}
 
-# Unsorted result
-n "Switch 1" %{{xdotool set_desktop 0}}
+# Result (sorted by default, but indices reflect parse order)
+a "First?" +write %{{5}}
+b "Second?" +write %{{4}}
 e "Switch 2" %{{xdotool set_desktop 1}}
 i "Switch 3" %{{xdotool set_desktop 2}}
+n "Switch 1" %{{xdotool set_desktop 0}}
 o "Switch 4" %{{xdotool set_desktop 3}}
-b "Second?" +write %{{4}}
-a "First?" +write %{{5}}
-
-# Sorted result
-a "First?" +write %{{0}}
-b "Second?" +write %{{1}}
-e "Switch 3" %{{xdotool set_desktop 2}}
-i "Switch 4" %{{xdotool set_desktop 3}}
-n "Switch 5" %{{xdotool set_desktop 4}}
-o "Switch 6" %{{xdotool set_desktop 5}}
 ```
 
-To avoid this you can add the `+ignore-sort` flag to any key
-chord to ensure the value of the index interpolations.
+The array `[neio]` expands to indices 0-3 in parse order
+(n=0, e=1, i=2, o=3), then `b` gets index 4 and `a` gets
+index 5. After sorting, the display order changes but
+indices remain unchanged.
 
-```
-# Base file
-[neio] "Switch %(index+1)" +ignore-sort %{{xdotool set_desktop %(index)}}
-b "Second?" +write %{{%(index)}}
-a "First?" +write %{{%(index)}}
-
-# Sorted with `+ignore-sort` result
-n "Switch 3" %{{xdotool set_desktop 2}}
-e "Switch 1" %{{xdotool set_desktop 0}}
-i "Switch 2" %{{xdotool set_desktop 1}}
-o "Switch 4" %{{xdotool set_desktop 3}}
-a "First?" +write %{{4}}
-b "Second?" +write %{{5}}
-```
+To disable sorting, use the `--unsorted` CLI flag or the
+`:unsorted` preprocessor macro.
 
 ## Preprocessor Macros
 
@@ -1338,7 +1299,7 @@ settings.
 
 ```
 switch_macro -> ( 'debug'
-                | 'sort'
+                | 'unsorted'
                 | 'top'
                 | 'bottom' );
 ```

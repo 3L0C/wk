@@ -5,24 +5,14 @@
 #include <strings.h>
 
 /* common includes */
-#include "common/array.h"
 #include "common/common.h"
 #include "common/key_chord.h"
-#include "common/key_chord_def.h"
 #include "common/menu.h"
 #include "common/property.h"
+#include "common/span.h"
 #include "common/string.h"
 
-/* Property enum name table for transpilation */
-static const char* KC_PROP_NAMES[KC_PROP_COUNT] = {
-#define KC_PROP(id, name, accessor, rt, ct) [id] = #id,
-    KEY_CHORD_PROP_LIST
-#undef KC_PROP
-};
-
-static size_t offset = 0;
-
-static void writeKeyChords(const Array* keyChords, int indent);
+static void writeKeyChords(const Span* keyChords, int indent);
 
 static void
 writeNewlineWithIndent(int indent)
@@ -41,23 +31,21 @@ writeConfigHeader(void)
         "#include <stdint.h>\n"
         "\n"
         "/* common includes */\n"
-        "#include \"src/common/array.h\"\n"
         "#include \"src/common/key_chord.h\"\n"
         "#include \"src/common/menu.h\"\n"
+        "#include \"src/common/span.h\"\n"
         "#include \"src/common/string.h\"\n"
         "\n");
 }
 
 static void
-writeEscString(const String* string)
+writeEscString(const String* str)
 {
-    if (!string) return;
-    if (stringIsEmpty(string)) return;
+    if (!str || stringIsEmpty(str)) return;
 
-    StringIterator iter = stringIteratorMake(string);
-    char           c    = '\0';
-    while ((c = stringIteratorNext(&iter)) != '\0')
+    for (size_t i = 0; i < str->length; i++)
     {
+        char c = str->data[i];
         switch (c)
         {
         case '\\': printf("\\\\"); break;
@@ -85,6 +73,14 @@ writeEscCString(const char* str)
         }
         c++;
     }
+}
+
+static void
+writeEscStringQuoted(const String* str)
+{
+    printf("\"");
+    if (str && !stringIsEmpty(str)) writeEscString(str);
+    printf("\"");
 }
 
 static void
@@ -200,14 +196,14 @@ writeConfigVariables(const Menu* menu)
 
     /* Wrap command */
     printf("/* Command wrapper prefix. Set to NULL or \"\" to disable. Examples: \"uwsm app --\", \"firefox\", etc. */\n");
-    if (stringIsEmpty(&menu->wrapCmd))
+    if (menu->wrapCmd == NULL || menu->wrapCmd[0] == '\0')
     {
         printf("static const char* wrapCmd = NULL;\n");
     }
     else
     {
         printf("static const char* wrapCmd = \"");
-        writeEscString(&menu->wrapCmd);
+        writeEscCString(menu->wrapCmd);
         printf("\";\n");
     }
 
@@ -219,37 +215,23 @@ writeKeyChordsDefines(void)
 {
     printf(
         "/* Builtin key chords */\n"
-        "#define ARRAY(T, _len, ...)                  \\\n"
-        "    (Array)                                  \\\n"
-        "    {                                        \\\n"
-        "        .data        = (T[]){ __VA_ARGS__ }, \\\n"
-        "        .length      = (_len),               \\\n"
-        "        .capacity    = (_len),               \\\n"
-        "        .elementSize = sizeof(T)             \\\n"
+        "#define SPAN_STATIC(T, _count, ...)    \\\n"
+        "    (Span)                             \\\n"
+        "    {                                  \\\n"
+        "        .data  = (T[]){ __VA_ARGS__ }, \\\n"
+        "        .count = (_count)              \\\n"
         "    }\n"
-        "#define ARRAY_EMPTY(T)           \\\n"
-        "    (Array)                      \\\n"
-        "    {                            \\\n"
-        "        .data        = NULL,     \\\n"
-        "        .length      = 0,        \\\n"
-        "        .capacity    = 0,        \\\n"
-        "        .elementSize = sizeof(T) \\\n"
+        "#define STRING(_str)               \\\n"
+        "    (String){                      \\\n"
+        "        .data   = (_str),          \\\n"
+        "        .length = sizeof(_str) - 1 \\\n"
         "    }\n"
-        "#define STRING(_offset, _len)                                                                       \\\n"
-        "    (String)                                                                                        \\\n"
-        "    {                                                                                               \\\n"
-        "        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \\\n"
-        "        .length = (_len)                                                                            \\\n"
-        "    }\n"
-        "#define STRING_EMPTY (String){         \\\n"
-        "    .parts  = ARRAY_EMPTY(StringPart), \\\n"
-        "    .length = 0                        \\\n"
-        "}\n"
-        "#define PROPERTY_STRING(_offset, _len)                     \\\n"
-        "    (Property)                                             \\\n"
-        "    {                                                      \\\n"
-        "        .type  = PROP_TYPE_STRING,                         \\\n"
-        "        .value = {.as_string = STRING((_offset), (_len)) } \\\n"
+        "#define STRING_EMPTY (String){ .data = \"\", .length = 0 }\n"
+        "#define PROPERTY_STRING(_str)                 \\\n"
+        "    (Property)                                \\\n"
+        "    {                                         \\\n"
+        "        .type  = PROP_TYPE_STRING,            \\\n"
+        "        .value = {.as_string = STRING(_str) } \\\n"
         "    }\n"
         "#define PROPERTY_STRING_EMPTY                 \\\n"
         "    (Property)                                \\\n"
@@ -267,58 +249,20 @@ writeKeyChordsDefines(void)
         "        .flags     = (_flags),                   \\\n"
         "        .keyChords = (_chords)                   \\\n"
         "    }\n"
-        "#define KEY(_offset, _len, _mods, _special)   \\\n"
-        "    (Key)                                     \\\n"
-        "    {                                         \\\n"
-        "        .repr    = STRING((_offset), (_len)), \\\n"
-        "        .mods    = (_mods),                   \\\n"
-        "        .special = (_special)                 \\\n"
+        "#define KEY(_repr, _mods, _special) \\\n"
+        "    (Key)                           \\\n"
+        "    {                               \\\n"
+        "        .repr    = STRING(_repr),   \\\n"
+        "        .mods    = (_mods),         \\\n"
+        "        .special = (_special)       \\\n"
         "    }\n"
         "\n");
 }
 
 static void
-writeBuiltinSourceDeclaration(void)
-{
-    printf("static const char BUILTIN_SOURCE[] = ");
-}
-
-static void
-writeBuiltinSourceImpl(const Array* arr)
-{
-    assert(arr);
-
-    forEach(arr, KeyChord, keyChord)
-    {
-        writeEscString(&keyChord->key.repr);
-
-        /* Write all string properties in order */
-#define KC_PROP(id, name, accessor, rt, ct)           \
-    if (keyChordRuntimeType(id) == PROP_TYPE_STRING)  \
-    {                                                 \
-        writeEscString(keyChordString(keyChord, id)); \
-    }
-        KEY_CHORD_PROP_LIST
-#undef KC_PROP
-
-        if (!arrayIsEmpty(&keyChord->keyChords)) writeBuiltinSourceImpl(&keyChord->keyChords);
-    }
-}
-
-static void
-writeBuiltinSource(const Array* arr)
-{
-    assert(arr);
-
-    printf("\"");
-    writeBuiltinSourceImpl(arr);
-    printf("\";\n\n");
-}
-
-static void
 writeKeyChordsDeclaration(void)
 {
-    printf("static Array builtinKeyChords =\n    ");
+    printf("static Span builtinKeyChords =\n    ");
 }
 
 static void
@@ -342,16 +286,7 @@ writeModifier(const Modifier mods, int indent)
 static void
 writeSpecialKey(SpecialKey special)
 {
-    printf("%s", specialKeyGetLiteral(special));
-}
-
-static void
-writeOffsetAndLength(const String* string, const char* rest)
-{
-    assert(string), assert(rest);
-    printf("%zu, %zu", offset, string->length);
-    if (rest) printf("%s", rest);
-    offset += string->length;
+    printf("%s", specialKeyLiteral(special));
 }
 
 static void
@@ -361,7 +296,8 @@ writeKey(const Key* key, int indent)
 
     writeNewlineWithIndent(indent);
     printf("KEY(");
-    writeOffsetAndLength(&key->repr, ", ");
+    writeEscStringQuoted(&key->repr);
+    printf(", ");
     writeModifier(key->mods, indent);
     writeSpecialKey(key->special);
     printf("),");
@@ -382,7 +318,6 @@ writeChordFlag(const ChordFlag flags, int indent)
         if (chordFlagIsActive(flags, FLAG_CLOSE)) printf("FLAG_CLOSE%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_INHERIT)) printf("FLAG_INHERIT%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_IGNORE)) printf("FLAG_IGNORE%s", getSeparator(&count, " | ", ","));
-        if (chordFlagIsActive(flags, FLAG_IGNORE_SORT)) printf("FLAG_IGNORE_SORT%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_UNHOOK)) printf("FLAG_UNHOOK%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_DEFLAG)) printf("FLAG_DEFLAG%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_NO_BEFORE)) printf("FLAG_NO_BEFORE%s", getSeparator(&count, " | ", ","));
@@ -397,18 +332,18 @@ writeChordFlag(const ChordFlag flags, int indent)
 }
 
 static void
-writePrefix(const Array* arr, int indent)
+writePrefix(const Span* span, int indent)
 {
-    assert(arr);
+    assert(span);
 
     writeNewlineWithIndent(indent);
-    if (!arrayIsEmpty(arr))
+    if (span->count != 0)
     {
-        writeKeyChords(arr, indent);
+        writeKeyChords(span, indent);
     }
     else
     {
-        printf("ARRAY_EMPTY(KeyChord)");
+        printf("SPAN_EMPTY");
     }
 }
 
@@ -429,12 +364,12 @@ propertyIsEmpty(const Property* prop)
 }
 
 static void
-writePropertyDesignator(KeyChordPropId id, const Property* prop, size_t maxNameLength)
+writePropertyDesignator(PropId id, const Property* prop, size_t maxNameLength)
 {
     assert(prop);
     assert(id < KC_PROP_COUNT);
 
-    const char* name    = KC_PROP_NAMES[id];
+    const char* name    = propRepr(id);
     size_t      nameLen = strlen(name);
 
     /* Align the '=' sign by padding shorter property names */
@@ -444,7 +379,8 @@ writePropertyDesignator(KeyChordPropId id, const Property* prop, size_t maxNameL
     {
     case PROP_TYPE_STRING:
         printf("PROPERTY_STRING(");
-        writeOffsetAndLength(PROP_VAL(prop, as_string), ")");
+        writeEscStringQuoted(PROP_VAL(prop, as_string));
+        printf(")");
         break;
     default:
         printf("PROPERTY_STRING_EMPTY");
@@ -472,7 +408,7 @@ writeChord(const KeyChord* keyChord, int indent)
         if (!propertyIsEmpty(&keyChord->props[i]))
         {
             hasProperties  = true;
-            size_t nameLen = strlen(KC_PROP_NAMES[i]);
+            size_t nameLen = strlen(propRepr((PropId)i));
             if (nameLen > maxNameLength)
             {
                 maxNameLength = nameLen;
@@ -493,7 +429,7 @@ writeChord(const KeyChord* keyChord, int indent)
                     printf(",");
                 }
                 writeNewlineWithIndent(indent + 2);
-                writePropertyDesignator((KeyChordPropId)i, &keyChord->props[i], maxNameLength);
+                writePropertyDesignator((PropId)i, &keyChord->props[i], maxNameLength);
                 first = false;
             }
         }
@@ -510,25 +446,32 @@ writeChord(const KeyChord* keyChord, int indent)
 }
 
 static void
-writeKeyChords(const Array* arr, int indent)
+writeKeyChords(const Span* span, int indent)
 {
-    assert(arr);
+    assert(span);
 
-    printf("ARRAY(");
+    if (span->count == 0)
+    {
+        printf("SPAN_EMPTY");
+        return;
+    }
+
+    printf("SPAN_STATIC(");
     writeNewlineWithIndent(indent + 1);
     printf("KeyChord,");
     writeNewlineWithIndent(indent + 1);
-    printf("%zu,", arr->length);
-    forEach(arr, KeyChord, keyChord)
+    printf("%zu,", span->count);
+    size_t index = 0;
+    spanForEach(span, const KeyChord, keyChord)
     {
         writeChord(keyChord, indent + 1);
-        if (iter.index < arr->length - 1) printf(",");
+        if (index++ < span->count - 1) printf(",");
     }
     printf(")");
 }
 
 void
-writeConfigHeaderFile(const Array* keyChords, const Menu* menu)
+writeConfigHeaderFile(const Span* keyChords, const Menu* menu)
 {
     assert(keyChords);
     assert(menu);
@@ -536,8 +479,6 @@ writeConfigHeaderFile(const Array* keyChords, const Menu* menu)
     writeConfigHeader();
     writeConfigVariables(menu);
     writeKeyChordsDefines();
-    writeBuiltinSourceDeclaration();
-    writeBuiltinSource(keyChords);
     writeKeyChordsDeclaration();
     writeKeyChords(keyChords, 1);
     printf(";\n\n#endif /* WK_CONFIG_CONFIG_H_ */\n");

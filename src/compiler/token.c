@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -88,22 +87,20 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_SYNC_AFTER]  = "TOKEN_SYNC_AFTER",
 
     /* flags */
-    [TOKEN_KEEP]        = "TOKEN_KEEP",
-    [TOKEN_CLOSE]       = "TOKEN_CLOSE",
-    [TOKEN_INHERIT]     = "TOKEN_INHERIT",
-    [TOKEN_IGNORE]      = "TOKEN_IGNORE",
-    [TOKEN_IGNORE_SORT] = "TOKEN_IGNORE_SORT",
-    [TOKEN_UNHOOK]      = "TOKEN_UNHOOK",
-    [TOKEN_DEFLAG]      = "TOKEN_DEFLAG",
-    [TOKEN_NO_BEFORE]   = "TOKEN_NO_BEFORE",
-    [TOKEN_NO_AFTER]    = "TOKEN_NO_AFTER",
-    [TOKEN_WRITE]       = "TOKEN_WRITE",
-    [TOKEN_EXECUTE]     = "TOKEN_EXECUTE",
-    [TOKEN_SYNC_CMD]    = "TOKEN_SYNC_CMD",
-    [TOKEN_WRAP]        = "TOKEN_WRAP",
-    [TOKEN_UNWRAP]      = "TOKEN_UNWRAP",
-    [TOKEN_ENABLE_SORT] = "TOKEN_ENABLE_SORT",
-    [TOKEN_TITLE]       = "TOKEN_TITLE",
+    [TOKEN_KEEP]      = "TOKEN_KEEP",
+    [TOKEN_CLOSE]     = "TOKEN_CLOSE",
+    [TOKEN_INHERIT]   = "TOKEN_INHERIT",
+    [TOKEN_IGNORE]    = "TOKEN_IGNORE",
+    [TOKEN_UNHOOK]    = "TOKEN_UNHOOK",
+    [TOKEN_DEFLAG]    = "TOKEN_DEFLAG",
+    [TOKEN_NO_BEFORE] = "TOKEN_NO_BEFORE",
+    [TOKEN_NO_AFTER]  = "TOKEN_NO_AFTER",
+    [TOKEN_WRITE]     = "TOKEN_WRITE",
+    [TOKEN_EXECUTE]   = "TOKEN_EXECUTE",
+    [TOKEN_SYNC_CMD]  = "TOKEN_SYNC_CMD",
+    [TOKEN_WRAP]      = "TOKEN_WRAP",
+    [TOKEN_UNWRAP]    = "TOKEN_UNWRAP",
+    [TOKEN_TITLE]     = "TOKEN_TITLE",
 
     /* literals */
     [TOKEN_COMMAND]          = "TOKEN_COMMAND",
@@ -151,41 +148,8 @@ tokenCopy(const Token* from, Token* to)
     to->special       = from->special;
 }
 
-void
-tokenErrorAt(const Token* token, const char* filepath, const char* fmt, ...)
-{
-    assert(token), assert(filepath), assert(fmt);
-
-    fprintf(stderr, "%s:%u:%u: error", filepath, token->line, token->column);
-
-    if (token->type == TOKEN_EOF)
-    {
-        fprintf(stderr, " at end: ");
-    }
-    else if (token->type == TOKEN_ERROR)
-    {
-        fprintf(
-            stderr,
-            " at line %u: '%.*s': ",
-            token->line,
-            (int)token->length,
-            token->start);
-    }
-    else
-    {
-        fprintf(stderr, " at '%.*s': ", (int)token->length, token->start);
-    }
-
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-
-    fputc('\n', stderr);
-}
-
 bool
-tokenGetDouble(const Token* token, double* dest, bool debug)
+tokenDouble(const Token* token, double* dest, bool debug)
 {
     assert(token), assert(dest);
 
@@ -223,8 +187,49 @@ tokenGetDouble(const Token* token, double* dest, bool debug)
     return true;
 }
 
+void
+tokenErrorAt(const Token* token, const char* filepath)
+{
+    assert(token), assert(filepath);
+
+    fprintf(stderr, "%s:%u:%u: error", filepath, token->line, token->column);
+
+    if (token->type == TOKEN_EOF)
+    {
+        fprintf(stderr, " at end: ");
+    }
+    else if (token->type == TOKEN_ERROR)
+    {
+        fprintf(
+            stderr,
+            " at line %u: '%.*s': ",
+            token->line,
+            (int)token->length,
+            token->start);
+    }
+    else
+    {
+        fprintf(stderr, " at '%.*s': ", (int)token->length, token->start);
+    }
+}
+
+void
+tokenInit(Token* token)
+{
+    assert(token);
+
+    token->start         = NULL;
+    token->message       = NULL;
+    token->length        = 0;
+    token->messageLength = 0;
+    token->line          = 0;
+    token->column        = 0;
+    token->type          = TOKEN_EMPTY;
+    token->special       = SPECIAL_KEY_NONE;
+}
+
 bool
-tokenGetInt32(const Token* token, int32_t* dest, bool debug)
+tokenInt32(const Token* token, int32_t* dest, bool debug)
 {
     assert(token), assert(dest);
 
@@ -271,14 +276,30 @@ tokenGetInt32(const Token* token, int32_t* dest, bool debug)
     return true;
 }
 
+bool
+tokenIsHookType(const TokenType type)
+{
+    return (
+        type == TOKEN_BEFORE || type == TOKEN_AFTER ||
+        type == TOKEN_SYNC_BEFORE || type == TOKEN_SYNC_AFTER);
+}
+
+bool
+tokenIsModType(const TokenType type)
+{
+    return (
+        type == TOKEN_MOD_CTRL || type == TOKEN_MOD_META ||
+        type == TOKEN_MOD_HYPER || type == TOKEN_MOD_SHIFT);
+}
+
 const char*
-tokenGetLiteral(const TokenType type)
+tokenLiteral(const TokenType type)
 {
     return tokenTable[type];
 }
 
 bool
-tokenGetUint32(const Token* token, uint32_t* dest, bool debug)
+tokenUint32(const Token* token, uint32_t* dest, bool debug)
 {
     assert(token), assert(dest);
 
@@ -323,35 +344,4 @@ tokenGetUint32(const Token* token, uint32_t* dest, bool debug)
 
     *dest = (uint32_t)value;
     return true;
-}
-
-void
-tokenInit(Token* token)
-{
-    assert(token);
-
-    token->start         = NULL;
-    token->message       = NULL;
-    token->length        = 0;
-    token->messageLength = 0;
-    token->line          = 0;
-    token->column        = 0;
-    token->type          = TOKEN_EMPTY;
-    token->special       = SPECIAL_KEY_NONE;
-}
-
-bool
-tokenIsHookType(const TokenType type)
-{
-    return (
-        type == TOKEN_BEFORE || type == TOKEN_AFTER ||
-        type == TOKEN_SYNC_BEFORE || type == TOKEN_SYNC_AFTER);
-}
-
-bool
-tokenIsModType(const TokenType type)
-{
-    return (
-        type == TOKEN_MOD_CTRL || type == TOKEN_MOD_META ||
-        type == TOKEN_MOD_HYPER || type == TOKEN_MOD_SHIFT);
 }

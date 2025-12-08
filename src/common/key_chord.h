@@ -5,10 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Common includes */
-#include "array.h"
+/* common includes */
 #include "key_chord_def.h"
 #include "property.h"
+#include "span.h"
 #include "string.h"
 
 typedef uint16_t ChordFlag;
@@ -19,17 +19,16 @@ enum
     FLAG_CLOSE        = 1 << 1,
     FLAG_INHERIT      = 1 << 2,
     FLAG_IGNORE       = 1 << 3,
-    FLAG_IGNORE_SORT  = 1 << 4,
-    FLAG_UNHOOK       = 1 << 5,
-    FLAG_DEFLAG       = 1 << 6,
-    FLAG_NO_BEFORE    = 1 << 7,
-    FLAG_NO_AFTER     = 1 << 8,
-    FLAG_WRITE        = 1 << 9,
-    FLAG_EXECUTE      = 1 << 10,
-    FLAG_SYNC_COMMAND = 1 << 11,
-    FLAG_SYNC_BEFORE  = 1 << 12,
-    FLAG_SYNC_AFTER   = 1 << 13,
-    FLAG_UNWRAP       = 1 << 14,
+    FLAG_UNHOOK       = 1 << 4,
+    FLAG_DEFLAG       = 1 << 5,
+    FLAG_NO_BEFORE    = 1 << 6,
+    FLAG_NO_AFTER     = 1 << 7,
+    FLAG_WRITE        = 1 << 8,
+    FLAG_EXECUTE      = 1 << 9,
+    FLAG_SYNC_COMMAND = 1 << 10,
+    FLAG_SYNC_BEFORE  = 1 << 11,
+    FLAG_SYNC_AFTER   = 1 << 12,
+    FLAG_UNWRAP       = 1 << 13,
 };
 
 typedef uint8_t KeyType;
@@ -122,70 +121,53 @@ typedef struct
     SpecialKey special;
 } Key;
 
-/* KeyChord property slot IDs - generated from KEY_CHORD_PROP_LIST */
 typedef enum
 {
-#define KC_PROP(id, name, accessor, rt, ct) id,
+#define KC_PROP(id, name, accessor) id,
     KEY_CHORD_PROP_LIST
 #undef KC_PROP
         KC_PROP_COUNT
-} KeyChordPropId;
+} PropId;
 
 typedef struct KeyChord
 {
     Key       key;
     Property  props[KC_PROP_COUNT];
     ChordFlag flags;
-    Array     keyChords;
+    Span      keyChords;
 } KeyChord;
 
-/* Helpers */
-int       chordFlagCount(ChordFlag flag);
-bool      chordFlagHasAnyActive(ChordFlag flag);
-ChordFlag chordFlagInit(void);
-bool      chordFlagIsActive(ChordFlag flag, ChordFlag test);
-bool      chordFlagsAreDefault(ChordFlag flag);
+int             chordFlagCount(ChordFlag flag);
+bool            chordFlagHasAnyActive(ChordFlag flag);
+ChordFlag       chordFlagInit(void);
+bool            chordFlagIsActive(ChordFlag flag, ChordFlag test);
+bool            chordFlagsAreDefault(ChordFlag flag);
+void            keyCopy(const Key* from, Key* to);
+void            keyFree(Key* key);
+void            keyInit(Key* key);
+bool            keyIsEqual(const Key* a, const Key* b);
+void            keyChordCopy(const KeyChord* from, KeyChord* to);
+void            keyChordFree(KeyChord* keyChord);
+void            keyChordInit(KeyChord* keyChord);
+void            keyChordsFree(Span* keyChords);
+int             modifierCount(Modifier mod);
+bool            modifierHasAnyActive(Modifier mod);
+Modifier        modifierInit(void);
+bool            modifierIsActive(Modifier mod, Modifier test);
+Property*       propGet(KeyChord* chord, PropId id);
+const Property* propGetConst(const KeyChord* chord, PropId id);
+bool            propHasContent(const KeyChord* chord, PropId id);
+void            propInitAsArray(KeyChord* chord, PropId id, size_t itemSize);
+bool            propIsSet(const KeyChord* chord, PropId id);
+const char*     propRepr(PropId id);
+const char*     specialKeyLiteral(const SpecialKey special);
+const char*     specialKeyRepr(const SpecialKey special);
 
-int      modifierCount(Modifier mod);
-bool     modifierHasAnyActive(Modifier mod);
-Modifier modifierInit(void);
-bool     modifierIsActive(Modifier mod, Modifier test);
-
-const char* specialKeyGetLiteral(const SpecialKey special);
-const char* specialKeyGetRepr(const SpecialKey special);
-
-/* Core */
-void keyCopy(const Key* from, Key* to);
-void keyFree(Key* key);
-void keyInit(Key* key);
-bool keyIsEqual(const Key* a, const Key* b);
-
-void keyChordsFree(Array* keyChords);
-void keyChordCopy(const KeyChord* from, KeyChord* to);
-void keyChordFree(KeyChord* keyChord);
-void keyChordInit(KeyChord* keyChord);
-
-/* Property slot access */
-Property*       keyChordProperty(KeyChord* chord, KeyChordPropId id);
-const Property* keyChordPropertyConst(const KeyChord* chord, KeyChordPropId id);
-PropertyType    keyChordCompileType(KeyChordPropId id);
-PropertyType    keyChordRuntimeType(KeyChordPropId id);
-
-/* Type-specific slot accessors - return NULL if prop->type doesn't match */
-#define PROP_TYPE_X(name, ctype, accessor, field)                        \
-    ctype*       keyChord##accessor(KeyChord* chord, KeyChordPropId id); \
-    const ctype* keyChord##accessor##Const(const KeyChord* chord, KeyChordPropId id);
+/* Type-specific slot accessors. Return NULL if prop->type doesn't match */
+#define PROP_TYPE_X(name, ctype, accessor, field)            \
+    ctype*       prop##accessor(KeyChord* chord, PropId id); \
+    const ctype* prop##accessor##Const(const KeyChord* chord, PropId id);
 PROPERTY_TYPE_LIST
 #undef PROP_TYPE_X
-
-/* Query helpers */
-bool keyChordIsSet(const KeyChord* chord, KeyChordPropId id);
-
-/* Generated typed accessors - declared here, defined in key_chord.c */
-#define KC_PROP(id, name, accessor, rt, ct)            \
-    String*       keyChord##accessor(KeyChord* chord); \
-    const String* keyChord##accessor##Const(const KeyChord* chord);
-KEY_CHORD_PROP_LIST
-#undef KC_PROP
 
 #endif /* WK_COMMON_KEY_CHORD_H_ */

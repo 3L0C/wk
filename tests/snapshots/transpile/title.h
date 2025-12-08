@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 /* common includes */
-#include "src/common/array.h"
 #include "src/common/key_chord.h"
 #include "src/common/menu.h"
+#include "src/common/span.h"
 #include "src/common/string.h"
 
 /* Delimiter when displaying chords. */
@@ -58,37 +58,23 @@ static const char* implicitArrayKeys = "asdfghjkl;";
 static const char* wrapCmd = NULL;
 
 /* Builtin key chords */
-#define ARRAY(T, _len, ...)                  \
-    (Array)                                  \
-    {                                        \
-        .data        = (T[]){ __VA_ARGS__ }, \
-        .length      = (_len),               \
-        .capacity    = (_len),               \
-        .elementSize = sizeof(T)             \
+#define SPAN_STATIC(T, _count, ...)    \
+    (Span)                             \
+    {                                  \
+        .data  = (T[]){ __VA_ARGS__ }, \
+        .count = (_count)              \
     }
-#define ARRAY_EMPTY(T)           \
-    (Array)                      \
-    {                            \
-        .data        = NULL,     \
-        .length      = 0,        \
-        .capacity    = 0,        \
-        .elementSize = sizeof(T) \
+#define STRING(_str)               \
+    (String){                      \
+        .data   = (_str),          \
+        .length = sizeof(_str) - 1 \
     }
-#define STRING(_offset, _len)                                                                       \
-    (String)                                                                                        \
-    {                                                                                               \
-        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
-        .length = (_len)                                                                            \
-    }
-#define STRING_EMPTY (String){         \
-    .parts  = ARRAY_EMPTY(StringPart), \
-    .length = 0                        \
-}
-#define PROPERTY_STRING(_offset, _len)                     \
-    (Property)                                             \
-    {                                                      \
-        .type  = PROP_TYPE_STRING,                         \
-        .value = {.as_string = STRING((_offset), (_len)) } \
+#define STRING_EMPTY (String){ .data = "", .length = 0 }
+#define PROPERTY_STRING(_str)                 \
+    (Property)                                \
+    {                                         \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING(_str) } \
     }
 #define PROPERTY_STRING_EMPTY                 \
     (Property)                                \
@@ -106,218 +92,216 @@ static const char* wrapCmd = NULL;
         .flags     = (_flags),                   \
         .keyChords = (_chords)                   \
     }
-#define KEY(_offset, _len, _mods, _special)   \
-    (Key)                                     \
-    {                                         \
-        .repr    = STRING((_offset), (_len)), \
-        .mods    = (_mods),                   \
-        .special = (_special)                 \
+#define KEY(_repr, _mods, _special) \
+    (Key)                           \
+    {                               \
+        .repr    = STRING(_repr),   \
+        .mods    = (_mods),         \
+        .special = (_special)       \
     }
 
-static const char BUILTIN_SOURCE[] = "1override testecho \"override\"Second2title with keepecho \"keep\"Keep Title3title with deflagecho \"deflag\"Deflag Title4parent for inheritParent Title5child with inheritecho \"inherit\";implicitecho \"implicit\"Implicit Titleaimplicitecho \"implicit\"Implicit Titlebcommand becho \"command b executed\"cprefix with titlePrefix Titlednested commandecho \"nested command executed\"enested with own titleecho \"nested with title\"Nested Titledimplicitecho \"implicit\"Implicit Titlefimplicitecho \"implicit\"Implicit Titlegimplicitecho \"implicit\"Implicit Titlehimplicitecho \"implicit\"Implicit Titleiinterpolation testecho \"interpolation\"Key: ijimplicitecho \"implicit\"Implicit Titlekimplicitecho \"implicit\"Implicit Titlelimplicitecho \"implicit\"Implicit Titleqarray itemecho \"array\"Array Titlerarray itemecho \"array\"Array Titlesimplicitecho \"implicit\"Implicit Titlexvar testecho \"var\"My Custom Textyunicode testecho \"unicode\"Title with emojizspecial charsecho \"special\"Title with quotes and backslash";
-
-static Array builtinKeyChords =
-    ARRAY(
+static Span builtinKeyChords =
+    SPAN_STATIC(
         KeyChord,
         22,
         KEY_CHORD(
-            KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("1", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 13),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(14, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(29, 6)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("override test"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"override\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Second")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(35, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("2", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(36, 15),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(51, 11),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(62, 10)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("title with keep"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"keep\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Keep Title")),
             FLAG_KEEP | FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(72, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("3", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(73, 17),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(90, 13),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(103, 12)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("title with deflag"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"deflag\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Deflag Title")),
             FLAG_DEFLAG | FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(115, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("4", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(116, 18),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(134, 12)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("parent for inherit"),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Parent Title")),
             FLAG_NONE,
-            ARRAY(
+            SPAN_STATIC(
                 KeyChord,
                 1,
                 KEY_CHORD(
-                    KEY(146, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("5", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(147, 18),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(165, 14)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("child with inherit"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"inherit\"")),
                     FLAG_INHERIT | FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)))),
+                    SPAN_EMPTY))),
         KEY_CHORD(
-            KEY(179, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(";", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(180, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(188, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(203, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(217, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(218, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(226, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(241, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(255, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(256, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(265, 25)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("command b"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"command b executed\"")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(290, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("c", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(291, 17),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(308, 12)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("prefix with title"),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Prefix Title")),
             FLAG_NONE,
-            ARRAY(
+            SPAN_STATIC(
                 KeyChord,
                 2,
                 KEY_CHORD(
-                    KEY(320, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(321, 14),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(335, 30)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("nested command"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"nested command executed\"")),
                     FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)),
+                    SPAN_EMPTY),
                 KEY_CHORD(
-                    KEY(365, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("e", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(366, 21),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(387, 24),
-                        [KC_PROP_TITLE]       = PROPERTY_STRING(411, 12)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("nested with own title"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"nested with title\""),
+                        [KC_PROP_TITLE]       = PROPERTY_STRING("Nested Title")),
                     FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)))),
+                    SPAN_EMPTY))),
         KEY_CHORD(
-            KEY(423, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(424, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(432, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(447, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(461, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("f", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(462, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(470, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(485, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(499, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("g", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(500, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(508, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(523, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(537, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("h", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(538, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(546, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(561, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(575, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("i", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(576, 18),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(594, 20),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(614, 6)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("interpolation test"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"interpolation\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Key: i")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(620, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("j", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(621, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(629, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(644, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(658, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("k", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(659, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(667, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(682, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(696, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("l", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(697, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(705, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(720, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(734, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("q", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(735, 10),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(745, 12),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(757, 11)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("array item"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"array\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Array Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(768, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("r", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(769, 10),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(779, 12),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(791, 11)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("array item"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"array\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Array Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(802, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("s", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(803, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(811, 15),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(826, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("implicit"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"implicit\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Implicit Title")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(840, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("x", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(841, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(849, 10),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(859, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("var test"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"var\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("My Custom Text")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(873, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("y", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(874, 12),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(886, 14),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(900, 16)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("unicode test"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"unicode\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Title with emoji")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(916, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("z", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(917, 13),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(930, 14),
-                [KC_PROP_TITLE]       = PROPERTY_STRING(944, 31)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("special chars"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"special\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("Title with quotes and backslash")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)));
+            SPAN_EMPTY));
 
 #endif /* WK_CONFIG_CONFIG_H_ */

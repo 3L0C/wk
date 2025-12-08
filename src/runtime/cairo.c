@@ -15,12 +15,11 @@
 #include <pango/pangocairo.h>
 
 /* common includes */
-#include "common/array.h"
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/key_chord.h"
 #include "common/menu.h"
-#include "common/string.h"
+#include "common/span.h"
 
 /* local includes */
 #include "cairo.h"
@@ -105,7 +104,6 @@ getFontHeight(cairo_t* cr, const char* font)
     pango_layout_set_single_paragraph_mode(layout, 1);
     pango_layout_get_pixel_extents(layout, NULL, &rect);
 
-    /* cleanup */
     pango_font_description_free(fontDesc);
     g_object_unref(layout);
 
@@ -113,7 +111,7 @@ getFontHeight(cairo_t* cr, const char* font)
 }
 
 uint32_t
-cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
+cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 {
     assert(menu), assert(surface);
 
@@ -128,7 +126,7 @@ cairoGetHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 
     menu->cellHeight  = cellHeight;
     menu->titleHeight = (menu->title && strlen(menu->title) > 0) ? titleHeight : 0;
-    calculateGrid(menu->keyChords->length, menu->maxCols, &menu->rows, &menu->cols);
+    calculateGrid(menu->keyChords->count, menu->maxCols, &menu->rows, &menu->cols);
 
     /* Calculate table padding for height calculation - if -1, use cell padding, otherwise use the
      * specified value */
@@ -404,17 +402,15 @@ static bool
 drawString(
     cairo_t*      cr,
     PangoLayout*  layout,
-    const String* string,
+    const String* str,
     uint32_t*     cellw,
     uint32_t*     x,
     uint32_t*     y,
     int           ellipsisWidth)
 {
-    assert(cr), assert(layout), assert(string), assert(cellw), assert(x), assert(y);
+    assert(cr), assert(layout), assert(str), assert(cellw), assert(x), assert(y);
 
-    char buffer[string->length + 1];
-    stringWriteToBuffer(string, buffer);
-    return drawText(cr, layout, buffer, cellw, x, y, ellipsisWidth);
+    return drawText(cr, layout, str->data, cellw, x, y, ellipsisWidth);
 }
 
 static bool
@@ -502,16 +498,16 @@ drawKeyText(
     cairo_t*      cr,
     CairoPaint*   paint,
     PangoLayout*  layout,
-    const String* string,
+    const String* str,
     uint32_t*     cellw,
     uint32_t*     x,
     uint32_t*     y,
     int           ellipsisWidth)
 {
-    assert(cr), assert(paint), assert(layout), assert(string), assert(cellw), assert(x), assert(y);
+    assert(cr), assert(paint), assert(layout), assert(str), assert(cellw), assert(x), assert(y);
     if (!setSourceRgba(cr, paint, MENU_COLOR_KEY)) return false;
 
-    return drawString(cr, layout, string, cellw, x, y, ellipsisWidth);
+    return drawString(cr, layout, str, cellw, x, y, ellipsisWidth);
 }
 
 static bool
@@ -548,10 +544,17 @@ drawDescriptionText(
     if (!setSourceRgba(
             cr,
             paint,
-            arrayIsEmpty(&keyChord->keyChords) ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX))
+            keyChord->keyChords.count == 0 ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX))
         return false;
 
-    return drawString(cr, layout, keyChordDescriptionConst(keyChord), cellw, x, y, ellipsisWidth);
+    return drawString(
+        cr,
+        layout,
+        propStringConst(keyChord, KC_PROP_DESCRIPTION),
+        cellw,
+        x,
+        y,
+        ellipsisWidth);
 }
 
 static void
@@ -610,7 +613,7 @@ drawGrid(
                                      : width - borderWidthTotal - totalTablePadding;
     uint32_t cellWidth         = (availableWidth > 0) ? availableWidth / cols : 0;
     uint32_t cellHeight        = menu->cellHeight;
-    uint32_t count             = menu->keyChords->length;
+    uint32_t count             = menu->keyChords->count;
 
     PangoFontDescription* fontDesc = pango_font_description_from_string(menu->font);
     PangoLayout*          layout   = pango_cairo_create_layout(cr);
@@ -632,7 +635,7 @@ drawGrid(
             cellWidth,
             cellHeight,
             count);
-        disassembleKeyChordArrayShallow(menu->keyChords);
+        disassembleKeyChordSpanShallow(menu->keyChords);
     }
 
     initEllipsisIfNeeded(cr, layout, ctx);
@@ -668,15 +671,14 @@ drawGrid(
 
     starty += titleOffset;
 
-    ArrayIterator   iter     = arrayIteratorMake(menu->keyChords);
-    const KeyChord* keyChord = NULL;
+    size_t chordIdx = 0;
     for (uint32_t i = 0; i < cols; i++)
     {
         uint32_t x = startx + (i * cellWidth) + wpadding;
         for (uint32_t j = 0; j < rows; j++)
         {
-            keyChord = ARRAY_ITER_NEXT(&iter, const KeyChord);
-            if (!keyChord) goto done;
+            if (chordIdx >= menu->keyChords->count) goto done;
+            const KeyChord* keyChord = SPAN_GET(menu->keyChords, const KeyChord, chordIdx++);
 
             uint32_t y = starty + (j * cellHeight) + hpadding;
             drawHintText(
@@ -707,7 +709,7 @@ cairoPaint(Cairo* cairo, Menu* menu)
     assert(cairo), assert(menu);
 
     if (menu->debug) disassembleMenu(menu);
-    if (arrayIsEmpty(menu->keyChords)) return false;
+    if (menu->keyChords->count == 0) return false;
     if (menuIsDelayed(menu)) return true;
 
     /* Clear delay after first successful render */

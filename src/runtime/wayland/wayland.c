@@ -249,7 +249,7 @@ setKeyMods(Key* key, uint32_t state)
 }
 
 static SpecialKey
-getSpecialKey(xkb_keysym_t keysym)
+keysymToSpecialKey(xkb_keysym_t keysym)
 {
     for (size_t i = 0; i < specialkeysLen; i++)
     {
@@ -272,7 +272,7 @@ xkbIsModifierKey(xkb_keysym_t keysym)
 }
 
 static size_t
-maskedKeyGetUtf8(
+maskedKeyUtf8(
     Xkb*           xkb,
     uint32_t       keycode,
     char*          buffer,
@@ -305,37 +305,38 @@ shiftIsSignificant(const char* a, size_t aLen, const char* b, size_t bLen)
         memcmp(a, b, (aLen < bLen) ? aLen : bLen));
 }
 
-static void
-handleMysteryKeypress(Menu* menu, Key* key, xkb_keysym_t keysym, char* repr, size_t reprSize)
+static size_t
+handleMysteryKeypress(Menu* menu, xkb_keysym_t keysym, char* reprBuf, size_t reprBufSize)
 {
-    assert(menu), assert(key), assert(repr);
+    assert(menu), assert(reprBuf);
     debugMsg(menu->debug, "Checking mystery key.");
 
-    int len = xkb_keysym_get_name(keysym, repr, reprSize);
+    int len = xkb_keysym_get_name(keysym, reprBuf, reprBufSize);
     if (len == 0)
     {
         warnMsg("[WAYLAND]: Could not get keysym.");
-        return;
+        return 0;
     }
     if (len < 0)
     {
         errorMsg("[WAYLAND]: Invalid keysym.");
-        return;
+        return 0;
     }
 
-    stringAppendCString(&key->repr, repr);
+    return (size_t)len;
 }
 
-static void
+static size_t
 setKeyRepr(
     Wayland*      wayland,
     Menu*         menu,
     Key*          key,
     xkb_keysym_t* outKeysym,
-    char*         repr,
-    size_t        reprSize)
+    char*         reprBuf,
+    size_t        reprBufSize)
 {
-    assert(wayland), assert(menu), assert(key), assert(outKeysym), assert(repr);
+    assert(wayland), assert(menu), assert(key), assert(outKeysym), assert(reprBuf);
+    assert(reprBufSize > 0);
 
     Xkb*         xkb     = &wayland->input.xkb;
     uint32_t     keycode = wayland->input.code;
@@ -345,7 +346,7 @@ setKeyRepr(
     size_t       reprLen = 0;
 
     char   aBuffer[128] = { 0 };
-    size_t aLen         = maskedKeyGetUtf8(
+    size_t aLen         = maskedKeyUtf8(
         xkb,
         keycode,
         aBuffer,
@@ -354,7 +355,7 @@ setKeyRepr(
         xkb->masks[MASK_CTRL]);
 
     char   bBuffer[128] = { 0 };
-    size_t bLen         = maskedKeyGetUtf8(
+    size_t bLen         = maskedKeyUtf8(
         xkb,
         keycode,
         bBuffer,
@@ -362,45 +363,62 @@ setKeyRepr(
         &bKeysym,
         xkb->masks[MASK_SHIFT] | xkb->masks[MASK_CTRL]);
 
-    if (xkbIsModifierKey(aKeysym) || xkbIsModifierKey(bKeysym)) return;
+    if (xkbIsModifierKey(aKeysym) || xkbIsModifierKey(bKeysym)) return 0;
     if (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen))
     {
         reprLen    = aLen;
         *outKeysym = aKeysym;
-        if (reprLen > 0) mempcpy(repr, aBuffer, reprLen);
         state &= ~(XKB_MOD_SHIFT);
     }
     else
     {
         reprLen    = bLen;
         *outKeysym = bKeysym;
-        if (reprLen > 0) mempcpy(repr, bBuffer, reprLen);
     }
 
-    key->special = getSpecialKey(*outKeysym);
-    if (reprLen > 0 && isNormalKey(repr, reprLen))
+    key->special    = keysymToSpecialKey(*outKeysym);
+    size_t finalLen = 0;
+
+    if (reprLen > 0 && isNormalKey(shiftIsSignificant(aBuffer, aLen, bBuffer, bLen) ? aBuffer : bBuffer, reprLen))
     {
-        stringAppend(&key->repr, repr, reprLen);
+        const char* src = shiftIsSignificant(aBuffer, aLen, bBuffer, bLen) ? aBuffer : bBuffer;
+        finalLen        = reprLen;
+        if (finalLen >= reprBufSize) finalLen = reprBufSize - 1;
+        memcpy(reprBuf, src, finalLen);
+        reprBuf[finalLen] = '\0';
     }
     else if (key->special != SPECIAL_KEY_NONE)
     {
-        stringAppendCString(&key->repr, specialKeyGetRepr(key->special));
+        const char* specialRepr = specialKeyRepr(key->special);
+        finalLen                = strlen(specialRepr);
+        if (finalLen >= reprBufSize) finalLen = reprBufSize - 1;
+        memcpy(reprBuf, specialRepr, finalLen);
+        reprBuf[finalLen] = '\0';
     }
     else
     {
-        handleMysteryKeypress(menu, key, *outKeysym, repr, reprSize);
+        finalLen = handleMysteryKeypress(menu, *outKeysym, reprBuf, reprBufSize);
     }
+
     setKeyMods(key, state);
+    return finalLen;
 }
 
 static Key
-makeKeyFromEvent(Wayland* wayland, Menu* menu, xkb_keysym_t* keysym, char* buffer, size_t size)
+makeKeyFromEvent(
+    Wayland*      wayland,
+    Menu*         menu,
+    xkb_keysym_t* keysym,
+    char*         reprBuf,
+    size_t        reprBufSize,
+    size_t*       outReprLen)
 {
-    assert(wayland), assert(menu), assert(keysym), assert(buffer);
+    assert(wayland), assert(menu), assert(keysym), assert(reprBuf), assert(outReprLen);
 
     Key key = { 0 };
     keyInit(&key);
-    setKeyRepr(wayland, menu, &key, keysym, buffer, size);
+    *outReprLen = setKeyRepr(wayland, menu, &key, keysym, reprBuf, reprBufSize);
+    key.repr    = (String){ .data = reprBuf, .length = *outReprLen };
 
     return key;
 }
@@ -431,9 +449,10 @@ pollKey(Wayland* wayland, Menu* menu)
     wayland->input.keyPending = false;
 
     xkb_keysym_t keysym;
-    char         buffer[128] = { 0 };
+    char         reprBuf[128] = { 0 };
+    size_t       reprLen      = 0;
 
-    Key key = makeKeyFromEvent(wayland, menu, &keysym, buffer, sizeof(buffer));
+    Key key = makeKeyFromEvent(wayland, menu, &keysym, reprBuf, sizeof(reprBuf), &reprLen);
     if (stringIsEmpty(&key.repr))
     {
         return MENU_STATUS_RUNNING;

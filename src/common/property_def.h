@@ -19,6 +19,6 @@
     PROP_TYPE_X(INT, int32_t, Int, as_int)         \
     PROP_TYPE_X(BOOL, bool, Bool, as_bool)         \
     PROP_TYPE_X(COLOR, uint32_t, Color, as_color)  \
-    PROP_TYPE_X(ARRAY, Array, Array, as_array)
+    PROP_TYPE_X(ARRAY, Vector, Vector, as_array)
 
 #endif /* WK_COMMON_PROPERTY_DEF_H_ */

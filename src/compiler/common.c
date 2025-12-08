@@ -3,10 +3,11 @@
 #include <stddef.h>
 
 /* common includes */
-#include "common/array.h"
+#include "common/arena.h"
 #include "common/common.h"
 #include "common/key_chord.h"
 #include "common/string.h"
+#include "common/vector.h"
 
 /* local includes */
 #include "common.h"
@@ -42,9 +43,9 @@ addMod(Key* key, TokenType type)
 }
 
 bool
-compileKeys(const char* keys, Array* outKeys)
+compileKeys(Arena* arena, const char* keys, Vector* outKeys)
 {
-    assert(keys), assert(outKeys);
+    assert(arena), assert(keys), assert(outKeys);
 
     Scanner scanner;
     scannerInit(&scanner, keys, "KEYS");
@@ -56,25 +57,25 @@ compileKeys(const char* keys, Array* outKeys)
 
         Token token = { 0 };
         tokenInit(&token);
-        scannerGetTokenForCompiler(&scanner, &token);
+        scannerTokenForCompiler(&scanner, &token);
 
         while (isMod(token.type))
         {
             addMod(&key, token.type);
-            scannerGetTokenForCompiler(&scanner, &token);
+            scannerTokenForCompiler(&scanner, &token);
         }
 
         if (token.type == TOKEN_KEY)
         {
             key.special = SPECIAL_KEY_NONE;
-            stringAppend(&key.repr, token.start, token.length);
-            arrayAppend(outKeys, &key);
+            key.repr    = stringMake(arena, token.start, token.length);
+            vectorAppend(outKeys, &key);
         }
         else if (token.type == TOKEN_SPECIAL_KEY)
         {
             key.special = token.special;
-            stringAppendCString(&key.repr, specialKeyGetRepr(key.special));
-            arrayAppend(outKeys, &key);
+            key.repr    = stringFromCString(arena, specialKeyRepr(key.special));
+            vectorAppend(outKeys, &key);
         }
         else if (token.type == TOKEN_EOF)
         {

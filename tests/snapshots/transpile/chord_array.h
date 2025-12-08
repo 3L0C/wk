@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 /* common includes */
-#include "src/common/array.h"
 #include "src/common/key_chord.h"
 #include "src/common/menu.h"
+#include "src/common/span.h"
 #include "src/common/string.h"
 
 /* Delimiter when displaying chords. */
@@ -58,37 +58,23 @@ static const char* implicitArrayKeys = "asdfghjkl;";
 static const char* wrapCmd = NULL;
 
 /* Builtin key chords */
-#define ARRAY(T, _len, ...)                  \
-    (Array)                                  \
-    {                                        \
-        .data        = (T[]){ __VA_ARGS__ }, \
-        .length      = (_len),               \
-        .capacity    = (_len),               \
-        .elementSize = sizeof(T)             \
+#define SPAN_STATIC(T, _count, ...)    \
+    (Span)                             \
+    {                                  \
+        .data  = (T[]){ __VA_ARGS__ }, \
+        .count = (_count)              \
     }
-#define ARRAY_EMPTY(T)           \
-    (Array)                      \
-    {                            \
-        .data        = NULL,     \
-        .length      = 0,        \
-        .capacity    = 0,        \
-        .elementSize = sizeof(T) \
+#define STRING(_str)               \
+    (String){                      \
+        .data   = (_str),          \
+        .length = sizeof(_str) - 1 \
     }
-#define STRING(_offset, _len)                                                                       \
-    (String)                                                                                        \
-    {                                                                                               \
-        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
-        .length = (_len)                                                                            \
-    }
-#define STRING_EMPTY (String){         \
-    .parts  = ARRAY_EMPTY(StringPart), \
-    .length = 0                        \
-}
-#define PROPERTY_STRING(_offset, _len)                     \
-    (Property)                                             \
-    {                                                      \
-        .type  = PROP_TYPE_STRING,                         \
-        .value = {.as_string = STRING((_offset), (_len)) } \
+#define STRING_EMPTY (String){ .data = "", .length = 0 }
+#define PROPERTY_STRING(_str)                 \
+    (Property)                                \
+    {                                         \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING(_str) } \
     }
 #define PROPERTY_STRING_EMPTY                 \
     (Property)                                \
@@ -106,180 +92,178 @@ static const char* wrapCmd = NULL;
         .flags     = (_flags),                   \
         .keyChords = (_chords)                   \
     }
-#define KEY(_offset, _len, _mods, _special)   \
-    (Key)                                     \
-    {                                         \
-        .repr    = STRING((_offset), (_len)), \
-        .mods    = (_mods),                   \
-        .special = (_special)                 \
+#define KEY(_repr, _mods, _special) \
+    (Key)                           \
+    {                               \
+        .repr    = STRING(_repr),   \
+        .mods    = (_mods),         \
+        .special = (_special)       \
     }
 
-static const char BUILTIN_SOURCE[] = ";Switch 10switching to 9;Switch 23switching to 22aSwitch 1switching to 0dSwitch 3switching to 2fSwitch 4switching to 3gSwitch 5switching to 4hSwitch 6switching to 5jSwitch 7switching to 6kSwitch 8switching to 7lSwitch 9switching to 8sSwitch 2switching to 1xSwitch 11switching to 10ySwitch 12switching to 11zSwitch 13switching to 12aSwitch 14switching to 13dSwitch 16switching to 15fSwitch 17switching to 16gSwitch 18switching to 17hSwitch 19switching to 18jSwitch 20switching to 19kSwitch 21switching to 20lSwitch 22switching to 21sSwitch 15switching to 14";
-
-static Array builtinKeyChords =
-    ARRAY(
+static Span builtinKeyChords =
+    SPAN_STATIC(
         KeyChord,
         23,
         KEY_CHORD(
-            KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY(";", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(10, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 10"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 9")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(24, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY(";", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(25, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(34, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 10"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 9")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(49, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(50, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(58, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 1"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 0")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(72, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(73, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(81, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 3"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 2")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(95, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("f", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(96, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(104, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 4"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 3")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(118, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("g", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(119, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(127, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 5"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 4")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(141, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("h", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(142, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(150, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 6"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 5")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(164, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("j", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(165, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(173, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 7"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 6")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(187, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("k", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(188, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(196, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 8"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 7")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(210, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("l", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(211, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(219, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 9"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 8")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(233, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("s", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(234, 8),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(242, 14)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 2"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 1")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(256, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("x", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(257, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(266, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 1"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 0")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(281, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("y", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(282, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(291, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 2"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 1")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(306, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("z", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(307, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(316, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 3"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 2")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(331, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("a", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(332, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(341, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 1"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 0")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(356, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("d", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(357, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(366, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 3"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 2")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(381, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("f", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(382, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(391, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 4"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 3")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(406, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("g", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(407, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(416, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 5"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 4")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(431, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("h", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(432, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(441, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 6"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 5")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(456, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("j", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(457, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(466, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 7"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 6")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(481, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("k", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(482, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(491, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 8"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 7")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(506, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("l", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(507, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(516, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 9"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 8")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(531, 1, MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
+            KEY("s", MOD_CTRL | MOD_META, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(532, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(541, 15)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Switch 2"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("switching to 1")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)));
+            SPAN_EMPTY));
 
 #endif /* WK_CONFIG_CONFIG_H_ */

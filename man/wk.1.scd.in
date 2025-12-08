@@ -44,8 +44,8 @@ key chords from a *wks*(5) file or script.
 *-s, --script*
 	Read *wks* script from stdin to use as key chords.
 
-*-S, --sort*
-	Sort key chords read from *--key-chords, --script, or --transpile*.
+*-U, --unsorted*
+	Disable sorting of key chords (sorted by default).
 
 *-m, --max-columns* _INT_
 	Set the maximum menu columns to _INT_ (default 5).

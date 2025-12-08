@@ -1,13 +1,13 @@
 # @desc: Chord array syntax [xyz] and implicit arrays
 
 # @test: "x"
-# @expect: switching to 10
+# @expect: switching to 0
 
 # @test: "y"
-# @expect: switching to 11
+# @expect: switching to 1
 
 # @test: "z"
-# @expect: switching to 12
+# @expect: switching to 2
 
 ... "Switch %(index+1)" +write %{{switching to %(index)}}
 [xyz] "Switch %(index+1)" +write %{{switching to %(index)}}

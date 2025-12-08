@@ -5,7 +5,8 @@
 #include <time.h>
 
 #include "common/arena.h"
-#include "common/array.h"
+#include "common/span.h"
+#include "common/vector.h"
 #include "key_chord.h"
 
 #define MENU_MIN_WIDTH 80
@@ -83,35 +84,35 @@ typedef struct
         const char* keys;
         const char* transpile;
         const char* wksFile;
-        Array       script;
+        Vector      script;
         bool        tryScript;
     } client;
     struct timespec timer;
     CleanupFP       cleanupfp;
-    Array           userVars;
-    Array           compiledKeyChords;
-    Array*          builtinKeyChords;
-    Array*          keyChords;
-    Array*          keyChordsHead;
+    Vector          userVars;
+    Span            compiledKeyChords;
+    Span*           builtinKeyChords;
+    Span*           keyChords;
+    Span*           keyChordsHead;
     void*           xp;
     Arena           arena;
 
-    uint32_t maxCols;
-    int32_t  menuWidth;
-    int32_t  menuGap;
-    uint32_t wpadding;
-    uint32_t hpadding;
-    int32_t  tablePadding;
-    uint32_t cellHeight;
-    uint32_t titleHeight;
-    uint32_t rows;
-    uint32_t cols;
-    uint32_t width;
-    uint32_t height;
-    uint32_t borderWidth;
-    uint32_t delay;
-    uint32_t keepDelay;
-    String   wrapCmd;
+    uint32_t    maxCols;
+    int32_t     menuWidth;
+    int32_t     menuGap;
+    uint32_t    wpadding;
+    uint32_t    hpadding;
+    int32_t     tablePadding;
+    uint32_t    cellHeight;
+    uint32_t    titleHeight;
+    uint32_t    rows;
+    uint32_t    cols;
+    uint32_t    width;
+    uint32_t    height;
+    uint32_t    borderWidth;
+    uint32_t    delay;
+    uint32_t    keepDelay;
+    const char* wrapCmd;
 
     MenuPosition position;
     bool         debug;

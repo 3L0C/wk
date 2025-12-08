@@ -43,8 +43,9 @@ WAY_OBJS     := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
 MAN_FILES    := $(MAN_DIR)/wk.1 $(MAN_DIR)/wks.5
 
 # Flags
+EXTRA_CFLAGS ?=
 CFLAGS       := -Wall -Wextra -Werror -Wno-unused-parameter -DVERSION=\"$(VERSION)\" -MMD -MP \
-					-iquote. -iquote$(SOURCE_DIR)
+					-iquote. -iquote$(SOURCE_DIR) $(EXTRA_CFLAGS)
 CFLAGS       += $(shell $(PKG_CONFIG) --cflags cairo pango pangocairo)
 LDFLAGS      += $(shell $(PKG_CONFIG) --libs cairo pango pangocairo)
 X11_CFLAGS   += -DWK_X11_BACKEND $(shell $(PKG_CONFIG) --cflags x11 xinerama)
@@ -53,7 +54,7 @@ WAY_CFLAGS   += -DWK_WAYLAND_BACKEND $(shell $(PKG_CONFIG) --cflags wayland-clie
 WAY_LDFLAGS  += $(shell $(PKG_CONFIG) --libs wayland-client xkbcommon)
 
 # Make goals
-ALL_GOALS    := all debug test from-wks
+ALL_GOALS    := all debug test from-wks asan
 X11_GOALS    := x11 debug-x11 from-wks-x11
 WAY_GOALS    := wayland debug-wayland from-wks-wayland
 
@@ -141,6 +142,10 @@ debug-x11: x11
 
 debug-wayland: CFLAGS += -ggdb
 debug-wayland: wayland
+
+asan: CFLAGS += -fsanitize=address -g
+asan: LDFLAGS += -fsanitize=address
+asan: all
 
 test: options
 test: all

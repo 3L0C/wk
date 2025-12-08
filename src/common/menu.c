@@ -1,7 +1,4 @@
-#include "arena.h"
-#include "array.h"
 #include <assert.h>
-#include <bits/getopt_core.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -24,16 +21,21 @@
 #include "runtime/wayland/wayland.h"
 #endif
 
-/* config include */
+/* config includes */
 #include "config/config.h"
 
-/* local includes */
+/* common includes */
+#include "arena.h"
 #include "common.h"
 #include "debug.h"
 #include "key_chord.h"
-#include "menu.h"
+#include "span.h"
 #include "stack.h"
 #include "string.h"
+#include "vector.h"
+
+/* local includes */
+#include "menu.h"
 
 /* compiler includes */
 #include "compiler/common.h"
@@ -91,7 +93,7 @@ menuFree(Menu* menu)
     assert(menu);
 
     keyChordsFree(&menu->compiledKeyChords);
-    arrayFree(&menu->userVars);
+    vectorFree(&menu->userVars);
     arenaFree(&menu->arena);
 }
 
@@ -103,46 +105,13 @@ menuHandlePrefix(Menu* menu, KeyChord* keyChord)
     debugMsg(menu->debug, "Found prefix.");
 
     menu->keyChords = &keyChord->keyChords;
-    if (keyChordIsSet(keyChord, KC_PROP_TITLE))
+    if (propIsSet(keyChord, KC_PROP_TITLE))
     {
-        menu->title = stringToCString(&menu->arena, keyChordTitleConst(keyChord));
+        const String* title = propStringConst(keyChord, KC_PROP_TITLE);
+        menu->title         = title->data;
     }
 
     return MENU_STATUS_DAMAGED;
-}
-
-MenuStatus
-menuHandlePath(Menu* menu, const char* path)
-{
-    assert(menu), assert(path);
-
-    Array keys = ARRAY_INIT(Key);
-
-    if (!compileKeys(path, &keys))
-    {
-        forEach(&keys, Key, key) { keyFree(key); }
-        arrayFree(&keys);
-        return MENU_STATUS_EXIT_SOFTWARE;
-    }
-
-    MenuStatus status = MENU_STATUS_RUNNING;
-
-    forEach(&keys, Key, key)
-    {
-        if (menu->debug)
-        {
-            debugMsg(menu->debug, "Pressing key: '%s'.", stringToCString(&menu->arena, &key->repr));
-        }
-
-        status = menuHandleKeypress(menu, key);
-
-        if (!menuStatusIsRunning(status)) break;
-    }
-
-    forEach(&keys, Key, key) { keyFree(key); }
-    arrayFree(&keys);
-
-    return status;
 }
 
 static MenuStatus
@@ -157,7 +126,7 @@ menuHandleGoto(Menu* menu, KeyChord* keyChord)
         .elementSize = sizeof(const KeyChord*)
     };
 
-    forEach(&visitedChords, const KeyChord*, visited)
+    vectorForEach(&visitedChords, const KeyChord*, visited)
     {
         if (*visited == keyChord)
         {
@@ -172,7 +141,7 @@ menuHandleGoto(Menu* menu, KeyChord* keyChord)
     menu->keyChords = menu->keyChordsHead;
     menu->title     = menu->rootTitle;
 
-    const String* gotoPath = keyChordGotoConst(keyChord);
+    const String* gotoPath = propStringConst(keyChord, KC_PROP_GOTO);
     MenuStatus    status;
 
     if (stringIsEmpty(gotoPath))
@@ -182,10 +151,8 @@ menuHandleGoto(Menu* menu, KeyChord* keyChord)
     }
     else
     {
-        char buffer[gotoPath->length + 1];
-        stringWriteToBuffer(gotoPath, buffer);
-        debugMsg(menu->debug, "@goto: navigating to '%s'.", buffer);
-        status = menuHandlePath(menu, buffer);
+        debugMsg(menu->debug, "@goto: navigating to '%s'.", gotoPath->data);
+        status = menuHandlePath(menu, gotoPath->data);
     }
 
     stackPop(&visitedChords);
@@ -193,54 +160,68 @@ menuHandleGoto(Menu* menu, KeyChord* keyChord)
     return status;
 }
 
-static const String*
-getWrapper(const Menu* menu, const KeyChord* keyChord)
-{
-    assert(menu), assert(keyChord);
-
-    if (chordFlagIsActive(keyChord->flags, FLAG_UNWRAP)) return NULL;
-    if (keyChordIsSet(keyChord, KC_PROP_WRAP_CMD)) return keyChordWrapCmdConst(keyChord);
-    if (!stringIsEmpty(&menu->wrapCmd)) return &menu->wrapCmd;
-    return NULL;
-}
-
-static String
-getCmd(const Menu* menu, const KeyChord* keyChord)
-{
-    const String* wrapper = getWrapper(menu, keyChord);
-
-    String cmd = stringInit();
-
-    if (wrapper != NULL)
-    {
-        stringAppendString(&cmd, wrapper);
-        stringAppendCString(&cmd, " ");
-    }
-
-    stringAppendString(&cmd, keyChordCommandConst(keyChord));
-
-    return cmd;
-}
-
 static void
 menuHandleCommand(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    String cmd = getCmd(menu, keyChord);
+    const char* wrapData = NULL;
+    size_t      wrapLen  = 0;
 
-    /* Nothing to print */
-    if (cmd.length == 0) return;
+    if (!chordFlagIsActive(keyChord->flags, FLAG_UNWRAP))
+    {
+        if (propIsSet(keyChord, KC_PROP_WRAP_CMD))
+        {
+            const String* wrapStr = propStringConst(keyChord, KC_PROP_WRAP_CMD);
+            if (!stringIsEmpty(wrapStr))
+            {
+                wrapData = wrapStr->data;
+                wrapLen  = wrapStr->length;
+            }
+        }
+        else if (menu->wrapCmd && menu->wrapCmd[0])
+        {
+            wrapData = menu->wrapCmd;
+            wrapLen  = strlen(menu->wrapCmd);
+        }
+    }
+
+    const char*   cmdData = NULL;
+    size_t        cmdLen  = 0;
+    const String* cmdStr  = propStringConst(keyChord, KC_PROP_COMMAND);
+    if (!stringIsEmpty(cmdStr))
+    {
+        cmdData = cmdStr->data;
+        cmdLen  = cmdStr->length;
+    }
+
+    if (wrapLen == 0 && cmdLen == 0) return;
+
+    bool   needsSpace = (wrapLen > 0 && cmdLen > 0);
+    size_t totalLen   = wrapLen + cmdLen + (needsSpace ? 1 : 0);
+    char   buffer[totalLen + 1];
+    char*  p = buffer;
+
+    if (wrapLen > 0)
+    {
+        memcpy(p, wrapData, wrapLen);
+        p += wrapLen;
+        if (needsSpace) *p++ = ' ';
+    }
+    if (cmdLen > 0)
+    {
+        memcpy(p, cmdData, cmdLen);
+        p += cmdLen;
+    }
+    *p = '\0';
 
     if (chordFlagIsActive(keyChord->flags, FLAG_WRITE))
     {
-        char buffer[cmd.length + 1];
-        stringWriteToBuffer(&cmd, buffer);
-
         printf("%s\n", buffer);
         return;
     }
 
+    String cmd = { .data = buffer, .length = totalLen };
     menuSpawn(menu, keyChord, &cmd, chordFlagIsActive(keyChord->flags, FLAG_SYNC_COMMAND));
 }
 
@@ -252,22 +233,22 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
     menuSpawn(
         menu,
         keyChord,
-        keyChordBeforeConst(keyChord),
+        propStringConst(keyChord, KC_PROP_BEFORE),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_BEFORE));
     menuHandleCommand(menu, keyChord);
     menuSpawn(
         menu,
         keyChord,
-        keyChordAfterConst(keyChord),
+        propStringConst(keyChord, KC_PROP_AFTER),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
     /* If chord has +keep flag and a command to execute, sleep to allow
      * compositor to process the ungrab before the command executes */
-    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && keyChordIsSet(keyChord, KC_PROP_COMMAND))
+    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && propIsSet(keyChord, KC_PROP_COMMAND))
     {
         struct timespec sleep_duration = {
             .tv_sec  = 0,
-            .tv_nsec = menu->keepDelay * 1000000 /* Convert ms to nanoseconds */
+            .tv_nsec = menu->keepDelay * 1000000
         };
         nanosleep(&sleep_duration, NULL);
     }
@@ -280,11 +261,11 @@ menuPressKey(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
-    if (keyChordIsSet(keyChord, KC_PROP_GOTO))
+    if (propIsSet(keyChord, KC_PROP_GOTO))
     {
         return menuHandleGoto(menu, keyChord);
     }
-    if (!arrayIsEmpty(&keyChord->keyChords))
+    if (keyChord->keyChords.count != 0)
     {
         return menuHandlePrefix(menu, keyChord);
     }
@@ -296,15 +277,13 @@ menuHandleKeypress(Menu* menu, const Key* key)
 {
     assert(menu), assert(key);
 
-    forEach(menu->keyChords, KeyChord, keyChord)
+    spanForEach(menu->keyChords, KeyChord, keyChord)
     {
         if (keyIsEqual(&keyChord->key, key))
         {
             if (menu->debug)
             {
-                char buffer[keyChord->key.repr.length + 1];
-                stringWriteToBuffer(&keyChord->key.repr, buffer);
-                debugMsg(menu->debug, "Found match: '%s'.", buffer);
+                debugMsg(menu->debug, "Found match: '%s'.", keyChord->key.repr.data);
                 disassembleKeyChordWithHeader(keyChord, 0);
                 disassembleKey(key);
             }
@@ -320,6 +299,40 @@ menuHandleKeypress(Menu* menu, const Key* key)
     }
 
     return MENU_STATUS_EXIT_SOFTWARE;
+}
+
+MenuStatus
+menuHandlePath(Menu* menu, const char* path)
+{
+    assert(menu), assert(path);
+
+    Vector keys = VECTOR_INIT(Key);
+
+    if (!compileKeys(&menu->arena, path, &keys))
+    {
+        vectorForEach(&keys, Key, key) { keyFree(key); }
+        vectorFree(&keys);
+        return MENU_STATUS_EXIT_SOFTWARE;
+    }
+
+    MenuStatus status = MENU_STATUS_RUNNING;
+
+    vectorForEach(&keys, Key, key)
+    {
+        if (menu->debug)
+        {
+            debugMsg(menu->debug, "Pressing key: '%s'.", key->repr.data);
+        }
+
+        status = menuHandleKeypress(menu, key);
+
+        if (!menuStatusIsRunning(status)) break;
+    }
+
+    vectorForEach(&keys, Key, key) { keyFree(key); }
+    vectorFree(&keys);
+
+    return status;
 }
 
 static bool
@@ -407,10 +420,10 @@ menuInit(Menu* menu)
     menu->client.transpile = NULL;
     menu->client.wksFile   = NULL;
     menu->client.tryScript = false;
-    menu->client.script    = ARRAY_INIT(char);
+    menu->client.script    = VECTOR_INIT(char);
     clock_gettime(CLOCK_MONOTONIC, &menu->timer);
-    menu->userVars          = ARRAY_INIT(UserVar);
-    menu->compiledKeyChords = ARRAY_INIT(KeyChord);
+    menu->userVars          = VECTOR_INIT(UserVar);
+    menu->compiledKeyChords = SPAN_EMPTY;
     menu->builtinKeyChords  = &builtinKeyChords;
     menu->keyChords         = &builtinKeyChords;
     menu->keyChordsHead     = &builtinKeyChords;
@@ -438,7 +451,7 @@ menuInit(Menu* menu)
     menu->debug    = false;
     menu->sort     = true;
     menu->dirty    = true;
-    menu->wrapCmd  = stringInitFromChar(wrapCmd);
+    menu->wrapCmd  = wrapCmd;
 }
 
 bool
@@ -817,9 +830,7 @@ void
 menuSetWrapCmd(Menu* menu, const char* cmd)
 {
     assert(menu);
-
-    if (!stringIsEmpty(&menu->wrapCmd)) stringFree(&menu->wrapCmd);
-    menu->wrapCmd = stringInitFromChar(cmd);
+    menu->wrapCmd = cmd;
 }
 
 static MenuStatus
@@ -863,7 +874,7 @@ spawnAsync(const char* shell, const char* cmd)
 MenuStatus
 menuSpawn(const Menu* menu, const KeyChord* keyChord, const String* cmd, bool sync)
 {
-    assert(menu), assert(cmd);
+    assert(menu);
 
     if (stringIsEmpty(cmd)) return MENU_STATUS_EXIT_OK;
 
@@ -882,16 +893,13 @@ menuSpawn(const Menu* menu, const KeyChord* keyChord, const String* cmd, bool sy
 
         if (cmd->length == 0) exit(EX_OK);
 
-        char buffer[cmd->length + 1];
-        stringWriteToBuffer(cmd, buffer);
-
         if (sync)
         {
-            spawnSync(menu->shell, buffer);
+            spawnSync(menu->shell, cmd->data);
         }
         else
         {
-            spawnAsync(menu->shell, buffer);
+            spawnAsync(menu->shell, cmd->data);
         }
         exit(EX_OK);
     }
@@ -930,17 +938,17 @@ menuTryStdin(Menu* menu)
 {
     assert(menu);
 
-    Array* scriptArray = &menu->client.script;
+    Vector* scriptVector = &menu->client.script;
 
     char*   line         = NULL;
     size_t  lineCapacity = 0;
     ssize_t n;
     while ((n = getline(&line, &lineCapacity, stdin)) != -1)
     {
-        if (n > 0) arrayAppendN(scriptArray, line, n);
+        if (n > 0) vectorAppendN(scriptVector, line, n);
     }
 
     free(line);
-    arrayAppend(scriptArray, "");
+    vectorAppend(scriptVector, "");
     return n == -1 && feof(stdin);
 }

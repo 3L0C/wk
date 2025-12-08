@@ -3,23 +3,13 @@
 #include <stddef.h>
 
 /* local includes */
-#include "array.h"
 #include "key_chord.h"
+#include "property.h"
 #include "string.h"
+#include "vector.h"
 
-/* Helpers */
-typedef struct
-{
-    PropertyType runtimeType; /* Expected type after compilation */
-    PropertyType compileType; /* Type during parsing */
-} KeyChordPropInfo;
-
-static const KeyChordPropInfo keyChordPropTable[KC_PROP_COUNT] = {
-#define KC_PROP(id, name, accessor, rt, ct) \
-    [id] = {                                \
-        .runtimeType = PROP_TYPE_##rt,      \
-        .compileType = PROP_TYPE_##ct       \
-    },
+static const char* keyChordPropNames[KC_PROP_COUNT] = {
+#define KC_PROP(id, name, accessor) [id] = #id,
     KEY_CHORD_PROP_LIST
 #undef KC_PROP
 };
@@ -112,7 +102,6 @@ chordFlagHasAnyActive(ChordFlag flag)
         FLAG_CLOSE |
         FLAG_INHERIT |
         FLAG_IGNORE |
-        FLAG_IGNORE_SORT |
         FLAG_UNHOOK |
         FLAG_DEFLAG |
         FLAG_NO_BEFORE |
@@ -127,12 +116,6 @@ chordFlagHasAnyActive(ChordFlag flag)
     return (flag & any) != 0;
 }
 
-bool
-chordFlagsAreDefault(ChordFlag flag)
-{
-    return !chordFlagHasAnyActive(flag);
-}
-
 ChordFlag
 chordFlagInit(void)
 {
@@ -145,10 +128,176 @@ chordFlagIsActive(ChordFlag flag, ChordFlag test)
     return (flag & test) != 0;
 }
 
+bool
+chordFlagsAreDefault(ChordFlag flag)
+{
+    return !chordFlagHasAnyActive(flag);
+}
+
+void
+keyCopy(const Key* from, Key* to)
+{
+    assert(from), assert(to);
+
+    to->mods |= from->mods;
+    to->special = from->special;
+    to->repr    = from->repr;
+}
+
+void
+keyFree(Key* key)
+{
+    assert(key);
+    (void)key;
+}
+
+void
+keyInit(Key* key)
+{
+    assert(key);
+
+    key->repr    = (String){ 0 };
+    key->mods    = modifierInit();
+    key->special = SPECIAL_KEY_NONE;
+}
+
 static bool
 modifiersAreEqual(Modifier a, Modifier b)
 {
     return a == b;
+}
+
+static bool
+keyIsSpecial(const Key* key)
+{
+    assert(key);
+
+    return key->special != SPECIAL_KEY_NONE;
+}
+
+static bool
+keyIsEqualSpecial(const Key* a, const Key* b)
+{
+    assert(a), assert(b);
+
+    if (!keyIsSpecial(a) || !keyIsSpecial(b)) return false;
+
+    return (
+        a->special == b->special &&
+        modifiersAreEqual(a->mods, b->mods));
+}
+
+bool
+keyIsEqual(const Key* a, const Key* b)
+{
+    assert(a), assert(b);
+
+    if (keyIsEqualSpecial(a, b)) return true;
+    return (
+        a->special == b->special &&
+        modifiersAreEqual(a->mods, b->mods) &&
+        stringEquals(&a->repr, &b->repr));
+}
+
+void
+keyChordCopy(const KeyChord* from, KeyChord* to)
+{
+    assert(from), assert(to);
+
+    keyCopy(&from->key, &to->key);
+
+    for (size_t i = 0; i < KC_PROP_COUNT; i++)
+    {
+        propertyCopy(&from->props[i], &to->props[i]);
+    }
+
+    to->flags     = from->flags;
+    to->keyChords = from->keyChords;
+}
+
+void
+keyChordFree(KeyChord* keyChord)
+{
+    assert(keyChord);
+
+    for (size_t i = 0; i < KC_PROP_COUNT; i++)
+    {
+        propertyFree(&keyChord->props[i]);
+    }
+
+    keyChordsFree(&keyChord->keyChords);
+}
+
+void
+keyChordInit(KeyChord* keyChord)
+{
+    assert(keyChord);
+
+    keyInit(&keyChord->key);
+
+    for (size_t i = 0; i < KC_PROP_COUNT; i++)
+    {
+        propertyInit(&keyChord->props[i]);
+    }
+
+    keyChord->flags     = chordFlagInit();
+    keyChord->keyChords = SPAN_EMPTY;
+}
+
+void
+propInitAsArray(KeyChord* chord, PropId id, size_t itemSize)
+{
+    assert(chord), assert(id < KC_PROP_COUNT);
+
+    Property* prop       = &chord->props[id];
+    prop->type           = PROP_TYPE_ARRAY;
+    prop->value.as_array = vectorInit(itemSize);
+}
+
+bool
+propIsSet(const KeyChord* chord, PropId id)
+{
+    assert(chord), assert(id < KC_PROP_COUNT);
+    return propertyIsSet(&chord->props[id]);
+}
+
+const char*
+propRepr(PropId id)
+{
+    assert(id < KC_PROP_COUNT);
+    return keyChordPropNames[id];
+}
+
+Property*
+propGet(KeyChord* chord, PropId id)
+{
+    assert(chord), assert(id < KC_PROP_COUNT);
+    return &chord->props[id];
+}
+
+const Property*
+propGetConst(const KeyChord* chord, PropId id)
+{
+    assert(chord), assert(id < KC_PROP_COUNT);
+    return &chord->props[id];
+}
+
+bool
+propHasContent(const KeyChord* chord, PropId id)
+{
+    assert(chord), assert(id < KC_PROP_COUNT);
+    return propertyHasContent(propGetConst(chord, id));
+}
+
+void
+keyChordsFree(Span* keyChords)
+{
+    assert(keyChords);
+
+    spanForEach(keyChords, KeyChord, keyChord)
+    {
+        keyChordFree(keyChord);
+    }
 }
 
 int
@@ -189,206 +338,32 @@ modifierIsActive(Modifier mod, Modifier test)
 }
 
 const char*
-specialKeyGetLiteral(const SpecialKey special)
+specialKeyLiteral(const SpecialKey special)
 {
     return specialTable[special].literal;
 }
 
 const char*
-specialKeyGetRepr(const SpecialKey special)
+specialKeyRepr(const SpecialKey special)
 {
     return specialTable[special].repr;
 }
 
-/* Core */
-static bool
-keyIsSpecial(const Key* key)
-{
-    assert(key);
-
-    return key->special != SPECIAL_KEY_NONE;
-}
-
-static bool
-keyIsEqualSpecial(const Key* a, const Key* b)
-{
-    assert(a), assert(b);
-
-    if (!keyIsSpecial(a) || !keyIsSpecial(b)) return false;
-
-    return (
-        a->special == b->special &&
-        modifiersAreEqual(a->mods, b->mods));
-}
-
-void
-keyCopy(const Key* from, Key* to)
-{
-    assert(from), assert(to);
-
-    to->mods |= from->mods;
-    to->special = from->special;
-    to->repr    = stringCopy(&from->repr);
-}
-
-void
-keyFree(Key* key)
-{
-    assert(key);
-
-    stringFree(&key->repr);
-}
-
-void
-keyInit(Key* key)
-{
-    assert(key);
-
-    key->repr    = stringInit();
-    key->mods    = modifierInit();
-    key->special = SPECIAL_KEY_NONE;
-}
-
-bool
-keyIsEqual(const Key* a, const Key* b)
-{
-    assert(a), assert(b);
-
-    if (keyIsEqualSpecial(a, b)) return true;
-    return (
-        a->special == b->special &&
-        modifiersAreEqual(a->mods, b->mods) &&
-        stringEquals(&a->repr, &b->repr));
-}
-
-void
-keyChordsFree(Array* keyChords)
-{
-    assert(keyChords);
-
-    forEach(keyChords, KeyChord, keyChord)
-    {
-        keyChordFree(keyChord);
-    }
-    arrayFree(keyChords);
-}
-
-void
-keyChordCopy(const KeyChord* from, KeyChord* to)
-{
-    assert(from), assert(to);
-
-    keyCopy(&from->key, &to->key);
-
-    for (size_t i = 0; i < KC_PROP_COUNT; i++)
-    {
-        propertyCopy(&from->props[i], &to->props[i]);
-    }
-
-    to->flags     = from->flags;
-    to->keyChords = from->keyChords;
-}
-
-void
-keyChordFree(KeyChord* keyChord)
-{
-    assert(keyChord);
-
-    stringFree(&keyChord->key.repr);
-
-    /* Free all properties */
-    for (size_t i = 0; i < KC_PROP_COUNT; i++)
-    {
-        propertyFree(&keyChord->props[i]);
-    }
-
-    keyChordsFree(&keyChord->keyChords);
-}
-
-void
-keyChordInit(KeyChord* keyChord)
-{
-    assert(keyChord);
-
-    keyInit(&keyChord->key);
-
-    for (size_t i = 0; i < KC_PROP_COUNT; i++)
-    {
-        propertyInit(&keyChord->props[i]);
-    }
-
-    keyChord->flags     = chordFlagInit();
-    keyChord->keyChords = ARRAY_INIT(KeyChord);
-}
-
-/* Property slot access */
-Property*
-keyChordProperty(KeyChord* chord, KeyChordPropId id)
-{
-    assert(chord), assert(id < KC_PROP_COUNT);
-    return &chord->props[id];
-}
-
-const Property*
-keyChordPropertyConst(const KeyChord* chord, KeyChordPropId id)
-{
-    assert(chord), assert(id < KC_PROP_COUNT);
-    return &chord->props[id];
-}
-
-PropertyType
-keyChordCompileType(KeyChordPropId id)
-{
-    assert(id < KC_PROP_COUNT);
-    return keyChordPropTable[id].compileType;
-}
-
-PropertyType
-keyChordRuntimeType(KeyChordPropId id)
-{
-    assert(id < KC_PROP_COUNT);
-    return keyChordPropTable[id].runtimeType;
-}
-
-/* Type-specific slot accessors - return NULL if type doesn't match */
-#define PROP_TYPE_X(name, ctype, accessor, field)                                    \
-    ctype* keyChord##accessor(KeyChord* chord, KeyChordPropId id)                    \
-    {                                                                                \
-        assert(chord);                                                               \
-        Property* prop = keyChordProperty(chord, id);                                \
-        if (prop->type != PROP_TYPE_##name) return NULL;                             \
-        return &prop->value.field;                                                   \
-    }                                                                                \
-    const ctype* keyChord##accessor##Const(const KeyChord* chord, KeyChordPropId id) \
-    {                                                                                \
-        assert(chord);                                                               \
-        const Property* prop = keyChordPropertyConst(chord, id);                     \
-        if (prop->type != PROP_TYPE_##name) return NULL;                             \
-        return &prop->value.field;                                                   \
+#define PROP_TYPE_X(name, ctype, accessor, field)                        \
+    ctype* prop##accessor(KeyChord* chord, PropId id)                    \
+    {                                                                    \
+        assert(chord);                                                   \
+        Property* prop = propGet(chord, id);                             \
+        if (prop->type != PROP_TYPE_##name) return NULL;                 \
+        return &prop->value.field;                                       \
+    }                                                                    \
+    const ctype* prop##accessor##Const(const KeyChord* chord, PropId id) \
+    {                                                                    \
+        assert(chord);                                                   \
+        const Property* prop = propGetConst(chord, id);                  \
+        if (prop->type != PROP_TYPE_##name) return NULL;                 \
+        return &prop->value.field;                                       \
     }
 PROPERTY_TYPE_LIST
+
 #undef PROP_TYPE_X
-
-/* Query helpers */
-bool
-keyChordIsSet(const KeyChord* chord, KeyChordPropId id)
-{
-    assert(chord);
-    assert(id < KC_PROP_COUNT);
-    return propertyIsSet(&chord->props[id]);
-}
-
-/* Generated typed accessors */
-#define KC_PROP(id, name, accessor, rt, ct)                           \
-    String* keyChord##accessor(KeyChord* chord)                       \
-    {                                                                 \
-        assert(chord);                                                \
-        return PROP_VAL(keyChordProperty(chord, id), as_string);      \
-    }                                                                 \
-    const String* keyChord##accessor##Const(const KeyChord* chord)    \
-    {                                                                 \
-        assert(chord);                                                \
-        return PROP_VAL(keyChordPropertyConst(chord, id), as_string); \
-    }
-KEY_CHORD_PROP_LIST
-#undef KC_PROP

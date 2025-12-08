@@ -361,7 +361,7 @@ resizeWindow(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);
+    window->height = cairoHeight(menu, getThrowawaySurface(window), window->maxHeight);
     resizeWinWidth(window, menu);
     resizeWinHeight(window, menu);
     resizeWinGap(window, menu);
@@ -489,7 +489,7 @@ getWindowHeight(WaylandWindow* window, Menu* menu)
 {
     assert(window), assert(menu);
 
-    return cairoGetHeight(menu, getThrowawaySurface(window), window->maxHeight);
+    return cairoHeight(menu, getThrowawaySurface(window), window->maxHeight);
 }
 
 void

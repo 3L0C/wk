@@ -8,7 +8,6 @@
 
 /* common includes */
 #include "common/arena.h"
-#include "common/array.h"
 #include "common/common.h"
 #include "common/debug.h"
 #include "common/menu.h"
@@ -17,24 +16,25 @@
 
 /* local includes */
 #include "debug.h"
+#include "lazy_string.h"
 #include "preprocessor.h"
 #include "scanner.h"
 #include "token.h"
 
 typedef struct
 {
-    char* path;          /* Constructed path (preserves symlinks) for relative includes */
-    char* canonicalPath; /* Canonical path (resolved symlinks) for duplicate detection */
+    char* path;
+    char* canonicalPath;
 } FilePath;
 
-static Array preprocessorRunImpl(Menu*, Array*, const char*, Stack*, Arena*);
+static String preprocessorRunImpl(Menu*, String, const char*, Stack*, Arena*);
 
 static bool
 fileIsInIncludeStack(Stack* stack, const char* canonicalPath)
 {
     assert(stack), assert(canonicalPath);
 
-    forEach(stack, FilePath, entry)
+    vectorForEach(stack, FilePath, entry)
     {
         if (entry->canonicalPath && strcmp(entry->canonicalPath, canonicalPath) == 0) return true;
     }
@@ -58,7 +58,7 @@ disassembleIncludeStack(Stack* stack)
     debugMsg(true, "");
     debugPrintHeader("IncludeStack");
     debugMsg(true, "|");
-    forEach(stack, FilePath, entry)
+    vectorForEach(stack, FilePath, entry)
     {
         if (strncmp(entry->path, pwd, pwdLen) == 0 && entry->path[pwdLen] == '/')
         {
@@ -79,14 +79,6 @@ getBaseDirLength(const char* sourcePath)
 {
     assert(sourcePath);
 
-    /* current moves through the 'sourcePath'
-     * lastDir tracks the character past the last '/'
-     * for 'sourcePath' '/home/john/wks/main.wks'
-     * lastDir will point at the 'm' in main.
-     * for 'sourcePath' 'wks/main.wks' the same is true.
-     * for 'sourcePath' 'main.wks' it will still point at 'm'.
-     * The function returns the length of the baseDir,
-     * relative or absolute makes no difference here. */
     const char* current = sourcePath;
     const char* lastDir = sourcePath;
 
@@ -105,29 +97,26 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
     assert(filepath), assert(sourcePath);
 
     size_t baseLen         = getBaseDirLength(sourcePath);
-    Array  includeFilePath = ARRAY_INIT(char);
+    Vector includeFilePath = VECTOR_INIT(char);
 
-    /* If filepath is not absolute and source path is not in the PWD add base path */
-    if (*filepath != '/' && baseLen > 0) arrayAppendN(&includeFilePath, sourcePath, baseLen);
+    if (*filepath != '/' && baseLen > 0) vectorAppendN(&includeFilePath, sourcePath, baseLen);
 
-    arrayAppendN(&includeFilePath, filepath, len);
-    arrayAppend(&includeFilePath, "");
+    vectorAppendN(&includeFilePath, filepath, len);
+    vectorAppend(&includeFilePath, "");
 
-    char* constructedPath = ARRAY_AS(&includeFilePath, char);
+    char* constructedPath = VECTOR_AS(&includeFilePath, char);
 
-    /* Verify the file exists without resolving symlinks */
     FILE* f = fopen(constructedPath, "r");
     if (!f)
     {
         warnMsg("Could not open file: '%.*s'.", len, filepath);
-        arrayFree(&includeFilePath);
+        vectorFree(&includeFilePath);
         return NULL;
     }
     fclose(f);
 
-    /* Return the constructed path (preserving symlink structure) */
     char* result = strdup(constructedPath);
-    arrayFree(&includeFilePath);
+    vectorFree(&includeFilePath);
     return result;
 }
 
@@ -139,15 +128,15 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
     /* If first token is TOKEN_DESCRIPTION, there are no interpolations - return literal string */
     if (firstToken->type == TOKEN_DESCRIPTION)
     {
-        String result = stringInit();
-        stringAppendEscString(&result, firstToken->start, firstToken->length);
-        char* resolved = stringToCString(arena, &result);
-        stringFree(&result);
+        LazyString result = lazyStringInit();
+        lazyStringAppendEscString(&result, firstToken->start, firstToken->length);
+        char* resolved = lazyStringToCString(arena, &result);
+        lazyStringFree(&result);
         return resolved;
     }
 
-    String result = stringInit();
-    Token  token  = { 0 };
+    LazyString result = lazyStringInit();
+    Token      token  = { 0 };
     tokenCopy(firstToken, &token);
 
     while (token.type != TOKEN_DESCRIPTION)
@@ -157,19 +146,19 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
         case TOKEN_DESC_INTERP:
         {
             /* Literal text between interpolations */
-            stringAppendEscString(&result, token.start, token.length);
+            lazyStringAppendEscString(&result, token.start, token.length);
             break;
         }
         case TOKEN_USER_VAR:
         {
             /* Look up variable and substitute */
             bool found = false;
-            forEach(&menu->userVars, const UserVar, var)
+            vectorForEach(&menu->userVars, const UserVar, var)
             {
                 if (strncmp(var->key, token.start, token.length) == 0 &&
                     strlen(var->key) == token.length)
                 {
-                    stringAppendCString(&result, var->value);
+                    lazyStringAppendCString(&result, var->value);
                     found = true;
                     break;
                 }
@@ -177,55 +166,55 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
 
             if (!found)
             {
-                tokenErrorAt(
+                scannerErrorAt(
+                    scanner,
                     &token,
-                    scanner->filepath,
                     "Undefined variable '%.*s' in %s. "
                     "Variables must be defined with :var before use.",
                     (int)token.length,
                     token.start,
                     context);
                 scanner->hadError = true;
-                stringFree(&result);
+                lazyStringFree(&result);
                 return NULL;
             }
             break;
         }
         default:
         {
-            tokenErrorAt(
+            scannerErrorAt(
+                scanner,
                 &token,
-                scanner->filepath,
                 "Unexpected token type in %s interpolation.",
                 context);
             scanner->hadError = true;
-            stringFree(&result);
+            lazyStringFree(&result);
             return NULL;
         }
         }
 
-        scannerGetTokenForPreprocessor(scanner, &token, SCANNER_WANTS_DESCRIPTION);
+        scannerTokenForPreprocessor(scanner, &token, SCANNER_WANTS_DESCRIPTION);
     }
 
     /* TOKEN_DESCRIPTION can have trailing literal text after the last interpolation */
     if (token.length > 0)
     {
-        stringAppendEscString(&result, token.start, token.length);
+        lazyStringAppendEscString(&result, token.start, token.length);
     }
 
-    char* resolved = stringToCString(arena, &result);
-    stringFree(&result);
+    char* resolved = lazyStringToCString(arena, &result);
+    lazyStringFree(&result);
     return resolved;
 }
 
 static void
 handleIncludeMacro(
-    Menu*    menu,
-    Scanner* scanner,
-    Array*   result,
-    Token*   includeFile,
-    Stack*   stack,
-    Arena*   arena)
+    Menu*       menu,
+    Scanner*    scanner,
+    LazyString* result,
+    Token*      includeFile,
+    Stack*      stack,
+    Arena*      arena)
 {
     assert(menu), assert(scanner), assert(result), assert(includeFile), assert(stack),
         assert(arena);
@@ -240,8 +229,6 @@ handleIncludeMacro(
     }
 
     char* includeFilePath = NULL;
-    Array includeSource   = ARRAY_INIT(char);
-    Array includeResult   = ARRAY_INIT(char);
 
     /* Get the path to the included file */
     includeFilePath = getAbsolutePath(includeFile->start, includeFile->length, sourcePath);
@@ -273,46 +260,46 @@ handleIncludeMacro(
         if (menu->debug) disassembleIncludeStack(stack);
         scanner->hadError = true;
         free(canonicalIncludePath);
-        goto fail;
+        free(includeFilePath);
+        return;
     }
 
     free(canonicalIncludePath);
 
-    /* Try to read the included file */
-    includeSource = readFile(includeFilePath);
-    if (arrayIsEmpty(&includeSource))
+    /* Try to read the included file into arena */
+    String includeSource = readFileToArena(arena, includeFilePath);
+    if (stringIsEmpty(&includeSource))
     {
-        /* readFile prints an error for us. */
+        /* readFileToArena prints an error for us. */
         scanner->hadError = true;
-        goto fail;
+        free(includeFilePath);
+        return;
     }
 
     /* check that the file and the source are not one and the same */
-    if (strcmp(ARRAY_AS(&includeSource, char), scanner->head) == 0)
+    if (strcmp(includeSource.data, scanner->head) == 0)
     {
         errorMsg(
             "Included file appears to be the same as the source file. Cannot `:include` self.");
         scanner->hadError = true;
-        goto fail;
+        free(includeFilePath);
+        return;
     }
 
     /* Run preprocessor on the included file */
-    includeResult = preprocessorRunImpl(menu, &includeSource, includeFilePath, stack, arena);
-    if (arrayIsEmpty(&includeResult))
+    String includeResult = preprocessorRunImpl(menu, includeSource, includeFilePath, stack, arena);
+    if (stringIsEmpty(&includeResult))
     {
         errorMsg("Failed to get preprocessor result.");
         scanner->hadError = true;
-        goto fail;
+        free(includeFilePath);
+        return;
     }
 
-    /* Append the result. */
-    arrayAppendN(result, ARRAY_AS(&includeResult, char), arrayLength(&includeResult));
+    /* Append the result using LazyString lazy concat. */
+    lazyStringAppend(result, includeResult.data, includeResult.length);
 
-fail:
     free(includeFilePath);
-    arrayFree(&includeSource);
-    arrayFree(&includeResult);
-    return;
 }
 
 static void
@@ -327,16 +314,16 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
     /* Validate resolved name */
     if (strlen(resolvedKey) == 0)
     {
-        tokenErrorAt(keyToken, scanner->filepath, "Variable name resolves to empty string.");
+        scannerErrorAt(scanner, keyToken, "Variable name resolves to empty string.");
         scanner->hadError = true;
         return;
     }
 
     if (strchr(resolvedKey, ')'))
     {
-        tokenErrorAt(
+        scannerErrorAt(
+            scanner,
             keyToken,
-            scanner->filepath,
             "Variable name contains ')' after resolution: '%s'.",
             resolvedKey);
         scanner->hadError = true;
@@ -346,14 +333,14 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
     scannerMakeCurrent(scanner);
 
     Token valueToken = { 0 };
-    scannerGetTokenForPreprocessor(scanner, &valueToken, SCANNER_WANTS_DESCRIPTION);
+    scannerTokenForPreprocessor(scanner, &valueToken, SCANNER_WANTS_DESCRIPTION);
 
     if (valueToken.type != TOKEN_DESCRIPTION && valueToken.type != TOKEN_DESC_INTERP &&
         valueToken.type != TOKEN_USER_VAR)
     {
-        tokenErrorAt(
+        scannerErrorAt(
+            scanner,
             &valueToken,
-            scanner->filepath,
             "Expected variable value as a string. Got '%.*s'.",
             valueToken.length,
             valueToken.start);
@@ -365,7 +352,7 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
     char* resolvedValue = getArg(menu, scanner, arena, &valueToken, "variable value");
     if (!resolvedValue) return; /* Error already reported */
 
-    forEach(&menu->userVars, UserVar, var)
+    vectorForEach(&menu->userVars, UserVar, var)
     {
         if (strcmp(var->key, resolvedKey) == 0)
         {
@@ -376,35 +363,35 @@ handleVarMacro(Menu* menu, Scanner* scanner, Token* keyToken, char* key, Arena* 
     }
 
     UserVar newVar = { .key = resolvedKey, .value = resolvedValue };
-    arrayAppend(&menu->userVars, &newVar);
+    vectorAppend(&menu->userVars, &newVar);
 }
 
 static void
 handleMacroWithStringArg(
-    Menu*    menu,
-    Scanner* scanner,
-    Token*   token,
-    Array*   arr,
-    Stack*   stack,
-    Arena*   arena)
+    Menu*       menu,
+    Scanner*    scanner,
+    Token*      token,
+    LazyString* output,
+    Stack*      stack,
+    Arena*      arena)
 {
-    assert(menu), assert(scanner), assert(token), assert(arr), assert(stack), assert(arena);
+    assert(menu), assert(scanner), assert(token), assert(output), assert(stack), assert(arena);
 
     scannerMakeCurrent(scanner);
 
-    Token result = { 0 };
-    scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DESCRIPTION);
-    if (result.type != TOKEN_DESCRIPTION && result.type != TOKEN_DESC_INTERP &&
-        result.type != TOKEN_USER_VAR)
+    Token argToken = { 0 };
+    scannerTokenForPreprocessor(scanner, &argToken, SCANNER_WANTS_DESCRIPTION);
+    if (argToken.type != TOKEN_DESCRIPTION && argToken.type != TOKEN_DESC_INTERP &&
+        argToken.type != TOKEN_USER_VAR)
     {
-        tokenErrorAt(
+        scannerErrorAt(
+            scanner,
             token,
-            scanner->filepath,
             "Expect string argument to macro. Got '%.*s'.",
             token->length,
             token->start,
-            result.length,
-            result.start);
+            argToken.length,
+            argToken.start);
         scanner->hadError = true;
         return;
     }
@@ -413,13 +400,13 @@ handleMacroWithStringArg(
     {
     case TOKEN_INCLUDE:
     {
-        handleIncludeMacro(menu, scanner, arr, &result, stack, arena);
+        handleIncludeMacro(menu, scanner, output, &argToken, stack, arena);
         break;
     }
     case TOKEN_VAR:
     {
-        char* key = arenaCopyCString(arena, result.start, result.length);
-        handleVarMacro(menu, scanner, &result, key, arena);
+        char* key = arenaCopyCString(arena, argToken.start, argToken.length);
+        handleVarMacro(menu, scanner, &argToken, key, arena);
         break;
     }
     case TOKEN_FOREGROUND_COLOR: /* FALLTHROUGH */
@@ -438,7 +425,8 @@ handleMacroWithStringArg(
     case TOKEN_WRAP_CMD:
     case TOKEN_DELIMITER:
     {
-        char* arg = getArg(menu, scanner, arena, &result, "macro argument");
+        /* Menu settings must persist past compilation, so use menu->arena not compilerArena */
+        char* arg = getArg(menu, scanner, &menu->arena, &argToken, "macro argument");
         if (!arg) return; /* Error already reported */
 
         switch (token->type)
@@ -485,11 +473,11 @@ handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
     scannerMakeCurrent(scanner);
 
     Token result = { 0 };
-    scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DOUBLE);
+    scannerTokenForPreprocessor(scanner, &result, SCANNER_WANTS_DOUBLE);
     if (result.type != TOKEN_DOUBLE) goto fail;
 
     double value = 0;
-    if (!tokenGetDouble(&result, &value, menu->debug)) goto fail;
+    if (!tokenDouble(&result, &value, menu->debug)) goto fail;
 
     switch (token->type)
     {
@@ -503,9 +491,9 @@ handleMacroWithDoubleArg(Scanner* scanner, Menu* menu, Token* token)
     }
 
 fail:
-    tokenErrorAt(
+    scannerErrorAt(
+        scanner,
         token,
-        scanner->filepath,
         "Expect double argument to macro. Got '%.*s'.",
         token->length,
         token->start,
@@ -523,11 +511,11 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
     scannerMakeCurrent(scanner);
 
     Token result = { 0 };
-    scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_INTEGER);
+    scannerTokenForPreprocessor(scanner, &result, SCANNER_WANTS_INTEGER);
     if (result.type != TOKEN_INTEGER) goto fail;
 
     int32_t value = 0;
-    if (!tokenGetInt32(&result, &value, menu->debug)) goto fail;
+    if (!tokenInt32(&result, &value, menu->debug)) goto fail;
 
     switch (token->type)
     {
@@ -543,9 +531,9 @@ handleMacroWithInt32Arg(Scanner* scanner, Menu* menu, Token* token)
     }
 
 fail:
-    tokenErrorAt(
+    scannerErrorAt(
+        scanner,
         token,
-        scanner->filepath,
         "Expect integer argument to macro. Got '%.*s'.",
         token->length,
         token->start,
@@ -563,11 +551,11 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
     scannerMakeCurrent(scanner);
 
     Token result = { 0 };
-    scannerGetTokenForPreprocessor(scanner, &result, SCANNER_WANTS_UNSIGNED_INTEGER);
+    scannerTokenForPreprocessor(scanner, &result, SCANNER_WANTS_UNSIGNED_INTEGER);
     if (result.type != TOKEN_UNSIGNED_INTEGER) goto fail;
 
     uint32_t value = 0;
-    if (!tokenGetUint32(&result, &value, menu->debug)) goto fail;
+    if (!tokenUint32(&result, &value, menu->debug)) goto fail;
 
     switch (token->type)
     {
@@ -586,9 +574,9 @@ handleMacroWithUint32Arg(Scanner* scanner, Menu* menu, Token* token)
     }
 
 fail:
-    tokenErrorAt(
+    scannerErrorAt(
+        scanner,
         token,
-        scanner->filepath,
         "Expect unsigned integer argument to macro. Got '%.*s'.",
         token->length,
         token->start,
@@ -611,23 +599,38 @@ popFilePath(Stack* stack)
     stackPop(stack);
 }
 
-static Array
-preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stack, Arena* arena)
+static String
+preprocessorRunImpl(Menu* menu, String source, const char* filepath, Stack* stack, Arena* arena)
 {
-    assert(menu), assert(source), assert(stack), assert(arena);
+    assert(menu), assert(stack), assert(arena);
+
+    String emptyResult = { 0 };
+
+    if (stringIsEmpty(&source)) return emptyResult;
 
     Scanner scanner = { 0 };
-    scannerInit(&scanner, ARRAY_AS(source, char), filepath);
+    scannerInit(&scanner, source.data, filepath);
     const char* scannerStart = scanner.head;
 
-    Array result = ARRAY_INIT(char);
+    LazyString result = lazyStringInit();
 
-    char* absoluteFilePath  = getAbsolutePath(filepath, strlen(filepath), ".");
-    char* canonicalFilePath = realpath(absoluteFilePath ? absoluteFilePath : filepath, NULL);
-    if (!canonicalFilePath)
+    /* For stdin, skip file path resolution - there's no real file */
+    char* absoluteFilePath  = NULL;
+    char* canonicalFilePath = NULL;
+    if (strcmp(filepath, "<stdin>") == 0)
     {
-        /* If canonicalization fails, use the constructed path */
-        canonicalFilePath = strdup(absoluteFilePath ? absoluteFilePath : filepath);
+        absoluteFilePath  = strdup(filepath);
+        canonicalFilePath = strdup(filepath);
+    }
+    else
+    {
+        absoluteFilePath  = getAbsolutePath(filepath, strlen(filepath), ".");
+        canonicalFilePath = realpath(absoluteFilePath ? absoluteFilePath : filepath, NULL);
+        if (!canonicalFilePath)
+        {
+            /* If canonicalization fails, use the constructed path */
+            canonicalFilePath = strdup(absoluteFilePath ? absoluteFilePath : filepath);
+        }
     }
 
     FilePath pathEntry = { .path = absoluteFilePath, .canonicalPath = canonicalFilePath };
@@ -635,7 +638,9 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     if (menu->debug)
     {
         disassembleIncludeStack(stack);
-        disassembleArrayAsText(source, "Source");
+        debugPrintHeader("Source");
+        debugTextLenWithLineNumber(source.data, source.length);
+        debugPrintHeader("");
     }
 
     while (!scannerIsAtEnd(&scanner))
@@ -643,12 +648,12 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         if (scanner.hadError) goto fail;
 
         Token token = { 0 };
-        scannerGetTokenForPreprocessor(&scanner, &token, SCANNER_WANTS_MACRO);
+        scannerTokenForPreprocessor(&scanner, &token, SCANNER_WANTS_MACRO);
         if (token.type == TOKEN_EOF) break;
         if (menu->debug) disassembleSingleToken(&token);
 
         /* Found either valid preprocessor token, or error. Either way it is safe to append. */
-        arrayAppendN(&result, scannerStart, scanner.start - 1 - scannerStart);
+        lazyStringAppend(&result, scannerStart, scanner.start - 1 - scannerStart);
 
         /* Handle macros */
         switch (token.type)
@@ -701,7 +706,7 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
         /* Handle error */
         case TOKEN_ERROR:
         {
-            tokenErrorAt(&token, scanner.filepath, "%s", token.message);
+            scannerErrorAt(&scanner, &token, "%s", token.message);
             scanner.hadError = true;
             break;
         }
@@ -711,9 +716,9 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
             {
                 /* DEBUG HERE */
             }
-            tokenErrorAt(
+            scannerErrorAt(
+                &scanner,
                 &token,
-                scanner.filepath,
                 "Got unexpected token during preprocessor parsing.");
             scanner.hadError = true;
             break;
@@ -725,33 +730,39 @@ preprocessorRunImpl(Menu* menu, Array* source, const char* filepath, Stack* stac
     }
 
     /* Append the last bit of the source to result. */
-    arrayAppendN(&result, scannerStart, scanner.current - scannerStart);
+    lazyStringAppend(&result, scannerStart, scanner.current - scannerStart);
 
     if (menu->debug)
     {
-        disassembleArrayAsText(&result, "Processed Source");
+        disassembleLazyString(&result, "Processed Source", 0);
         disassembleMenu(menu);
     }
 
 fail:
     popFilePath(stack);
 
-    if (scanner.hadError) arrayFree(&result);
-    return result;
+    if (scanner.hadError)
+    {
+        lazyStringFree(&result);
+        return emptyResult;
+    }
+
+    String str = lazyStringToString(arena, &result);
+    lazyStringFree(&result);
+    return str;
 }
 
-Array
-preprocessorRun(Menu* menu, Array* source, const char* filepath)
+String
+preprocessorRun(Menu* menu, String source, const char* filepath, Arena* arena)
 {
-    assert(menu), assert(source);
+    assert(menu), assert(arena);
 
-    Stack stack  = STACK_INIT(FilePath);
-    Array result = preprocessorRunImpl(menu, source, filepath, &stack, &menu->arena);
+    Stack  stack  = STACK_INIT(FilePath);
+    String result = preprocessorRunImpl(menu, source, filepath, &stack, arena);
     while (!stackIsEmpty(&stack))
     {
         popFilePath(&stack);
     }
     stackFree(&stack);
-    if (!arrayIsEmpty(&result)) arrayAppend(&result, "");
     return result;
 }

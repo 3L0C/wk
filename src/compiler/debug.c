@@ -7,6 +7,7 @@
 
 /* local includes */
 #include "debug.h"
+#include "lazy_string.h"
 #include "token.h"
 
 void
@@ -28,6 +29,18 @@ debugPrintScannedTokenHeader(void)
 }
 
 void
+disassembleLazyString(const LazyString* string, const char* title, int indent)
+{
+    assert(string);
+
+    if (title == NULL) title = "(null)";
+
+    char buffer[string->length + 1];
+    lazyStringWriteToBuffer(string, buffer);
+    debugMsgWithIndent(indent, "| %-20s '%s'", title, buffer);
+}
+
+void
 disassembleScanner(const Scanner* scanner)
 {
     assert(scanner);
@@ -42,9 +55,7 @@ disassembleScanner(const Scanner* scanner)
     debugMsg(true, "| Line:              %zu", scanner->line);
     debugMsg(true, "| Column:            %zu", scanner->column);
     debugMsg(true, "| Had Error:         %s", scanner->hadError ? "true" : "false");
-    /* debugMsg(true, "| State:             %s", *scanner->head); */
-    /* debugMsg(true, "| Prev State:        %s", *scanner->head); */
-    debugMsg(true, "| Interp Type:       %s", tokenGetLiteral(scanner->interpType));
+    debugMsg(true, "| Interp Type:       %s", tokenLiteral(scanner->interpType));
     debugMsg(true, "|");
     debugPrintHeader("");
 }
@@ -84,7 +95,7 @@ printSimpleToken(const Token* token)
         "| %04zu:%04zu | %-27s | %-26.*s |",
         token->line,
         token->column,
-        tokenGetLiteral(token->type),
+        tokenLiteral(token->type),
         (int)token->length,
         token->start);
 }

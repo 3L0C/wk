@@ -296,7 +296,7 @@ setMonitor(X11Window* window, Menu* menu)
             window->root.h = DisplayHeight(window->display, window->screen);
         }
 
-        window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->root.h);
+        window->height = cairoHeight(menu, getThrowawaySurface(window), window->root.h);
 
         resizeWindow(window, menu);
 #undef INTERSECT
@@ -455,7 +455,7 @@ render(X11Window* window, Menu* menu)
     assert(window), assert(menu);
 
     uint32_t oldh  = window->height;
-    window->height = cairoGetHeight(menu, getThrowawaySurface(window), window->root.h);
+    window->height = cairoHeight(menu, getThrowawaySurface(window), window->root.h);
     resizeWinHeight(window, menu);
 
     if (oldh != window->height)
@@ -607,33 +607,38 @@ shiftIsSignificant(const char* a, int aLen, const char* b, int bLen)
         memcmp(a, b, (aLen < bLen) ? aLen : bLen) != 0);
 }
 
-static void
-handleMysteryKeypress(Menu* menu, Key* key, KeySym keysym)
+static size_t
+handleMysteryKeypress(Menu* menu, KeySym keysym, char* reprBuf, size_t reprBufSize)
 {
-    assert(menu), assert(key);
+    assert(menu);
     debugMsg(menu->debug, "Checking mystery key.");
 
     const char* repr = XKeysymToString(keysym);
     if (!repr)
     {
         debugMsg(menu->debug, "[X11]: Got invalid keysym.");
-        return;
+        return 0;
     }
 
-    stringAppendCString(&key->repr, repr);
-    return;
+    size_t len = strlen(repr);
+    if (len >= reprBufSize) len = reprBufSize - 1;
+    memcpy(reprBuf, repr, len);
+    reprBuf[len] = '\0';
+    return len;
 }
 
-static void
+static size_t
 setKeyRepr(
     X11Window* window,
     Menu*      menu,
     XKeyEvent* keyEvent,
     Key*       key,
     KeySym*    keysym,
-    char*      repr)
+    char*      reprBuf,
+    size_t     reprBufSize)
 {
     assert(window), assert(menu), assert(keyEvent), assert(key), assert(keysym);
+    assert(reprBuf), assert(reprBufSize > 0);
 
     KeySym       aKeysym;
     KeySym       bKeysym;
@@ -657,45 +662,63 @@ setKeyRepr(
         &bKeysym,
         ~(ShiftMask | ControlMask));
 
-    if (IsModifierKey(aKeysym) || IsModifierKey(bKeysym)) return;
+    if (IsModifierKey(aKeysym) || IsModifierKey(bKeysym)) return 0;
     if (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen))
     {
         reprLen = aLen;
         *keysym = aKeysym;
-        if (reprLen > 0) memcpy(repr, aBuffer, reprLen);
         state &= ~(ShiftMask);
     }
     else
     {
         reprLen = bLen;
         *keysym = bKeysym;
-        if (reprLen > 0) memcpy(repr, bBuffer, reprLen);
     }
 
-    key->special = getSpecialKey(*keysym);
-    if (isNormalKey(repr, reprLen))
+    key->special    = getSpecialKey(*keysym);
+    size_t finalLen = 0;
+
+    if (isNormalKey(reprLen > 0 ? (shiftIsSignificant(aBuffer, aLen, bBuffer, bLen) ? aBuffer : bBuffer) : "", reprLen))
     {
-        stringAppend(&key->repr, repr, reprLen);
+        const char* src = shiftIsSignificant(aBuffer, aLen, bBuffer, bLen) ? aBuffer : bBuffer;
+        finalLen        = (size_t)reprLen;
+        if (finalLen >= reprBufSize) finalLen = reprBufSize - 1;
+        memcpy(reprBuf, src, finalLen);
+        reprBuf[finalLen] = '\0';
     }
     else if (key->special != SPECIAL_KEY_NONE)
     {
-        stringAppendCString(&key->repr, specialKeyGetRepr(key->special));
+        const char* specialRepr = specialKeyRepr(key->special);
+        finalLen                = strlen(specialRepr);
+        if (finalLen >= reprBufSize) finalLen = reprBufSize - 1;
+        memcpy(reprBuf, specialRepr, finalLen);
+        reprBuf[finalLen] = '\0';
     }
     else
     {
-        handleMysteryKeypress(menu, key, *keysym);
+        finalLen = handleMysteryKeypress(menu, *keysym, reprBuf, reprBufSize);
     }
+
     setKeyMods(key, state);
+    return finalLen;
 }
 
 static Key
-makeKeyFromEvent(X11Window* window, Menu* menu, XKeyEvent* keyEvent, KeySym* keysym, char* buffer)
+makeKeyFromEvent(
+    X11Window* window,
+    Menu*      menu,
+    XKeyEvent* keyEvent,
+    KeySym*    keysym,
+    char*      reprBuf,
+    size_t     reprBufSize,
+    size_t*    outReprLen)
 {
-    assert(window), assert(keyEvent), assert(keysym), assert(buffer);
+    assert(window), assert(keyEvent), assert(keysym), assert(reprBuf), assert(outReprLen);
 
     Key key = { 0 };
     keyInit(&key);
-    setKeyRepr(window, menu, keyEvent, &key, keysym, buffer);
+    *outReprLen = setKeyRepr(window, menu, keyEvent, &key, keysym, reprBuf, reprBufSize);
+    key.repr    = (String){ .data = reprBuf, .length = *outReprLen };
 
     return key;
 }
@@ -706,8 +729,9 @@ keypress(X11Window* window, Menu* menu, XKeyEvent* keyEvent)
     assert(window), assert(menu), assert(keyEvent);
 
     KeySym keysym;
-    char   buffer[128] = { 0 };
-    Key    key         = makeKeyFromEvent(window, menu, keyEvent, &keysym, buffer);
+    char   reprBuf[128] = { 0 };
+    size_t reprLen      = 0;
+    Key    key          = makeKeyFromEvent(window, menu, keyEvent, &keysym, reprBuf, sizeof(reprBuf), &reprLen);
     if (stringIsEmpty(&key.repr)) return MENU_STATUS_RUNNING;
 
     MenuStatus status = menuHandleKeypress(menu, &key);

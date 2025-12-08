@@ -4,8 +4,10 @@
 #include <stdbool.h>
 
 /* common includes */
+#include "common/arena.h"
 #include "common/menu.h"
+#include "common/string.h"
 
-Array preprocessorRun(Menu* menu, Array* source, const char* sourcePath);
+String preprocessorRun(Menu* menu, String source, const char* sourcePath, Arena* arena);
 
 #endif /* WK_COMPILER_PREPROCESSOR_H_ */

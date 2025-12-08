@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 /* common includes */
-#include "src/common/array.h"
 #include "src/common/key_chord.h"
 #include "src/common/menu.h"
+#include "src/common/span.h"
 #include "src/common/string.h"
 
 /* Delimiter when displaying chords. */
@@ -58,37 +58,23 @@ static const char* implicitArrayKeys = "asdfghjkl;";
 static const char* wrapCmd = NULL;
 
 /* Builtin key chords */
-#define ARRAY(T, _len, ...)                  \
-    (Array)                                  \
-    {                                        \
-        .data        = (T[]){ __VA_ARGS__ }, \
-        .length      = (_len),               \
-        .capacity    = (_len),               \
-        .elementSize = sizeof(T)             \
+#define SPAN_STATIC(T, _count, ...)    \
+    (Span)                             \
+    {                                  \
+        .data  = (T[]){ __VA_ARGS__ }, \
+        .count = (_count)              \
     }
-#define ARRAY_EMPTY(T)           \
-    (Array)                      \
-    {                            \
-        .data        = NULL,     \
-        .length      = 0,        \
-        .capacity    = 0,        \
-        .elementSize = sizeof(T) \
+#define STRING(_str)               \
+    (String){                      \
+        .data   = (_str),          \
+        .length = sizeof(_str) - 1 \
     }
-#define STRING(_offset, _len)                                                                       \
-    (String)                                                                                        \
-    {                                                                                               \
-        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
-        .length = (_len)                                                                            \
-    }
-#define STRING_EMPTY (String){         \
-    .parts  = ARRAY_EMPTY(StringPart), \
-    .length = 0                        \
-}
-#define PROPERTY_STRING(_offset, _len)                     \
-    (Property)                                             \
-    {                                                      \
-        .type  = PROP_TYPE_STRING,                         \
-        .value = {.as_string = STRING((_offset), (_len)) } \
+#define STRING_EMPTY (String){ .data = "", .length = 0 }
+#define PROPERTY_STRING(_str)                 \
+    (Property)                                \
+    {                                         \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING(_str) } \
     }
 #define PROPERTY_STRING_EMPTY                 \
     (Property)                                \
@@ -106,63 +92,61 @@ static const char* wrapCmd = NULL;
         .flags     = (_flags),                   \
         .keyChords = (_chords)                   \
     }
-#define KEY(_offset, _len, _mods, _special)   \
-    (Key)                                     \
-    {                                         \
-        .repr    = STRING((_offset), (_len)), \
-        .mods    = (_mods),                   \
-        .special = (_special)                 \
+#define KEY(_repr, _mods, _special) \
+    (Key)                           \
+    {                               \
+        .repr    = STRING(_repr),   \
+        .mods    = (_mods),         \
+        .special = (_special)       \
     }
 
-static const char BUILTIN_SOURCE[] = "aA chordHello, world!bBasicb - BasicpA prefixbA chordHello from inside prefix 'p b'cAnother prefixdDoneYou've reached the end!";
-
-static Array builtinKeyChords =
-    ARRAY(
+static Span builtinKeyChords =
+    SPAN_STATIC(
         KeyChord,
         3,
         KEY_CHORD(
-            KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 7),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(8, 13)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A chord"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("Hello, world!")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(21, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(22, 5),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(27, 9)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Basic"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("b - Basic")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(36, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("p", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(37, 8)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A prefix")),
             FLAG_WRITE,
-            ARRAY(
+            SPAN_STATIC(
                 KeyChord,
                 2,
                 KEY_CHORD(
-                    KEY(45, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(46, 7),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(53, 30)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A chord"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("Hello from inside prefix 'p b'")),
                     FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)),
+                    SPAN_EMPTY),
                 KEY_CHORD(
-                    KEY(83, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("c", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(84, 14)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Another prefix")),
                     FLAG_WRITE,
-                    ARRAY(
+                    SPAN_STATIC(
                         KeyChord,
                         1,
                         KEY_CHORD(
-                            KEY(98, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
                             PROPERTIES(
-                                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(99, 4),
-                                [KC_PROP_COMMAND]     = PROPERTY_STRING(103, 23)),
+                                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Done"),
+                                [KC_PROP_COMMAND]     = PROPERTY_STRING("You've reached the end!")),
                             FLAG_WRITE,
-                            ARRAY_EMPTY(KeyChord)))))));
+                            SPAN_EMPTY))))));
 
 #endif /* WK_CONFIG_CONFIG_H_ */

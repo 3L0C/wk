@@ -5,21 +5,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "array.h"
 #include "property_def.h"
 #include "string.h"
+#include "vector.h"
 
-/* Property type enumeration - generated from PROPERTY_TYPE_LIST */
+/* Property type enumeration generated from PROPERTY_TYPE_LIST */
 typedef enum
 {
-    PROP_TYPE_NONE, /* Manually defined - represents unset/empty property */
+    PROP_TYPE_NONE,
 #define PROP_TYPE_X(name, ctype, accessor, field) PROP_TYPE_##name,
     PROPERTY_TYPE_LIST
 #undef PROP_TYPE_X
         PROP_TYPE_COUNT
 } PropertyType;
 
-/* Property value union - generated from PROPERTY_TYPE_LIST */
+/* Property value union generated from PROPERTY_TYPE_LIST */
 typedef union
 {
 #define PROP_TYPE_X(name, ctype, accessor, field) ctype field;
@@ -27,14 +27,14 @@ typedef union
 #undef PROP_TYPE_X
 } PropertyValue;
 
-/* Property container - a generic typed value */
+/* Property container a generic typed value */
 typedef struct
 {
     PropertyType  type;
     PropertyValue value;
 } Property;
 
-/* Direct value access macro - use on Property* */
+/* Direct value access macro use on Property* */
 #define PROP_VAL(prop, field) (&(prop)->value.field)
 
 #define PROP_TYPE_X(name, ctype, accessor, field)                              \
@@ -48,13 +48,11 @@ PROPERTY_TYPE_LIST
 
 #define PROP_SET_TYPE(prop, name) ((prop)->type = PROP_TYPE_##name)
 
-/* Lifecycle operations */
-void propertyInit(Property* prop);
-void propertyFree(Property* prop);
+void propertyClear(Property* prop);
 void propertyCopy(const Property* from, Property* to);
-void propertyClear(Property* prop); /* Free and set to NONE */
-
-/* Query operations */
+void propertyFree(Property* prop);
+bool propertyHasContent(const Property* prop);
+void propertyInit(Property* prop);
 bool propertyIsSet(const Property* prop);
 bool propertyIsType(const Property* prop, PropertyType type);
 

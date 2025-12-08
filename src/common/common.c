@@ -6,10 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* local */
-#include "array.h"
+/* local includes */
+#include "arena.h"
 #include "common.h"
-#include "memory.h"
+#include "string.h"
 
 void
 errorMsg(const char* fmt, ...)
@@ -17,7 +17,7 @@ errorMsg(const char* fmt, ...)
     assert(fmt);
 
     fprintf(stderr, "[ERROR] ");
-    int     len = strlen(fmt); /* 1 = '\0' */
+    int     len = strlen(fmt);
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
@@ -41,24 +41,24 @@ isUtf8ContByte(char byte)
 }
 
 bool
-isUtf8StartByte(char byte)
-{
-    return (byte & 0xC0) != 0x80;
-}
-
-bool
 isUtf8MultiByteStartByte(char byte)
 {
     return (byte & 0x80) == 0x80 && (byte & 0xC0) != 0x80;
 }
 
-Array
-readFile(const char* filepath)
+bool
+isUtf8StartByte(char byte)
 {
-    assert(filepath);
+    return (byte & 0xC0) != 0x80;
+}
 
-    Array result = ARRAY_INIT(char);
-    FILE* file   = fopen(filepath, "rb");
+String
+readFileToArena(Arena* arena, const char* filepath)
+{
+    assert(arena), assert(filepath);
+
+    String result = { 0 };
+    FILE*  file   = fopen(filepath, "rb");
     if (!file)
     {
         errorMsg("Could not open file '%s'.", filepath);
@@ -69,7 +69,7 @@ readFile(const char* filepath)
     size_t fileSize = ftell(file);
     rewind(file);
 
-    char* buffer = ALLOCATE(char, fileSize + 1);
+    char* buffer = ARENA_ALLOCATE(arena, char, fileSize + 1);
 
     size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
     if (bytesRead < fileSize)
@@ -81,9 +81,9 @@ readFile(const char* filepath)
 
     buffer[bytesRead] = '\0';
     fclose(file);
-    arrayAppendN(&result, buffer, bytesRead + 1);
-    free(buffer);
 
+    result.data   = buffer;
+    result.length = bytesRead;
     return result;
 }
 

@@ -1,0 +1,5 @@
+# @desc: Missing description before command
+# @expect-error: Expected description but got command
+
+# Test missing description error - key directly followed by command
+a %{{echo test}}

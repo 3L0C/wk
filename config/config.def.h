@@ -5,9 +5,10 @@
 #include <stdint.h>
 
 /* common includes */
-#include "src/common/array.h"
 #include "src/common/key_chord.h"
 #include "src/common/menu.h"
+#include "src/common/span.h"
+#include "src/common/string.h"
 
 /* Delimiter when displaying chords. */
 static const char* delimiter = " -> ";
@@ -56,56 +57,49 @@ static const char* implicitArrayKeys = "asdfghjkl;";
 /* Command wrapper prefix. Set to NULL or "" to disable. Examples: "uwsm app --", "firefox", etc. */
 static const char* wrapCmd = NULL;
 
-/* Key chord macro definitions */
-#define ARRAY(T, _len, ...)                  \
-    (Array)                                  \
-    {                                        \
-        .data        = (T[]){ __VA_ARGS__ }, \
-        .length      = (_len),               \
-        .capacity    = (_len),               \
-        .elementSize = sizeof(T)             \
+/* Builtin key chords */
+#define SPAN_STATIC(T, _count, ...)    \
+    (Span)                             \
+    {                                  \
+        .data  = (T[]){ __VA_ARGS__ }, \
+        .count = (_count)              \
     }
-#define ARRAY_EMPTY(T)           \
-    (Array)                      \
-    {                            \
-        .data        = NULL,     \
-        .length      = 0,        \
-        .capacity    = 0,        \
-        .elementSize = sizeof(T) \
+#define STRING(_str)               \
+    (String){                      \
+        .data   = (_str),          \
+        .length = sizeof(_str) - 1 \
     }
-#define STRING(_offset, _len)                                                                       \
-    (String)                                                                                        \
-    {                                                                                               \
-        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
-        .length = (_len)                                                                            \
-    }
-#define STRING_EMPTY (String){         \
-    .parts  = ARRAY_EMPTY(StringPart), \
-    .length = 0                        \
-}
-#define KEY_CHORD(_key, _desc, _cmd, _before, _after, _wrap_cmd, _title, _flags, _chords) \
-    (KeyChord)                                                                            \
-    {                                                                                     \
-        .key         = (_key),                                                            \
-        .description = (_desc),                                                           \
-        .command     = (_cmd),                                                            \
-        .before      = (_before),                                                         \
-        .after       = (_after),                                                          \
-        .wrapCmd     = (_wrap_cmd),                                                       \
-        .title       = (_title),                                                          \
-        .flags       = (_flags),                                                          \
-        .keyChords   = (_chords)                                                          \
-    }
-#define KEY(_offset, _len, _mods, _special)   \
-    (Key)                                     \
+#define STRING_EMPTY (String){ .data = "", .length = 0 }
+#define PROPERTY_STRING(_str)                 \
+    (Property)                                \
     {                                         \
-        .repr    = STRING((_offset), (_len)), \
-        .mods    = (_mods),                   \
-        .special = (_special)                 \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING(_str) } \
+    }
+#define PROPERTY_STRING_EMPTY                 \
+    (Property)                                \
+    {                                         \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING_EMPTY } \
+    }
+#define PROPERTIES(...) __VA_ARGS__
+#define PROPERTIES_EMPTY
+#define KEY_CHORD(_key, _props, _flags, _chords) \
+    (KeyChord)                                   \
+    {                                            \
+        .key       = (_key),                     \
+        .props     = { _props },                 \
+        .flags     = (_flags),                   \
+        .keyChords = (_chords)                   \
+    }
+#define KEY(_repr, _mods, _special) \
+    (Key)                           \
+    {                               \
+        .repr    = STRING(_repr),   \
+        .mods    = (_mods),         \
+        .special = (_special)       \
     }
 
-static const char BUILTIN_SOURCE[] = "";
-
-static Array builtinKeyChords = ARRAY_EMPTY(KeyChord);
+static Span builtinKeyChords = SPAN_EMPTY;
 
 #endif /* WK_CONFIG_CONFIG_H_ */

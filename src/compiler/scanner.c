@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 /* common includes */
@@ -18,6 +20,27 @@ enum
     CHAR_TYPE_WHITESPACE,
     CHAR_TYPE_INTERP_END,
 };
+
+void
+vscannerErrorAt(Scanner* scanner, Token* token, const char* fmt, va_list ap)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    tokenErrorAt(token, scanner->filepath);
+    vfprintf(stderr, fmt, ap);
+    fputc('\n', stderr);
+}
+
+void
+scannerErrorAt(Scanner* scanner, Token* token, const char* fmt, ...)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    va_list ap;
+    va_start(ap, fmt);
+    vscannerErrorAt(scanner, token, fmt, ap);
+    va_end(ap);
+}
 
 void
 scannerInit(Scanner* scanner, const char* source, const char* filepath)
@@ -307,7 +330,6 @@ scanFlag(Scanner* scanner, Token* token)
     {
         if (isKeyword(scanner, 1, 6, "nherit")) result = TOKEN_INHERIT;
         else if (isKeyword(scanner, 1, 5, "gnore")) result = TOKEN_IGNORE;
-        else if (isKeyword(scanner, 1, 10, "gnore-sort")) result = TOKEN_IGNORE_SORT;
         break;
     }
     case 'n':
@@ -331,7 +353,6 @@ scanFlag(Scanner* scanner, Token* token)
     case 's':
     {
         if (isKeyword(scanner, 1, 11, "ync-command")) result = TOKEN_SYNC_CMD;
-        else if (isKeyword(scanner, 1, 3, "ort")) result = TOKEN_ENABLE_SORT;
         break;
     }
     case 't':
@@ -687,7 +708,7 @@ checkSpecialType(Scanner* scanner, Token* token)
 
     for (size_t i = SPECIAL_KEY_NONE; i < SPECIAL_KEY_LAST; i++)
     {
-        const char* repr = specialKeyGetRepr(i);
+        const char* repr = specialKeyRepr(i);
         if (isKeyword(
                 scanner,
                 0,
@@ -811,7 +832,7 @@ scanUnsignedInteger(Scanner* scanner, Token* token)
 }
 
 void
-scannerGetTokenForCompiler(Scanner* scanner, Token* token)
+scannerTokenForCompiler(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
 
@@ -891,7 +912,7 @@ scannerGetTokenForCompiler(Scanner* scanner, Token* token)
 }
 
 void
-scannerGetTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
+scannerTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
 {
     assert(scanner), assert(token);
 

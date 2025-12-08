@@ -78,8 +78,6 @@ flag               -> '+' ( 'keep'
                           | 'close'
                           | 'inherit'
                           | 'ignore'
-                          | 'ignore-sort'
-                          | 'sort'
                           | 'unhook'
                           | 'deflag'
                           | 'no-before'
@@ -504,10 +502,6 @@ description, zero or more keywords, and a command. This is practially a _chord_
 in terms of its form, but in behavior an _implicit array_ generates any number
 of _chords_ from this simple syntax.
 
-*Important:* Implicit arrays have an implicit _+ignore-sort_ flag, meaning they
-remain in their original order (from _implicitArrayKeys_) even when _:sort_ is
-enabled. To make them sorted, explicitly add the _+sort_ flag.
-
 As an example, say your implicit array keys are set to _h_, _j_, _k_, and _l_,
 and you have this _wks_ file:
 
@@ -523,18 +517,6 @@ j "Switch workspace 2" %{{xdotool set_desktop 1}}
 k "Switch workspace 3" %{{xdotool set_desktop 2}}
 l "Switch workspace 4" %{{xdotool set_desktop 3}}
 ```
-
-The _chords_ are generated in the same order as _implicitArrayKeys_ (h, j, k, l
-in this example). If you want them sorted alphabetically when using _:sort_, add
-the _+sort_ flag:
-
-```
-:sort
-... "Switch workspace %(index+1)" +sort %{{xdotool set_desktop %(index)}}
-```
-
-This will generate _chords_ in sorted order: h, j, k, l (which happens to be the
-same in this case, but would differ with keys in a different order like _jklh_).
 
 ## EXPLICIT ARRAY
 
@@ -655,14 +637,14 @@ chord_metadata -> ( 'key'
 	_chord_ that may change frequently or is not know ahead of time.
 
 *index*
-	The _index_ _identifier_ corresponds to the 0 base index of the current
-	_chord_ or _prefix_ within the current scope. *NOTE* a _prefix_ starts a
-	new scope.
+	The 0-based index based on parse order. Scoping rules:
+	- Within a _chord array_, index is relative to the array (0 to N-1)
+	- For standalone chords, index is the position within the current prefix
+	- A _prefix_ starts a new scope for its children
+	Index values are resolved before sorting.
 
 *index+1*
-	The _index+1_ _identifier_ corresponds to the 1 base index of the current
-	_chord_ or _prefix_ within the current scope. *NOTE* a _prefix_ starts a
-	new scope.
+	Same as _index_ but 1-based (1 to N).
 
 *desc*
 	The _desc_ _identifier_ correspond to the _description_ of the current
@@ -758,8 +740,6 @@ flag -> '+' ( 'keep'
             | 'close'
             | 'inherit'
             | 'ignore'
-            | 'ignore-sort'
-            | 'sort'
             | 'unhook'
             | 'deflag'
             | 'no-before'
@@ -790,14 +770,6 @@ how each flag changes the behavior of *wk*:
 *ignore*
 	Ignore all hooks and flags from the surrounding prefix. Has no effect when
 	given to a prefix.
-
-*ignore-sort*
-	Chord is ignored during sorting leaving it in it in the same position it was
-	parsed in.
-
-*sort*
-	Unsets the _ignore-sort_ flag. Primarily useful for implicit arrays (which
-	have implicit _+ignore-sort_) or overriding inherited behavior.
 
 *unhook*
 	Ignore all hooks from the surrounding prefix.
@@ -1427,10 +1399,10 @@ additional flags may be given to ignore unwanted behavior.
 
 ## SORTING
 
-Key chords will be sorted when processing a _wks_ file if the *--sort* flag is
-passed to *wk*. This has knock-on effects with index interpolations (often for
-chord arrays). A _wks_ file like this will produce different results sorted vs
-unsorted (the default).
+Key chords are sorted by default when processing a _wks_ file. Index
+interpolations are resolved *before* sorting, so _%(index)_ reflects parse
+order, not final sorted position. This means sorting only changes display
+order, not index values.
 
 ```
 # Base file
@@ -1438,67 +1410,21 @@ unsorted (the default).
 b "Second?" +write %{{%(index)}}
 a "First?" +write %{{%(index)}}
 
-# Unsorted result
-n "Switch 1" %{{xdotool set_desktop 0}}
+# Result (sorted by default, but indices reflect parse order)
+a "First?" +write %{{5}}
+b "Second?" +write %{{4}}
 e "Switch 2" %{{xdotool set_desktop 1}}
 i "Switch 3" %{{xdotool set_desktop 2}}
+n "Switch 1" %{{xdotool set_desktop 0}}
 o "Switch 4" %{{xdotool set_desktop 3}}
-b "Second?" +write %{{4}}
-a "First?" +write %{{5}}
-
-# Sorted result
-a "First?" +write %{{0}}
-b "Second?" +write %{{1}}
-e "Switch 3" %{{xdotool set_desktop 2}}
-i "Switch 4" %{{xdotool set_desktop 3}}
-n "Switch 5" %{{xdotool set_desktop 4}}
-o "Switch 6" %{{xdotool set_desktop 5}}
 ```
 
-To avoid this you can add the _+ignore-sort_ flag to any key chord to ensure the
-value of the index interpolations.
+The array _[neio]_ expands to indices 0-3 in parse order (n=0, e=1, i=2, o=3),
+then _b_ gets index 4 and _a_ gets index 5. After sorting, the display order
+changes but indices remain unchanged.
 
-```
-# Base file
-[neio] "Switch %(index+1)" +ignore-sort %{{xdotool set_desktop %(index)}}
-b "Second?" +write %{{%(index)}}
-a "First?" +write %{{%(index)}}
-
-# Sorted with `+ignore-sort` result
-e "Switch 1" %{{xdotool set_desktop 0}}
-i "Switch 2" %{{xdotool set_desktop 1}}
-n "Switch 3" %{{xdotool set_desktop 2}}
-o "Switch 4" %{{xdotool set_desktop 3}}
-a "First?" +write %{{4}}
-b "Second?" +write %{{5}}
-```
-
-*Implicit arrays* have an implicit _+ignore-sort_ flag, meaning they remain
-unsorted even when _:sort_ is enabled. To make them sorted, explicitly add
-the _+sort_ flag:
-
-```
-:sort
-:implicit-array-keys "dcba"
-
-# Implicit array (unsorted by default)
-... "Workspace %(index+1)" %{{xdotool set_desktop %(index)}}
-
-# Sorted result: d, c, b, a (original order from implicitArrayKeys)
-d "Workspace 1" %{{xdotool set_desktop 0}}
-c "Workspace 2" %{{xdotool set_desktop 1}}
-b "Workspace 3" %{{xdotool set_desktop 2}}
-a "Workspace 4" %{{xdotool set_desktop 3}}
-
-# Implicit array with +sort flag
-C-... "Workspace %(index+1)" +sort %{{xdotool set_desktop %(index)}}
-
-# Sorted result: a, b, c, d (alphabetically sorted)
-C-a "Workspace 1" %{{xdotool set_desktop 0}}
-C-b "Workspace 2" %{{xdotool set_desktop 1}}
-C-c "Workspace 3" %{{xdotool set_desktop 2}}
-C-d "Workspace 4" %{{xdotool set_desktop 3}}
-```
+To disable sorting, use the *--unsorted* CLI flag or the *:unsorted*
+preprocessor macro.
 
 ## BUG REPORTS
 

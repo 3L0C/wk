@@ -1,0 +1,60 @@
+# @desc: Test large arena allocation (multiple 64KB blocks) - regression test for arenaFree
+# @test: "t"
+# @expect: pass
+
+# Generate many chords to exceed 64KB arena block size
+# Forces arena to allocate multiple blocks and tests arenaFree cleanup
+
+[abcdefghijklmnopqrstuvwxyz] "Root chord %(key) with long description padding text to consume arena memory index %(index) extra words here" %{{:}}
+
+0 "zero block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 0 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+1 "one block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 1 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+2 "two block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 2 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+3 "three block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 3 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+4 "four block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 4 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+5 "five block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 5 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+6 "six block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 6 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+7 "seven block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 7 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+8 "eight block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 8 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+9 "nine block"
+{
+    [abcdefghijklmnopqrstuvwxyz] "Block 9 chord %(key) with description padding for arena test index %(index) more text" %{{:}}
+}
+
+t "test result" +write %{{pass}}

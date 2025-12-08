@@ -1,6 +1,7 @@
 #ifndef WK_COMPILER_SCANNER_H_
 #define WK_COMPILER_SCANNER_H_
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -41,11 +42,13 @@ typedef struct
     bool         hadError;
 } Scanner;
 
+void scannerErrorAt(Scanner* scanner, Token* token, const char* fmt, ...);
+void vscannerErrorAt(Scanner* scanner, Token* token, const char* fmt, va_list ap);
 void scannerInit(Scanner* scanner, const char* source, const char* filepath);
 void scannerClone(const Scanner* scanner, Scanner* clone);
 bool scannerIsAtEnd(const Scanner* scanner);
 void scannerMakeCurrent(Scanner* scanner);
-void scannerGetTokenForCompiler(Scanner* scanner, Token* result);
-void scannerGetTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag);
+void scannerTokenForCompiler(Scanner* scanner, Token* result);
+void scannerTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag);
 
 #endif /* WK_COMPILER_SCANNER_H_ */

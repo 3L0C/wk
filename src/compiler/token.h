@@ -85,7 +85,6 @@ enum
     TOKEN_CLOSE,
     TOKEN_INHERIT,
     TOKEN_IGNORE,
-    TOKEN_IGNORE_SORT,
     TOKEN_UNHOOK,
     TOKEN_DEFLAG,
     TOKEN_NO_BEFORE,
@@ -95,7 +94,6 @@ enum
     TOKEN_SYNC_CMD,
     TOKEN_WRAP,
     TOKEN_UNWRAP,
-    TOKEN_ENABLE_SORT,
     TOKEN_TITLE,
 
     /* meta commands */
@@ -147,13 +145,13 @@ typedef struct
 } Token;
 
 void        tokenCopy(const Token* from, Token* to);
-void        tokenErrorAt(const Token* token, const char* filepath, const char* fmt, ...);
-bool        tokenGetDouble(const Token* token, double* dest, bool debug);
-bool        tokenGetInt32(const Token* token, int32_t* dest, bool debug);
-const char* tokenGetLiteral(const TokenType type);
-bool        tokenGetUint32(const Token* token, uint32_t* dest, bool debug);
+bool        tokenDouble(const Token* token, double* dest, bool debug);
+void        tokenErrorAt(const Token* token, const char* filepath);
 void        tokenInit(Token* token);
+bool        tokenInt32(const Token* token, int32_t* dest, bool debug);
 bool        tokenIsHookType(const TokenType type);
 bool        tokenIsModType(const TokenType type);
+const char* tokenLiteral(const TokenType type);
+bool        tokenUint32(const Token* token, uint32_t* dest, bool debug);
 
 #endif /* WK_COMPILER_TOKEN_H_ */

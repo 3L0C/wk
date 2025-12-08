@@ -2,9 +2,9 @@
 #define WK_COMPILER_WRITER_H_
 
 /* common includes */
-#include "common/array.h"
 #include "common/menu.h"
+#include "common/span.h"
 
-void writeConfigHeaderFile(const Array* keyChords, const Menu* menu);
+void writeConfigHeaderFile(const Span* keyChords, const Menu* menu);
 
 #endif /* WK_COMPILER_WRITER_H_ */

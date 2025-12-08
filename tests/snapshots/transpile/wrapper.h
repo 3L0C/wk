@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 /* common includes */
-#include "src/common/array.h"
 #include "src/common/key_chord.h"
 #include "src/common/menu.h"
+#include "src/common/span.h"
 #include "src/common/string.h"
 
 /* Delimiter when displaying chords. */
@@ -58,37 +58,23 @@ static const char* implicitArrayKeys = "asdfghjkl;";
 static const char* wrapCmd = "wrapper";
 
 /* Builtin key chords */
-#define ARRAY(T, _len, ...)                  \
-    (Array)                                  \
-    {                                        \
-        .data        = (T[]){ __VA_ARGS__ }, \
-        .length      = (_len),               \
-        .capacity    = (_len),               \
-        .elementSize = sizeof(T)             \
+#define SPAN_STATIC(T, _count, ...)    \
+    (Span)                             \
+    {                                  \
+        .data  = (T[]){ __VA_ARGS__ }, \
+        .count = (_count)              \
     }
-#define ARRAY_EMPTY(T)           \
-    (Array)                      \
-    {                            \
-        .data        = NULL,     \
-        .length      = 0,        \
-        .capacity    = 0,        \
-        .elementSize = sizeof(T) \
+#define STRING(_str)               \
+    (String){                      \
+        .data   = (_str),          \
+        .length = sizeof(_str) - 1 \
     }
-#define STRING(_offset, _len)                                                                       \
-    (String)                                                                                        \
-    {                                                                                               \
-        .parts  = ARRAY(StringPart, 1, { .source = BUILTIN_SOURCE + (_offset), .length = (_len) }), \
-        .length = (_len)                                                                            \
-    }
-#define STRING_EMPTY (String){         \
-    .parts  = ARRAY_EMPTY(StringPart), \
-    .length = 0                        \
-}
-#define PROPERTY_STRING(_offset, _len)                     \
-    (Property)                                             \
-    {                                                      \
-        .type  = PROP_TYPE_STRING,                         \
-        .value = {.as_string = STRING((_offset), (_len)) } \
+#define STRING_EMPTY (String){ .data = "", .length = 0 }
+#define PROPERTY_STRING(_str)                 \
+    (Property)                                \
+    {                                         \
+        .type  = PROP_TYPE_STRING,            \
+        .value = {.as_string = STRING(_str) } \
     }
 #define PROPERTY_STRING_EMPTY                 \
     (Property)                                \
@@ -106,95 +92,93 @@ static const char* wrapCmd = "wrapper";
         .flags     = (_flags),                   \
         .keyChords = (_chords)                   \
     }
-#define KEY(_offset, _len, _mods, _special)   \
-    (Key)                                     \
-    {                                         \
-        .repr    = STRING((_offset), (_len)), \
-        .mods    = (_mods),                   \
-        .special = (_special)                 \
+#define KEY(_repr, _mods, _special) \
+    (Key)                           \
+    {                               \
+        .repr    = STRING(_repr),   \
+        .mods    = (_mods),         \
+        .special = (_special)       \
     }
 
-static const char BUILTIN_SOURCE[] = "aAuto wrapcommandbExplicit wrapcmdcCustom wrapcmdcustomdUnwrappedcmdfNo wrappercmdgMultialthChild with altcmd1altiAnother childcmd2altpPrefix unwrappedeChild inherits unwrapcmd";
-
-static Array builtinKeyChords =
-    ARRAY(
+static Span builtinKeyChords =
+    SPAN_STATIC(
         KeyChord,
         7,
         KEY_CHORD(
-            KEY(0, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(1, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(10, 7)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Auto wrap"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("command")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(17, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(18, 13),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(31, 3)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Explicit wrap"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(34, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("c", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(35, 11),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(46, 3),
-                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(49, 6)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Custom wrap"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd"),
+                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING("custom")),
             FLAG_WRITE,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(55, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(56, 9),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(65, 3)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Unwrapped"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd")),
             FLAG_WRITE | FLAG_UNWRAP,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(68, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("f", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(69, 10),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING(79, 3)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("No wrapper"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd")),
             FLAG_WRITE | FLAG_UNWRAP,
-            ARRAY_EMPTY(KeyChord)),
+            SPAN_EMPTY),
         KEY_CHORD(
-            KEY(82, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("g", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(83, 5),
-                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(88, 3)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Multi"),
+                [KC_PROP_WRAP_CMD]    = PROPERTY_STRING("alt")),
             FLAG_NONE,
-            ARRAY(
+            SPAN_STATIC(
                 KeyChord,
                 2,
                 KEY_CHORD(
-                    KEY(91, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("h", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(92, 14),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(106, 4),
-                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(110, 3)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Child with alt"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd1"),
+                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING("alt")),
                     FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)),
+                    SPAN_EMPTY),
                 KEY_CHORD(
-                    KEY(113, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("i", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(114, 13),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(127, 4),
-                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING(131, 3)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Another child"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd2"),
+                        [KC_PROP_WRAP_CMD]    = PROPERTY_STRING("alt")),
                     FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)))),
+                    SPAN_EMPTY))),
         KEY_CHORD(
-            KEY(134, 1, MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("p", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING(135, 16)),
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Prefix unwrapped")),
             FLAG_UNWRAP,
-            ARRAY(
+            SPAN_STATIC(
                 KeyChord,
                 1,
                 KEY_CHORD(
-                    KEY(151, 1, MOD_NONE, SPECIAL_KEY_NONE),
+                    KEY("e", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING(152, 21),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING(173, 3)),
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Child inherits unwrap"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("cmd")),
                     FLAG_WRITE,
-                    ARRAY_EMPTY(KeyChord)))));
+                    SPAN_EMPTY))));
 
 #endif /* WK_CONFIG_CONFIG_H_ */
