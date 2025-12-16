@@ -1,0 +1,57 @@
+#compdef wk
+
+# Zsh completion for wk (Which-Key)
+
+_wk() {
+    local -a args
+
+    args=(
+        # Flags without arguments
+        '(-h --help)'{-h,--help}'[Display help message and exit]'
+        '(-v --version)'{-v,--version}'[Display version number and exit]'
+        '(-d --debug)'{-d,--debug}'[Print debug information]'
+        '(-t --top -b --bottom)'{-t,--top}'[Position menu at top of screen]'
+        '(-t --top -b --bottom)'{-b,--bottom}'[Position menu at bottom of screen]'
+        '(-s --script)'{-s,--script}'[Read script from stdin]'
+        '(-U --unsorted)'{-U,--unsorted}'[Disable sorting of key chords]'
+
+        # Options with integer arguments
+        '(-D --delay)'{-D,--delay}'[Delay popup menu by N milliseconds]:delay (ms):'
+        '(-m --max-columns)'{-m,--max-columns}'[Set maximum menu columns]:columns:'
+        '(-w --menu-width)'{-w,--menu-width}'[Set menu width (-1 = half screen)]:width:'
+        '(-g --menu-gap)'{-g,--menu-gap}'[Set menu gap from screen edge]:gap:'
+        '--keep-delay[Delay after ungrab for +keep chords]:delay (ms):'
+        '--border-width[Set border width]:width:'
+        '--border-radius[Set border radius in degrees]:radius:'
+        '--wpadding[Set horizontal padding around hint text]:padding:'
+        '--hpadding[Set vertical padding around hint text]:padding:'
+        '--table-padding[Set padding between cells and border]:padding:'
+
+        # Options with file arguments
+        '(-T --transpile)'{-T,--transpile}'[Transpile .wks file to C header]:wks file:_files -g "*.wks"'
+        '(-k --key-chords)'{-k,--key-chords}'[Use .wks file for key chords]:wks file:_files -g "*.wks"'
+
+        # Options with string arguments
+        '(-p --press)'{-p,--press}'[Press keys before displaying menu]:keys:'
+        '--shell[Set shell for command execution]:shell:_files -g "*"'
+        '--font[Set menu font (Pango description)]:font:'
+        '--title-font[Set title font (Pango description)]:font:'
+        '--title[Set menu title]:title:'
+        '--implicit-keys[Set implicit keys for arrays]:keys:'
+        '--wrap-cmd[Wrap all commands with this string]:wrapper:'
+
+        # Options with color arguments
+        '--fg[Set all foreground text color]:color:'
+        '--fg-key[Set key foreground color]:color:'
+        '--fg-delimiter[Set delimiter foreground color]:color:'
+        '--fg-prefix[Set prefix foreground color]:color:'
+        '--fg-chord[Set chord foreground color]:color:'
+        '--fg-title[Set title foreground color]:color:'
+        '--bg[Set background color]:color:'
+        '--bd[Set border color]:color:'
+    )
+
+    _arguments -s -S $args
+}
+
+_wk "$@"

@@ -1,14 +1,16 @@
 # Package info
-NAME         := wk
-VERSION      := 0.1.3
-DATE         := $(shell date '+%Y-%m-%d')
+NAME    := wk
+VERSION := $(shell cat VERSION)
+DATE    := $(shell date '+%Y-%m-%d')
 
 # Tools
-PKG_CONFIG   ?= pkg-config
+PKG_CONFIG ?= pkg-config
 
 # Install locations
-PREFIX       := /usr/local
-MANPREFIX    := $(PREFIX)/share/man
+PREFIX        := /usr/local
+MANPREFIX     := $(PREFIX)/share/man
+BASH_COMP_DIR := $(PREFIX)/share/bash-completion/completions
+ZSH_COMP_DIR  := $(PREFIX)/share/zsh/site-functions
 
 # Project directories
 BUILD_DIR    := ./build
@@ -24,23 +26,23 @@ TEST_DIR     := ./tests
 TEST_SCRIPTS := $(TEST_DIR)/scripts
 
 # Files
-HEADERS      := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h # $(CONF_DIR)/key_chords.h
-SOURCES      := $(wildcard $(SOURCE_DIR)/*.c)
-OBJECTS      := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.o)))
-COMM_OBJS    := $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/common/%.o, \
-					$(wildcard $(COMMON_DIR)/*.c))
-COMP_OBJS    := $(patsubst $(COMPILER_DIR)/%.c, $(BUILD_DIR)/compiler/%.o, \
-					$(wildcard $(COMPILER_DIR)/*.c))
-RUN_OBJS     := $(patsubst $(RUNTIME_DIR)/%.c, $(BUILD_DIR)/runtime/%.o, \
-					$(wildcard $(RUNTIME_DIR)/*.c))
-X11_OBJS     := $(patsubst $(X11_DIR)/%.c, $(BUILD_DIR)/runtime/x11/%.o, \
-					$(wildcard $(X11_DIR)/*.c))
-WAY_SRCS     := $(WAY_DIR)/xdg-shell.c $(WAY_DIR)/wlr-layer-shell-unstable-v1.c
-WAY_HDRS     := $(WAY_DIR)/wlr-layer-shell-unstable-v1.h
-WAY_FILES    := $(WAY_SRCS) $(WAY_HDRS)
-WAY_OBJS     := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
-					$(wildcard $(WAY_DIR)/*.c) $(WAY_SRCS))
-MAN_FILES    := $(MAN_DIR)/wk.1 $(MAN_DIR)/wks.5
+HEADERS   := $(wildcard $(SOURCE_DIR)/*.h) $(CONF_DIR)/config.h # $(CONF_DIR)/key_chords.h
+SOURCES   := $(wildcard $(SOURCE_DIR)/*.c)
+OBJECTS   := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.o)))
+COMM_OBJS := $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/common/%.o, \
+			$(wildcard $(COMMON_DIR)/*.c))
+COMP_OBJS := $(patsubst $(COMPILER_DIR)/%.c, $(BUILD_DIR)/compiler/%.o, \
+			$(wildcard $(COMPILER_DIR)/*.c))
+RUN_OBJS  := $(patsubst $(RUNTIME_DIR)/%.c, $(BUILD_DIR)/runtime/%.o, \
+			$(wildcard $(RUNTIME_DIR)/*.c))
+X11_OBJS  := $(patsubst $(X11_DIR)/%.c, $(BUILD_DIR)/runtime/x11/%.o, \
+			$(wildcard $(X11_DIR)/*.c))
+WAY_SRCS  := $(WAY_DIR)/xdg-shell.c $(WAY_DIR)/wlr-layer-shell-unstable-v1.c
+WAY_HDRS  := $(WAY_DIR)/wlr-layer-shell-unstable-v1.h
+WAY_FILES := $(WAY_SRCS) $(WAY_HDRS)
+WAY_OBJS  := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
+			$(wildcard $(WAY_DIR)/*.c) $(WAY_SRCS))
+MAN_FILES := $(MAN_DIR)/wk.1 $(MAN_DIR)/wks.5
 
 # Flags
 EXTRA_CFLAGS ?=
@@ -54,9 +56,9 @@ WAY_CFLAGS   += -DWK_WAYLAND_BACKEND $(shell $(PKG_CONFIG) --cflags wayland-clie
 WAY_LDFLAGS  += $(shell $(PKG_CONFIG) --libs wayland-client xkbcommon)
 
 # Make goals
-ALL_GOALS    := all debug test from-wks asan
-X11_GOALS    := x11 debug-x11 from-wks-x11
-WAY_GOALS    := wayland debug-wayland from-wks-wayland
+ALL_GOALS := all debug test from-wks asan
+X11_GOALS := x11 debug-x11 from-wks-x11
+WAY_GOALS := wayland debug-wayland from-wks-wayland
 
 # Insert implicit 'all' target
 ifeq (0,$(words $(MAKECMDGOALS)))
@@ -65,23 +67,23 @@ endif
 
 # Include relevant objects and flags for ALL_GOALS
 ifneq (0,$(words $(filter $(ALL_GOALS),$(MAKECMDGOALS))))
-TARGET_OBJS  := $(X11_OBJS) $(WAY_OBJS)
-CFLAGS       += $(X11_CFLAGS) $(WAY_CFLAGS)
-LDFLAGS      += $(X11_LDFLAGS) $(WAY_LDFLAGS)
+TARGET_OBJS := $(X11_OBJS) $(WAY_OBJS)
+CFLAGS      += $(X11_CFLAGS) $(WAY_CFLAGS)
+LDFLAGS     += $(X11_LDFLAGS) $(WAY_LDFLAGS)
 endif
 
 # Include relevant objects and flags for X11_GOALS
 ifneq (0,$(words $(filter $(X11_GOALS),$(MAKECMDGOALS))))
-TARGET_OBJS  := $(X11_OBJS)
-CFLAGS       += $(X11_CFLAGS)
-LDFLAGS      += $(X11_LDFLAGS)
+TARGET_OBJS := $(X11_OBJS)
+CFLAGS      += $(X11_CFLAGS)
+LDFLAGS     += $(X11_LDFLAGS)
 endif
 
 # Include relevant objects and flags for WAY_GOALS
 ifneq (0,$(words $(filter $(WAY_GOALS),$(MAKECMDGOALS))))
-TARGET_OBJS  := $(WAY_OBJS)
-CFLAGS       += $(WAY_CFLAGS)
-LDFLAGS      += $(WAY_LDFLAGS)
+TARGET_OBJS := $(WAY_OBJS)
+CFLAGS      += $(WAY_CFLAGS)
+LDFLAGS     += $(WAY_LDFLAGS)
 endif
 
 # Targets
@@ -253,6 +255,8 @@ install: $(BUILD_DIR)/$(NAME) $(MAN_FILES)
 		cp -f $(MAN_DIR)/*.$$section $(DESTDIR)$(MANPREFIX)/man$${section}; \
 		chmod 644 $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
 	done
+	install -Dm644 completions/wk.bash $(DESTDIR)$(BASH_COMP_DIR)/wk
+	install -Dm644 completions/_wk $(DESTDIR)$(ZSH_COMP_DIR)/_wk
 
 man: $(MAN_FILES)
 
@@ -261,6 +265,8 @@ uninstall:
 	for section in 1 5; do \
 		rm -f $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
 	done
+	rm -f $(DESTDIR)$(BASH_COMP_DIR)/wk
+	rm -f $(DESTDIR)$(ZSH_COMP_DIR)/_wk
 
 .PHONY: all x11 wayland from-wks from-wks-x11 from-wks-wayland debug debug-x11 debug-wayland test clean dist install uninstall man
 
