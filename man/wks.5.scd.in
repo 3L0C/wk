@@ -251,7 +251,7 @@ make things explicit.
 	Down arrow
 
 *BS*
-    Backspace
+	Backspace
 
 *TAB*
 	Tab
@@ -1414,8 +1414,8 @@ b "Second" +write %{{%(index)}}
 a "First" +write %{{%(index)}}
 
 # Result (sorted by default, but indices reflect parse order)
-a "First?" +write %{{5}}
-b "Second?" +write %{{4}}
+a "First" +write %{{5}}
+b "Second" +write %{{4}}
 e "Switch 2" %{{xdotool set_desktop 1}}
 i "Switch 3" %{{xdotool set_desktop 2}}
 n "Switch 1" %{{xdotool set_desktop 0}}
