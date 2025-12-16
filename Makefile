@@ -5,6 +5,7 @@ DATE    := $(shell date '+%Y-%m-%d')
 
 # Tools
 PKG_CONFIG ?= pkg-config
+SCDOC      := $(shell command -v scdoc 2>/dev/null)
 
 # Install locations
 PREFIX        := /usr/local
@@ -225,12 +226,16 @@ $(MAN_DIR)/%.1.scd: $(MAN_DIR)/%.1.scd.in
 $(MAN_DIR)/%.5.scd: $(MAN_DIR)/%.5.scd.in
 	sed -e 's:@VERSION@:$(VERSION):g' -e 's:@DATE@:$(DATE):g' < $< > $@
 
-# Manfile generation from scdoc
+# Manfile generation from scdoc (only if scdoc is available)
+ifdef SCDOC
 $(MAN_DIR)/%.1: $(MAN_DIR)/%.1.scd
 	scdoc < $< > $@
 
 $(MAN_DIR)/%.5: $(MAN_DIR)/%.5.scd
 	scdoc < $< > $@
+else
+$(info Note: scdoc not found, man pages will not be built)
+endif
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -246,19 +251,30 @@ dist: clean
 	tar -czf $(NAME)-$(VERSION).tar.gz $(NAME)-$(VERSION)
 	rm -rf $(NAME)-$(VERSION)
 
-install: $(BUILD_DIR)/$(NAME) $(MAN_FILES)
+install: $(BUILD_DIR)/$(NAME)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f $(NAME) $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/$(NAME)
-	for section in 1 5; do \
-		mkdir -p $(DESTDIR)$(MANPREFIX)/man$${section}; \
-		cp -f $(MAN_DIR)/*.$$section $(DESTDIR)$(MANPREFIX)/man$${section}; \
-		chmod 644 $(DESTDIR)$(MANPREFIX)/man$${section}/$(NAME)*.$${section}; \
-	done
+	@# Install man pages only if they were built
+	@if [ -f $(MAN_DIR)/wk.1 ]; then \
+		mkdir -p $(DESTDIR)$(MANPREFIX)/man1; \
+		cp -f $(MAN_DIR)/wk.1 $(DESTDIR)$(MANPREFIX)/man1/; \
+		chmod 644 $(DESTDIR)$(MANPREFIX)/man1/wk.1; \
+	fi
+	@if [ -f $(MAN_DIR)/wks.5 ]; then \
+		mkdir -p $(DESTDIR)$(MANPREFIX)/man5; \
+		cp -f $(MAN_DIR)/wks.5 $(DESTDIR)$(MANPREFIX)/man5/; \
+		chmod 644 $(DESTDIR)$(MANPREFIX)/man5/wks.5; \
+	fi
 	install -Dm644 completions/wk.bash $(DESTDIR)$(BASH_COMP_DIR)/wk
 	install -Dm644 completions/_wk $(DESTDIR)$(ZSH_COMP_DIR)/_wk
 
+ifdef SCDOC
 man: $(MAN_FILES)
+else
+man:
+	@echo "scdoc not found, cannot build man pages"
+endif
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)

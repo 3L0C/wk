@@ -157,12 +157,8 @@ stdenv.mkDerivation (finalAttrs: {
   buildPhase = ''
     runHook preBuild
     make ${wks.makeTarget}
+    make man
     runHook postBuild
-  '';
-
-  postInstall = ''
-    installShellCompletion --bash completions/wk.bash
-    installShellCompletion --zsh completions/_wk
   '';
 
   passthru = {

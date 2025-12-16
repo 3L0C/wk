@@ -112,7 +112,7 @@ pkgs.wk.override {
 # Dependencies
 
 - C compiler
-- scdoc to generate man pages
+- scdoc to generate man pages (optional)
 
 All runtime dependencies below are searched with
 `pkg-config`.
