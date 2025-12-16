@@ -228,7 +228,7 @@ Special keys like _tab_, _escape_, _spacebar_, and _F1_ can still be used as
 trigger keys in _wks_ files via their special forms.
 
 ```
-special_key -> ( 'Left'    | 'Right'   | 'Up'     | 'Down'
+special_key -> ( 'Left'    | 'Right'   | 'Up'     | 'Down' | 'BS'
                | 'TAB'     | 'SPC'     | 'RET'    | 'DEL'  | 'ESC'
                | 'Home'    | 'PgUp'    | 'PgDown' | 'End'  | 'Begin'
                | 'VolDown' | 'VolMute' | 'VolUp'  | 'Play' | 'Stop'
@@ -249,6 +249,9 @@ make things explicit.
 
 *Down*
 	Down arrow
+
+*BS*
+    Backspace
 
 *TAB*
 	Tab
@@ -639,7 +642,7 @@ chord_metadata -> ( 'key'
 *index*
 	The 0-based index based on parse order. Scoping rules:
 	- Within a _chord array_, index is relative to the array (0 to N-1)
-	- For standalone chords, index is the position within the current prefix
+	- For standalone chords, index is the position within the current scope
 	- A _prefix_ starts a new scope for its children
 	Index values are resolved before sorting.
 
@@ -917,7 +920,7 @@ The _:var_ macro allows you to define a variable with some value. It takes two
 arguments, the first is the _key_ or _variable name_, and the second is the
 _value_ which can be an empty string, i.e., unset a previously defined _var_.
 
-*NOTE* Both arguments now support variable interpolation, enabling meta-variables
+*NOTE* Both arguments support variable interpolation, enabling meta-variables
 (variables with computed names) and variables that reference other variables.
 
 The _key_ can contain any character except a closing parenthesis ('_)_'),
@@ -1273,7 +1276,7 @@ menu, free from concern about your local environment.
 
 ## VARIABLES IN PREPROCESSOR DIRECTIVES
 
-All preprocessor macros that take string arguments now support variable
+All preprocessor macros that take string arguments support variable
 interpolation, enabling powerful meta-programming capabilities:
 
 *META-VARIABLES*
@@ -1407,8 +1410,8 @@ order, not index values.
 ```
 # Base file
 [neio] "Switch %(index+1)" %{{xdotool set_desktop %(index)}}
-b "Second?" +write %{{%(index)}}
-a "First?" +write %{{%(index)}}
+b "Second" +write %{{%(index)}}
+a "First" +write %{{%(index)}}
 
 # Result (sorted by default, but indices reflect parse order)
 a "First?" +write %{{5}}

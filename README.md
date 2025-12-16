@@ -217,16 +217,32 @@ run `man 1 wk` for more info on each option.
 
 # Configuration
 
-`wk` can be configured at the command line as shown in the
-above help message, or your configuration can be built into
-the binary by changing the settings in
-[config.def.h](config/config.def.h).
+`wk` can be configured at runtime or your settings and key
+chords can be built into the binary.
 
-Key chords can be customized in two ways:
-1. **Direct editing**: Modify [config/key_chords.h](config/key_chords.h) (C code) and run `make`
-2. **From wks file**: Create [config/key_chords.wks](config/key_chords.wks) (wks syntax) and run `make from-wks`
+## Runtime
 
-The wks approach is more powerful and recommended for complex configurations.
+Configure `wk` at the command line as shown above, or use
+[preprocessor macros](#preprocessor-macros) in a `wks` file
+passed to `--key-chords`, `--transpile`, or `--script`. For
+example, define your configuration in `~/.config/wk/main.wks`
+and bind `Super+Comma` in your window manager to run
+`wk --key-chords ~/.config/wk/main.wks`.
+
+## Built-in
+
+You can build your configuration into the `wk` binary by
+placing it in `config/key_chords.wks` and running
+`make from-wks && sudo make install`. The result is
+equivalent to running `wk --key-chords config/key_chords.wks`
+but without the runtime parsing overhead.
+
+## Tradeoffs
+
+Runtime configuration allows fast iteration. Built-in
+configuration is faster at startup and suits stable setups.
+Start with runtime, then switch to built-in once your
+configuration stabilizes or startup time becomes noticeable.
 
 # wks Files
 
