@@ -53,3 +53,9 @@ z "special chars" +title "Title with quotes and backslash" +write %{{echo "speci
 4 "parent for inherit" +title "Parent Title" {
     5 "child with inherit" +inherit +write %{{echo "inherit"}}
 }
+
+# Title without argument (uses description)
+6 "title from description" +title +write %{{echo "title from desc"}}
+7 "prefix title from desc" +title {
+    8 "child of prefix" +write %{{echo "child"}}
+}

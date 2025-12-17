@@ -172,9 +172,50 @@ resolveTokenVector(Resolver* r, Vector* tokens, KeyChord* chord, LazyString* des
 static bool
 isSingleSimpleToken(const Vector* tokens)
 {
-    if (tokens->length != 1) return false;
+    assert(tokens);
+
+    if (vectorLength(tokens) != 1) return false;
     Token* token = VECTOR_GET(tokens, Token, 0);
     return token->type == TOKEN_DESCRIPTION || token->type == TOKEN_COMMAND;
+}
+
+static bool
+isEmptyToken(const Vector* tokens)
+{
+    assert(tokens);
+
+    if (vectorLength(tokens) != 1) return false;
+    Token* token = VECTOR_GET(tokens, Token, 0);
+    return token->type == TOKEN_EMPTY;
+}
+
+static String
+resolveEmptyProp(const KeyChord* chord, PropId id)
+{
+    assert(chord), assert(id < KC_PROP_COUNT);
+
+    switch (id)
+    {
+    case KC_PROP_TITLE:
+    {
+        const String* desc = propStringConst(chord, KC_PROP_DESCRIPTION);
+        if (desc) return *desc;
+        break;
+    }
+    /* These properties should never reach here */
+    case KC_PROP_DESCRIPTION: /* FALLTHROUGH */
+    case KC_PROP_COMMAND:
+    case KC_PROP_BEFORE:
+    case KC_PROP_AFTER:
+    case KC_PROP_WRAP_CMD:
+    case KC_PROP_GOTO:
+    case KC_PROP_COUNT: assert(false);
+    }
+
+    return (String){
+        .data   = NULL,
+        .length = 0
+    };
 }
 
 static void
@@ -198,6 +239,16 @@ resolveChordProperties(Resolver* r, KeyChord* chord, size_t index)
                     Token* token = VECTOR_GET(&tokens, Token, 0);
                     result       = stringMake(r->arena, token->start, token->length);
                 }
+                else if (isEmptyToken(&tokens))
+                {
+                    result = resolveEmptyProp(chord, (PropId)i);
+                    if (result.length == 0)
+                    {
+                        prop->type = PROP_TYPE_NONE;
+                        vectorFree(&tokens);
+                        continue;
+                    }
+                }
                 else
                 {
                     LazyString str = lazyStringInit();
@@ -206,15 +257,14 @@ resolveChordProperties(Resolver* r, KeyChord* chord, size_t index)
                     lazyStringFree(&str);
                 }
 
-                vectorFree(&tokens);
                 prop->value.as_string = result;
                 prop->type            = PROP_TYPE_STRING;
             }
             else
             {
-                vectorFree(&tokens);
                 prop->type = PROP_TYPE_NONE;
             }
+            vectorFree(&tokens);
         }
     }
 }

@@ -290,7 +290,7 @@ disassembleKey(const Key* key)
 static void
 debugStringWithIndent(int indent, const char* title, const String* str)
 {
-    assert(title), assert(str);
+    assert(title);
 
     if (stringIsEmpty(str))
     {

@@ -859,7 +859,7 @@ flag -> '+' ( 'keep'
             | 'sync-command'
             | 'unwrap'
             | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
-            | 'title' '"' ( '\\"' | [^"] | interpolation )* '"') ;
+            | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )? ) ;
 ```
 
 Flags begin with a plus character (`+`), followed by the
@@ -881,7 +881,7 @@ flag itself. Here is how each flag changes the behavior of
 | `sync-command` | Execute the command in a blocking fashion. See the note in [hooks](#hooks) regarding potential issues with blocking commands. |
 | `unwrap`       | Prevent wrapping this chord, even if a global wrapper is set or inherited from a parent prefix.                               |
 | `wrap`         | Wrap chord commands with the given string (supports interpolation). Overrides the global `wrap-cmd` setting.                  |
-| `title`        | Set a title for the chord or prefix that is displayed above the menu (supports interpolation). Overrides the global `--title` setting. |
+| `title`        | Set a title for the chord or prefix that is displayed above the menu (supports interpolation). Overrides the global `--title` setting. Can be omitted to set the title to the chord's description |
 
 Each flag has a time and a place but I find `+keep`, and
 `+write` to be the most useful out of the bunch.

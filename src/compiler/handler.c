@@ -355,8 +355,9 @@ handleFlagWithArg(Parser* p)
     KeyChord* chord = parserCurrentChord(p);
     Token*    token = parserCurrentToken(p);
 
-    PropId propId;
-    switch (token->type)
+    PropId    propId;
+    TokenType tokenType = token->type;
+    switch (tokenType)
     {
     case TOKEN_TITLE: propId = KC_PROP_TITLE; break;
     case TOKEN_WRAP: propId = KC_PROP_WRAP_CMD; break;
@@ -367,15 +368,22 @@ handleFlagWithArg(Parser* p)
 
     parserAdvance(p);
 
-    Token* next = parserCurrentToken(p);
+    Token*  next   = parserCurrentToken(p);
+    Vector* tokens = propVector(chord, propId);
+
     if (next->type == TOKEN_DESCRIPTION || next->type == TOKEN_DESC_INTERP)
     {
-        Vector* tokens = propVector(chord, propId);
         vectorClear(tokens);
         if (!collectDescriptionTokens(p, tokens))
         {
             return handleResultError();
         }
+    }
+    else if (tokenType == TOKEN_TITLE)
+    {
+        static const Token sentinel = { .type = TOKEN_EMPTY };
+        vectorClear(tokens);
+        vectorAppend(tokens, &sentinel);
     }
 
     return handleResultOk(EXPECT_AFTER_FLAG);

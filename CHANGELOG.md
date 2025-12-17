@@ -29,6 +29,7 @@ an improved configuration system, and several new features. See
 
 - **Menu titles**: Display a title above the menu using `--title` CLI flag,
   `:title` preprocessor macro, or `+title "..."` flag on chords/prefixes.
+  Using `+title` without an argument sets the title to the chord's description.
   Includes `--title-font` and `:title-font` for separate title styling.
 
 - **Command wrapping**: Wrap all commands with a prefix string using

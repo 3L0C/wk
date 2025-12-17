@@ -103,7 +103,7 @@ static const char* wrapCmd = NULL;
 static Span builtinKeyChords =
     SPAN_STATIC(
         KeyChord,
-        22,
+        24,
         KEY_CHORD(
             KEY("1", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
@@ -143,6 +143,30 @@ static Span builtinKeyChords =
                         [KC_PROP_DESCRIPTION] = PROPERTY_STRING("child with inherit"),
                         [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"inherit\"")),
                     FLAG_INHERIT | FLAG_WRITE,
+                    SPAN_EMPTY))),
+        KEY_CHORD(
+            KEY("6", MOD_NONE, SPECIAL_KEY_NONE),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("title from description"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"title from desc\""),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("title from description")),
+            FLAG_WRITE,
+            SPAN_EMPTY),
+        KEY_CHORD(
+            KEY("7", MOD_NONE, SPECIAL_KEY_NONE),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("prefix title from desc"),
+                [KC_PROP_TITLE]       = PROPERTY_STRING("prefix title from desc")),
+            FLAG_NONE,
+            SPAN_STATIC(
+                KeyChord,
+                1,
+                KEY_CHORD(
+                    KEY("8", MOD_NONE, SPECIAL_KEY_NONE),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("child of prefix"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo \"child\"")),
+                    FLAG_WRITE,
                     SPAN_EMPTY))),
         KEY_CHORD(
             KEY(";", MOD_NONE, SPECIAL_KEY_NONE),

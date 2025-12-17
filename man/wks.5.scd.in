@@ -87,7 +87,7 @@ flag               -> '+' ( 'keep'
                           | 'sync-command'
                           | 'unwrap'
                           | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
-                          | 'title' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
+                          | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )? ) ;
 
 preprocessor_macro -> ':' ( string_macro
                           | switch_macro
@@ -752,7 +752,7 @@ flag -> '+' ( 'keep'
             | 'sync-command'
             | 'unwrap'
             | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
-            | 'title' '"' ( '\\"' | [^"] | interpolation )* '"' ) ;
+            | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )? ) ;
 ```
 
 Flags begin with a plus character (_+_), followed by the flag itself. Here is
@@ -808,11 +808,12 @@ how each flag changes the behavior of *wk*:
 	"wrap" is applied as "/bin/sh -c WRAP CMD". See *EXAMPLES* for
 	scenarios where this is useful.
 
-*title* '"' ( '\\"' | [^"] | interpolation )\* '"'
+*title* ( '"' ( '\\"' | [^"] | interpolation )\* '"' )?
 	Set a title for the chord or prefix that is displayed above the menu. The
 	argument supports interpolation, the same syntax as a description. Overrides
 	the global _--title_ setting. Empty string _""_ clears any inherited or
 	global title. Nested prefixes display their own title when specified.
+	Can ommit the argument to set the title to the chord's description.
 
 See *EXAMPLES* for further discussion about flags.
 
