@@ -25,32 +25,32 @@
 # @expect: alt cmd2
 
 # Wrapper test fixture - uses :wrap-cmd once
-:wrap-cmd "wrapper"
+:wrap-cmd "echo 'wrapper'"
 
 # Test 1: Auto-wrap with global wrapper
-a "Auto wrap" +write %{{command}}
+a "Auto wrap" +wrap "echo 'wrapper'" %{{command}}
 
 # Test 2: Explicit +wrap (uses global wrapper)
-b "Explicit wrap" +wrap +write %{{cmd}}
+b "Explicit wrap" +wrap "echo 'wrapper'" %{{cmd}}
 
 # Test 3: Custom +wrap overrides global
-c "Custom wrap" +wrap "custom" +write %{{cmd}}
+c "Custom wrap" +wrap "echo 'custom'" %{{cmd}}
 
 # Test 4: +unwrap overrides global wrapper
-d "Unwrapped" +unwrap +write %{{cmd}}
+d "Unwrapped" +unwrap %{{echo cmd}}
 
 # Test 5: Inheritance - unwrap parent, child should inherit
 p "Prefix unwrapped" +unwrap
 {
-    e "Child inherits unwrap" +write %{{cmd}}
+    e "Child inherits unwrap" %{{cmd}}
 }
 
 # Test 6: Another unwrap test
-f "No wrapper" +unwrap +write %{{cmd}}
+f "No wrapper" +unwrap %{{echo cmd}}
 
 # Test 7: Inheritance - custom wrap parent, children should inherit
-g "Multi" +wrap "alt"
+g "Multi" +wrap "echo 'alt'"
 {
-    h "Child with alt" +write %{{cmd1}}
-    i "Another child" +write %{{cmd2}}
+    h "Child with alt" %{{cmd1}}
+    i "Another child" %{{cmd2}}
 }

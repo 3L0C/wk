@@ -165,6 +165,13 @@ menuHandleCommand(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
 
+    if (chordFlagIsActive(keyChord->flags, FLAG_WRITE))
+    {
+        const String* cmd = propStringConst(keyChord, KC_PROP_COMMAND);
+        if (cmd) printf("%s\n", cmd->data);
+        return;
+    }
+
     const char* wrapData = NULL;
     size_t      wrapLen  = 0;
 
@@ -214,12 +221,6 @@ menuHandleCommand(Menu* menu, KeyChord* keyChord)
         p += cmdLen;
     }
     *p = '\0';
-
-    if (chordFlagIsActive(keyChord->flags, FLAG_WRITE))
-    {
-        printf("%s\n", buffer);
-        return;
-    }
 
     String cmd = { .data = buffer, .length = totalLen };
     menuSpawn(menu, keyChord, &cmd, chordFlagIsActive(keyChord->flags, FLAG_SYNC_COMMAND));
