@@ -1,6 +1,6 @@
 {
   pkgs ? import <nixpkgs> { },
-  checks ? {},
+  checks ? { },
   ...
 }:
 let
@@ -8,11 +8,11 @@ let
 
   # Make pre-commit optional to avoid circular dependencies
   hasPreCommit = checks ? pre-commit-check;
-  preCommitPackages = if hasPreCommit then checks.pre-commit-check.enabledPackages else [];
+  preCommitPackages = if hasPreCommit then checks.pre-commit-check.enabledPackages else [ ];
   preCommitHook = if hasPreCommit then checks.pre-commit-check.shellHook else "";
 in
 pkgs.mkShell {
-  buildInputs = preCommitPackages;
+  buildInputs = [ pkgs.bashInteractive ] ++ preCommitPackages;
 
   inputsFrom = [ wk-package ];
 
