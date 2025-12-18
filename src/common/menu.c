@@ -70,6 +70,12 @@ menuDisplay(Menu* menu)
 {
     assert(menu);
 
+    if (SPAN_LENGTH(menu->keyChords) == 0)
+    {
+        warnMsg("No key chords to display...");
+        return EX_DATAERR;
+    }
+
     menuResetTimer(menu);
 
 #ifdef WK_WAYLAND_BACKEND
