@@ -11,9 +11,9 @@ and this project adheres to
 
 ### Fixed
 
-- Nix: interactive bash errors [9455f58](9455f589a1bdb077bbb23f6f04b728ae398cd549)
-- Parser: Infinite loop on certain syntax errors [982bdfe](982bdfe8f5e3375e951b3e755aff326359dc5be2)
-- Runtime: Displaying invisible menu when no key chords defined [f0a00b6](f0a00b6d98ac558ba66ecc3a6dc925242c19966a)
+- Nix: interactive bash errors [9455f58](https://github.com/3L0C/wk/commit/9455f589a1bdb077bbb23f6f04b728ae398cd549)
+- Parser: Infinite loop on certain syntax errors [982bdfe](https://github.com/3L0C/wk/commit/982bdfe8f5e3375e951b3e755aff326359dc5be2)
+- Runtime: Displaying invisible menu when no key chords defined [f0a00b6](https://github.com/3L0C/wk/commit/f0a00b6d98ac558ba66ecc3a6dc925242c19966a)
 
 ## [0.2.0] - 2025-12-16
 
