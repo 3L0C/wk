@@ -426,11 +426,12 @@ synchronize(Parser* p)
     {
         switch (p->current.type)
         {
-        case TOKEN_LEFT_BRACKET:
-            return;
+        case TOKEN_LEFT_BRACKET: /* FALLTHROUGH */
+        case TOKEN_LEFT_BRACE: parserAdvance(p); return;
 
-        case TOKEN_COMM_INTERP:
+        case TOKEN_COMM_INTERP: /* FALLTHROUGH */
         case TOKEN_COMMAND:
+        case TOKEN_GOTO:
         {
             while (!parserIsAtEnd(p) && !parserCheck(p, TOKEN_COMMAND))
             {
@@ -454,9 +455,6 @@ synchronize(Parser* p)
             }
             return;
         }
-
-        case TOKEN_LEFT_BRACE:
-            return;
 
         default:
             parserAdvance(p);
