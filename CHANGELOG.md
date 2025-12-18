@@ -7,6 +7,14 @@ The format is based on
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-12-18
+
+### Fixed
+
+- Nix: interactive bash errors 9455f58
+- Parser: Infinite loop on certain syntax errors 982bdfe
+- Runtime: Displaying invisible menu when no key chords defined f0a00b6
+
 ## [0.2.0] - 2025-12-16
 
 This release features a significant internal rewrite with new data structures,
@@ -124,6 +132,7 @@ an improved configuration system, and several new features. See
 
 Initial documented release.
 
+[0.2.1]: https://github.com/3L0C/wk/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/3L0C/wk/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/3L0C/wk/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/3L0C/wk/releases/tag/v0.1.2
