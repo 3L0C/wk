@@ -648,7 +648,7 @@ drawGrid(
 
     if ((uint32_t)ctx->ellipsisWidth > cellWidth - (wpadding * 2))
     {
-        warnMsg("Not enough cell space to draw truncated hints.");
+        debugMsg(menu->debug, "Not enough cell space to draw truncated hints.");
         ctx->ellipsisWidth  = 0;
         ctx->ellipsisHeight = -1;
     }
