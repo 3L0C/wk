@@ -63,51 +63,8 @@ make clean && make from-wks && sudo make install
 
 ## Nix
 
-```nix
-# Default: both backends with default key chords
-pkgs.wk
-
-# X11-only build (lightweight, skips Wayland dependencies)
-pkgs.wk.override { backend = "x11"; }
-
-# Wayland-only build (skips X11 dependencies)
-pkgs.wk.override { backend = "wayland"; }
-
-# Both backends with custom wks file
-pkgs.wk.override { wksFile = ./my-keychords.wks; }
-
-# X11-only with inline wks content
-pkgs.wk.override {
-  backend = "x11";
-  wksContent = ''
-    h "help" %{{echo "Help!"}}
-    q "quit" %{{echo "Quit!"}}
-  '';
-}
-
-# Wayland-only with wks file
-pkgs.wk.override {
-  backend = "wayland";
-  wksFile = ./keychords.wks;
-}
-
-# Structured configs with directories
-# Use wksFile for entry point, wksDirs to copy dependency directories
-# Directories are copied with full structure preserved
-pkgs.wk.override {
-  wksFile = ./wks/main.wks;
-  wksDirs = [
-    ./wks/shared    # Copied as config/shared/
-    ./wks/apps      # Copied as config/apps/
-  ];
-}
-# Your main.wks can use:
-#   :include "shared/utils.wks"
-#   :include "apps/browser.wks"
-
-# Note: wksContent is mutually exclusive with wksFile and wksDirs
-# wksDirs requires wksFile (can't be used standalone)
-```
+See [INSTALL-NIX.md](INSTALL-NIX.md) for detailed
+Nix/NixOS/Home Manager installation instructions.
 
 # Dependencies
 
