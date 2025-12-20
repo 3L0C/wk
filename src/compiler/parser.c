@@ -32,7 +32,7 @@ struct Parser
     Vector      rootChords;
     KeyChord*   parentStack[MAX_DEPTH];
     Vector*     destStack[MAX_DEPTH];
-    Vector      childArrays;
+    Vector      childArrays[MAX_DEPTH];
     size_t      depth;
     Expectation expect;
     Arena*      arena;
@@ -52,8 +52,10 @@ parserFree(Parser* p)
     vectorForEach(&p->implicitKeys, Key, key) { keyFree(key); }
     vectorFree(&p->implicitKeys);
 
-    vectorForEach(&p->childArrays, Vector, vec) { vectorFree(vec); }
-    vectorFree(&p->childArrays);
+    for (size_t i = 0; i < MAX_DEPTH; i++)
+    {
+        vectorFree(&p->childArrays[i]);
+    }
 }
 
 static void
@@ -70,11 +72,14 @@ parserInit(Parser* p, Scanner* scanner, Menu* m)
     p->arena        = &m->arena;
     p->userVars     = &m->userVars;
     p->implicitKeys = VECTOR_INIT(Key);
-    p->childArrays  = VECTOR_INIT(Vector);
-    p->menu         = m;
-    p->hadError     = false;
-    p->panicMode    = false;
-    p->debug        = m->debug;
+    for (size_t i = 0; i < MAX_DEPTH; i++)
+    {
+        p->childArrays[i] = VECTOR_INIT(KeyChord);
+    }
+    p->menu      = m;
+    p->hadError  = false;
+    p->panicMode = false;
+    p->debug     = m->debug;
     tokenInit(&p->current);
     tokenInit(&p->previous);
 }
@@ -276,15 +281,9 @@ parserSavedChord(Parser* p, size_t depth)
 Vector*
 parserChildVector(Parser* p, size_t depth)
 {
-    assert(p);
+    assert(p), assert(depth < MAX_DEPTH);
 
-    while (depth >= vectorLength(&p->childArrays))
-    {
-        Vector* slot = VECTOR_APPEND_SLOT(&p->childArrays, Vector);
-        *slot        = VECTOR_INIT(KeyChord);
-    }
-
-    Vector* vec = VECTOR_GET(&p->childArrays, Vector, depth);
+    Vector* vec = &p->childArrays[depth];
     if (vec->elementSize == 0)
     {
         *vec = VECTOR_INIT(KeyChord);
