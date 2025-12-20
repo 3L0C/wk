@@ -12,6 +12,7 @@
 #include "scanner.h"
 
 bool transform(Vector* chords, Menu* menu, Scanner* scanner);
+void deduplicateVector(Vector* chords, void (*freeChord)(KeyChord*));
 void deduplicateKeyChordVector(Vector* chords);
 void keyChordSpanSort(Span* chords);
 void propagateInheritanceSpan(Span* chords);

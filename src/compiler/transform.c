@@ -304,7 +304,7 @@ freeKeyChordVectorProps(KeyChord* chord)
 }
 
 void
-deduplicateKeyChordVector(Vector* chords)
+deduplicateVector(Vector* chords, void (*freeChord)(KeyChord*))
 {
     assert(chords);
 
@@ -334,7 +334,7 @@ deduplicateKeyChordVector(Vector* chords)
     {
         size_t    index = *(STACK_PEEK(&stack, size_t));
         KeyChord* dup   = VECTOR_GET(chords, KeyChord, index);
-        freeKeyChordVectorProps(dup);
+        freeChord(dup);
         vectorRemove(chords, index);
 
         while (!stackIsEmpty(&stack) && index == *(STACK_PEEK(&stack, size_t)))
@@ -344,6 +344,12 @@ deduplicateKeyChordVector(Vector* chords)
     }
 
     stackFree(&stack);
+}
+
+void
+deduplicateKeyChordVector(Vector* chords)
+{
+    deduplicateVector(chords, freeKeyChordVectorProps);
 }
 
 bool

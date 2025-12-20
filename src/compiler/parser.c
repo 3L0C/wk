@@ -8,6 +8,9 @@
 /* common includes */
 #include "common/key_chord.h"
 #include "common/menu.h"
+#include "common/property.h"
+#include "common/span.h"
+#include "common/string.h"
 #include "common/vector.h"
 
 /* local includes */
@@ -18,6 +21,15 @@
 #include "parser.h"
 #include "scanner.h"
 #include "token.h"
+#include "transform.h"
+
+typedef struct
+{
+    const char* start;
+    size_t      length;
+} InternedIndex;
+
+static InternedIndex indexInterns[256] = { 0 };
 
 /* Maximum prefix nesting depth */
 #define MAX_DEPTH 32
@@ -43,6 +55,164 @@ struct Parser
     bool        panicMode;
     bool        debug;
 };
+
+static bool parseChordContent(Parser* p, KeyChord* chord, Expectation terminator);
+
+static Token
+indexToToken(Arena* arena, size_t index, const Token* token, TokenType interpType)
+{
+    assert(arena), assert(token);
+
+    size_t value = (token->type == TOKEN_INDEX_ONE) ? index + 1 : index;
+
+    if (value >= 256)
+    {
+        return *token;
+    }
+
+    if (!indexInterns[value].start)
+    {
+        char buf[12];
+        int  len                   = snprintf(buf, sizeof(buf), "%zu", value);
+        indexInterns[value].start  = arenaCopyCString(arena, buf, len);
+        indexInterns[value].length = len;
+    }
+
+    Token result  = *token;
+    result.type   = interpType;
+    result.start  = indexInterns[value].start;
+    result.length = indexInterns[value].length;
+    return result;
+}
+
+static TokenType
+getInterpTypeForProperty(PropId id)
+{
+    switch (id)
+    {
+    case KC_PROP_COMMAND:
+    case KC_PROP_BEFORE:
+    case KC_PROP_AFTER:
+    case KC_PROP_WRAP_CMD:
+        return TOKEN_COMM_INTERP;
+    default:
+        return TOKEN_DESC_INTERP;
+    }
+}
+
+static void
+applySharedProperties(Arena* arena, const KeyChord* from, KeyChord* to, size_t index)
+{
+    assert(arena), assert(from), assert(to);
+
+    if (to->flags == FLAG_NONE) to->flags = from->flags;
+
+    for (PropId id = 0; id < KC_PROP_COUNT; id++)
+    {
+        const Property* fromProp = propGetConst(from, id);
+        Property*       toProp   = propGet(to, id);
+
+        if (propertyHasContent(fromProp) && !propertyHasContent(toProp))
+        {
+            if (fromProp->type == PROP_TYPE_ARRAY)
+            {
+                PROP_SET_TYPE(toProp, ARRAY);
+                toProp->value.as_array = VECTOR_INIT(Token);
+
+                const Vector* fromVec    = &fromProp->value.as_array;
+                Vector*       toVec      = &toProp->value.as_array;
+                TokenType     interpType = getInterpTypeForProperty(id);
+
+                vectorForEach(fromVec, const Token, token)
+                {
+                    if (token->type == TOKEN_INDEX || token->type == TOKEN_INDEX_ONE)
+                    {
+                        Token resolved = indexToToken(arena, index, token, interpType);
+                        vectorAppend(toVec, &resolved);
+                    }
+                    else
+                    {
+                        vectorAppend(toVec, token);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static bool
+parseKeyIntoChord(Parser* p, KeyChord* chord)
+{
+    assert(p), assert(chord);
+
+    Token* token = parserCurrentToken(p);
+
+    while (tokenIsModType(token->type))
+    {
+        switch (token->type)
+        {
+        case TOKEN_MOD_CTRL: chord->key.mods |= MOD_CTRL; break;
+        case TOKEN_MOD_META: chord->key.mods |= MOD_META; break;
+        case TOKEN_MOD_HYPER: chord->key.mods |= MOD_HYPER; break;
+        case TOKEN_MOD_SHIFT: chord->key.mods |= MOD_SHIFT; break;
+        default: break;
+        }
+        parserAdvance(p);
+        token = parserCurrentToken(p);
+    }
+
+    Arena* arena = parserArena(p);
+    if (token->type == TOKEN_SPECIAL_KEY)
+    {
+        chord->key.special = token->special;
+        chord->key.repr    = stringFromCString(arena, specialKeyRepr(chord->key.special));
+        parserAdvance(p);
+        return true;
+    }
+    else if (token->type == TOKEN_KEY)
+    {
+        chord->key.repr = stringMake(arena, token->start, token->length);
+        parserAdvance(p);
+        return true;
+    }
+
+    return false;
+}
+
+static bool
+parseTuple(Parser* p, KeyChord* tuple)
+{
+    assert(p), assert(tuple);
+
+    compilerInitChord(tuple);
+
+    if (!parserCheck(p, TOKEN_LEFT_PAREN))
+    {
+        parserErrorAtCurrent(p, "Expected '(' to start tuple.");
+        return false;
+    }
+    parserAdvance(p);
+
+    if (!parseKeyIntoChord(p, tuple))
+    {
+        parserErrorAtCurrent(p, "Expected key in tuple.");
+        return false;
+    }
+
+    if (!parseChordContent(p, tuple, EXPECT_RPAREN))
+    {
+        return false;
+    }
+
+    if (!parserCheck(p, TOKEN_RIGHT_PAREN))
+    {
+        parserErrorAtCurrent(p, "Expected ')' to end tuple.");
+        return false;
+    }
+    parserAdvance(p);
+
+    return true;
+}
 
 static void
 parserFree(Parser* p)
@@ -414,6 +584,287 @@ parserErrorUnexpected(Parser* p, Expectation expected, Expectation got)
         expectationToString(got, gotBuf, sizeof(gotBuf)));
 }
 
+static bool
+parseChordContent(Parser* p, KeyChord* chord, Expectation terminator)
+{
+    assert(p), assert(chord);
+
+    KeyChord* saved = parserCurrentChord(p);
+    parserSetChord(p, chord);
+
+    Expectation expect = EXPECT_DESC;
+
+    while (!parserIsAtEnd(p))
+    {
+        Expectation got = tokenToExpectation(parserCurrentToken(p)->type);
+
+        if (got & terminator) break;
+
+        if (got == EXPECT_COMMAND || got == EXPECT_META)
+        {
+            HandleResult result = handleCurrent(p);
+            if (result.error)
+            {
+                parserSetChord(p, saved);
+                return false;
+            }
+            break;
+        }
+
+        if (!(got & expect))
+        {
+            parserErrorUnexpected(p, expect, got);
+            parserSetChord(p, saved);
+            return false;
+        }
+
+        HandleResult result = handleCurrent(p);
+        if (result.error)
+        {
+            parserSetChord(p, saved);
+            return false;
+        }
+
+        expect = result.next;
+    }
+
+    parserSetChord(p, saved);
+    return true;
+}
+
+static bool
+parseSharedTemplate(Parser* p, KeyChord* tmpl)
+{
+    assert(p), assert(tmpl);
+
+    if (!parseChordContent(p, tmpl, EXPECT_KEY_START | EXPECT_RBRACE | EXPECT_EOF))
+    {
+        compilerFreeChord(tmpl);
+        return false;
+    }
+
+    return true;
+}
+
+static bool
+parseRightBrace(Parser* p)
+{
+    assert(p);
+
+    if (parserDepth(p) == 0)
+    {
+        parserErrorAtCurrent(p, "Unexpected '}'.");
+        return false;
+    }
+
+    Vector* dest = parserDest(p);
+
+    if (vectorIsEmpty(dest))
+    {
+        parserErrorAtCurrent(p, "Empty prefix.");
+        return false;
+    }
+
+    KeyChord* lastChord = parserCurrentChord(p);
+    if (lastChord && stringIsEmpty(&lastChord->key.repr))
+    {
+        compilerFreeChord(lastChord);
+        vectorRemove(dest, vectorLength(dest) - 1);
+    }
+
+    deduplicateVector(dest, compilerFreeChord);
+
+    KeyChord* parentChord = parserSavedChord(p, parserDepth(p) - 1);
+
+    parentChord->keyChords = SPAN_FROM_VECTOR(parserArena(p), dest, KeyChord);
+
+    if (!parserPopState(p))
+    {
+        parserErrorAtCurrent(p, "State stack underflow.");
+        return false;
+    }
+
+    size_t depth = parserDepth(p);
+    parserSetDest(p, parserSavedDest(p, depth));
+    parserAdvance(p);
+    parserAllocChord(p);
+
+    p->expect = parserNextChordExpectation(p);
+    return true;
+}
+
+static bool
+parseExplicitArray(Parser* p)
+{
+    assert(p);
+
+    KeyChord* uncommitted = parserCurrentChord(p);
+    Modifier  modPrefix   = uncommitted->key.mods;
+    Vector*   dest        = parserDest(p);
+
+    compilerFreeChord(uncommitted);
+    vectorRemove(dest, vectorLength(dest) - 1);
+    parserAdvance(p);
+
+    Vector partialChords = VECTOR_INIT(KeyChord);
+
+    KeyChord currentPartial;
+    compilerInitChord(&currentPartial);
+    currentPartial.key.mods = modPrefix;
+
+    Token* token = parserCurrentToken(p);
+    while (!parserIsAtEnd(p))
+    {
+        if (token->type == TOKEN_RIGHT_BRACKET)
+        {
+            if (!stringIsEmpty(&currentPartial.key.repr))
+            {
+                KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
+                *slot          = currentPartial;
+            }
+            else
+            {
+                compilerFreeChord(&currentPartial);
+            }
+            parserAdvance(p);
+            break;
+        }
+
+        if (token->type == TOKEN_LEFT_PAREN)
+        {
+            if (!stringIsEmpty(&currentPartial.key.repr))
+            {
+                KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
+                *slot          = currentPartial;
+                compilerInitChord(&currentPartial);
+                currentPartial.key.mods = modPrefix;
+            }
+
+            KeyChord tuple;
+            if (!parseTuple(p, &tuple))
+            {
+                compilerFreeChord(&currentPartial);
+                vectorForEach(&partialChords, KeyChord, c) { compilerFreeChord(c); }
+                vectorFree(&partialChords);
+                return false;
+            }
+            tuple.key.mods |= modPrefix;
+            KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
+            *slot          = tuple;
+        }
+        else if (tokenIsModType(token->type))
+        {
+            switch (token->type)
+            {
+            case TOKEN_MOD_CTRL: currentPartial.key.mods |= MOD_CTRL; break;
+            case TOKEN_MOD_META: currentPartial.key.mods |= MOD_META; break;
+            case TOKEN_MOD_HYPER: currentPartial.key.mods |= MOD_HYPER; break;
+            case TOKEN_MOD_SHIFT: currentPartial.key.mods |= MOD_SHIFT; break;
+            default: break;
+            }
+            parserAdvance(p);
+        }
+        else if (token->type == TOKEN_KEY || token->type == TOKEN_SPECIAL_KEY)
+        {
+            Arena* arena = parserArena(p);
+            if (token->type == TOKEN_SPECIAL_KEY)
+            {
+                currentPartial.key.special = token->special;
+                currentPartial.key.repr    = stringFromCString(
+                    arena,
+                    specialKeyRepr(currentPartial.key.special));
+            }
+            else
+            {
+                currentPartial.key.repr = stringMake(arena, token->start, token->length);
+            }
+            parserAdvance(p);
+
+            KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
+            *slot          = currentPartial;
+            compilerInitChord(&currentPartial);
+            currentPartial.key.mods = modPrefix;
+        }
+        else
+        {
+            parserErrorAtCurrent(p, "Unexpected token in chord array keys.");
+            compilerFreeChord(&currentPartial);
+            vectorForEach(&partialChords, KeyChord, c) { compilerFreeChord(c); }
+            vectorFree(&partialChords);
+            return false;
+        }
+
+        token = parserCurrentToken(p);
+    }
+
+    KeyChord sharedTemplate;
+    compilerInitChord(&sharedTemplate);
+
+    if (!parseSharedTemplate(p, &sharedTemplate))
+    {
+        vectorForEach(&partialChords, KeyChord, c) { compilerFreeChord(c); }
+        vectorFree(&partialChords);
+        return false;
+    }
+
+    Arena* arena = parserArena(p);
+    vectorForEach(&partialChords, KeyChord, partial)
+    {
+        applySharedProperties(arena, &sharedTemplate, partial, iter.index);
+        KeyChord* slot = VECTOR_APPEND_SLOT(dest, KeyChord);
+        *slot          = *partial;
+    }
+
+    compilerFreeChord(&sharedTemplate);
+    vectorFree(&partialChords);
+    parserAllocChord(p);
+
+    p->expect = parserNextChordExpectation(p);
+    return true;
+}
+
+static bool
+parseImplicitArray(Parser* p)
+{
+    assert(p);
+
+    KeyChord* uncommitted = parserCurrentChord(p);
+    Modifier  modPrefix   = uncommitted->key.mods;
+    Vector*   dest        = parserDest(p);
+
+    compilerFreeChord(uncommitted);
+    vectorRemove(dest, vectorLength(dest) - 1);
+    parserAdvance(p);
+
+    KeyChord sharedTemplate;
+    compilerInitChord(&sharedTemplate);
+
+    if (!parseSharedTemplate(p, &sharedTemplate))
+    {
+        return false;
+    }
+
+    Vector* implicitKeys = parserImplicitKeys(p);
+    Arena*  arena        = parserArena(p);
+    vectorForEach(implicitKeys, const Key, implicitKey)
+    {
+        KeyChord* chord = VECTOR_APPEND_SLOT(dest, KeyChord);
+        compilerInitChord(chord);
+
+        chord->key.mods    = modPrefix | implicitKey->mods;
+        chord->key.special = implicitKey->special;
+        chord->key.repr    = implicitKey->repr;
+
+        applySharedProperties(arena, &sharedTemplate, chord, iter.index);
+    }
+
+    compilerFreeChord(&sharedTemplate);
+    parserAllocChord(p);
+
+    p->expect = parserNextChordExpectation(p);
+    return true;
+}
+
 static void
 synchronize(Parser* p)
 {
@@ -463,6 +914,45 @@ synchronize(Parser* p)
 }
 
 static bool
+parseSingleChord(Parser* p)
+{
+    while (!parserIsAtEnd(p))
+    {
+        Expectation got = tokenToExpectation(p->current.type);
+
+        if (!(got & p->expect))
+        {
+            parserErrorUnexpected(p, p->expect, got);
+            return false;
+        }
+
+        HandleResult result = handleCurrent(p);
+
+        if (result.error) return false;
+
+        if ((got == EXPECT_COMMAND || got == EXPECT_META) &&
+            (result.next & EXPECT_KEY_START))
+        {
+            parserFinishChord(p);
+            p->expect = result.next;
+            return true;
+        }
+
+        p->expect = result.next;
+
+        TokenType t = p->current.type;
+        if (t == TOKEN_LEFT_BRACKET || t == TOKEN_ELLIPSIS ||
+            tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY ||
+            t == TOKEN_RIGHT_BRACE || t == TOKEN_EOF)
+        {
+            return true;
+        }
+    }
+
+    return true;
+}
+
+static bool
 parseImpl(Parser* p)
 {
     assert(p);
@@ -479,29 +969,35 @@ parseImpl(Parser* p)
             if (parserIsAtEnd(p)) break;
         }
 
-        Expectation got = tokenToExpectation(p->current.type);
+        TokenType t = p->current.type;
 
-        if (!(got & p->expect))
+        bool ok;
+        if (t == TOKEN_LEFT_BRACKET)
         {
-            parserErrorUnexpected(p, p->expect, got);
-            continue;
+            ok = parseExplicitArray(p);
+        }
+        else if (t == TOKEN_ELLIPSIS)
+        {
+            ok = parseImplicitArray(p);
+        }
+        else if (t == TOKEN_RIGHT_BRACE)
+        {
+            ok = parseRightBrace(p);
+        }
+        else if (tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY)
+        {
+            ok = parseSingleChord(p);
+        }
+        else
+        {
+            parserErrorUnexpected(p, p->expect, tokenToExpectation(t));
+            ok = false;
         }
 
-        HandleResult result = handleCurrent(p);
-
-        if (result.error)
+        if (!ok)
         {
             p->panicMode = true;
-            continue;
         }
-
-        if ((got == EXPECT_COMMAND || got == EXPECT_META) &&
-            (result.next & EXPECT_KEY_START))
-        {
-            parserFinishChord(p);
-        }
-
-        p->expect = result.next;
     }
 
     if (!vectorIsEmpty(p->dest) && p->chord)
