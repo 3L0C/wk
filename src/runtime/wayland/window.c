@@ -372,6 +372,8 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
 {
     assert(window);
 
+    int32_t leftMargin = ((window->maxWidth - window->width) / 2) * window->scale;
+
     zwlr_layer_surface_v1_set_size(
         window->layerSurface,
         window->width * window->scale,
@@ -384,7 +386,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
             0,
             0,
             window->windowGap * window->scale,
-            0);
+            leftMargin);
     }
     else
     {
@@ -393,7 +395,7 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
             window->windowGap * window->scale,
             0,
             0,
-            0);
+            leftMargin);
     }
     wl_surface_commit(window->surface);
     wl_display_roundtrip(display);
