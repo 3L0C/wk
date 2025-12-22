@@ -159,6 +159,7 @@ options:
     --fg-prefix COLOR          Set foreground prefix to COLOR (default '#AF9FC9').
     --fg-chord COLOR           Set foreground chord to COLOR (default '#DCD7BA').
     --fg-title COLOR           Set foreground title to COLOR (default '#DCD7BA').
+    --fg-goto COLOR            Set foreground goto to COLOR (default '#E6C384').
     --title STRING             Set global title displayed above menu to STRING.
     --title-font STRING        Set title font to STRING. Should be a valid Pango
                                font description (default 'sans-serif, 16').
@@ -1012,14 +1013,15 @@ String macros require a string argument.
 
 ```
 string_macro -> ( 'include'
-                | 'fg-color'
-                | 'bg-color'
-                | 'bd-color'
+                | 'fg'
+                | 'bg'
+                | 'bd'
                 | 'fg-key'
                 | 'fg-delimiter'
                 | 'fg-prefix'
                 | 'fg-chord'
                 | 'fg-title'
+                | 'fg-goto'
                 | 'shell'
                 | 'font'
                 | 'title'
@@ -1037,9 +1039,9 @@ any string macro, (e.g. `:shell "/usr/bin/env zsh"`).
 interpolation using the `%(variable_name)` syntax. This
 allows you to use variables defined with `:var` in any
 string macro argument, including `:include`, `:font`,
-`:title-font`, `:title`, `:fg-color`, `:fg-key`,
+`:title-font`, `:title`, `:fg`, `:fg-key`,
 `:fg-delimiter`, `:fg-prefix`, `:fg-chord`, `:fg-title`,
-`:bg-color`, `:bd-color`, `:shell`, `:delimiter`, and
+`:fg-goto`, `:bg`, `:bd`, `:shell`, `:delimiter`, and
 `:wrap-cmd`. See [The Var Macro](#the-var-macro) for examples
 of using variables in preprocessor directives.
 

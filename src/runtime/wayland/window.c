@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -21,7 +22,6 @@
 
 /* local includes */
 #include "debug.h"
-#include "wayland.h"
 #include "window.h"
 #include "wlr-layer-shell-unstable-v1.h"
 
@@ -552,7 +552,7 @@ windowCreate(
     window->shm     = shm;
     window->surface = surface;
 
-    cairoInitPaint(menu, &window->paint);
+    cairoPaintInit(menu, &window->paint);
 
     return true;
 }

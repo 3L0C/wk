@@ -177,6 +177,12 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
     paint->fgTitle.b = (float)colors[MENU_COLOR_TITLE].b / 255.0f;
     paint->fgTitle.a = (float)colors[MENU_COLOR_TITLE].a / 255.0f;
 
+    /* foreground - goto */
+    paint->fgGoto.r = (float)colors[MENU_COLOR_GOTO].r / 255.0f;
+    paint->fgGoto.g = (float)colors[MENU_COLOR_GOTO].g / 255.0f;
+    paint->fgGoto.b = (float)colors[MENU_COLOR_GOTO].b / 255.0f;
+    paint->fgGoto.a = (float)colors[MENU_COLOR_GOTO].a / 255.0f;
+
     /* background */
     paint->bg.r = (float)colors[MENU_COLOR_BACKGROUND].r / 255.0f;
     paint->bg.g = (float)colors[MENU_COLOR_BACKGROUND].g / 255.0f;
@@ -191,7 +197,7 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
 }
 
 void
-cairoInitPaint(Menu* menu, CairoPaint* paint)
+cairoPaintInit(Menu* menu, CairoPaint* paint)
 {
     assert(menu), assert(paint);
 
@@ -214,6 +220,7 @@ setSourceRgba(cairo_t* cr, CairoPaint* paint, MenuColor type)
     case MENU_COLOR_PREFIX: color = &paint->fgPrefix; break;
     case MENU_COLOR_CHORD: color = &paint->fgChord; break;
     case MENU_COLOR_TITLE: color = &paint->fgTitle; break;
+    case MENU_COLOR_GOTO: color = &paint->fgGoto; break;
     case MENU_COLOR_BACKGROUND: color = &paint->bg; break;
     case MENU_COLOR_BORDER: color = &paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;
@@ -541,11 +548,11 @@ drawDescriptionText(
 {
     assert(cr), assert(paint), assert(layout), assert(keyChord), assert(cellw), assert(x), assert(y);
 
-    if (!setSourceRgba(
-            cr,
-            paint,
-            keyChord->keyChords.count == 0 ? MENU_COLOR_CHORD : MENU_COLOR_PREFIX))
-        return false;
+    MenuColor descColor = MENU_COLOR_CHORD;
+    if (SPAN_LENGTH(&keyChord->keyChords) > 0) descColor = MENU_COLOR_PREFIX;
+    else if (propIsSet(keyChord, KC_PROP_GOTO)) descColor = MENU_COLOR_GOTO;
+
+    if (!setSourceRgba(cr, paint, descColor)) return false;
 
     return drawString(
         cr,

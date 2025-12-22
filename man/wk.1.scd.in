@@ -107,6 +107,9 @@ key chords from a *wks*(5) file or script.
 *--fg-title* _COLOR_
 	Set foreground title to COLOR (default '#DCD7BA').
 
+*--fg-goto* _COLOR_
+	Set foreground goto to COLOR (default '#E6C384').
+
 *--title* _STRING_
 	Set global title displayed above menu to STRING.
 

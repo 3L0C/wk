@@ -17,7 +17,7 @@ _wk() {
 
     # Options that take color arguments
     local color_opts='--fg --fg-key --fg-delimiter --fg-prefix --fg-chord
-                      --fg-title --bg --bd'
+                      --fg-title --fg-goto --bg --bd'
 
     # Options that take string arguments
     local str_opts='-p --press --shell --font --title-font --title
@@ -31,7 +31,7 @@ _wk() {
                     --keep-delay --border-width --border-radius
                     --wpadding --hpadding --table-padding
                     --fg --fg-key --fg-delimiter --fg-prefix --fg-chord
-                    --fg-title --bg --bd
+                    --fg-title --fg-goto --bg --bd
                     --shell --font --title-font --title --implicit-keys --wrap-cmd'
 
     case $prev in
@@ -51,7 +51,7 @@ _wk() {
             # Numeric arguments - no completion
             return
             ;;
-        --fg|--fg-key|--fg-delimiter|--fg-prefix|--fg-chord|--fg-title|--bg|--bd)
+        --fg|--fg-key|--fg-delimiter|--fg-prefix|--fg-chord|--fg-title|--fg-goto|--bg|--bd)
             # Color arguments - no completion (user enters hex color)
             return
             ;;

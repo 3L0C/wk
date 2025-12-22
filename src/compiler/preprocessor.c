@@ -415,6 +415,7 @@ handleMacroWithStringArg(
     case TOKEN_FOREGROUND_PREFIX_COLOR:
     case TOKEN_FOREGROUND_CHORD_COLOR:
     case TOKEN_FOREGROUND_TITLE_COLOR:
+    case TOKEN_FOREGROUND_GOTO_COLOR:
     case TOKEN_BACKGROUND_COLOR:
     case TOKEN_BORDER_COLOR:
     case TOKEN_SHELL:
@@ -437,12 +438,14 @@ handleMacroWithStringArg(
             menuSetColor(menu, arg, MENU_COLOR_PREFIX);
             menuSetColor(menu, arg, MENU_COLOR_CHORD);
             menuSetColor(menu, arg, MENU_COLOR_TITLE);
+            menuSetColor(menu, arg, MENU_COLOR_GOTO);
             break;
         case TOKEN_FOREGROUND_KEY_COLOR: menuSetColor(menu, arg, MENU_COLOR_KEY); break;
         case TOKEN_FOREGROUND_DELIMITER_COLOR: menuSetColor(menu, arg, MENU_COLOR_DELIMITER); break;
         case TOKEN_FOREGROUND_PREFIX_COLOR: menuSetColor(menu, arg, MENU_COLOR_PREFIX); break;
         case TOKEN_FOREGROUND_CHORD_COLOR: menuSetColor(menu, arg, MENU_COLOR_CHORD); break;
         case TOKEN_FOREGROUND_TITLE_COLOR: menuSetColor(menu, arg, MENU_COLOR_TITLE); break;
+        case TOKEN_FOREGROUND_GOTO_COLOR: menuSetColor(menu, arg, MENU_COLOR_GOTO); break;
         case TOKEN_BACKGROUND_COLOR: menuSetColor(menu, arg, MENU_COLOR_BACKGROUND); break;
         case TOKEN_BORDER_COLOR: menuSetColor(menu, arg, MENU_COLOR_BORDER); break;
         case TOKEN_SHELL: menu->shell = arg; break;
@@ -687,6 +690,7 @@ preprocessorRunImpl(Menu* menu, String source, const char* filepath, Stack* stac
         case TOKEN_FOREGROUND_PREFIX_COLOR:
         case TOKEN_FOREGROUND_CHORD_COLOR:
         case TOKEN_FOREGROUND_TITLE_COLOR:
+        case TOKEN_FOREGROUND_GOTO_COLOR:
         case TOKEN_BACKGROUND_COLOR:
         case TOKEN_BORDER_COLOR:
         case TOKEN_SHELL:

@@ -17,6 +17,7 @@ typedef struct
     CairoColor  fgPrefix;
     CairoColor  fgChord;
     CairoColor  fgTitle;
+    CairoColor  fgGoto;
     CairoColor  bg;
     CairoColor  bd;
     const char* font;
@@ -36,7 +37,7 @@ typedef struct
 bool     cairoCreateForSurface(Cairo* cairo, cairo_surface_t* surface);
 void     cairoDestroy(Cairo* cairo);
 uint32_t cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight);
-void     cairoInitPaint(Menu* menu, CairoPaint* paint);
+void     cairoPaintInit(Menu* menu, CairoPaint* paint);
 bool     cairoPaint(Cairo* cairo, Menu* menu);
 
 #endif /* WK_RUNTIME_CAIRO_H_ */

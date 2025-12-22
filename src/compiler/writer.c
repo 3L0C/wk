@@ -156,6 +156,9 @@ writeConfigVariables(const Menu* menu)
     printf("    [FOREGROUND_COLOR_TITLE]     = \"");
     writeEscCString(menu->colors[MENU_COLOR_TITLE].hex);
     printf("\",\n");
+    printf("    [FOREGROUND_COLOR_GOTO]      = \"");
+    writeEscCString(menu->colors[MENU_COLOR_GOTO].hex);
+    printf("\",\n");
     printf("};\n");
 
     /* Background color */

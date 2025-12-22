@@ -47,6 +47,7 @@ _wk() {
         '--fg-prefix[Set prefix foreground color]:color:'
         '--fg-chord[Set chord foreground color]:color:'
         '--fg-title[Set title foreground color]:color:'
+        '--fg-goto[Set goto foreground color]:color:'
         '--bg[Set background color]:color:'
         '--bd[Set border color]:color:'
     )

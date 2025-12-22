@@ -43,26 +43,27 @@
 typedef uint8_t MenuOptArg;
 enum
 {
-    OPT_ARG_BORDER_WIDTH  = 0x090,
-    OPT_ARG_BORDER_RADIUS = 0x091,
-    OPT_ARG_WPADDING      = 0x092,
-    OPT_ARG_HPADDING      = 0x093,
-    OPT_ARG_TABLE_PADDING = 0x094,
-    OPT_ARG_FG            = 0x095,
-    OPT_ARG_FG_KEY        = 0x096,
-    OPT_ARG_FG_DELIMITER  = 0x097,
-    OPT_ARG_FG_PREFIX     = 0x098,
-    OPT_ARG_FG_CHORD      = 0x099,
-    OPT_ARG_FG_TITLE      = 0x100,
-    OPT_ARG_BG            = 0x101,
-    OPT_ARG_BD            = 0x102,
-    OPT_ARG_SHELL         = 0x103,
-    OPT_ARG_FONT          = 0x104,
-    OPT_ARG_IMPLICIT_KEYS = 0x105,
-    OPT_ARG_WRAP_CMD      = 0x106,
-    OPT_ARG_TITLE         = 0x107,
-    OPT_ARG_TITLE_FONT    = 0x108,
-    OPT_ARG_KEEP_DELAY    = 0x109,
+    OPT_ARG_BORDER_WIDTH = 0x090,
+    OPT_ARG_BORDER_RADIUS,
+    OPT_ARG_WPADDING,
+    OPT_ARG_HPADDING,
+    OPT_ARG_TABLE_PADDING,
+    OPT_ARG_FG,
+    OPT_ARG_FG_KEY,
+    OPT_ARG_FG_DELIMITER,
+    OPT_ARG_FG_PREFIX,
+    OPT_ARG_FG_CHORD,
+    OPT_ARG_FG_TITLE,
+    OPT_ARG_FG_GOTO,
+    OPT_ARG_BG,
+    OPT_ARG_BD,
+    OPT_ARG_SHELL,
+    OPT_ARG_FONT,
+    OPT_ARG_IMPLICIT_KEYS,
+    OPT_ARG_WRAP_CMD,
+    OPT_ARG_TITLE,
+    OPT_ARG_TITLE_FONT,
+    OPT_ARG_KEEP_DELAY,
 };
 
 int
@@ -372,6 +373,7 @@ menuHexColorInitColors(MenuHexColor* hexColors)
         [MENU_COLOR_PREFIX]     = "#AF9FC9",
         [MENU_COLOR_CHORD]      = "#DCD7BA",
         [MENU_COLOR_TITLE]      = "#DCD7BA",
+        [MENU_COLOR_GOTO]       = "#E6C384",
         [MENU_COLOR_BACKGROUND] = "#181616",
         [MENU_COLOR_BORDER]     = "#7FB4CA",
     };
@@ -382,6 +384,7 @@ menuHexColorInitColors(MenuHexColor* hexColors)
         [MENU_COLOR_PREFIX]     = foreground[FOREGROUND_COLOR_PREFIX],
         [MENU_COLOR_CHORD]      = foreground[FOREGROUND_COLOR_CHORD],
         [MENU_COLOR_TITLE]      = foreground[FOREGROUND_COLOR_TITLE],
+        [MENU_COLOR_GOTO]       = foreground[FOREGROUND_COLOR_GOTO],
         [MENU_COLOR_BACKGROUND] = background,
         [MENU_COLOR_BORDER]     = border,
     };
@@ -401,6 +404,7 @@ menuHexColorInitColors(MenuHexColor* hexColors)
             case MENU_COLOR_BACKGROUND: colorType = "background"; break;
             case MENU_COLOR_BORDER: colorType = "border"; break;
             case MENU_COLOR_TITLE: colorType = "title"; break;
+            case MENU_COLOR_GOTO: colorType = "goto"; break;
             default: colorType = "UNKNOWN"; break;
             }
             fprintf(stderr, "setting %s to '%s'.\n", colorType, defaultColors[i]);
@@ -523,6 +527,7 @@ usage(void)
         "    --fg-prefix COLOR          Set foreground prefix to COLOR (default '#AF9FC9').\n"
         "    --fg-chord COLOR           Set foreground chord to COLOR (default '#DCD7BA').\n"
         "    --fg-title COLOR           Set foreground title to COLOR (default '#DCD7BA').\n"
+        "    --fg-goto COLOR            Set foreground goto to COLOR (default '#E6C384').\n"
         "    --bg COLOR                 Set background to COLOR (default '#181616').\n"
         "    --bd COLOR                 Set border to COLOR (default '#7FB4CA').\n"
         "    --shell STRING             Set shell to STRING (default '/bin/sh').\n"
@@ -602,6 +607,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "fg-prefix",     required_argument, 0, OPT_ARG_FG_PREFIX     },
         { "fg-chord",      required_argument, 0, OPT_ARG_FG_CHORD      },
         { "fg-title",      required_argument, 0, OPT_ARG_FG_TITLE      },
+        { "fg-goto",       required_argument, 0, OPT_ARG_FG_GOTO       },
         { "bg",            required_argument, 0, OPT_ARG_BG            },
         { "bd",            required_argument, 0, OPT_ARG_BD            },
         { "shell",         required_argument, 0, OPT_ARG_SHELL         },
@@ -751,6 +757,8 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menuSetColor(menu, optarg, MENU_COLOR_DELIMITER);
             menuSetColor(menu, optarg, MENU_COLOR_PREFIX);
             menuSetColor(menu, optarg, MENU_COLOR_CHORD);
+            menuSetColor(menu, optarg, MENU_COLOR_TITLE);
+            menuSetColor(menu, optarg, MENU_COLOR_GOTO);
             break;
         }
         case OPT_ARG_FG_KEY: menuSetColor(menu, optarg, MENU_COLOR_KEY); break;
@@ -758,6 +766,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case OPT_ARG_FG_PREFIX: menuSetColor(menu, optarg, MENU_COLOR_PREFIX); break;
         case OPT_ARG_FG_CHORD: menuSetColor(menu, optarg, MENU_COLOR_CHORD); break;
         case OPT_ARG_FG_TITLE: menuSetColor(menu, optarg, MENU_COLOR_TITLE); break;
+        case OPT_ARG_FG_GOTO: menuSetColor(menu, optarg, MENU_COLOR_GOTO); break;
         case OPT_ARG_BG: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
         case OPT_ARG_BD: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
         case OPT_ARG_SHELL: menu->shell = optarg; break;
@@ -825,7 +834,7 @@ menuResetTimer(Menu* menu)
 void
 menuSetColor(Menu* menu, const char* color, MenuColor colorType)
 {
-    assert(menu), assert(colorType < MENU_COLOR_LAST);
+    assert(menu), assert(color), assert(colorType < MENU_COLOR_LAST);
 
     if (!menuHexColorInitColor(&menu->colors[colorType], color))
     {
