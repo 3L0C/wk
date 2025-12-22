@@ -715,7 +715,7 @@ cairoPaint(Cairo* cairo, Menu* menu)
     /* Clear delay after first successful render */
     if (menu->delay) menu->delay = 0;
 
-    uint32_t       width  = menu->width;
+    uint32_t       width  = menu->width / cairo->scale;
     uint32_t       height = menu->height / cairo->scale;
     DrawingContext ctx;
     initDrawingContext(&ctx);
