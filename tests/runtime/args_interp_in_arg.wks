@@ -1,0 +1,9 @@
+# @desc: Args with interpolation being spliced into command
+
+# @test: "a"
+# @expect: echo template-a
+
+# @test: "b"
+# @expect: echo template-b
+
+[(a "A" +args "template-%(key)")(b "B" +args "template-%(key)")] "Run" +write %{{echo %($0)}}

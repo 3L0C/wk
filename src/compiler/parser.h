@@ -8,6 +8,7 @@
 #include "common/arena.h"
 #include "common/key_chord.h"
 #include "common/menu.h"
+#include "common/stack.h"
 #include "common/vector.h"
 
 /* local includes */
@@ -19,35 +20,42 @@ typedef struct Parser Parser;
 
 Vector parse(Scanner* scanner, Menu* m);
 
-Token*      parserCurrentToken(Parser* p);
-Token*      parserPreviousToken(Parser* p);
 TokenType   parserAdvance(Parser* p);
-bool        parserCheck(Parser* p, TokenType type);
-bool        parserIsAtEnd(Parser* p);
-KeyChord*   parserCurrentChord(Parser* p);
-void        parserSetChord(Parser* p, KeyChord* chord);
 KeyChord*   parserAllocChord(Parser* p);
-void        parserFinishChord(Parser* p);
-Vector*     parserDest(Parser* p);
-void        parserSetDest(Parser* p, Vector* dest);
 Arena*      parserArena(Parser* p);
-Vector*     parserUserVars(Parser* p);
-Vector*     parserImplicitKeys(Parser* p);
-Menu*       parserMenu(Parser* p);
-Scanner*    parserScanner(Parser* p);
-bool        parserHadError(Parser* p);
-void        parserSetError(Parser* p);
-bool        parserInPanicMode(Parser* p);
-void        parserSetPanicMode(Parser* p, bool mode);
-size_t      parserDepth(Parser* p);
-void        parserPushState(Parser* p);
-bool        parserPopState(Parser* p);
-Vector*     parserSavedDest(Parser* p, size_t depth);
-KeyChord*   parserSavedChord(Parser* p, size_t depth);
+Stack*      parserArgEnvStack(Parser* p);
+bool        parserCheck(Parser* p, TokenType type);
 Vector*     parserChildVector(Parser* p, size_t depth);
+bool        parserChordPushedEnv(Parser* p);
+KeyChord*   parserCurrentChord(Parser* p);
+Token*      parserCurrentToken(Parser* p);
+size_t      parserDepth(Parser* p);
+Vector*     parserDest(Parser* p);
 void        parserErrorAt(Parser* p, Token* token, const char* fmt, ...);
 void        parserErrorAtCurrent(Parser* p, const char* fmt, ...);
 void        parserErrorUnexpected(Parser* p, Expectation expected, Expectation got);
+void        parserFinishChord(Parser* p);
+bool        parserHadError(Parser* p);
+Vector*     parserImplicitKeys(Parser* p);
+bool        parserInPanicMode(Parser* p);
+bool        parserInTemplateContext(Parser* p);
+bool        parserIsAtEnd(Parser* p);
+Menu*       parserMenu(Parser* p);
 Expectation parserNextChordExpectation(Parser* p);
+bool        parserPopState(Parser* p);
+Token*      parserPreviousToken(Parser* p);
+bool        parserPushedEnvAtDepth(Parser* p, size_t depth);
+void        parserPushState(Parser* p);
+KeyChord*   parserSavedChord(Parser* p, size_t depth);
+Vector*     parserSavedDest(Parser* p, size_t depth);
+Scanner*    parserScanner(Parser* p);
+void        parserSetChord(Parser* p, KeyChord* chord);
+void        parserSetChordPushedEnv(Parser* p, bool pushed);
+void        parserSetDest(Parser* p, Vector* dest);
+void        parserSetError(Parser* p);
+void        parserSetInTemplateContext(Parser* p, bool inTemplate);
+void        parserSetPanicMode(Parser* p, bool mode);
+void        parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed);
+Vector*     parserUserVars(Parser* p);
 
 #endif /* WK_COMPILER_PARSER_H_ */

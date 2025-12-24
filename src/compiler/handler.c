@@ -2,16 +2,17 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* common includes */
 #include "common/arena.h"
 #include "common/key_chord.h"
-#include "common/property.h"
+#include "common/stack.h"
 #include "common/string.h"
 #include "common/vector.h"
 
 /* local includes */
-#include "compiler.h"
+#include "args.h"
 #include "expect.h"
 #include "handler.h"
 #include "parser.h"
@@ -23,6 +24,7 @@ static HandleResult handleDescription(Parser* p);
 static HandleResult handleHook(Parser* p);
 static HandleResult handleFlag(Parser* p);
 static HandleResult handleFlagWithArg(Parser* p);
+static HandleResult handleArgs(Parser* p);
 static HandleResult handleCommand(Parser* p);
 static HandleResult handleGoto(Parser* p);
 static HandleResult handleLeftBrace(Parser* p);
@@ -54,6 +56,7 @@ static TokenHandler handlers[TOKEN_LAST] = {
     [TOKEN_UNWRAP]      = handleFlag,
     [TOKEN_TITLE]       = handleFlagWithArg,
     [TOKEN_WRAP]        = handleFlagWithArg,
+    [TOKEN_ARGS]        = handleArgs,
     [TOKEN_COMMAND]     = handleCommand,
     [TOKEN_COMM_INTERP] = handleCommand,
     [TOKEN_GOTO]        = handleGoto,
@@ -83,8 +86,48 @@ handleCurrent(Parser* p)
     return handler(p);
 }
 
+static void
+spliceArgIntoVector(const Vector* arg, TokenType interpType, Vector* dest)
+{
+    assert(arg), assert(dest);
+
+    vectorForEach(arg, const Token, argToken)
+    {
+        Token converted = *argToken;
+        if (argToken->type == TOKEN_DESC_INTERP && interpType == TOKEN_COMM_INTERP)
+        {
+            converted.type = TOKEN_COMM_INTERP;
+        }
+        vectorAppend(dest, &converted);
+    }
+}
+
 static bool
-collectDescriptionTokens(Parser* p, Vector* tokens)
+tryResolveArgToken(Parser* p, const Token* token, TokenType interpType, Vector* dest)
+{
+    assert(p), assert(token), assert(dest);
+
+    if (parserInTemplateContext(p))
+    {
+        vectorAppend(dest, token);
+        return true;
+    }
+
+    size_t  argIndex = strtoul(token->start, NULL, 10);
+    Vector* arg      = argEnvStackLookup(parserArgEnvStack(p), argIndex);
+
+    if (arg && !vectorIsEmpty(arg))
+    {
+        spliceArgIntoVector(arg, interpType, dest);
+        return true;
+    }
+
+    parserErrorAt(p, (Token*)token, "Argument $%zu not defined.", argIndex);
+    return false;
+}
+
+static bool
+collectDescriptionTokens(Parser* p, Vector* tokens, TokenType interpType)
 {
     assert(p), assert(tokens);
 
@@ -101,6 +144,11 @@ collectDescriptionTokens(Parser* p, Vector* tokens)
         case TOKEN_USER_VAR:
         case TOKEN_WRAP_CMD_INTERP:
             vectorAppend(tokens, token);
+            parserAdvance(p);
+            break;
+
+        case TOKEN_ARG_POSITION:
+            if (!tryResolveArgToken(p, token, interpType, tokens)) return false;
             parserAdvance(p);
             break;
 
@@ -142,6 +190,11 @@ collectCommandTokens(Parser* p, Vector* tokens)
         case TOKEN_THIS_DESC_UPPER_ALL:
         case TOKEN_THIS_DESC_LOWER_ALL:
             vectorAppend(tokens, token);
+            parserAdvance(p);
+            break;
+
+        case TOKEN_ARG_POSITION:
+            if (!tryResolveArgToken(p, token, TOKEN_COMM_INTERP, tokens)) return false;
             parserAdvance(p);
             break;
 
@@ -212,7 +265,7 @@ handleDescription(Parser* p)
     KeyChord* chord  = parserCurrentChord(p);
     Vector*   tokens = propVector(chord, KC_PROP_DESCRIPTION);
 
-    if (!collectDescriptionTokens(p, tokens))
+    if (!collectDescriptionTokens(p, tokens, TOKEN_DESC_INTERP))
     {
         return handleResultError();
     }
@@ -328,8 +381,11 @@ handleFlagWithArg(Parser* p)
 
     if (next->type == TOKEN_DESCRIPTION || next->type == TOKEN_DESC_INTERP)
     {
+        TokenType interpType = (propId == KC_PROP_WRAP_CMD)
+                                   ? TOKEN_COMM_INTERP
+                                   : TOKEN_DESC_INTERP;
         vectorClear(tokens);
-        if (!collectDescriptionTokens(p, tokens))
+        if (!collectDescriptionTokens(p, tokens, interpType))
         {
             return handleResultError();
         }
@@ -340,6 +396,46 @@ handleFlagWithArg(Parser* p)
         vectorClear(tokens);
         vectorAppend(tokens, &sentinel);
     }
+
+    return handleResultOk(EXPECT_AFTER_FLAG);
+}
+
+static HandleResult
+handleArgs(Parser* p)
+{
+    assert(p);
+
+    parserAdvance(p);
+
+    ArgEnvironment env;
+    argEnvInit(&env);
+
+    while (!parserIsAtEnd(p))
+    {
+        Token* token = parserCurrentToken(p);
+        if (token->type != TOKEN_DESCRIPTION && token->type != TOKEN_DESC_INTERP)
+            break;
+
+        Vector arg = VECTOR_INIT(Token);
+        if (!collectDescriptionTokens(p, &arg, TOKEN_DESC_INTERP))
+        {
+            vectorFree(&arg);
+            argEnvFree(&env);
+            return handleResultError();
+        }
+
+        argEnvAddArg(&env, &arg);
+    }
+
+    if (argEnvIsEmpty(&env))
+    {
+        parserErrorAtCurrent(p, "+args requires at least one argument.");
+        argEnvFree(&env);
+        return handleResultError();
+    }
+
+    stackPush(parserArgEnvStack(p), &env);
+    parserSetChordPushedEnv(p, true);
 
     return handleResultOk(EXPECT_AFTER_FLAG);
 }
@@ -388,7 +484,7 @@ handleGoto(Parser* p)
     parserAdvance(p);
 
     Vector* tokens = propVector(chord, KC_PROP_GOTO);
-    if (!collectDescriptionTokens(p, tokens))
+    if (!collectDescriptionTokens(p, tokens, TOKEN_DESC_INTERP))
     {
         return handleResultError();
     }
@@ -408,6 +504,10 @@ handleLeftBrace(Parser* p)
         parserErrorAtCurrent(p, "Cannot mix prefix and @goto.");
         return handleResultError();
     }
+
+    size_t currentDepth = parserDepth(p);
+    parserSetPushedEnvAtDepth(p, currentDepth, parserChordPushedEnv(p));
+    parserSetChordPushedEnv(p, false);
 
     parserPushState(p);
     parserSetDest(p, parserChildVector(p, parserDepth(p)));

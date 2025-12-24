@@ -78,8 +78,10 @@ compareKeyChords(const void* a, const void* b)
     size_t minLen = (ka->repr.length < kb->repr.length) ? ka->repr.length : kb->repr.length;
     int    cmp    = memcmp(ka->repr.data, kb->repr.data, minLen);
     if (cmp != 0) return cmp;
-    return (ka->repr.length < kb->repr.length) ? -1 : (ka->repr.length > kb->repr.length) ? 1
-                                                                                          : 0;
+
+    if (ka->repr.length < kb->repr.length) return -1;
+    else if (ka->repr.length > kb->repr.length) return 1;
+    else return 0;
 }
 
 void
@@ -148,8 +150,7 @@ setBeforeHook(KeyChord* parent, KeyChord* child)
 
     copyPropertyIfChildEmpty(parent, child, KC_PROP_BEFORE);
 
-    if (chordFlagIsActive(parent->flags, FLAG_SYNC_BEFORE))
-        child->flags |= FLAG_SYNC_BEFORE;
+    if (chordFlagIsActive(parent->flags, FLAG_SYNC_BEFORE)) child->flags |= FLAG_SYNC_BEFORE;
 }
 
 static void
@@ -164,8 +165,7 @@ setAfterHook(KeyChord* parent, KeyChord* child)
 
     copyPropertyIfChildEmpty(parent, child, KC_PROP_AFTER);
 
-    if (chordFlagIsActive(parent->flags, FLAG_SYNC_AFTER))
-        child->flags |= FLAG_SYNC_AFTER;
+    if (chordFlagIsActive(parent->flags, FLAG_SYNC_AFTER)) child->flags |= FLAG_SYNC_AFTER;
 }
 
 static void

@@ -1,0 +1,9 @@
+# @desc: Multiple positional args
+
+# @test: "a"
+# @expect: arg0=foo, arg1=bar
+
+# @test: "b"
+# @expect: arg0=baz, arg1=qux
+
+[(a "A" +args "foo" "bar")(b "B" +args "baz" "qux")] "Args" +write %{{arg0=%($0), arg1=%($1)}}

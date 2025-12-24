@@ -1,0 +1,9 @@
+# @desc: Basic +args test - positional args spliced into description and command
+
+# @test: "a"
+# @expect: first-value
+
+# @test: "b"
+# @expect: second-value
+
+[(a "A" +args "first-value")(b "B" +args "second-value")] "Use %($0)" +write %{{%($0)}}

@@ -19,16 +19,30 @@ enum
 {
     CHAR_TYPE_WHITESPACE,
     CHAR_TYPE_INTERP_END,
+    CHAR_TYPE_KEYWORD_END, /* whitespace or syntax chars: ()[]{}\"' */
 };
 
-void
-vscannerErrorAt(Scanner* scanner, Token* token, const char* fmt, va_list ap)
+static bool
+isDigit(char c)
 {
-    assert(scanner), assert(token), assert(fmt);
+    return c >= '0' && c <= '9';
+}
 
-    tokenErrorAt(token, scanner->filepath);
-    vfprintf(stderr, fmt, ap);
-    fputc('\n', stderr);
+void
+scannerClone(const Scanner* scanner, Scanner* clone)
+{
+    assert(scanner), assert(clone);
+
+    clone->head          = scanner->head;
+    clone->start         = scanner->start;
+    clone->current       = scanner->current;
+    clone->filepath      = scanner->filepath;
+    clone->line          = scanner->line;
+    clone->column        = scanner->column;
+    clone->hadError      = scanner->hadError;
+    clone->state         = scanner->state;
+    clone->previousState = scanner->previousState;
+    clone->interpType    = scanner->interpType;
 }
 
 void
@@ -59,21 +73,12 @@ scannerInit(Scanner* scanner, const char* source, const char* filepath)
     scanner->hadError      = false;
 }
 
-void
-scannerClone(const Scanner* scanner, Scanner* clone)
+bool
+scannerIsAtEnd(const Scanner* scanner)
 {
-    assert(scanner), assert(clone);
+    assert(scanner);
 
-    clone->head          = scanner->head;
-    clone->start         = scanner->start;
-    clone->current       = scanner->current;
-    clone->filepath      = scanner->filepath;
-    clone->line          = scanner->line;
-    clone->column        = scanner->column;
-    clone->hadError      = scanner->hadError;
-    clone->state         = scanner->state;
-    clone->previousState = scanner->previousState;
-    clone->interpType    = scanner->interpType;
+    return *scanner->current == '\0';
 }
 
 void
@@ -82,20 +87,6 @@ scannerMakeCurrent(Scanner* scanner)
     assert(scanner);
 
     scanner->start = scanner->current;
-}
-
-static bool
-isDigit(char c)
-{
-    return c >= '0' && c <= '9';
-}
-
-bool
-scannerIsAtEnd(const Scanner* scanner)
-{
-    assert(scanner);
-
-    return *scanner->current == '\0';
 }
 
 static void
@@ -250,6 +241,18 @@ seekToCharType(Scanner* scanner, CharType charType)
             advance(scanner);
         return peek(scanner) == ')';
     }
+    case CHAR_TYPE_KEYWORD_END:
+    {
+        while (!scannerIsAtEnd(scanner))
+        {
+            char c = peek(scanner);
+            if (isspace(c) || c == '(' || c == ')' || c == '[' || c == ']' ||
+                c == '{' || c == '}' || c == '"' || c == '\'')
+                break;
+            advance(scanner);
+        }
+        return !scannerIsAtEnd(scanner);
+    }
     default: return false;
     }
 }
@@ -295,8 +298,8 @@ scanFlag(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
 
-    /* Seek to end of keyword. Only fails if given invalid CharType parameter. */
-    if (!seekToCharType(scanner, CHAR_TYPE_WHITESPACE))
+    /* Seek to end of keyword. Stops at whitespace or syntax chars like ) ] } */
+    if (!seekToCharType(scanner, CHAR_TYPE_KEYWORD_END))
     {
         return tokenMakeError(scanner, token, "Got end of file while scanning flag keyword.");
     }
@@ -306,6 +309,11 @@ scanFlag(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (peekStart(scanner))
     {
+    case 'a':
+    {
+        if (isKeyword(scanner, 1, 3, "rgs")) result = TOKEN_ARGS;
+        break;
+    }
     case 'k':
     {
         if (isKeyword(scanner, 1, 3, "eep")) result = TOKEN_KEEP;
@@ -515,6 +523,24 @@ getInterpolationType(Scanner* scanner)
     }
 
     scannerMakeCurrent(&clone);
+
+    /* Check for arg position: %($n) where n is one or more digits */
+    if (peek(&clone) == '$')
+    {
+        Scanner checkClone = { 0 };
+        scannerClone(&clone, &checkClone);
+        advance(&checkClone); /* skip $ */
+
+        if (isDigit(peek(&checkClone)))
+        {
+            while (isDigit(peek(&checkClone)))
+            {
+                advance(&checkClone);
+            }
+            if (peek(&checkClone) == ')') return TOKEN_ARG_POSITION;
+        }
+    }
+
     if (!seekToCharType(&clone, CHAR_TYPE_INTERP_END)) return TOKEN_ERROR;
 
     /* Switch on start of keyword */
@@ -746,7 +772,9 @@ scanKey(Scanner* scanner, Token* token, char c)
     {
         /* NOTE scanning multi byte character */
         while (isUtf8ContByte(peek(scanner)))
+        {
             c = advance(scanner);
+        }
     }
     else
     {
@@ -764,6 +792,13 @@ static void
 scanInterpolation(Scanner* scanner, Token* token)
 {
     assert(scanner), assert(token);
+
+    /* For arg position, skip past $ to position token start at digits */
+    if (scanner->interpType == TOKEN_ARG_POSITION)
+    {
+        consume(scanner, '$');
+        scannerMakeCurrent(scanner);
+    }
 
     if (!seekToCharType(scanner, CHAR_TYPE_INTERP_END))
     {
@@ -1000,4 +1035,29 @@ scannerTokenForPreprocessor(Scanner* scanner, Token* token, ScannerFlag flag)
     }
 
     return tokenMake(scanner, token, TOKEN_EOF);
+}
+
+void
+scannerWarnAt(Scanner* scanner, Token* token, const char* fmt, ...)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    fprintf(stderr, "%s:%u:%u: warning: ", scanner->filepath, token->line, token->column);
+
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+
+    fputc('\n', stderr);
+}
+
+void
+vscannerErrorAt(Scanner* scanner, Token* token, const char* fmt, va_list ap)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    tokenErrorAt(token, scanner->filepath);
+    vfprintf(stderr, fmt, ap);
+    fputc('\n', stderr);
 }
