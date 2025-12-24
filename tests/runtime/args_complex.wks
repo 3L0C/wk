@@ -1,0 +1,21 @@
+# @desc: Complex `+args' example
+
+# @test: "t e a"
+# @expect: Hello, Alice!
+
+# @test: "t v h"
+# @expect: cowsay Hi
+
+t "Top-level - no $0..$n" +args "echo" "eval" +title "arg0: %($0) arg1: %($1)"
+{
+    e "Using %($0)" +wrap "%($0)" +args "Hello,"
+    {
+        a "A" %{{%($0) Alice!}}
+        b "B" %{{%($0) Bob!}}
+    }
+    v "Using %($1)" +wrap "%($1)" +args "cowsay %(desc)"
+    {
+        h "Hi" +write %{{%($0)}}
+        m "Moo" +write %{{%($0)}}
+    }
+}
