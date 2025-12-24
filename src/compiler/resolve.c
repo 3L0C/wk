@@ -86,6 +86,16 @@ resolveInterpolationToken(Resolver* r, Token* token, KeyChord* chord, LazyString
         }
         return true;
 
+    case TOKEN_ARG_POSITION:
+        scannerErrorAt(
+            r->scanner,
+            token,
+            "Argument $%.*s not defined. Ensure +args defines this index.",
+            token->length,
+            token->start);
+        r->hadError = true;
+        return true;
+
     default:
         return false;
     }

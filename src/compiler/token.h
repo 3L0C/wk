@@ -96,6 +96,7 @@ enum
     TOKEN_WRAP,
     TOKEN_UNWRAP,
     TOKEN_TITLE,
+    TOKEN_ARGS,
 
     /* meta commands */
     TOKEN_GOTO,
@@ -111,6 +112,7 @@ enum
     TOKEN_COMM_INTERP,
     TOKEN_DESC_INTERP,
     TOKEN_WRAP_CMD_INTERP,
+    TOKEN_ARG_POSITION,
 
     /* mods */
     TOKEN_MOD_CTRL,

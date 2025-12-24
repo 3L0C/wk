@@ -1,0 +1,9 @@
+# @desc: Simple keys in array inherit template args
+
+# @test: "a"
+# @expect: default-value
+
+# @test: "b"
+# @expect: default-value
+
+[ab] "Key %(key)" +args "default-value" +write %{{%($0)}}

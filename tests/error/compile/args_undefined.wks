@@ -1,0 +1,4 @@
+# @desc: Error when referencing undefined arg
+# @expect-error: Argument $0 not defined
+
+[(a)(b)] "Test" +write %{{%($0)}}
