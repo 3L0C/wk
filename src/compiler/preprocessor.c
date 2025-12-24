@@ -126,7 +126,8 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
 {
     assert(menu), assert(scanner), assert(firstToken), assert(context);
 
-    /* If first token is TOKEN_DESCRIPTION, there are no interpolations - return literal string */
+    /* If first token is TOKEN_DESCRIPTION, there are no interpolations.
+     * Return literal string */
     if (firstToken->type == TOKEN_DESCRIPTION)
     {
         LazyString result = lazyStringInit();
@@ -623,7 +624,12 @@ popFilePath(Stack* stack)
 }
 
 static String
-preprocessorRunImpl(Menu* menu, String source, const char* filepath, Stack* stack, Arena* arena)
+preprocessorRunImpl(
+    Menu*       menu,
+    String      source,
+    const char* filepath,
+    Stack*      stack,
+    Arena*      arena)
 {
     assert(menu), assert(stack), assert(arena);
 
@@ -637,7 +643,7 @@ preprocessorRunImpl(Menu* menu, String source, const char* filepath, Stack* stac
 
     LazyString result = lazyStringInit();
 
-    /* For stdin, skip file path resolution - there's no real file */
+    /* For stdin, skip file path resolution, there's no real file */
     char* absoluteFilePath  = NULL;
     char* canonicalFilePath = NULL;
     if (strcmp(filepath, "<stdin>") == 0)
@@ -736,10 +742,6 @@ preprocessorRunImpl(Menu* menu, String source, const char* filepath, Stack* stac
         }
         default:
         {
-            if (menu->debug)
-            {
-                /* DEBUG HERE */
-            }
             scannerErrorAt(
                 &scanner,
                 &token,

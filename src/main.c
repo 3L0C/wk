@@ -95,7 +95,6 @@ runWksFile(Menu* menu)
 {
     assert(menu);
 
-    /* Use new compiler entry point */
     menu->keyChordsHead = compile(menu, menu->client.wksFile);
     if (!menu->keyChordsHead)
     {

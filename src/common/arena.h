@@ -20,10 +20,10 @@ typedef struct Arena
     struct Arena* prev;
 } Arena;
 
-void  arenaInit(Arena* arena);
 void* arenaAdoptVector(Arena* arena, Vector* vec);
 void* arenaAlloc(Arena* arena, size_t size);
 char* arenaCopyCString(Arena* arena, const char* src, size_t length);
 void  arenaFree(Arena* arena);
+void  arenaInit(Arena* arena);
 
 #endif /* WK_COMMON_ARENA_H_ */

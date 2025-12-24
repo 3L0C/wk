@@ -82,6 +82,13 @@ vectorAppendN(Vector* vec, const void* value, size_t n)
 }
 
 static inline void
+vectorClear(Vector* vec)
+{
+    assert(vec);
+    vec->length = 0;
+}
+
+static inline void
 vectorFree(Vector* vec)
 {
     assert(vec);
@@ -138,21 +145,6 @@ vectorIsEmpty(const Vector* vec)
     return vec->length == 0;
 }
 
-static inline void
-vectorClear(Vector* vec)
-{
-    assert(vec);
-    vec->length = 0;
-}
-
-static inline void
-vectorSort(Vector* vec, int (*cmp)(const void*, const void*))
-{
-    assert(vec), assert(cmp);
-    if (vec->length < 2) return;
-    qsort(vec->data, vec->length, vec->elementSize, cmp);
-}
-
 static inline Vector
 vectorCopy(const Vector* src)
 {
@@ -171,67 +163,6 @@ vectorCopy(const Vector* src)
     return dest;
 }
 
-static inline size_t
-vectorLastIndex(const Vector* vec)
-{
-    assert(vec), assert(vec->length > 0);
-    return vec->length - 1;
-}
-
-static inline size_t
-vectorLength(const Vector* vec)
-{
-    assert(vec);
-    return vec->length;
-}
-
-static inline void
-vectorRemove(Vector* vec, size_t index)
-{
-    assert(vec), assert(index < vec->length);
-
-    if (index < vec->length - 1)
-    {
-        void*       dest  = (char*)vec->data + (index * vec->elementSize);
-        const void* src   = (char*)vec->data + ((index + 1) * vec->elementSize);
-        size_t      bytes = (vec->length - index - 1) * vec->elementSize;
-        memmove(dest, src, bytes);
-    }
-
-    vec->length--;
-}
-
-static inline void
-vectorSwap(Vector* vec, size_t a, size_t b)
-{
-    assert(vec), assert(a < vec->length), assert(b < vec->length);
-    if (a == b) return;
-
-#define SWAP_BUFFER_SIZE 512
-    char  stackBuffer[SWAP_BUFFER_SIZE];
-    char* temp = vec->elementSize <= SWAP_BUFFER_SIZE
-                     ? stackBuffer
-                     : ALLOCATE(char, vec->elementSize);
-
-    void* elemA = vectorGet(vec, a);
-    void* elemB = vectorGet(vec, b);
-
-    memcpy(temp, elemA, vec->elementSize);
-    memcpy(elemA, elemB, vec->elementSize);
-    memcpy(elemB, temp, vec->elementSize);
-
-    if (temp != stackBuffer) free(temp);
-#undef SWAP_BUFFER_SIZE
-}
-
-static inline void
-vectorIteratorInit(const Vector* vec, VectorIterator* iter)
-{
-    assert(vec), assert(iter);
-    iter->vec   = vec;
-    iter->index = (size_t)-1;
-}
-
 static inline bool
 vectorIteratorHasNext(const VectorIterator* iter)
 {
@@ -244,6 +175,14 @@ vectorIteratorAdvance(VectorIterator* iter)
 {
     assert(iter), assert(vectorIteratorHasNext(iter));
     iter->index++;
+}
+
+static inline void
+vectorIteratorInit(const Vector* vec, VectorIterator* iter)
+{
+    assert(vec), assert(iter);
+    iter->vec   = vec;
+    iter->index = (size_t)-1;
 }
 
 static inline VectorIterator
@@ -283,6 +222,67 @@ vectorIteratorPeek(VectorIterator* iter)
     assert(iter);
     VectorIterator tmp = *iter;
     return vectorIteratorNext(&tmp);
+}
+
+static inline size_t
+vectorLastIndex(const Vector* vec)
+{
+    assert(vec), assert(vec->length > 0);
+    return vec->length - 1;
+}
+
+static inline size_t
+vectorLength(const Vector* vec)
+{
+    assert(vec);
+    return vec->length;
+}
+
+static inline void
+vectorRemove(Vector* vec, size_t index)
+{
+    assert(vec), assert(index < vec->length);
+
+    if (index < vec->length - 1)
+    {
+        void*       dest  = (char*)vec->data + (index * vec->elementSize);
+        const void* src   = (char*)vec->data + ((index + 1) * vec->elementSize);
+        size_t      bytes = (vec->length - index - 1) * vec->elementSize;
+        memmove(dest, src, bytes);
+    }
+
+    vec->length--;
+}
+
+static inline void
+vectorSort(Vector* vec, int (*cmp)(const void*, const void*))
+{
+    assert(vec), assert(cmp);
+    if (vec->length < 2) return;
+    qsort(vec->data, vec->length, vec->elementSize, cmp);
+}
+
+static inline void
+vectorSwap(Vector* vec, size_t a, size_t b)
+{
+    assert(vec), assert(a < vec->length), assert(b < vec->length);
+    if (a == b) return;
+
+#define SWAP_BUFFER_SIZE 512
+    char  stackBuffer[SWAP_BUFFER_SIZE];
+    char* temp = vec->elementSize <= SWAP_BUFFER_SIZE
+                     ? stackBuffer
+                     : ALLOCATE(char, vec->elementSize);
+
+    void* elemA = vectorGet(vec, a);
+    void* elemB = vectorGet(vec, b);
+
+    memcpy(temp, elemA, vec->elementSize);
+    memcpy(elemA, elemB, vec->elementSize);
+    memcpy(elemB, temp, vec->elementSize);
+
+    if (temp != stackBuffer) free(temp);
+#undef SWAP_BUFFER_SIZE
 }
 
 #endif /* WK_COMMON_VECTOR_H_ */

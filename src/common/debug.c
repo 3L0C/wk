@@ -223,50 +223,21 @@ disassembleHexColors(const MenuHexColor* colors)
 {
     assert(colors);
 
+    static const char* colorHeaders[MENU_COLOR_LAST] = {
+        [MENU_COLOR_KEY]        = "|-- Foreground Key Color --------",
+        [MENU_COLOR_DELIMITER]  = "|-- Foreground Delimiter Color --",
+        [MENU_COLOR_PREFIX]     = "|-- Foreground Prefix Color -----",
+        [MENU_COLOR_CHORD]      = "|-- Foreground Chord Color ------",
+        [MENU_COLOR_TITLE]      = "|-- Foreground Title Color ------",
+        [MENU_COLOR_GOTO]       = "|-- Foreground Goto Color -------",
+        [MENU_COLOR_BACKGROUND] = "|-- Background color ------------",
+        [MENU_COLOR_BORDER]     = "|-- Border color ----------------",
+    };
+
     debugMsg(true, "|");
     for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
-        /* TODO refactor */
-        switch (i)
-        {
-        case MENU_COLOR_KEY:
-        {
-            debugMsg(true, "|----- Foreground Key Color -----");
-            break;
-        }
-        case MENU_COLOR_DELIMITER:
-        {
-            debugMsg(true, "|---- Foreground Delim Color ----");
-            break;
-        }
-        case MENU_COLOR_PREFIX:
-        {
-            debugMsg(true, "|--- Foreground Prefix Color ----");
-            break;
-        }
-        case MENU_COLOR_CHORD:
-        {
-            debugMsg(true, "|--- Foreground Chord Color -----");
-            break;
-        }
-        case MENU_COLOR_TITLE:
-        {
-            debugMsg(true, "|--- Foreground Title Color -----");
-            break;
-        }
-        case MENU_COLOR_BACKGROUND:
-        {
-            debugMsg(true, "|------- Background color -------");
-            break;
-        }
-        case MENU_COLOR_BORDER:
-        {
-            debugMsg(true, "|--------- Border color ---------");
-            break;
-        }
-        default: errorMsg("| Got unexpected color index: '%d'.", i); return;
-        }
-
+        debugMsg(true, colorHeaders[i]);
         disassembleHexColor(&colors[i]);
     }
     debugMsg(true, "|--------------------------------");

@@ -334,73 +334,6 @@ lazyStringIsEmpty(const LazyString* string)
     return string->length == 0;
 }
 
-bool
-lazyStringIteratorHasNext(const LazyStringIterator* iter)
-{
-    assert(iter);
-    if (iter->partIndex < iter->string->parts.length)
-    {
-        LazyStringPart* part = VECTOR_GET(&iter->string->parts, LazyStringPart, iter->partIndex);
-        if (iter->offset < part->length) return true;
-        return (iter->partIndex + 1) < iter->string->parts.length;
-    }
-    return false;
-}
-
-void
-lazyStringIteratorInit(const LazyString* string, LazyStringIterator* iter)
-{
-    assert(string), assert(iter);
-
-    iter->string    = string;
-    iter->partIndex = 0;
-    iter->offset    = 0;
-}
-
-LazyStringIterator
-lazyStringIteratorMake(const LazyString* string)
-{
-    assert(string);
-
-    return (LazyStringIterator){
-        .string    = string,
-        .partIndex = 0,
-        .offset    = 0
-    };
-}
-
-char
-lazyStringIteratorNext(LazyStringIterator* iter)
-{
-    assert(iter), assert(iter->string);
-
-    const Vector* parts = &iter->string->parts;
-
-    while (iter->partIndex < parts->length)
-    {
-        const LazyStringPart* part = VECTOR_GET(parts, const LazyStringPart, iter->partIndex);
-
-        if (iter->offset < part->length)
-        {
-            return part->source[iter->offset++];
-        }
-
-        iter->partIndex++;
-        iter->offset = 0;
-    }
-
-    return '\0';
-}
-
-char
-lazyStringIteratorPeek(const LazyStringIterator* iter)
-{
-    assert(iter);
-
-    LazyStringIterator tmp = *iter;
-    return lazyStringIteratorNext(&tmp);
-}
-
 size_t
 lazyStringLength(const LazyString* string)
 {
@@ -515,4 +448,71 @@ lazyStringWriteToBuffer(const LazyString* string, char* buffer)
     }
 
     *ptr = '\0';
+}
+
+bool
+lazyStringIteratorHasNext(const LazyStringIterator* iter)
+{
+    assert(iter);
+    if (iter->partIndex < iter->string->parts.length)
+    {
+        LazyStringPart* part = VECTOR_GET(&iter->string->parts, LazyStringPart, iter->partIndex);
+        if (iter->offset < part->length) return true;
+        return (iter->partIndex + 1) < iter->string->parts.length;
+    }
+    return false;
+}
+
+void
+lazyStringIteratorInit(const LazyString* string, LazyStringIterator* iter)
+{
+    assert(string), assert(iter);
+
+    iter->string    = string;
+    iter->partIndex = 0;
+    iter->offset    = 0;
+}
+
+LazyStringIterator
+lazyStringIteratorMake(const LazyString* string)
+{
+    assert(string);
+
+    return (LazyStringIterator){
+        .string    = string,
+        .partIndex = 0,
+        .offset    = 0
+    };
+}
+
+char
+lazyStringIteratorNext(LazyStringIterator* iter)
+{
+    assert(iter), assert(iter->string);
+
+    const Vector* parts = &iter->string->parts;
+
+    while (iter->partIndex < parts->length)
+    {
+        const LazyStringPart* part = VECTOR_GET(parts, const LazyStringPart, iter->partIndex);
+
+        if (iter->offset < part->length)
+        {
+            return part->source[iter->offset++];
+        }
+
+        iter->partIndex++;
+        iter->offset = 0;
+    }
+
+    return '\0';
+}
+
+char
+lazyStringIteratorPeek(const LazyStringIterator* iter)
+{
+    assert(iter);
+
+    LazyStringIterator tmp = *iter;
+    return lazyStringIteratorNext(&tmp);
 }

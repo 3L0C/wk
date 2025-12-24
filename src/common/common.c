@@ -93,7 +93,7 @@ warnMsg(const char* fmt, ...)
     assert(fmt);
 
     fprintf(stderr, "[WARNING] ");
-    int     len = strlen(fmt); /* 1 = '\0' */
+    int     len = strlen(fmt);
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);

@@ -7,15 +7,6 @@
 #include "memory.h"
 #include "vector.h"
 
-void
-arenaInit(Arena* arena)
-{
-    arena->buffer     = NULL;
-    arena->bufferSize = 0;
-    arena->used       = 0;
-    arena->prev       = NULL;
-}
-
 void*
 arenaAdoptVector(Arena* arena, Vector* vec)
 {
@@ -101,4 +92,13 @@ arenaFree(Arena* arena)
         }
         arena = prev;
     }
+}
+
+void
+arenaInit(Arena* arena)
+{
+    arena->buffer     = NULL;
+    arena->bufferSize = 0;
+    arena->used       = 0;
+    arena->prev       = NULL;
 }

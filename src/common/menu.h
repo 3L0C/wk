@@ -133,9 +133,8 @@ void       menuResetTimer(Menu* menu);
 void       menuSetColor(Menu* menu, const char* color, MenuColor colorType);
 void       menuSetWrapCmd(Menu* menu, const char* cmd);
 MenuStatus menuSpawn(const Menu* menu, const KeyChord* keyChord, const String* cmd, bool sync);
+bool       menuStatusIsError(MenuStatus status);
+bool       menuStatusIsRunning(MenuStatus status);
 bool       menuTryStdin(Menu* menu);
-
-bool menuStatusIsError(MenuStatus status);
-bool menuStatusIsRunning(MenuStatus status);
 
 #endif /* WK_COMMON_MENU_H_ */

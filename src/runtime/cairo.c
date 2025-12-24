@@ -128,8 +128,8 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     menu->titleHeight = (menu->title && strlen(menu->title) > 0) ? titleHeight : 0;
     calculateGrid(menu->keyChords->count, menu->maxCols, &menu->rows, &menu->cols);
 
-    /* Calculate table padding for height calculation - if -1, use cell padding, otherwise use the
-     * specified value */
+    /* Calculate table padding for height calculation - if -1, use cell padding,
+     * otherwise use the * specified value */
     uint32_t tablePadding = (menu->tablePadding == -1)
                                 ? menu->hpadding
                                 : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
@@ -143,57 +143,29 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 }
 
 static void
+cairoSetColor(CairoColor* cairoColor, MenuHexColor* menuColor)
+{
+    assert(cairoColor), assert(menuColor);
+
+    cairoColor->r = (float)menuColor->r / 255.0f;
+    cairoColor->g = (float)menuColor->g / 255.0f;
+    cairoColor->b = (float)menuColor->b / 255.0f;
+    cairoColor->a = (float)menuColor->a / 255.0f;
+}
+
+static void
 cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
 {
     assert(paint), assert(colors);
 
-    /* foreground - key */
-    paint->fgKey.r = (float)colors[MENU_COLOR_KEY].r / 255.0f;
-    paint->fgKey.g = (float)colors[MENU_COLOR_KEY].g / 255.0f;
-    paint->fgKey.b = (float)colors[MENU_COLOR_KEY].b / 255.0f;
-    paint->fgKey.a = (float)colors[MENU_COLOR_KEY].a / 255.0f;
-
-    /* foreground - delimiter */
-    paint->fgDelimiter.r = (float)colors[MENU_COLOR_DELIMITER].r / 255.0f;
-    paint->fgDelimiter.g = (float)colors[MENU_COLOR_DELIMITER].g / 255.0f;
-    paint->fgDelimiter.b = (float)colors[MENU_COLOR_DELIMITER].b / 255.0f;
-    paint->fgDelimiter.a = (float)colors[MENU_COLOR_DELIMITER].a / 255.0f;
-
-    /* foreground - prefix */
-    paint->fgPrefix.r = (float)colors[MENU_COLOR_PREFIX].r / 255.0f;
-    paint->fgPrefix.g = (float)colors[MENU_COLOR_PREFIX].g / 255.0f;
-    paint->fgPrefix.b = (float)colors[MENU_COLOR_PREFIX].b / 255.0f;
-    paint->fgPrefix.a = (float)colors[MENU_COLOR_PREFIX].a / 255.0f;
-
-    /* foreground - chord */
-    paint->fgChord.r = (float)colors[MENU_COLOR_CHORD].r / 255.0f;
-    paint->fgChord.g = (float)colors[MENU_COLOR_CHORD].g / 255.0f;
-    paint->fgChord.b = (float)colors[MENU_COLOR_CHORD].b / 255.0f;
-    paint->fgChord.a = (float)colors[MENU_COLOR_CHORD].a / 255.0f;
-
-    /* foreground - title */
-    paint->fgTitle.r = (float)colors[MENU_COLOR_TITLE].r / 255.0f;
-    paint->fgTitle.g = (float)colors[MENU_COLOR_TITLE].g / 255.0f;
-    paint->fgTitle.b = (float)colors[MENU_COLOR_TITLE].b / 255.0f;
-    paint->fgTitle.a = (float)colors[MENU_COLOR_TITLE].a / 255.0f;
-
-    /* foreground - goto */
-    paint->fgGoto.r = (float)colors[MENU_COLOR_GOTO].r / 255.0f;
-    paint->fgGoto.g = (float)colors[MENU_COLOR_GOTO].g / 255.0f;
-    paint->fgGoto.b = (float)colors[MENU_COLOR_GOTO].b / 255.0f;
-    paint->fgGoto.a = (float)colors[MENU_COLOR_GOTO].a / 255.0f;
-
-    /* background */
-    paint->bg.r = (float)colors[MENU_COLOR_BACKGROUND].r / 255.0f;
-    paint->bg.g = (float)colors[MENU_COLOR_BACKGROUND].g / 255.0f;
-    paint->bg.b = (float)colors[MENU_COLOR_BACKGROUND].b / 255.0f;
-    paint->bg.a = (float)colors[MENU_COLOR_BACKGROUND].a / 255.0f;
-
-    /* border */
-    paint->bd.r = (float)colors[MENU_COLOR_BORDER].r / 255.0f;
-    paint->bd.g = (float)colors[MENU_COLOR_BORDER].g / 255.0f;
-    paint->bd.b = (float)colors[MENU_COLOR_BORDER].b / 255.0f;
-    paint->bd.a = (float)colors[MENU_COLOR_BORDER].a / 255.0f;
+    cairoSetColor(&paint->fgKey, &colors[MENU_COLOR_KEY]);
+    cairoSetColor(&paint->fgDelimiter, &colors[MENU_COLOR_DELIMITER]);
+    cairoSetColor(&paint->fgPrefix, &colors[MENU_COLOR_PREFIX]);
+    cairoSetColor(&paint->fgChord, &colors[MENU_COLOR_CHORD]);
+    cairoSetColor(&paint->fgTitle, &colors[MENU_COLOR_TITLE]);
+    cairoSetColor(&paint->fgGoto, &colors[MENU_COLOR_GOTO]);
+    cairoSetColor(&paint->bg, &colors[MENU_COLOR_BACKGROUND]);
+    cairoSetColor(&paint->bd, &colors[MENU_COLOR_BORDER]);
 }
 
 void
