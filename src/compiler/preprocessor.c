@@ -10,6 +10,7 @@
 #include "common/arena.h"
 #include "common/common.h"
 #include "common/debug.h"
+#include "common/memory.h"
 #include "common/menu.h"
 #include "common/stack.h"
 #include "common/string.h"
@@ -123,14 +124,24 @@ getAbsolutePath(const char* filepath, size_t len, const char* sourcePath)
 static char*
 getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char* context)
 {
-    assert(menu), assert(scanner), assert(arena), assert(firstToken), assert(context);
+    assert(menu), assert(scanner), assert(firstToken), assert(context);
 
     /* If first token is TOKEN_DESCRIPTION, there are no interpolations - return literal string */
     if (firstToken->type == TOKEN_DESCRIPTION)
     {
         LazyString result = lazyStringInit();
         lazyStringAppendEscString(&result, firstToken->start, firstToken->length);
-        char* resolved = lazyStringToCString(arena, &result);
+        char* resolved = NULL;
+        if (arena != NULL)
+        {
+            resolved = lazyStringToCString(arena, &result);
+        }
+        else
+        {
+            /* TODO decide if this is the best way to do this */
+            resolved = ALLOCATE(char, lazyStringLength(&result) + 1);
+            lazyStringWriteToBuffer(&result, resolved);
+        }
         lazyStringFree(&result);
         return resolved;
     }
@@ -202,7 +213,17 @@ getArg(Menu* menu, Scanner* scanner, Arena* arena, Token* firstToken, const char
         lazyStringAppendEscString(&result, token.start, token.length);
     }
 
-    char* resolved = lazyStringToCString(arena, &result);
+    char* resolved = NULL;
+    if (arena != NULL)
+    {
+        resolved = lazyStringToCString(arena, &result);
+    }
+    else
+    {
+        /* TODO decide if this is the best way to do this */
+        resolved = ALLOCATE(char, lazyStringLength(&result) + 1);
+        lazyStringWriteToBuffer(&result, resolved);
+    }
     lazyStringFree(&result);
     return resolved;
 }
@@ -219,7 +240,7 @@ handleIncludeMacro(
     assert(menu), assert(scanner), assert(result), assert(includeFile), assert(stack),
         assert(arena);
 
-    /* currently pointing at the 'i' in ':include', so take off one. */
+    bool        hadError   = true;
     const char* sourcePath = scanner->filepath;
 
     if (!sourcePath) sourcePath = getenv("PWD");
@@ -228,15 +249,17 @@ handleIncludeMacro(
         warnMsg("Could not get environment variable '$PWD' for script.");
     }
 
+    char* includeFileArg = getArg(menu, scanner, NULL, includeFile, ":include argument");
+    if (!includeFileArg) return;
+
     char* includeFilePath = NULL;
 
     /* Get the path to the included file */
-    includeFilePath = getAbsolutePath(includeFile->start, includeFile->length, sourcePath);
+    includeFilePath = getAbsolutePath(includeFileArg, strlen(includeFileArg), sourcePath);
     if (!includeFilePath)
     {
         errorMsg("Failed to get the included file path.");
-        scanner->hadError = true;
-        return;
+        goto end;
     }
 
     /* Resolve canonical path for circular include detection */
@@ -258,10 +281,8 @@ handleIncludeMacro(
             (int)includeFile->length,
             includeFile->start);
         if (menu->debug) disassembleIncludeStack(stack);
-        scanner->hadError = true;
         free(canonicalIncludePath);
-        free(includeFilePath);
-        return;
+        goto error;
     }
 
     free(canonicalIncludePath);
@@ -271,9 +292,7 @@ handleIncludeMacro(
     if (stringIsEmpty(&includeSource))
     {
         /* readFileToArena prints an error for us. */
-        scanner->hadError = true;
-        free(includeFilePath);
-        return;
+        goto error;
     }
 
     /* check that the file and the source are not one and the same */
@@ -281,9 +300,7 @@ handleIncludeMacro(
     {
         errorMsg(
             "Included file appears to be the same as the source file. Cannot `:include` self.");
-        scanner->hadError = true;
-        free(includeFilePath);
-        return;
+        goto error;
     }
 
     /* Run preprocessor on the included file */
@@ -291,15 +308,18 @@ handleIncludeMacro(
     if (stringIsEmpty(&includeResult))
     {
         errorMsg("Failed to get preprocessor result.");
-        scanner->hadError = true;
-        free(includeFilePath);
-        return;
+        goto error;
     }
 
     /* Append the result using LazyString lazy concat. */
     lazyStringAppend(result, includeResult.data, includeResult.length);
+    hadError = false;
 
+error:
     free(includeFilePath);
+end:
+    free(includeFileArg);
+    scanner->hadError = hadError;
 }
 
 static void
