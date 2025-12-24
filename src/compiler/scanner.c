@@ -612,18 +612,6 @@ scanDescription(Scanner* scanner, Token* token, bool allowInterpolation)
             /* Switch on interpolation type. */
             switch (scanner->interpType)
             {
-            /* Error */
-            case TOKEN_THIS_DESC: /* FALLTHROUGH */
-            case TOKEN_THIS_DESC_UPPER_FIRST:
-            case TOKEN_THIS_DESC_LOWER_FIRST:
-            case TOKEN_THIS_DESC_UPPER_ALL:
-            case TOKEN_THIS_DESC_LOWER_ALL:
-            {
-                return tokenMakeError(
-                    scanner,
-                    token,
-                    "Cannot interpolate the description within the description.");
-            }
             /* Not an interpolation */
             case TOKEN_ERROR: break;
             /* Is a valid interpolation. */
