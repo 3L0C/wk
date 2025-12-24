@@ -228,6 +228,27 @@ resolveEmptyProp(const KeyChord* chord, PropId id)
     };
 }
 
+static Token*
+findDescriptionSelfReference(const Vector* tokens)
+{
+    assert(tokens);
+
+    vectorForEach(tokens, Token, token)
+    {
+        switch (token->type)
+        {
+        case TOKEN_THIS_DESC: /* FALLTHROUGH */
+        case TOKEN_THIS_DESC_UPPER_FIRST:
+        case TOKEN_THIS_DESC_LOWER_FIRST:
+        case TOKEN_THIS_DESC_UPPER_ALL:
+        case TOKEN_THIS_DESC_LOWER_ALL: return token;
+        default: break;
+        }
+    }
+
+    return NULL;
+}
+
 static void
 resolveChordProperties(Resolver* r, KeyChord* chord, size_t index)
 {
@@ -242,6 +263,22 @@ resolveChordProperties(Resolver* r, KeyChord* chord, size_t index)
 
             if (!vectorIsEmpty(&tokens))
             {
+                if (i == KC_PROP_DESCRIPTION)
+                {
+                    Token* selfRef = findDescriptionSelfReference(&tokens);
+                    if (selfRef)
+                    {
+                        scannerErrorAt(
+                            r->scanner,
+                            selfRef,
+                            "Cannot interpolate the description within the description.");
+                        r->hadError = true;
+                        vectorFree(&tokens);
+                        prop->type = PROP_TYPE_NONE;
+                        continue;
+                    }
+                }
+
                 String result;
 
                 if (isSingleSimpleToken(&tokens))
