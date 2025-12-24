@@ -14,6 +14,7 @@
 #include "common/vector.h"
 
 /* local includes */
+#include "args.h"
 #include "compiler.h"
 #include "debug.h"
 #include "expect.h"
@@ -51,12 +52,14 @@ struct Parser
     Vector*     userVars;
     Vector      implicitKeys;
     Menu*       menu;
+    Stack       argEnvStack;
+    bool        chordPushedEnv;
+    bool        pushedEnvAtDepth[MAX_DEPTH];
+    bool        inTemplateContext;
     bool        hadError;
     bool        panicMode;
     bool        debug;
 };
-
-static bool parseChordContent(Parser* p, KeyChord* chord, Expectation terminator);
 
 static Token
 indexToToken(Arena* arena, size_t index, const Token* token, TokenType interpType)
@@ -90,53 +93,150 @@ getInterpTypeForProperty(PropId id)
 {
     switch (id)
     {
-    case KC_PROP_COMMAND:
+    case KC_PROP_COMMAND: /* FALLTHROUGH */
     case KC_PROP_BEFORE:
     case KC_PROP_AFTER:
-    case KC_PROP_WRAP_CMD:
-        return TOKEN_COMM_INTERP;
-    default:
-        return TOKEN_DESC_INTERP;
+    case KC_PROP_WRAP_CMD: return TOKEN_COMM_INTERP;
+    default: return TOKEN_DESC_INTERP;
+    }
+}
+
+static const Vector*
+lookupArgTokens(const ArgEnvironment* tupleEnv, const Stack* parentEnvStack, size_t argIndex)
+{
+    const Vector* arg = NULL;
+
+    if (tupleEnv)
+    {
+        arg = argEnvGetConst(tupleEnv, argIndex);
+    }
+    if (!arg && parentEnvStack)
+    {
+        arg = argEnvStackLookupConst(parentEnvStack, argIndex);
+    }
+
+    return arg;
+}
+
+static void
+appendArgTokensWithConversion(
+    Arena*        arena,
+    const Vector* arg,
+    size_t        index,
+    TokenType     interpType,
+    Vector*       dest)
+{
+    assert(arena), assert(arg), assert(dest);
+
+    vectorForEach(arg, const Token, argToken)
+    {
+        Token converted = *argToken;
+
+        if (argToken->type == TOKEN_DESC_INTERP && interpType == TOKEN_COMM_INTERP)
+        {
+            converted.type = TOKEN_COMM_INTERP;
+        }
+
+        if (converted.type == TOKEN_INDEX || converted.type == TOKEN_INDEX_ONE)
+        {
+            converted = indexToToken(arena, index, &converted, interpType);
+        }
+
+        vectorAppend(dest, &converted);
     }
 }
 
 static void
-applySharedProperties(Arena* arena, const KeyChord* from, KeyChord* to, size_t index)
+copyPropertyArray(
+    Arena*                arena,
+    const Stack*          parentEnvStack,
+    PropId                propId,
+    const Property*       fromProp,
+    Property*             toProp,
+    size_t                index,
+    const ArgEnvironment* tupleEnv)
 {
-    assert(arena), assert(from), assert(to);
+    assert(arena), assert(fromProp), assert(toProp);
+
+    PROP_SET_TYPE(toProp, ARRAY);
+    toProp->value.as_array = VECTOR_INIT(Token);
+
+    const Vector* fromVec    = &fromProp->value.as_array;
+    Vector*       toVec      = &toProp->value.as_array;
+    TokenType     interpType = getInterpTypeForProperty(propId);
+
+    vectorForEach(fromVec, const Token, token)
+    {
+        if (token->type == TOKEN_ARG_POSITION)
+        {
+            size_t        argIndex = strtoul(token->start, NULL, 10);
+            const Vector* arg      = lookupArgTokens(tupleEnv, parentEnvStack, argIndex);
+
+            if (arg)
+            {
+                appendArgTokensWithConversion(arena, arg, index, interpType, toVec);
+            }
+            else
+            {
+                vectorAppend(toVec, token);
+            }
+        }
+        else if (token->type == TOKEN_INDEX || token->type == TOKEN_INDEX_ONE)
+        {
+            Token resolved = indexToToken(arena, index, token, interpType);
+            vectorAppend(toVec, &resolved);
+        }
+        else
+        {
+            vectorAppend(toVec, token);
+        }
+    }
+}
+
+static void
+applySharedPropertiesToChord(
+    Parser*               p,
+    const KeyChord*       from,
+    KeyChord*             to,
+    size_t                index,
+    const ArgEnvironment* tupleEnv)
+{
+    assert(p), assert(from), assert(to);
 
     if (to->flags == FLAG_NONE) to->flags = from->flags;
 
+    Arena* arena = parserArena(p);
     for (PropId id = 0; id < KC_PROP_COUNT; id++)
     {
         const Property* fromProp = propGetConst(from, id);
         Property*       toProp   = propGet(to, id);
 
-        if (propertyHasContent(fromProp) && !propertyHasContent(toProp))
+        if (propertyHasContent(fromProp) && !propertyHasContent(toProp) &&
+            fromProp->type == PROP_TYPE_ARRAY)
         {
-            if (fromProp->type == PROP_TYPE_ARRAY)
-            {
-                PROP_SET_TYPE(toProp, ARRAY);
-                toProp->value.as_array = VECTOR_INIT(Token);
-
-                const Vector* fromVec    = &fromProp->value.as_array;
-                Vector*       toVec      = &toProp->value.as_array;
-                TokenType     interpType = getInterpTypeForProperty(id);
-
-                vectorForEach(fromVec, const Token, token)
-                {
-                    if (token->type == TOKEN_INDEX || token->type == TOKEN_INDEX_ONE)
-                    {
-                        Token resolved = indexToToken(arena, index, token, interpType);
-                        vectorAppend(toVec, &resolved);
-                    }
-                    else
-                    {
-                        vectorAppend(toVec, token);
-                    }
-                }
-            }
+            copyPropertyArray(arena, parserArgEnvStack(p), id, fromProp, toProp, index, tupleEnv);
         }
+    }
+}
+
+static void
+applySharedProperties(
+    Parser*         p,
+    Vector*         partials,
+    Vector*         tupleEnvs,
+    const KeyChord* tmpl)
+{
+    assert(p), assert(partials), assert(tupleEnvs), assert(tmpl);
+
+    Vector* dest = parserDest(p);
+
+    vectorForEach(partials, KeyChord, partial)
+    {
+        ArgEnvironment* tupleEnv = VECTOR_GET(tupleEnvs, ArgEnvironment, iter.index);
+        applySharedPropertiesToChord(p, tmpl, partial, iter.index, tupleEnv);
+
+        KeyChord* slot = VECTOR_APPEND_SLOT(dest, KeyChord);
+        *slot          = *partial;
     }
 }
 
@@ -180,6 +280,58 @@ parseKeyIntoChord(Parser* p, KeyChord* chord)
 }
 
 static bool
+parseChordContent(
+    Parser*     p,
+    KeyChord*   chord,
+    Expectation terminator,
+    Expectation initialExpect)
+{
+    assert(p), assert(chord);
+
+    KeyChord* saved = parserCurrentChord(p);
+    parserSetChord(p, chord);
+
+    Expectation expect = initialExpect;
+
+    while (!parserIsAtEnd(p))
+    {
+        Expectation got = tokenToExpectation(parserCurrentToken(p)->type);
+
+        if (got & terminator) break;
+
+        if (got == EXPECT_COMMAND || got == EXPECT_META)
+        {
+            HandleResult result = handleCurrent(p);
+            if (result.error)
+            {
+                parserSetChord(p, saved);
+                return false;
+            }
+            break;
+        }
+
+        if (!(got & expect))
+        {
+            parserErrorUnexpected(p, expect, got);
+            parserSetChord(p, saved);
+            return false;
+        }
+
+        HandleResult result = handleCurrent(p);
+        if (result.error)
+        {
+            parserSetChord(p, saved);
+            return false;
+        }
+
+        expect = result.next;
+    }
+
+    parserSetChord(p, saved);
+    return true;
+}
+
+static bool
 parseTuple(Parser* p, KeyChord* tuple)
 {
     assert(p), assert(tuple);
@@ -199,7 +351,7 @@ parseTuple(Parser* p, KeyChord* tuple)
         return false;
     }
 
-    if (!parseChordContent(p, tuple, EXPECT_RPAREN))
+    if (!parseChordContent(p, tuple, EXPECT_RPAREN, EXPECT_DESC))
     {
         return false;
     }
@@ -226,6 +378,14 @@ parserFree(Parser* p)
     {
         vectorFree(&p->childArrays[i]);
     }
+
+    while (!stackIsEmpty(&p->argEnvStack))
+    {
+        ArgEnvironment* env = STACK_PEEK(&p->argEnvStack, ArgEnvironment);
+        argEnvFree(env);
+        stackPop(&p->argEnvStack);
+    }
+    stackFree(&p->argEnvStack);
 }
 
 static void
@@ -246,6 +406,10 @@ parserInit(Parser* p, Scanner* scanner, Menu* m)
     {
         p->childArrays[i] = VECTOR_INIT(KeyChord);
     }
+    p->argEnvStack       = STACK_INIT(ArgEnvironment);
+    p->chordPushedEnv    = false;
+    p->inTemplateContext = false;
+    memset(p->pushedEnvAtDepth, 0, sizeof(p->pushedEnvAtDepth));
     p->menu      = m;
     p->hadError  = false;
     p->panicMode = false;
@@ -491,14 +655,35 @@ parserAllocChord(Parser* p)
 
     KeyChord* chord = VECTOR_APPEND_SLOT(p->dest, KeyChord);
     compilerInitChord(chord);
-    p->chord = chord;
+    p->chord          = chord;
+    p->chordPushedEnv = false;
+
     return chord;
+}
+
+static void
+popArgEnvAndWarn(Parser* p)
+{
+    ArgEnvironment* top = STACK_PEEK(&p->argEnvStack, ArgEnvironment);
+    if (top)
+    {
+        argEnvWarnUnused(top, p->scanner);
+        ArgEnvironment env = *top;
+        stackPop(&p->argEnvStack);
+        argEnvFree(&env);
+    }
 }
 
 void
 parserFinishChord(Parser* p)
 {
     assert(p);
+
+    if (p->chordPushedEnv)
+    {
+        popArgEnvAndWarn(p);
+        p->chordPushedEnv = false;
+    }
 
     parserAllocChord(p);
 }
@@ -523,6 +708,57 @@ parserPopState(Parser* p)
 
     p->depth--;
     return true;
+}
+
+Stack*
+parserArgEnvStack(Parser* p)
+{
+    assert(p);
+    return &p->argEnvStack;
+}
+
+bool
+parserChordPushedEnv(Parser* p)
+{
+    assert(p);
+    return p->chordPushedEnv;
+}
+
+void
+parserSetChordPushedEnv(Parser* p, bool pushed)
+{
+    assert(p);
+    p->chordPushedEnv = pushed;
+}
+
+bool
+parserInTemplateContext(Parser* p)
+{
+    assert(p);
+    return p->inTemplateContext;
+}
+
+void
+parserSetInTemplateContext(Parser* p, bool inTemplate)
+{
+    assert(p);
+    p->inTemplateContext = inTemplate;
+}
+
+bool
+parserPushedEnvAtDepth(Parser* p, size_t depth)
+{
+    assert(p);
+    assert(depth < MAX_DEPTH);
+    return p->pushedEnvAtDepth[depth];
+}
+
+void
+parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed)
+{
+    assert(p);
+    assert(depth < MAX_DEPTH);
+    p->pushedEnvAtDepth[depth] = pushed;
 }
 
 Expectation
@@ -584,66 +820,26 @@ parserErrorUnexpected(Parser* p, Expectation expected, Expectation got)
         expectationToString(got, gotBuf, sizeof(gotBuf)));
 }
 
-static bool
-parseChordContent(Parser* p, KeyChord* chord, Expectation terminator)
+static KeyChord
+parseSharedTemplate(Parser* p)
 {
-    assert(p), assert(chord);
+    assert(p);
 
-    KeyChord* saved = parserCurrentChord(p);
-    parserSetChord(p, chord);
+    KeyChord tmpl;
+    compilerInitChord(&tmpl);
 
-    Expectation expect = EXPECT_DESC;
+    parserSetInTemplateContext(p, true);
 
-    while (!parserIsAtEnd(p))
+    if (!parseChordContent(p, &tmpl, EXPECT_KEY_START | EXPECT_RBRACE | EXPECT_EOF, EXPECT_DESC))
     {
-        Expectation got = tokenToExpectation(parserCurrentToken(p)->type);
-
-        if (got & terminator) break;
-
-        if (got == EXPECT_COMMAND || got == EXPECT_META)
-        {
-            HandleResult result = handleCurrent(p);
-            if (result.error)
-            {
-                parserSetChord(p, saved);
-                return false;
-            }
-            break;
-        }
-
-        if (!(got & expect))
-        {
-            parserErrorUnexpected(p, expect, got);
-            parserSetChord(p, saved);
-            return false;
-        }
-
-        HandleResult result = handleCurrent(p);
-        if (result.error)
-        {
-            parserSetChord(p, saved);
-            return false;
-        }
-
-        expect = result.next;
+        compilerFreeChord(&tmpl);
+        parserSetInTemplateContext(p, false);
+        compilerInitChord(&tmpl);
+        return tmpl;
     }
 
-    parserSetChord(p, saved);
-    return true;
-}
-
-static bool
-parseSharedTemplate(Parser* p, KeyChord* tmpl)
-{
-    assert(p), assert(tmpl);
-
-    if (!parseChordContent(p, tmpl, EXPECT_KEY_START | EXPECT_RBRACE | EXPECT_EOF))
-    {
-        compilerFreeChord(tmpl);
-        return false;
-    }
-
-    return true;
+    parserSetInTemplateContext(p, false);
+    return tmpl;
 }
 
 static bool
@@ -685,12 +881,174 @@ parseRightBrace(Parser* p)
     }
 
     size_t depth = parserDepth(p);
+    if (p->pushedEnvAtDepth[depth])
+    {
+        popArgEnvAndWarn(p);
+        p->pushedEnvAtDepth[depth] = false;
+    }
+
     parserSetDest(p, parserSavedDest(p, depth));
     parserAdvance(p);
     parserAllocChord(p);
 
     p->expect = parserNextChordExpectation(p);
     return true;
+}
+
+static void
+appendEmptyEnv(Vector* tupleEnvs)
+{
+    assert(tupleEnvs);
+
+    ArgEnvironment emptyEnv;
+    argEnvInit(&emptyEnv);
+    vectorAppend(tupleEnvs, &emptyEnv);
+}
+
+static void
+accumulateModifier(Modifier* mods, TokenType type)
+{
+    assert(mods);
+
+    switch (type)
+    {
+    case TOKEN_MOD_CTRL: *mods |= MOD_CTRL; break;
+    case TOKEN_MOD_META: *mods |= MOD_META; break;
+    case TOKEN_MOD_HYPER: *mods |= MOD_HYPER; break;
+    case TOKEN_MOD_SHIFT: *mods |= MOD_SHIFT; break;
+    default: break;
+    }
+}
+
+static void
+finalizePartialKey(
+    Parser*   p,
+    Token*    token,
+    KeyChord* currentPartial,
+    Modifier  modPrefix,
+    Vector*   partialChords,
+    Vector*   tupleEnvs)
+{
+    assert(p), assert(token), assert(currentPartial), assert(partialChords), assert(tupleEnvs);
+
+    Arena* arena = parserArena(p);
+    if (token->type == TOKEN_SPECIAL_KEY)
+    {
+        currentPartial->key.special = token->special;
+        currentPartial->key.repr    = stringFromCString(arena, specialKeyRepr(currentPartial->key.special));
+    }
+    else
+    {
+        currentPartial->key.repr = stringMake(arena, token->start, token->length);
+    }
+
+    KeyChord* slot = VECTOR_APPEND_SLOT(partialChords, KeyChord);
+    *slot          = *currentPartial;
+    appendEmptyEnv(tupleEnvs);
+
+    compilerInitChord(currentPartial);
+    currentPartial->key.mods = modPrefix;
+}
+
+static bool
+commitPendingPartial(
+    KeyChord* currentPartial,
+    Modifier  modPrefix,
+    Vector*   partialChords,
+    Vector*   tupleEnvs)
+{
+    assert(currentPartial), assert(partialChords), assert(tupleEnvs);
+
+    if (!stringIsEmpty(&currentPartial->key.repr))
+    {
+        KeyChord* slot = VECTOR_APPEND_SLOT(partialChords, KeyChord);
+        *slot          = *currentPartial;
+        appendEmptyEnv(tupleEnvs);
+        compilerInitChord(currentPartial);
+        currentPartial->key.mods = modPrefix;
+        return true;
+    }
+    return false;
+}
+
+static ArgEnvironment
+popTupleEnv(Parser* p)
+{
+    assert(p);
+
+    ArgEnvironment tupleEnv;
+    if (parserChordPushedEnv(p))
+    {
+        ArgEnvironment* top = STACK_PEEK(parserArgEnvStack(p), ArgEnvironment);
+        if (top)
+        {
+            tupleEnv = *top;
+            stackPop(parserArgEnvStack(p));
+        }
+        else
+        {
+            argEnvInit(&tupleEnv);
+        }
+        parserSetChordPushedEnv(p, false);
+    }
+    else
+    {
+        argEnvInit(&tupleEnv);
+    }
+    return tupleEnv;
+}
+
+static bool
+parseArrayTuple(
+    Parser*   p,
+    KeyChord* currentPartial,
+    Modifier  modPrefix,
+    Vector*   partialChords,
+    Vector*   tupleEnvs)
+{
+    assert(p), assert(currentPartial), assert(partialChords), assert(tupleEnvs);
+
+    commitPendingPartial(currentPartial, modPrefix, partialChords, tupleEnvs);
+
+    KeyChord tuple;
+    if (!parseTuple(p, &tuple))
+    {
+        if (parserChordPushedEnv(p))
+        {
+            ArgEnvironment* top = STACK_PEEK(parserArgEnvStack(p), ArgEnvironment);
+            if (top)
+            {
+                argEnvFree(top);
+                stackPop(parserArgEnvStack(p));
+            }
+            parserSetChordPushedEnv(p, false);
+        }
+        return false;
+    }
+
+    ArgEnvironment tupleEnv = popTupleEnv(p);
+    tuple.key.mods |= modPrefix;
+    KeyChord* slot = VECTOR_APPEND_SLOT(partialChords, KeyChord);
+    *slot          = tuple;
+    vectorAppend(tupleEnvs, &tupleEnv);
+    return true;
+}
+
+static void
+commitFinalPartial(KeyChord* currentPartial, Vector* partialChords, Vector* tupleEnvs)
+{
+    assert(currentPartial), assert(partialChords), assert(tupleEnvs);
+
+    if (!stringIsEmpty(&currentPartial->key.repr))
+    {
+        KeyChord* slot = VECTOR_APPEND_SLOT(partialChords, KeyChord);
+        *slot          = *currentPartial;
+        appendEmptyEnv(tupleEnvs);
+    }
+    else
+    {
+        compilerFreeChord(currentPartial);
+    }
 }
 
 static bool
@@ -707,120 +1065,92 @@ parseExplicitArray(Parser* p)
     parserAdvance(p);
 
     Vector partialChords = VECTOR_INIT(KeyChord);
+    Vector tupleEnvs     = VECTOR_INIT(ArgEnvironment);
+    bool   ok            = false;
 
     KeyChord currentPartial;
     compilerInitChord(&currentPartial);
     currentPartial.key.mods = modPrefix;
 
     Token* token = parserCurrentToken(p);
-    while (!parserIsAtEnd(p))
+    while (!parserIsAtEnd(p) && token->type != TOKEN_RIGHT_BRACKET)
     {
-        if (token->type == TOKEN_RIGHT_BRACKET)
-        {
-            if (!stringIsEmpty(&currentPartial.key.repr))
-            {
-                KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
-                *slot          = currentPartial;
-            }
-            else
-            {
-                compilerFreeChord(&currentPartial);
-            }
-            parserAdvance(p);
-            break;
-        }
-
         if (token->type == TOKEN_LEFT_PAREN)
         {
-            if (!stringIsEmpty(&currentPartial.key.repr))
-            {
-                KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
-                *slot          = currentPartial;
-                compilerInitChord(&currentPartial);
-                currentPartial.key.mods = modPrefix;
-            }
-
-            KeyChord tuple;
-            if (!parseTuple(p, &tuple))
+            if (!parseArrayTuple(p, &currentPartial, modPrefix, &partialChords, &tupleEnvs))
             {
                 compilerFreeChord(&currentPartial);
-                vectorForEach(&partialChords, KeyChord, c) { compilerFreeChord(c); }
-                vectorFree(&partialChords);
-                return false;
+                goto cleanup;
             }
-            tuple.key.mods |= modPrefix;
-            KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
-            *slot          = tuple;
         }
         else if (tokenIsModType(token->type))
         {
-            switch (token->type)
-            {
-            case TOKEN_MOD_CTRL: currentPartial.key.mods |= MOD_CTRL; break;
-            case TOKEN_MOD_META: currentPartial.key.mods |= MOD_META; break;
-            case TOKEN_MOD_HYPER: currentPartial.key.mods |= MOD_HYPER; break;
-            case TOKEN_MOD_SHIFT: currentPartial.key.mods |= MOD_SHIFT; break;
-            default: break;
-            }
+            accumulateModifier(&currentPartial.key.mods, token->type);
             parserAdvance(p);
         }
         else if (token->type == TOKEN_KEY || token->type == TOKEN_SPECIAL_KEY)
         {
-            Arena* arena = parserArena(p);
-            if (token->type == TOKEN_SPECIAL_KEY)
-            {
-                currentPartial.key.special = token->special;
-                currentPartial.key.repr    = stringFromCString(
-                    arena,
-                    specialKeyRepr(currentPartial.key.special));
-            }
-            else
-            {
-                currentPartial.key.repr = stringMake(arena, token->start, token->length);
-            }
+            finalizePartialKey(
+                p,
+                token,
+                &currentPartial,
+                modPrefix,
+                &partialChords,
+                &tupleEnvs);
             parserAdvance(p);
-
-            KeyChord* slot = VECTOR_APPEND_SLOT(&partialChords, KeyChord);
-            *slot          = currentPartial;
-            compilerInitChord(&currentPartial);
-            currentPartial.key.mods = modPrefix;
         }
         else
         {
             parserErrorAtCurrent(p, "Unexpected token in chord array keys.");
             compilerFreeChord(&currentPartial);
-            vectorForEach(&partialChords, KeyChord, c) { compilerFreeChord(c); }
-            vectorFree(&partialChords);
-            return false;
+            goto cleanup;
         }
 
         token = parserCurrentToken(p);
     }
 
-    KeyChord sharedTemplate;
-    compilerInitChord(&sharedTemplate);
-
-    if (!parseSharedTemplate(p, &sharedTemplate))
+    if (token->type == TOKEN_RIGHT_BRACKET)
     {
-        vectorForEach(&partialChords, KeyChord, c) { compilerFreeChord(c); }
-        vectorFree(&partialChords);
-        return false;
+        commitFinalPartial(&currentPartial, &partialChords, &tupleEnvs);
+        parserAdvance(p);
     }
 
-    Arena* arena = parserArena(p);
-    vectorForEach(&partialChords, KeyChord, partial)
+    KeyChord sharedTemplate = parseSharedTemplate(p);
+    if (parserHadError(p))
     {
-        applySharedProperties(arena, &sharedTemplate, partial, iter.index);
-        KeyChord* slot = VECTOR_APPEND_SLOT(dest, KeyChord);
-        *slot          = *partial;
+        goto cleanup;
     }
 
+    applySharedProperties(p, &partialChords, &tupleEnvs, &sharedTemplate);
     compilerFreeChord(&sharedTemplate);
-    vectorFree(&partialChords);
     parserAllocChord(p);
-
     p->expect = parserNextChordExpectation(p);
-    return true;
+    ok        = true;
+
+cleanup:
+    if (!ok)
+    {
+        vectorForEach(&partialChords, KeyChord, c)
+        {
+            compilerFreeChord(c);
+        }
+    }
+    vectorForEach(&tupleEnvs, ArgEnvironment, env)
+    {
+        argEnvFree(env);
+    }
+    vectorFree(&partialChords);
+    vectorFree(&tupleEnvs);
+    return ok;
+}
+
+static void
+keyCopyWithMod(Key* dest, const Key* src, Modifier modPrefix)
+{
+    assert(dest), assert(src);
+
+    keyCopy(src, dest);
+    dest->mods |= modPrefix;
 }
 
 static bool
@@ -836,26 +1166,20 @@ parseImplicitArray(Parser* p)
     vectorRemove(dest, vectorLength(dest) - 1);
     parserAdvance(p);
 
-    KeyChord sharedTemplate;
-    compilerInitChord(&sharedTemplate);
-
-    if (!parseSharedTemplate(p, &sharedTemplate))
+    KeyChord sharedTemplate = parseSharedTemplate(p);
+    if (parserHadError(p))
     {
         return false;
     }
 
     Vector* implicitKeys = parserImplicitKeys(p);
-    Arena*  arena        = parserArena(p);
     vectorForEach(implicitKeys, const Key, implicitKey)
     {
         KeyChord* chord = VECTOR_APPEND_SLOT(dest, KeyChord);
         compilerInitChord(chord);
 
-        chord->key.mods    = modPrefix | implicitKey->mods;
-        chord->key.special = implicitKey->special;
-        chord->key.repr    = implicitKey->repr;
-
-        applySharedProperties(arena, &sharedTemplate, chord, iter.index);
+        keyCopyWithMod(&chord->key, implicitKey, modPrefix);
+        applySharedPropertiesToChord(p, &sharedTemplate, chord, iter.index, NULL);
     }
 
     compilerFreeChord(&sharedTemplate);
