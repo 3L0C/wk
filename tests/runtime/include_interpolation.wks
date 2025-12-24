@@ -1,0 +1,13 @@
+# @desc: Include paths with variable interpolation (issue #6)
+
+# @test: "a"
+# @expect: from suffix a
+
+# @test: "b"
+# @expect: from suffix b
+
+:var "suffix" "a"
+:include "include_interpolation_%(suffix).wks"
+
+:var "suffix" "b"
+:include "include_interpolation_%(suffix).wks"
