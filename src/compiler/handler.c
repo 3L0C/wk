@@ -143,6 +143,11 @@ collectDescriptionTokens(Parser* p, Vector* tokens, TokenType interpType)
         case TOKEN_INDEX_ONE:
         case TOKEN_USER_VAR:
         case TOKEN_WRAP_CMD_INTERP:
+        case TOKEN_THIS_DESC:
+        case TOKEN_THIS_DESC_UPPER_FIRST:
+        case TOKEN_THIS_DESC_LOWER_FIRST:
+        case TOKEN_THIS_DESC_UPPER_ALL:
+        case TOKEN_THIS_DESC_LOWER_ALL:
             vectorAppend(tokens, token);
             parserAdvance(p);
             break;
