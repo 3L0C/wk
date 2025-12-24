@@ -41,6 +41,7 @@ static const char* foreground[FOREGROUND_COLOR_LAST] = {
     [FOREGROUND_COLOR_PREFIX]    = "#AF9FC9",
     [FOREGROUND_COLOR_CHORD]     = "#DCD7BA",
     [FOREGROUND_COLOR_TITLE]     = "#DCD7BA",
+    [FOREGROUND_COLOR_GOTO]      = "#E6C384",
 };
 /* Menu background color */
 static const char* background = "#181616";
