@@ -118,7 +118,8 @@ tokenToExpectation(TokenType type)
     case TOKEN_SYNC_CMD:
     case TOKEN_WRAP:
     case TOKEN_UNWRAP:
-    case TOKEN_TITLE: return EXPECT_FLAG;
+    case TOKEN_TITLE:
+    case TOKEN_ARGS: return EXPECT_FLAG;
 
     case TOKEN_COMMAND: /* FALLTHROUGH */
     case TOKEN_COMM_INTERP: return EXPECT_COMMAND;
@@ -143,7 +144,8 @@ tokenToExpectation(TokenType type)
     case TOKEN_THIS_DESC_UPPER_ALL:
     case TOKEN_THIS_DESC_LOWER_ALL:
     case TOKEN_USER_VAR:
-    case TOKEN_WRAP_CMD_INTERP: return EXPECT_INTERP;
+    case TOKEN_WRAP_CMD_INTERP:
+    case TOKEN_ARG_POSITION: return EXPECT_INTERP;
 
     case TOKEN_EOF: return EXPECT_EOF;
 

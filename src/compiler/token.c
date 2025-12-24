@@ -102,6 +102,10 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_WRAP]      = "TOKEN_WRAP",
     [TOKEN_UNWRAP]    = "TOKEN_UNWRAP",
     [TOKEN_TITLE]     = "TOKEN_TITLE",
+    [TOKEN_ARGS]      = "TOKEN_ARGS",
+
+    /* meta commands */
+    [TOKEN_GOTO] = "TOKEN_GOTO",
 
     /* literals */
     [TOKEN_COMMAND]          = "TOKEN_COMMAND",
@@ -111,8 +115,10 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_UNSIGNED_INTEGER] = "TOKEN_UNSIGNED_INTEGER",
 
     /* interpolations */
-    [TOKEN_COMM_INTERP] = "TOKEN_COMM_INTERP",
-    [TOKEN_DESC_INTERP] = "TOKEN_DESC_INTERP",
+    [TOKEN_COMM_INTERP]     = "TOKEN_COMM_INTERP",
+    [TOKEN_DESC_INTERP]     = "TOKEN_DESC_INTERP",
+    [TOKEN_WRAP_CMD_INTERP] = "TOKEN_WRAP_CMD_INTERP",
+    [TOKEN_ARG_POSITION]    = "TOKEN_ARG_POSITION",
 
     /* keys */
     [TOKEN_KEY] = "TOKEN_KEY",

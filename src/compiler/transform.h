@@ -11,10 +11,10 @@
 /* local includes */
 #include "scanner.h"
 
-bool transform(Vector* chords, Menu* menu, Scanner* scanner);
-void deduplicateVector(Vector* chords, void (*freeChord)(KeyChord*));
 void deduplicateKeyChordVector(Vector* chords);
+void deduplicateVector(Vector* chords, void (*freeChord)(KeyChord*));
 void keyChordSpanSort(Span* chords);
 void propagateInheritanceSpan(Span* chords);
+bool transform(Vector* chords, Menu* menu, Scanner* scanner);
 
 #endif /* WK_COMPILER_TRANSFORM_H_ */

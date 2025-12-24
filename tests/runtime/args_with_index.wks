@@ -1,0 +1,13 @@
+# @desc: Args containing %(index) interpolation
+
+# @test: "a"
+# @expect: item-0
+
+# @test: "b"
+# @expect: item-1
+
+# @test: "x"
+# @expect: item-2
+
+[(a "A" +args "item-%(index)") (b "B" +args "item-%(index)")] "Item %(index+1)" +write %{{%($0)}}
+x "X" +args "item-%(index)" +write %{{%($0)}}

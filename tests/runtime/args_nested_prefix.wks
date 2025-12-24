@@ -1,0 +1,8 @@
+# @desc: Args work inside nested prefix blocks
+
+# @test: "p a"
+# @expect: nested-value
+
+p "Prefix" {
+    a "Test" +args "nested-value" +write %{{%($0)}}
+}

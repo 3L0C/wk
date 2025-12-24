@@ -1,0 +1,6 @@
+# @desc: Single chord with +args
+
+# @test: "a"
+# @expect: hello world
+
+a "Test" +args "hello" "world" +write %{{%($0) %($1)}}

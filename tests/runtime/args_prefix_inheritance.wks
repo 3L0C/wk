@@ -1,0 +1,8 @@
+# @desc: Args inherit from outer scope in prefix blocks
+
+# @test: "p a"
+# @expect: outer0 outer1
+
+p "Prefix" +args "outer0" "outer1" {
+    a "Test" +write %{{%($0) %($1)}}
+}
