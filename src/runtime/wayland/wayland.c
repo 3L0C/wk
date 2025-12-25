@@ -466,7 +466,12 @@ pollKey(Wayland* wayland, Menu* menu)
     keyFree(&key);
 
     /* Regrab keyboard if menu is still running */
-    if (menuStatusIsRunning(status)) grabKeyboard(wayland, true);
+    if (menuStatusIsRunning(status))
+    {
+        grabKeyboard(wayland, true);
+        /* Clear keyboard leave flag since the release was intentional */
+        wayland->input.keyboardLeft = false;
+    }
 
     return status;
 }
@@ -478,8 +483,11 @@ pollPointer(Wayland* wayland)
 
     bool          result = false;
     PointerEvent* event  = &wayland->input.pointerEvent;
+
+    /* Close on button click or scroll */
     if (event->state & WL_POINTER_BUTTON_STATE_PRESSED ||
-        event->state & WL_POINTER_BUTTON_STATE_RELEASED)
+        event->state & WL_POINTER_BUTTON_STATE_RELEASED ||
+        event->eventMask & POINTER_EVENT_AXIS)
     {
         result = true;
     }
@@ -506,6 +514,16 @@ pollTouch(Wayland* wayland)
     }
 
     memset(event, 0, sizeof(*event));
+    return result;
+}
+
+static bool
+pollKeyboardLeft(Wayland* wayland)
+{
+    assert(wayland);
+
+    bool result                 = wayland->input.keyboardLeft;
+    wayland->input.keyboardLeft = false;
     return result;
 }
 
@@ -738,9 +756,10 @@ waylandRun(Menu* menu)
     MenuStatus status = MENU_STATUS_EXIT_SOFTWARE;
     do
     {
-        /* Exit on pointer and touch events */
+        /* Exit on pointer, touch, and keyboard leave events */
         if (pollPointer(&wayland)) break;
         if (pollTouch(&wayland)) break;
+        if (pollKeyboardLeft(&wayland)) break;
 
         render(menu, &wayland);
         switch (status = pollKey(&wayland, menu))
