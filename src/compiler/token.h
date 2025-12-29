@@ -148,6 +148,7 @@ typedef struct
 } Token;
 
 void        tokenCopy(const Token* from, Token* to);
+void        tokenDebugAt(const Token* token, const char* filepath);
 bool        tokenDouble(const Token* token, double* dest, bool debug);
 void        tokenErrorAt(const Token* token, const char* filepath);
 void        tokenInit(Token* token);
@@ -156,5 +157,6 @@ bool        tokenIsHookType(const TokenType type);
 bool        tokenIsModType(const TokenType type);
 const char* tokenLiteral(const TokenType type);
 bool        tokenUint32(const Token* token, uint32_t* dest, bool debug);
+void        tokenWarnAt(const Token* token, const char* filepath);
 
 #endif /* WK_COMPILER_TOKEN_H_ */

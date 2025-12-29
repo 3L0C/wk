@@ -102,7 +102,7 @@ spliceArgIntoVector(const Vector* arg, TokenType interpType, Vector* dest)
     }
 }
 
-static bool
+static void
 tryResolveArgToken(Parser* p, const Token* token, TokenType interpType, Vector* dest)
 {
     assert(p), assert(token), assert(dest);
@@ -110,7 +110,7 @@ tryResolveArgToken(Parser* p, const Token* token, TokenType interpType, Vector* 
     if (parserInTemplateContext(p))
     {
         vectorAppend(dest, token);
-        return true;
+        return;
     }
 
     size_t  argIndex = strtoul(token->start, NULL, 10);
@@ -119,11 +119,10 @@ tryResolveArgToken(Parser* p, const Token* token, TokenType interpType, Vector* 
     if (arg && !vectorIsEmpty(arg))
     {
         spliceArgIntoVector(arg, interpType, dest);
-        return true;
+        return;
     }
 
-    parserErrorAt(p, (Token*)token, "Argument $%zu not defined.", argIndex);
-    return false;
+    parserDebugAt(p, (Token*)token, "Argument $%zu not defined.", argIndex);
 }
 
 static bool
@@ -153,7 +152,7 @@ collectDescriptionTokens(Parser* p, Vector* tokens, TokenType interpType)
             break;
 
         case TOKEN_ARG_POSITION:
-            if (!tryResolveArgToken(p, token, interpType, tokens)) return false;
+            tryResolveArgToken(p, token, interpType, tokens);
             parserAdvance(p);
             break;
 
@@ -199,7 +198,7 @@ collectCommandTokens(Parser* p, Vector* tokens)
             break;
 
         case TOKEN_ARG_POSITION:
-            if (!tryResolveArgToken(p, token, TOKEN_COMM_INTERP, tokens)) return false;
+            tryResolveArgToken(p, token, TOKEN_COMM_INTERP, tokens);
             parserAdvance(p);
             break;
 

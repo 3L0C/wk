@@ -9,7 +9,6 @@
 
 /* common includes */
 #include "common/debug.h"
-#include "common/key_chord.h"
 
 /* local includes */
 #include "token.h"
@@ -194,12 +193,12 @@ tokenDouble(const Token* token, double* dest, bool debug)
     return true;
 }
 
-void
-tokenErrorAt(const Token* token, const char* filepath)
+static void
+tokenMsgAt(const Token* token, const char* filepath, const char* msg)
 {
-    assert(token), assert(filepath);
+    assert(token), assert(filepath), assert(msg);
 
-    fprintf(stderr, "%s:%u:%u: error", filepath, token->line, token->column);
+    fprintf(stderr, "%s:%u:%u: %s", filepath, token->line, token->column, msg);
 
     if (token->type == TOKEN_EOF)
     {
@@ -218,6 +217,20 @@ tokenErrorAt(const Token* token, const char* filepath)
     {
         fprintf(stderr, " at '%.*s': ", (int)token->length, token->start);
     }
+}
+
+void
+tokenDebugAt(const Token* token, const char* filepath)
+{
+    assert(token), assert(filepath);
+    tokenMsgAt(token, filepath, "debug");
+}
+
+void
+tokenErrorAt(const Token* token, const char* filepath)
+{
+    assert(token), assert(filepath);
+    tokenMsgAt(token, filepath, "error");
 }
 
 void
@@ -351,4 +364,11 @@ tokenUint32(const Token* token, uint32_t* dest, bool debug)
 
     *dest = (uint32_t)value;
     return true;
+}
+
+void
+tokenWarnAt(const Token* token, const char* filepath)
+{
+    assert(token), assert(filepath);
+    tokenMsgAt(token, filepath, "warning");
 }
