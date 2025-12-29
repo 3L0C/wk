@@ -589,6 +589,12 @@ parserSetPanicMode(Parser* p, bool mode)
     p->panicMode = mode;
 }
 
+bool
+parserDebug(Parser* p)
+{
+    return p->debug;
+}
+
 size_t
 parserDepth(Parser* p)
 {
@@ -774,6 +780,20 @@ parserNextChordExpectation(Parser* p)
 }
 
 void
+parserDebugAt(Parser* p, Token* token, const char* fmt, ...)
+{
+    assert(p), assert(token), assert(fmt);
+
+    if (!p->debug) return;
+    if (p->panicMode) return;
+
+    va_list ap;
+    va_start(ap, fmt);
+    vscannerDebugAt(p->scanner, token, fmt, ap);
+    va_end(ap);
+}
+
+void
 parserErrorAt(Parser* p, Token* token, const char* fmt, ...)
 {
     assert(p), assert(token), assert(fmt);
@@ -786,6 +806,19 @@ parserErrorAt(Parser* p, Token* token, const char* fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     vscannerErrorAt(p->scanner, token, fmt, ap);
+    va_end(ap);
+}
+
+void
+parserWarnAt(Parser* p, Token* token, const char* fmt, ...)
+{
+    assert(p), assert(token), assert(fmt);
+
+    if (p->panicMode) return;
+
+    va_list ap;
+    va_start(ap, fmt);
+    vscannerWarnAt(p->scanner, token, fmt, ap);
     va_end(ap);
 }
 

@@ -46,6 +46,17 @@ scannerClone(const Scanner* scanner, Scanner* clone)
 }
 
 void
+scannerDebugAt(Scanner* scanner, Token* token, const char* fmt, ...)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    va_list ap;
+    va_start(ap, fmt);
+    vscannerDebugAt(scanner, token, fmt, ap);
+    va_end(ap);
+}
+
+void
 scannerErrorAt(Scanner* scanner, Token* token, const char* fmt, ...)
 {
     assert(scanner), assert(token), assert(fmt);
@@ -1041,11 +1052,31 @@ scannerWarnAt(Scanner* scanner, Token* token, const char* fmt, ...)
 }
 
 void
+vscannerDebugAt(Scanner* scanner, Token* token, const char* fmt, va_list ap)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    tokenDebugAt(token, scanner->filepath);
+    vfprintf(stderr, fmt, ap);
+    fputc('\n', stderr);
+}
+
+void
 vscannerErrorAt(Scanner* scanner, Token* token, const char* fmt, va_list ap)
 {
     assert(scanner), assert(token), assert(fmt);
 
     tokenErrorAt(token, scanner->filepath);
+    vfprintf(stderr, fmt, ap);
+    fputc('\n', stderr);
+}
+
+void
+vscannerWarnAt(Scanner* scanner, Token* token, const char* fmt, va_list ap)
+{
+    assert(scanner), assert(token), assert(fmt);
+
+    tokenWarnAt(token, scanner->filepath);
     vfprintf(stderr, fmt, ap);
     fputc('\n', stderr);
 }

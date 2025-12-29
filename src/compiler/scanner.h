@@ -43,6 +43,7 @@ typedef struct
 } Scanner;
 
 void scannerClone(const Scanner* scanner, Scanner* clone);
+void scannerDebugAt(Scanner* scanner, Token* token, const char* fmt, ...);
 void scannerErrorAt(Scanner* scanner, Token* token, const char* fmt, ...);
 void scannerInit(Scanner* scanner, const char* source, const char* filepath);
 bool scannerIsAtEnd(const Scanner* scanner);
@@ -50,6 +51,8 @@ void scannerMakeCurrent(Scanner* scanner);
 void scannerTokenForCompiler(Scanner* scanner, Token* result);
 void scannerTokenForPreprocessor(Scanner* scanner, Token* result, ScannerFlag flag);
 void scannerWarnAt(Scanner* scanner, Token* token, const char* fmt, ...);
+void vscannerDebugAt(Scanner* scanner, Token* token, const char* fmt, va_list ap);
 void vscannerErrorAt(Scanner* scanner, Token* token, const char* fmt, va_list ap);
+void vscannerWarnAt(Scanner* scanner, Token* token, const char* fmt, va_list ap);
 
 #endif /* WK_COMPILER_SCANNER_H_ */

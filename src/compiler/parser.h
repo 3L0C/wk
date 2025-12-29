@@ -29,6 +29,8 @@ Vector*     parserChildVector(Parser* p, size_t depth);
 bool        parserChordPushedEnv(Parser* p);
 KeyChord*   parserCurrentChord(Parser* p);
 Token*      parserCurrentToken(Parser* p);
+bool        parserDebug(Parser* p);
+void        parserDebugAt(Parser* p, Token* token, const char* fmt, ...);
 size_t      parserDepth(Parser* p);
 Vector*     parserDest(Parser* p);
 void        parserErrorAt(Parser* p, Token* token, const char* fmt, ...);
@@ -57,5 +59,6 @@ void        parserSetInTemplateContext(Parser* p, bool inTemplate);
 void        parserSetPanicMode(Parser* p, bool mode);
 void        parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed);
 Vector*     parserUserVars(Parser* p);
+void        parserWarnAt(Parser* p, Token* token, const char* fmt, ...);
 
 #endif /* WK_COMPILER_PARSER_H_ */
