@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 /* common includes */
-#include "common/key_chord.h"
+#include "common/special_key.h"
 
 typedef uint8_t TokenType;
 enum
@@ -19,6 +19,8 @@ enum
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
     TOKEN_ELLIPSIS,
+    TOKEN_LESS_THAN,
+    TOKEN_GREATER_THAN,
 
     /* preprocessor macros */
 
