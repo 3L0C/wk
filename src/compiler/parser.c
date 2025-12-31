@@ -470,169 +470,17 @@ end:
     return result;
 }
 
-Token*
-parserCurrentToken(Parser* p)
+static void
+popArgEnvAndWarn(Parser* p)
 {
-    assert(p);
-    return &p->current;
-}
-
-Token*
-parserPreviousToken(Parser* p)
-{
-    assert(p);
-    return &p->previous;
-}
-
-bool
-parserCheck(Parser* p, TokenType type)
-{
-    assert(p);
-    return p->current.type == type;
-}
-
-bool
-parserIsAtEnd(Parser* p)
-{
-    assert(p);
-    return p->current.type == TOKEN_EOF;
-}
-
-KeyChord*
-parserCurrentChord(Parser* p)
-{
-    assert(p);
-    return p->chord;
-}
-
-void
-parserSetChord(Parser* p, KeyChord* chord)
-{
-    assert(p);
-    p->chord = chord;
-}
-
-Vector*
-parserDest(Parser* p)
-{
-    assert(p);
-    return p->dest;
-}
-
-void
-parserSetDest(Parser* p, Vector* dest)
-{
-    assert(p);
-    p->dest = dest;
-}
-
-Arena*
-parserArena(Parser* p)
-{
-    assert(p);
-    return p->arena;
-}
-
-Vector*
-parserUserVars(Parser* p)
-{
-    assert(p);
-    return p->userVars;
-}
-
-Vector*
-parserImplicitKeys(Parser* p)
-{
-    assert(p);
-    return &p->implicitKeys;
-}
-
-Menu*
-parserMenu(Parser* p)
-{
-    assert(p);
-    return p->menu;
-}
-
-Scanner*
-parserScanner(Parser* p)
-{
-    assert(p);
-    return p->scanner;
-}
-
-bool
-parserHadError(Parser* p)
-{
-    assert(p);
-    return p->hadError;
-}
-
-void
-parserSetError(Parser* p)
-{
-    assert(p);
-    p->hadError = true;
-}
-
-bool
-parserInPanicMode(Parser* p)
-{
-    assert(p);
-    return p->panicMode;
-}
-
-void
-parserSetPanicMode(Parser* p, bool mode)
-{
-    assert(p);
-    p->panicMode = mode;
-}
-
-bool
-parserDebug(Parser* p)
-{
-    return p->debug;
-}
-
-size_t
-parserDepth(Parser* p)
-{
-    assert(p);
-    return p->depth;
-}
-
-Vector*
-parserSavedDest(Parser* p, size_t depth)
-{
-    assert(p);
-    assert(depth < MAX_DEPTH);
-    return p->destStack[depth];
-}
-
-KeyChord*
-parserSavedChord(Parser* p, size_t depth)
-{
-    assert(p);
-    assert(depth < MAX_DEPTH);
-    return p->parentStack[depth];
-}
-
-Vector*
-parserChildVector(Parser* p, size_t depth)
-{
-    assert(p), assert(depth < MAX_DEPTH);
-
-    Vector* vec = &p->childArrays[depth];
-    if (vec->elementSize == 0)
+    ArgEnvironment* top = STACK_PEEK(&p->argEnvStack, ArgEnvironment);
+    if (top)
     {
-        *vec = VECTOR_INIT(KeyChord);
+        argEnvWarnUnused(top, p->scanner);
+        ArgEnvironment env = *top;
+        stackPop(&p->argEnvStack);
+        argEnvFree(&env);
     }
-    else
-    {
-        vec->length = 0;
-    }
-    return vec;
 }
 
 TokenType
@@ -667,53 +515,11 @@ parserAllocChord(Parser* p)
     return chord;
 }
 
-static void
-popArgEnvAndWarn(Parser* p)
-{
-    ArgEnvironment* top = STACK_PEEK(&p->argEnvStack, ArgEnvironment);
-    if (top)
-    {
-        argEnvWarnUnused(top, p->scanner);
-        ArgEnvironment env = *top;
-        stackPop(&p->argEnvStack);
-        argEnvFree(&env);
-    }
-}
-
-void
-parserFinishChord(Parser* p)
+Arena*
+parserArena(Parser* p)
 {
     assert(p);
-
-    if (p->chordPushedEnv)
-    {
-        popArgEnvAndWarn(p);
-        p->chordPushedEnv = false;
-    }
-
-    parserAllocChord(p);
-}
-
-void
-parserPushState(Parser* p)
-{
-    assert(p);
-    assert(p->depth < MAX_DEPTH);
-
-    p->parentStack[p->depth] = p->chord;
-    p->destStack[p->depth]   = p->dest;
-    p->depth++;
-}
-
-bool
-parserPopState(Parser* p)
-{
-    assert(p);
-
-    if (p->depth == 0) return false;
-
-    p->depth--;
-    return true;
+    return p->arena;
 }
 
 Stack*
@@ -724,59 +530,54 @@ parserArgEnvStack(Parser* p)
 }
 
 bool
+parserCheck(Parser* p, TokenType type)
+{
+    assert(p);
+    return p->current.type == type;
+}
+
+Vector*
+parserChildVector(Parser* p, size_t depth)
+{
+    assert(p), assert(depth < MAX_DEPTH);
+
+    Vector* vec = &p->childArrays[depth];
+    if (vec->elementSize == 0)
+    {
+        *vec = VECTOR_INIT(KeyChord);
+    }
+    else
+    {
+        vec->length = 0;
+    }
+    return vec;
+}
+
+bool
 parserChordPushedEnv(Parser* p)
 {
     assert(p);
     return p->chordPushedEnv;
 }
 
-void
-parserSetChordPushedEnv(Parser* p, bool pushed)
+KeyChord*
+parserCurrentChord(Parser* p)
 {
     assert(p);
-    p->chordPushedEnv = pushed;
+    return p->chord;
+}
+
+Token*
+parserCurrentToken(Parser* p)
+{
+    assert(p);
+    return &p->current;
 }
 
 bool
-parserInTemplateContext(Parser* p)
+parserDebug(Parser* p)
 {
-    assert(p);
-    return p->inTemplateContext;
-}
-
-void
-parserSetInTemplateContext(Parser* p, bool inTemplate)
-{
-    assert(p);
-    p->inTemplateContext = inTemplate;
-}
-
-bool
-parserPushedEnvAtDepth(Parser* p, size_t depth)
-{
-    assert(p);
-    assert(depth < MAX_DEPTH);
-    return p->pushedEnvAtDepth[depth];
-}
-
-void
-parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed)
-{
-    assert(p);
-    assert(depth < MAX_DEPTH);
-    p->pushedEnvAtDepth[depth] = pushed;
-}
-
-Expectation
-parserNextChordExpectation(Parser* p)
-{
-    assert(p);
-
-    if (p->depth > 0)
-    {
-        return EXPECT_KEY_START | EXPECT_RBRACE;
-    }
-    return EXPECT_KEY_START | EXPECT_EOF;
+    return p->debug;
 }
 
 void
@@ -793,6 +594,20 @@ parserDebugAt(Parser* p, Token* token, const char* fmt, ...)
     va_end(ap);
 }
 
+size_t
+parserDepth(Parser* p)
+{
+    assert(p);
+    return p->depth;
+}
+
+Vector*
+parserDest(Parser* p)
+{
+    assert(p);
+    return p->dest;
+}
+
 void
 parserErrorAt(Parser* p, Token* token, const char* fmt, ...)
 {
@@ -806,19 +621,6 @@ parserErrorAt(Parser* p, Token* token, const char* fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     vscannerErrorAt(p->scanner, token, fmt, ap);
-    va_end(ap);
-}
-
-void
-parserWarnAt(Parser* p, Token* token, const char* fmt, ...)
-{
-    assert(p), assert(token), assert(fmt);
-
-    if (p->panicMode) return;
-
-    va_list ap;
-    va_start(ap, fmt);
-    vscannerWarnAt(p->scanner, token, fmt, ap);
     va_end(ap);
 }
 
@@ -851,6 +653,204 @@ parserErrorUnexpected(Parser* p, Expectation expected, Expectation got)
         "Expected %s but got %s.",
         expectationToString(expected, expectedBuf, sizeof(expectedBuf)),
         expectationToString(got, gotBuf, sizeof(gotBuf)));
+}
+
+void
+parserFinishChord(Parser* p)
+{
+    assert(p);
+
+    if (p->chordPushedEnv)
+    {
+        popArgEnvAndWarn(p);
+        p->chordPushedEnv = false;
+    }
+
+    parserAllocChord(p);
+}
+
+bool
+parserHadError(Parser* p)
+{
+    assert(p);
+    return p->hadError;
+}
+
+Vector*
+parserImplicitKeys(Parser* p)
+{
+    assert(p);
+    return &p->implicitKeys;
+}
+
+bool
+parserInPanicMode(Parser* p)
+{
+    assert(p);
+    return p->panicMode;
+}
+
+bool
+parserInTemplateContext(Parser* p)
+{
+    assert(p);
+    return p->inTemplateContext;
+}
+
+bool
+parserIsAtEnd(Parser* p)
+{
+    assert(p);
+    return p->current.type == TOKEN_EOF;
+}
+
+Menu*
+parserMenu(Parser* p)
+{
+    assert(p);
+    return p->menu;
+}
+
+Expectation
+parserNextChordExpectation(Parser* p)
+{
+    assert(p);
+
+    if (p->depth > 0)
+    {
+        return EXPECT_KEY_START | EXPECT_RBRACE;
+    }
+    return EXPECT_KEY_START | EXPECT_EOF;
+}
+
+bool
+parserPopState(Parser* p)
+{
+    assert(p);
+
+    if (p->depth == 0) return false;
+
+    p->depth--;
+    return true;
+}
+
+Token*
+parserPreviousToken(Parser* p)
+{
+    assert(p);
+    return &p->previous;
+}
+
+void
+parserPushState(Parser* p)
+{
+    assert(p);
+    assert(p->depth < MAX_DEPTH);
+
+    p->parentStack[p->depth] = p->chord;
+    p->destStack[p->depth]   = p->dest;
+    p->depth++;
+}
+
+bool
+parserPushedEnvAtDepth(Parser* p, size_t depth)
+{
+    assert(p);
+    assert(depth < MAX_DEPTH);
+    return p->pushedEnvAtDepth[depth];
+}
+
+KeyChord*
+parserSavedChord(Parser* p, size_t depth)
+{
+    assert(p);
+    assert(depth < MAX_DEPTH);
+    return p->parentStack[depth];
+}
+
+Vector*
+parserSavedDest(Parser* p, size_t depth)
+{
+    assert(p);
+    assert(depth < MAX_DEPTH);
+    return p->destStack[depth];
+}
+
+Scanner*
+parserScanner(Parser* p)
+{
+    assert(p);
+    return p->scanner;
+}
+
+void
+parserSetChord(Parser* p, KeyChord* chord)
+{
+    assert(p);
+    p->chord = chord;
+}
+
+void
+parserSetChordPushedEnv(Parser* p, bool pushed)
+{
+    assert(p);
+    p->chordPushedEnv = pushed;
+}
+
+void
+parserSetDest(Parser* p, Vector* dest)
+{
+    assert(p);
+    p->dest = dest;
+}
+
+void
+parserSetError(Parser* p)
+{
+    assert(p);
+    p->hadError = true;
+}
+
+void
+parserSetInTemplateContext(Parser* p, bool inTemplate)
+{
+    assert(p);
+    p->inTemplateContext = inTemplate;
+}
+
+void
+parserSetPanicMode(Parser* p, bool mode)
+{
+    assert(p);
+    p->panicMode = mode;
+}
+
+void
+parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed)
+{
+    assert(p);
+    assert(depth < MAX_DEPTH);
+    p->pushedEnvAtDepth[depth] = pushed;
+}
+
+Vector*
+parserUserVars(Parser* p)
+{
+    assert(p);
+    return p->userVars;
+}
+
+void
+parserWarnAt(Parser* p, Token* token, const char* fmt, ...)
+{
+    assert(p), assert(token), assert(fmt);
+
+    if (p->panicMode) return;
+
+    va_list ap;
+    va_start(ap, fmt);
+    vscannerWarnAt(p->scanner, token, fmt, ap);
+    va_end(ap);
 }
 
 static KeyChord

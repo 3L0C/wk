@@ -18,8 +18,6 @@
 
 typedef struct Parser Parser;
 
-Vector parse(Scanner* scanner, Menu* m);
-
 TokenType   parserAdvance(Parser* p);
 KeyChord*   parserAllocChord(Parser* p);
 Arena*      parserArena(Parser* p);
@@ -46,8 +44,8 @@ Menu*       parserMenu(Parser* p);
 Expectation parserNextChordExpectation(Parser* p);
 bool        parserPopState(Parser* p);
 Token*      parserPreviousToken(Parser* p);
-bool        parserPushedEnvAtDepth(Parser* p, size_t depth);
 void        parserPushState(Parser* p);
+bool        parserPushedEnvAtDepth(Parser* p, size_t depth);
 KeyChord*   parserSavedChord(Parser* p, size_t depth);
 Vector*     parserSavedDest(Parser* p, size_t depth);
 Scanner*    parserScanner(Parser* p);
@@ -60,5 +58,7 @@ void        parserSetPanicMode(Parser* p, bool mode);
 void        parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed);
 Vector*     parserUserVars(Parser* p);
 void        parserWarnAt(Parser* p, Token* token, const char* fmt, ...);
+
+Vector parse(Scanner* scanner, Menu* m);
 
 #endif /* WK_COMPILER_PARSER_H_ */
