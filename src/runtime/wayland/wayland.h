@@ -124,6 +124,7 @@ typedef struct
     } notify;
 
     bool keyPending;
+    bool keyboardLeft;
 } Input;
 
 typedef struct

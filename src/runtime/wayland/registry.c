@@ -138,6 +138,7 @@ keyboardHandleLeave(
           .it_value.tv_nsec    = 0
     };
     timerfd_settime(*input->repeatFd, 0, &its, NULL);
+    input->keyboardLeft = true;
 }
 
 static void
@@ -273,7 +274,9 @@ pointerHandleAxis(
     uint32_t           axis,
     wl_fixed_t         value)
 {
-    (void)data, (void)pointer, (void)time, (void)axis, (void)value;
+    (void)pointer, (void)time, (void)axis, (void)value;
+    Input* input = data;
+    input->pointerEvent.eventMask |= POINTER_EVENT_AXIS;
 }
 
 static void
