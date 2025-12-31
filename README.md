@@ -989,12 +989,19 @@ patterns but differ in specific values. Arguments are
 defined as strings after the flag and accessed via
 `%($0)`, `%($1)`, etc. (0-indexed).
 
+In chord arrays, `+args` on the template (after the closing
+bracket) provides default arguments that are shadowed by
+any `+args` on individual chord expressions.
+
 ```
 # Define arguments per chord in an array
 [
     (a "Alice" +args "alice@example.com")
     (b "Bob" +args "bob@example.com")
 ] "Email %($0)" %{{mailto:%($0)}}
+# 'a' -> mailto:alice@example.com
+# 'b' -> mailto:bob@example.com
+# 'c' -> mailto:(null)
 ```
 
 Arguments inherit through prefix scopes, allowing all
@@ -1014,10 +1021,6 @@ p "+Prefix" +args "outer0" "outer1"
 # p a -> outer0 outer1
 # p n b -> inner0 outer1
 ```
-
-In chord arrays, `+args` on the template (after the closing
-bracket) provides default arguments that are shadowed by
-any `+args` on individual chord expressions.
 
 See [Argument Positions](#argument-positions) for more
 details on the `%($N)` syntax.
