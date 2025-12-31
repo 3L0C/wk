@@ -91,6 +91,10 @@ compositors. For those not on a `wlroots`-based compositor,
 does work based on my testing, but the popup menu seems to
 only display on one screen.
 
+See [here](docs/wayland-quirks.md) for notes about common
+compositor quirks (e.g., mouse click behavior differences,
+etc.).
+
 # Usage
 
 ```
@@ -103,12 +107,11 @@ wk --top
 # Display key chords in a `wks` file.
 wk --key-chords my_key_chords.wks
 
-# Try to pre-press keys 'C-c', and 'x'. Both options work the same.
-wk --press 'C-cx'
+# Try to pre-press keys 'C-c', and 'x'.
 wk --press 'C-c x'
 
 # Transpile the key chords in a `wks` file and print a properly
-# formated `key_chords.def.h` header to stdout.
+# formated `config.h` header to stdout.
 wk --transpile my_key_chords.wks
 
 # Read script from stdin
@@ -172,6 +175,18 @@ options:
 
 run `man 1 wk` for more info on each option.
 ```
+
+## Mouse and Touch Support
+
+`wk` is a keyboard driven tool. While `wk` provides a
+graphical menu with available key chords, users cannot
+click/touch the menu to select any of the items. Any click,
+scroll, or touch (untested) on the menu will cause it to
+close.
+
+Wayland has some quirks when it comes to clicking/scrolling
+outside the menu. You can read more about this
+[here](docs/wayland-quirks.md#pointer-behavior).
 
 # Configuration
 
