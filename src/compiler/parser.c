@@ -953,6 +953,153 @@ accumulateModifier(Modifier* mods, TokenType type)
     }
 }
 
+static bool
+keyIsBoundInScope(Vector* dest, Vector* partialChords, const Key* candidate)
+{
+    assert(dest), assert(partialChords), assert(candidate);
+
+    vectorForEach(dest, const KeyChord, chord)
+    {
+        if (keyIsEqual(&chord->key, candidate)) return true;
+    }
+    vectorForEach(partialChords, const KeyChord, chord)
+    {
+        if (keyIsEqual(&chord->key, candidate)) return true;
+    }
+    return false;
+}
+
+static bool
+parseKeyOptionsInArray(
+    Parser*   p,
+    KeyChord* currentPartial,
+    Modifier  modPrefix,
+    Vector*   partialChords,
+    Vector*   tupleEnvs)
+{
+    assert(p), assert(currentPartial), assert(partialChords), assert(tupleEnvs);
+
+    Vector*  dest      = parserDest(p);
+    Arena*   arena     = parserArena(p);
+    Vector   options   = VECTOR_INIT(Key);
+    Modifier localMods = currentPartial->key.mods;
+
+    parserAdvance(p);
+
+    while (!parserIsAtEnd(p))
+    {
+        Token* token = parserCurrentToken(p);
+
+        switch (token->type)
+        {
+        case TOKEN_MOD_CTRL: /* FALLTHROUGH */
+        case TOKEN_MOD_META:
+        case TOKEN_MOD_HYPER:
+        case TOKEN_MOD_SHIFT:
+            accumulateModifier(&localMods, token->type);
+            parserAdvance(p);
+            break;
+
+        case TOKEN_KEY:
+        case TOKEN_SPECIAL_KEY:
+        {
+            Key key;
+            keyInit(&key);
+            key.mods = localMods;
+            if (token->type == TOKEN_SPECIAL_KEY)
+            {
+                key.special = token->special;
+                key.repr    = stringFromCString(arena, specialKeyRepr(key.special));
+            }
+            else
+            {
+                key.repr = stringMake(arena, token->start, token->length);
+            }
+            vectorAppend(&options, &key);
+            localMods = modPrefix;
+            parserAdvance(p);
+            break;
+        }
+
+        case TOKEN_ELLIPSIS:
+        {
+            Vector* implicitKeys = parserImplicitKeys(p);
+            vectorForEach(implicitKeys, const Key, implicitKey)
+            {
+                Key copy;
+                keyInit(&copy);
+                copy.mods    = implicitKey->mods | localMods;
+                copy.special = implicitKey->special;
+                if (implicitKey->special != SPECIAL_KEY_NONE)
+                {
+                    copy.repr = stringFromCString(arena, specialKeyRepr(copy.special));
+                }
+                else
+                {
+                    copy.repr = stringMake(arena, implicitKey->repr.data, implicitKey->repr.length);
+                }
+                vectorAppend(&options, &copy);
+            }
+            localMods = modPrefix;
+            parserAdvance(p);
+            break;
+        }
+
+        case TOKEN_GREATER_THAN:
+            goto resolve;
+
+        default:
+            vectorFree(&options);
+            parserErrorAtCurrent(p, "Unexpected token in key options.");
+            return false;
+        }
+    }
+
+    vectorFree(&options);
+    parserErrorAtCurrent(p, "Unterminated key options, expected '>'.");
+    return false;
+
+resolve:
+    if (vectorIsEmpty(&options))
+    {
+        vectorFree(&options);
+        parserErrorAtCurrent(p, "Empty key options '<>'.");
+        return false;
+    }
+
+    Key* winner = NULL;
+    vectorForEach(&options, Key, candidate)
+    {
+        if (!keyIsBoundInScope(dest, partialChords, candidate))
+        {
+            winner = candidate;
+            break;
+        }
+    }
+
+    if (!winner)
+    {
+        vectorFree(&options);
+        parserErrorAtCurrent(p, "All key options are already bound.");
+        return false;
+    }
+
+    currentPartial->key.mods    = winner->mods;
+    currentPartial->key.special = winner->special;
+    currentPartial->key.repr    = winner->repr;
+
+    KeyChord* slot = VECTOR_APPEND_SLOT(partialChords, KeyChord);
+    *slot          = *currentPartial;
+    appendEmptyEnv(tupleEnvs);
+
+    compilerInitChord(currentPartial);
+    currentPartial->key.mods = modPrefix;
+
+    vectorFree(&options);
+    parserAdvance(p);
+    return true;
+}
+
 static void
 finalizePartialKey(
     Parser*   p,
@@ -1132,6 +1279,19 @@ parseExplicitArray(Parser* p)
                 &tupleEnvs);
             parserAdvance(p);
         }
+        else if (token->type == TOKEN_LESS_THAN)
+        {
+            if (!parseKeyOptionsInArray(
+                    p,
+                    &currentPartial,
+                    modPrefix,
+                    &partialChords,
+                    &tupleEnvs))
+            {
+                compilerFreeChord(&currentPartial);
+                goto cleanup;
+            }
+        }
         else
         {
             parserErrorAtCurrent(p, "Unexpected token in chord array keys.");
@@ -1300,7 +1460,7 @@ parseSingleChord(Parser* p)
         TokenType t = p->current.type;
         if (t == TOKEN_LEFT_BRACKET || t == TOKEN_ELLIPSIS ||
             tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY ||
-            t == TOKEN_RIGHT_BRACE || t == TOKEN_EOF)
+            t == TOKEN_LESS_THAN || t == TOKEN_RIGHT_BRACE || t == TOKEN_EOF)
         {
             return true;
         }
@@ -1341,7 +1501,7 @@ parseImpl(Parser* p)
         {
             ok = parseRightBrace(p);
         }
-        else if (tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY)
+        else if (tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY || t == TOKEN_LESS_THAN)
         {
             ok = parseSingleChord(p);
         }

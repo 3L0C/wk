@@ -24,6 +24,8 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_LEFT_PAREN]    = "TOKEN_LEFT_PAREN",
     [TOKEN_RIGHT_PAREN]   = "TOKEN_RIGHT_PAREN",
     [TOKEN_ELLIPSIS]      = "TOKEN_ELLIPSIS",
+    [TOKEN_LESS_THAN]     = "TOKEN_LESS_THAN",
+    [TOKEN_GREATER_THAN]  = "TOKEN_GREATER_THAN",
 
     /* preprocessor macros */
 

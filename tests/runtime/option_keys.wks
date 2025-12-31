@@ -1,0 +1,65 @@
+# @desc: Option keys - alternative trigger key bindings
+
+# Basic option key resolution
+# @test: "a"
+# @expect: first
+# @test: "b"
+# @expect: second (option resolved to b)
+
+# Modifier prefix applies to all options
+# @test: "M-a"
+# @expect: meta-first
+# @test: "M-b"
+# @expect: meta-second (option with mod prefix)
+
+# Implicit keys as options
+# @test: "x"
+# @expect: explicit
+# @test: "s"
+# @expect: implicit option (resolved to s)
+
+# Combined explicit and implicit
+# @test: "y"
+# @expect: combined explicit
+# @test: "z"
+# @expect: combined
+# @test: "d"
+# @expect: combined fallback (resolved to d)
+
+# Options inside prefix
+# @test: "p c"
+# @expect: prefix first
+# @test: "p d"
+# @expect: prefix option (resolved to d)
+
+# Options inside explicit arrays
+# @test: "e"
+# @expect: array option 0
+# @test: "f"
+# @expect: array option 1
+
+# Basic option key resolution
+a "First" +write %{{first}}
+<a b c> "Second" +write %{{second (option resolved to b)}}
+
+# Modifier prefix applies to all options
+M-a "Meta First" +write %{{meta-first}}
+M-<a b c> "Meta Second" +write %{{meta-second (option with mod prefix)}}
+
+# Implicit keys as options
+x "Explicit" +write %{{explicit}}
+<x ...> "Implicit Option" +write %{{implicit option (resolved to s)}}
+
+# Combined explicit and implicit
+y "Combined Explicit" +write %{{combined explicit}}
+z "Combined Z" +write %{{combined}}
+<y z ...> "Combined Fallback" +write %{{combined fallback (resolved to d)}}
+
+# Options inside prefix
+p "Prefix" {
+    c "Prefix First" +write %{{prefix first}}
+    <c d e> "Prefix Option" +write %{{prefix option (resolved to d)}}
+}
+
+# Options inside explicit arrays
+[<a e> <a f>] "Array Option %(index)" +write %{{array option %(index)}}

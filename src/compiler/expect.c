@@ -14,22 +14,23 @@ typedef struct
 } ExpectEntry;
 
 static const ExpectEntry expectEntries[] = {
-    { "modifier",      EXPECT_MOD      },
-    { "key",           EXPECT_KEY      },
-    { "description",   EXPECT_DESC     },
-    { "hook",          EXPECT_HOOK     },
-    { "flag",          EXPECT_FLAG     },
-    { "command",       EXPECT_COMMAND  },
-    { "@goto",         EXPECT_META     },
-    { "'{'",           EXPECT_LBRACE   },
-    { "'}'",           EXPECT_RBRACE   },
-    { "'['",           EXPECT_LBRACKET },
-    { "']'",           EXPECT_RBRACKET },
-    { "'('",           EXPECT_LPAREN   },
-    { "')'",           EXPECT_RPAREN   },
-    { "'...'",         EXPECT_ELLIPSIS },
-    { "interpolation", EXPECT_INTERP   },
-    { "EOF",           EXPECT_EOF      },
+    { "modifier",      EXPECT_MOD       },
+    { "key",           EXPECT_KEY       },
+    { "description",   EXPECT_DESC      },
+    { "hook",          EXPECT_HOOK      },
+    { "flag",          EXPECT_FLAG      },
+    { "command",       EXPECT_COMMAND   },
+    { "@goto",         EXPECT_META      },
+    { "'{'",           EXPECT_LBRACE    },
+    { "'}'",           EXPECT_RBRACE    },
+    { "'['",           EXPECT_LBRACKET  },
+    { "']'",           EXPECT_RBRACKET  },
+    { "'('",           EXPECT_LPAREN    },
+    { "')'",           EXPECT_RPAREN    },
+    { "'...'",         EXPECT_ELLIPSIS  },
+    { "'<'",           EXPECT_LESS_THAN },
+    { "interpolation", EXPECT_INTERP    },
+    { "EOF",           EXPECT_EOF       },
 };
 
 #define EXPECT_ENTRY_COUNT (sizeof(expectEntries) / sizeof(expectEntries[0]))
@@ -134,6 +135,7 @@ tokenToExpectation(TokenType type)
     case TOKEN_RIGHT_PAREN: return EXPECT_RPAREN;
 
     case TOKEN_ELLIPSIS: return EXPECT_ELLIPSIS;
+    case TOKEN_LESS_THAN: return EXPECT_LESS_THAN;
 
     case TOKEN_THIS_KEY: /* FALLTHROUGH */
     case TOKEN_INDEX:

@@ -1,0 +1,6 @@
+# @desc: All option keys are already bound
+# @expect-error: All key options are already bound
+
+a "First" %{{first}}
+b "Second" %{{second}}
+<a b> "All taken" %{{error}}
