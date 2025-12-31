@@ -22,10 +22,6 @@ tests/logs/*
 # Dot dirs
 .*/
 
-# Scratch
-*.md
-*.org
-
 # Debugging
 *.diff
 *.log
