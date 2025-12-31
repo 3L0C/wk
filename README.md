@@ -630,18 +630,24 @@ I have used interpolations in the last few examples without
 any explanation. Let's fix that.
 
 ```
-interpolation -> '%(' ( chord_metadata | user_variable ) ')' ;
+interpolation -> '%(' ( chord_metadata | arg_position | user_variable ) ')' ;
 ```
 
 The basic syntax for an interpolation begins with a `%(`
-delimiter followed by either a chord metadata identifier or
-a user variable name, and closing parenthesis (`)`).
+delimiter followed by a chord metadata identifier, argument
+position, or user variable name, and closing parenthesis
+(`)`).
 
-There are two types of interpolations with different scopes:
+There are three types of interpolations with different
+scopes:
 
 **Chord Metadata Interpolations** - Built-in identifiers
 that provide access to metadata about the current chord.
 These are only valid in descriptions and commands.
+
+**Argument Position Interpolations** - Positional references
+to values defined with the `+args` flag. These are only
+valid in descriptions and commands where `+args` is defined.
 
 **User Variable Interpolations** - User-defined variables
 created with the `:var` preprocessor macro. These can be
@@ -696,6 +702,44 @@ This enables powerful meta-programming capabilities such as
 meta-variables (variables with computed names) and dynamic
 configuration values. See [The Var Macro](#the-var-macro)
 for examples.
+
+#### Argument Positions
+
+Argument positions allow accessing values defined with the
+[`+args`](#flags) flag:
+
+```
+arg_position -> '$' [0-9]+ ;
+```
+
+The syntax `%($N)` accesses the Nth argument (0-indexed).
+Arguments are only valid when defined via `+args` on the
+current chord or an enclosing prefix.
+
+| Syntax   | Description                                   |
+|----------|-----------------------------------------------|
+| `%($0)`  | First argument                                |
+| `%($1)`  | Second argument                               |
+| `%($N)`  | Nth argument (0-indexed)                      |
+
+Arguments follow lexical scoping: all descendants within a
+prefix can access that prefix's arguments, not just direct
+children. When a chord defines its own arguments, they
+shadow ancestor arguments at the same index, but other
+indices remain accessible.
+
+```
+p "+Prefix" +args "outer0" "outer1"
+{
+    a "Use outer" +write %{{%($0) %($1)}}
+    n "+Nested" +args "inner0"
+    {
+        b "Mixed" +write %{{%($0) %($1)}}  # inner0 outer1
+    }
+}
+```
+
+Undefined argument positions resolve to an empty string.
 
 ### Keywords
 
@@ -832,7 +876,8 @@ flag -> '+' ( 'keep'
             | 'sync-command'
             | 'unwrap'
             | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
-            | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )? ) ;
+            | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )?
+            | 'args' ( '"' ( '\\"' | [^"] | interpolation )* '"' )+ ) ;
 ```
 
 Flags begin with a plus character (`+`), followed by the
@@ -855,6 +900,7 @@ flag itself. Here is how each flag changes the behavior of
 | `unwrap`       | Prevent wrapping this chord, even if a global wrapper is set or inherited from a parent prefix.                               |
 | `wrap`         | Wrap chord commands with the given string (supports interpolation). Overrides the global `wrap-cmd` setting.                  |
 | `title`        | Set a title for the chord or prefix that is displayed above the menu (supports interpolation). Overrides the global `--title` setting. Can be omitted to set the title to the chord's description |
+| `args`         | Define positional arguments accessible via `%($0)`, `%($1)`, etc. in descriptions and commands. Arguments inherit to all descendants within prefixes. |
 
 Each flag has a time and a place but I find `+keep`, and
 `+write` to be the most useful out of the bunch.
@@ -934,6 +980,47 @@ f "+Foot" +wrap "foot -e"
 5. No wrapper
 
 **Note:** Wrapping does not apply to hooks.
+
+#### Parameterized Chords
+
+The `+args` flag enables parameterized chord definitions,
+reducing repetition when multiple chords share similar
+patterns but differ in specific values. Arguments are
+defined as strings after the flag and accessed via
+`%($0)`, `%($1)`, etc. (0-indexed).
+
+```
+# Define arguments per chord in an array
+[
+    (a "Alice" +args "alice@example.com")
+    (b "Bob" +args "bob@example.com")
+] "Email %($0)" %{{mailto:%($0)}}
+```
+
+Arguments inherit through prefix scopes, allowing all
+descendant chords to access ancestor arguments - not just
+direct children, but grandchildren and beyond:
+
+```
+p "+Prefix" +args "outer0" "outer1"
+{
+    a "Direct child" +write %{{%($0) %($1)}}
+    n "+Nested" +args "inner0"
+    {
+        # $0 is shadowed, but $1 is still from grandparent
+        b "Grandchild" +write %{{%($0) %($1)}}
+    }
+}
+# p a -> outer0 outer1
+# p n b -> inner0 outer1
+```
+
+In chord arrays, `+args` on the template (after the closing
+bracket) provides default arguments that are shadowed by
+any `+args` on individual chord expressions.
+
+See [Argument Positions](#argument-positions) for more
+details on the `%($N)` syntax.
 
 #### Inheritance
 
