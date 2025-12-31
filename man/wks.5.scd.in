@@ -51,7 +51,7 @@ open_delim         -> ( '{{' | '((' | '[[' ) ;
 
 close_delim        -> ( '}}' | '))' | ']]' ) ;
 
-interpolation      -> '%(' ( chord_metadata | user_variable ) ')' ;
+interpolation      -> '%(' ( chord_metadata | arg_position | user_variable ) ')' ;
 
 chord_metadata     -> ( 'key'
                       | 'index'
@@ -62,6 +62,8 @@ chord_metadata     -> ( 'key'
                       | 'desc,'
                       | 'desc,,'
                       | 'wrap_cmd' );
+
+arg_position       -> '$' [0-9]+ ;
 
 user_variable      -> [^)]+ ;
 
@@ -87,7 +89,8 @@ flag               -> '+' ( 'keep'
                           | 'sync-command'
                           | 'unwrap'
                           | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
-                          | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )? ) ;
+                          | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )?
+                          | 'args' ( '"' ( '\\"' | [^"] | interpolation )* '"' )+ ) ;
 
 preprocessor_macro -> ':' ( string_macro
                           | switch_macro
@@ -601,18 +604,22 @@ variables from within a _description_, _command_, or _preprocessor macro
 argument_.
 
 ```
-interpolation -> '%(' ( chord_metadata | user_variable ) ')' ;
+interpolation  -> '%(' ( chord_metadata | arg_position | user_variable ) ')' ;
 ```
 
 The basic syntax for an _interpolation_ begins with a _%(_ delimiter followed by
-either a _chord_metadata_ identifier or a _user_variable_ name, and closing
-parenthesis (_)_).
+a _chord_metadata_ identifier, _arg_position_, or _user_variable_ name, and
+closing parenthesis (_)_).
 
-There are two types of interpolations with different scopes:
+There are three types of interpolations with different scopes:
 
 *Chord Metadata Interpolations*
 	Built-in identifiers providing access to metadata about the current chord.
 	These are only valid in _descriptions_ and _commands_.
+
+*Argument Position Interpolations*
+	Positional references to values defined with the _+args_ flag. These are
+	only valid in _descriptions_ and _commands_ where _+args_ is defined.
 
 *User Variable Interpolations*
 	User-defined variables created with the _:var_ preprocessor macro. These can
@@ -694,6 +701,35 @@ This enables powerful meta-programming capabilities such as meta-variables
 (variables with computed names) and dynamic configuration values. See *VAR
 MACRO* and *EXAMPLES* for demonstrations.
 
+## ARGUMENT POSITION
+
+Argument positions allow accessing values defined with the _+args_ flag:
+
+```
+arg_position -> '$' [0-9]+ ;
+```
+
+The syntax _%($N)_ accesses the Nth argument (0-indexed). Arguments are only
+valid when defined via _+args_ on the current chord or an enclosing prefix.
+
+*$0*
+	First argument
+
+*$1*
+	Second argument
+
+*$N*
+	Nth argument (0-indexed)
+
+Arguments follow lexical scoping: all descendants within a _prefix_ can access
+that prefix's arguments, not just direct children. When a chord defines its own
+arguments, they shadow ancestor arguments at the same index, but other indices
+remain accessible from ancestors.
+
+Undefined argument positions resolve to an empty string.
+
+See *EXAMPLES* for demonstrations of argument positions.
+
 ## KEYWORD
 
 A _keyword_ is an optional instruction to modify the behavior of a _chord_ or
@@ -753,7 +789,8 @@ flag -> '+' ( 'keep'
             | 'sync-command'
             | 'unwrap'
             | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
-            | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )? ) ;
+            | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )?
+            | 'args' ( '"' ( '\\"' | [^"] | interpolation )* '"' )+ ) ;
 ```
 
 Flags begin with a plus character (_+_), followed by the flag itself. Here is
@@ -815,6 +852,22 @@ how each flag changes the behavior of *wk*:
 	the global _--title_ setting. Empty string _""_ clears any inherited or
 	global title. Nested prefixes display their own title when specified.
 	Can ommit the argument to set the title to the chord's description.
+
+*args* ( '"' ( '\\"' | [^"] | interpolation )\* '"' )+
+	Define positional arguments that can be accessed via _%($0)_, _%($1)_, etc.
+	in descriptions and commands. Takes one or more string arguments (same syntax
+	as a description). Arguments are 0-indexed: _%($0)_ is the first argument.
+
+	When given to a _prefix_, all descendant chords can access the arguments -
+	not just direct children, but grandchildren and beyond. When a descendant
+	defines its own _+args_, those values shadow ancestor arguments at the same
+	index, but unspecified indices remain accessible from ancestors.
+
+	In _chord arrays_, _+args_ can be given to the template (after the closing
+	bracket) to provide default arguments. These defaults are shadowed by any
+	_+args_ given to individual _chord expressions_ within the array.
+
+	Undefined argument positions resolve to an empty string.
 
 See *EXAMPLES* for further discussion about flags.
 
@@ -1109,6 +1162,78 @@ m "+Music" +keep
 The _+write_ flag is useful for scripting purposes. In the same way that
 *dmenu*(1) and co print selections to stdout, this turns *wk*(1) into a prompt
 for users to choose from some list of options with less typing.
+
+## ARGS
+
+The _+args_ flag enables parameterized chord definitions, reducing repetition
+when multiple chords share similar patterns.
+
+*BASIC USAGE*
+
+A single chord with multiple arguments:
+
+```
+# Pressing 'a' outputs: Hello World!
+a "Greet" +args "Hello" "World" +write %{{%($0) %($1)!}}
+```
+
+*CHORD ARRAYS WITH PER-CHORD ARGS*
+
+Each chord in an array can have different arguments:
+
+```
+[
+    (a "Alice" +args "alice@example.com")
+    (b "Bob" +args "bob@example.com")
+    (c "Charlie")
+] "Email %($0)" +args "(null)" %{{mailto:%($0)}}
+# 'a' -> mailto:alice@example.com
+# 'b' -> mailto:bob@example.com
+# 'c' -> mailto:(null)
+```
+
+*PREFIX INHERITANCE*
+
+All descendants can access ancestor arguments:
+
+```
+p "+Prefix" +args "outer0" "outer1"
+{
+    a "Use both" +write %{{%($0) %($1)}}
+    n "+Nested" +args "inner0"
+    {
+        b "Mixed" +write %{{%($0) %($1)}}
+    }
+}
+# 'p a' outputs: outer0 outer1
+# 'p n b' outputs: inner0 outer1
+```
+
+*ARGUMENTS WITH INTERPOLATIONS*
+
+Arguments can contain other interpolations:
+
+```
+[abc] "Workspace %(index+1)" +args "ws-%(index)" +write %{{switch %($0)}}
+# 'a' -> switch ws-0
+# 'b' -> switch ws-1
+# 'c' -> switch ws-2
+```
+
+*NESTED SCOPES*
+
+Each scope maintains its own arguments:
+
+```
+o "+Outer" +args "outer-arg"
+{
+    i "+Inner" +args "inner-arg"
+    {
+        a "Access inner" +write %{{%($0)}}  # inner-arg
+    }
+    b "Access outer" +write %{{%($0)}}      # outer-arg
+}
+```
 
 ## META COMMANDS
 
