@@ -1,0 +1,4 @@
+# @desc: Empty option keys
+# @expect-error: Empty key options
+
+<> "Empty" %{{error}}

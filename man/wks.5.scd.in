@@ -29,7 +29,7 @@ explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description ke
 
 chord_expression   -> '(' trigger_key description keyword* ( command | meta_command )? ')' ;
 
-trigger_key        -> modifier* ( normal_key | special_key ) ;
+trigger_key        -> modifier* ( normal_key | special_key | key_options ) ;
 
 normal_key         -> ( '\\' [\\\[\]{}#":^+()] | [^\s\[\]{}#":^+()] ) ;
 
@@ -40,6 +40,8 @@ special_key        -> ( 'Left'    | 'Right'   | 'Up'     | 'Down' | 'BS'
                       | 'Prev'    | 'Next'    | 'F'[1-35] ) \s+ ;
 
 modifier           -> ( 'C' | 'H' | 'M' | 'S' ) '-' ;
+
+key_options        -> '<' ( modifier* ( normal_key | special_key | '...' ) )+ '>' ;
 
 description        -> '"' ( '\\"' | [^"] | interpolation )* '"' ;
 
@@ -172,11 +174,11 @@ triggers a corresponding action or command. In a _wks_ file, it is the written
 representation of the physical key(s) pressed by the user on their keyboard.
 
 ```
-trigger_key -> modifier* ( normal_key | special_key ) ;
+trigger_key -> modifier* ( normal_key | special_key | key_options ) ;
 ```
 
-A _trigger key_ is then zero or more _modifiers_ followed by a _normal key_ or
-a _special key_.
+A _trigger key_ is then zero or more _modifiers_ followed by a _normal key_,
+a _special key_, or a set of _key options_.
 
 ## NORMAL KEY
 
@@ -364,6 +366,43 @@ keypress, but I have yet to find a fitting solution. The ones I can think of
 either involve depending on some utf8 library, writing the code by hand, or
 permitting this syntax for ASCII but not other character sets. Each has its own
 drawback, and I find the current solution to be intuitive in practice.
+
+## KEY OPTIONS
+
+_key options_ allow users to bind a _chord_ to one of many _trigger keys_.
+
+```
+key_options -> '<' ( modifier* ( normal_key | special_key | '...' ) )+ '>' ;
+```
+
+When a _key options_ construct is encountered, the parser selects the *first
+unbound key* from the list. If all keys in the options are already bound in the
+current scope, an error is raised.
+
+This is useful when _key chords_ are generated in some dynamic fashion, or
+pulled from a generic context through an _:include_. By providing multiple key
+options, chords can gracefully resolve to available keys without conflicts.
+
+The ellipsis (_..._) within key options expands to all _implicit array keys_
+(defined by _implicitArrayKeys_ in config). This is useful as a fallback when
+preferred keys may already be taken:
+
+```
+<s i g ...> "Signal" %{{signal}}
+```
+
+In this example, _s_ is tried first, then _i_, then _g_, and finally the
+implicit array keys in order until an unbound key is found.
+
+*NOTE*: Modifiers given before the opening _<_ apply to all keys within the
+options. Modifiers can also be given to individual keys inside the options:
+
+```
+M-<a b>      # Both options get M- modifier
+<a M-b>      # Only 'b' gets M- modifier
+```
+
+See *EXAMPLES* for a full demonstration.
 
 ## DESCRIPTION
 
@@ -1378,6 +1417,63 @@ example" %{{echo "You wouldn't do this right??"}}
 --------------------
 A "silly example" %{{echo "You wouldn't do this right??"}}
 ```
+
+## KEY OPTIONS
+
+A set of _key options_ is most useful when constructing _key chords_
+in a dynamic fashion. Here is an attempt to use the _:include_ macro
+without _key options_:
+
+```
+# File chat.wks
+s "Signal"
+{
+    # some bindings
+}
+
+# File music.wks
+s "Spotify"
+{
+    # some bindings
+}
+
+# File main.wks
+A "Apps"
+{
+    :include "chat.wks"
+    :include "music.wks"
+}
+```
+
+In this example, the second include overrides the first because they both use
+the same _trigger key_ and the last instance always wins out. This can be solved
+with _key options_:
+
+```
+# File chat.wks
+<s i g> "Signal"
+{
+    # some bindings
+}
+
+# File music.wks
+<s p o> "Spotify"
+{
+    # some bindings
+}
+
+# File main.wks
+A "Apps"
+{
+    :include "chat.wks"
+    :include "music.wks"
+}
+```
+
+Now, both paths exist, but their _trigger key_ is not known without full
+context. In the above example, *"Signal"* gets *s* while *"Spotify"* gets *p*.
+*NOTE*: it is recommended that if one _key chord_ uses _key options_ all others
+of the same scope should also use _key options_.
 
 ## THE VAR MACRO
 

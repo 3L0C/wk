@@ -1,0 +1,16 @@
+# @desc: Option keys transpile test
+
+# Basic option resolution
+a "First" %{{first}}
+<a b> "Second" %{{second}}
+
+# Modifier prefix
+M-a "Meta First" %{{meta-first}}
+M-<a b> "Meta Second" %{{meta-second}}
+
+# Implicit keys
+x "Explicit" %{{explicit}}
+<x ...> "Implicit" %{{implicit}}
+
+# Inside explicit array
+[<a c> <a d>] "Array %(index)" %{{array-%(index)}}

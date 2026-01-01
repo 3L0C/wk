@@ -267,11 +267,11 @@ In a `wks` file, it is the written representation of the
 physical key(s) pressed by the user on their keyboard.
 
 ```
-trigger_key -> modifier* ( normal_key | special_key ) ;
+trigger_key -> modifier* ( normal_key | special_key | key_options ) ;
 ```
 
 A trigger key is then zero or more modifiers followed by a
-normal key or a special key.
+normal key, a special key, or a key_option.
 
 #### Normal Keys
 
@@ -1082,6 +1082,55 @@ indices remain unchanged.
 
 To disable sorting, use the `--unsorted` CLI flag or the
 `:unsorted` preprocessor macro.
+
+### Key Options
+
+Key options give users a way to bind one of many keys to a
+key chord.
+
+```
+key_options -> '<' ( modifier* ( normal_key | special_key | '...' ) )+ '>' ;
+```
+
+An example might look something like this:
+
+```
+a "Apps"
+{
+    s "Spotify" %{{spotify}}
+    <s i g> "Signal" %{{signal}}
+}
+```
+
+On its face, this might seem a bit silly, but imagine these
+key chords are generated from some set of files, or inputs
+in a script. Such key chords may be wholly unaware of their
+surrounding context, leading to possible collisions if
+another unaware key chord wants to use the same trigger key.
+With key options, this can be mitigated.
+
+The final key chords shown in the menu are deduped (last
+instance wins), so this does have one edge case to be aware
+of:
+
+```
+a "Apps"
+{
+    s "Spotify" %{{spotify}}
+    <s i g> "Signal" %{{signal}}
+    i "Last" %{{echo "last wins"}}
+}
+```
+
+In this example, `<s i g>` resolves to `i "Signal"`, but it
+ultimately gets shadowed by `i "Last"`. For this reason, it
+is advised that all key chords of the same scope use key
+options.
+
+As for the `'...'` bit, this is equivalent to having listed
+your implicit array keys as available key options. This is
+handy if you know you only have at most N key chords, or you
+want to use them as fallback options (e.g., `<s i g ...>`).
 
 ## Preprocessor Macros
 

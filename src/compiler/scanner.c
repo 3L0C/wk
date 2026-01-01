@@ -8,7 +8,6 @@
 
 /* common includes */
 #include "common/common.h"
-#include "common/key_chord.h"
 
 /* local includes */
 #include "scanner.h"
@@ -902,6 +901,8 @@ scannerTokenForCompiler(Scanner* scanner, Token* token)
         consume(scanner, '.');
         return tokenMake(scanner, token, TOKEN_ELLIPSIS);
     }
+    case '<': return tokenMake(scanner, token, TOKEN_LESS_THAN);
+    case '>': return tokenMake(scanner, token, TOKEN_GREATER_THAN);
 
     /* Hooks, flags, meta commands, and preprocessor commands */
     case '^': scannerMakeCurrent(scanner); return scanHook(scanner, token);
