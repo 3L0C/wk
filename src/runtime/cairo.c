@@ -294,7 +294,7 @@ drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw, int ell
     int      textw;
     int      texth;
     uint32_t truncatedWidth = 0;
-    char     buffer[len + 1];      /* +1 for null byte '\0' */
+    char     buffer[len + 4];      /* +4 for potential "..." suffix */
     memcpy(buffer, text, len + 1); /* +1 to copy null byte '\0' */
 
     pango_layout_set_text(layout, buffer, len);
@@ -332,14 +332,29 @@ drawTruncatedText(PangoLayout* layout, const char* text, uint32_t cellw, int ell
         }
     }
 
-    len = truncatedWidth == cellw ? left : left - 1;
-    if (truncatedWidth != cellw && len)
+    if (truncatedWidth == cellw || left == 0)
     {
-        while (len && !isUtf8StartByte(buffer[len]))
-            len--;
+        len = left;
+    }
+    else
+    {
+        len = left - 1;
     }
 
-    memcpy(buffer + len, "...", 4);
+    while (len && !isUtf8StartByte(buffer[len]))
+    {
+        len--;
+    }
+
+    if (ellipsisWidth > 0)
+    {
+        memcpy(buffer + len, "...", 4);
+    }
+    else
+    {
+        buffer[len] = '\0';
+    }
+
     pango_layout_set_text(layout, buffer, -1);
 }
 
