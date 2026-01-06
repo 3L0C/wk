@@ -7,6 +7,89 @@ The format is based on
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-05
+
+### Added
+
+- **Flag `+args`**: Define positional arguments accessible
+  via interpolations in the form of `%($0)`, `%($1)`, etc.
+  ```
+  # Define arguments per chord in an array
+  [
+      (a "Alice" +args "alice@example.com")
+      (b "Bob" +args "bob@example.com")
+  ] "Email %($0)" %{{mailto:%($0)}}
+  # 'a' -> mailto:alice@example.com
+  # 'b' -> mailto:bob@example.com
+  # 'c' -> mailto:(null)
+
+  p "+Prefix" +args "outer0" "outer1"
+  {
+      a "Direct child" +write %{{%($0) %($1)}}
+      n "+Nested" +args "inner0"
+      {
+          # $0 is shadowed, but $1 is still from grandparent
+          b "Grandchild" +write %{{%($0) %($1)}}
+      }
+  }
+  # p a -> outer0 outer1
+  # p n b -> inner0 outer1
+  ```
+
+- **Key options `<a b c ...>`**: Avoid trigger key
+  collisions via key options `<x y z ...>`.
+  ```
+  # --------------
+  # --- Before ---
+  # --------------
+  # File chat.wks
+  s "Signal" %{{signal}}
+
+  # File music.wks
+  s "Spotify" %{{spotify}}
+
+  # File main.wks
+  A "Apps"
+  {
+      :include "chat.wks"
+      :include "music.wks"
+  }
+
+  # -------------
+  # --- After ---
+  # -------------
+  # File chat.wks
+  <s i g> "Signal" %{{signal}}
+
+  # File music.wks
+  <s p o> "Spotify" %{{spotify}}
+
+  # File main.wks
+  A "Apps"
+  {
+      :include "chat.wks"
+      :include "music.wks"
+  }
+  ```
+
+- **Foreground color `@goto`**: Distinguish `@goto` chords
+  with a specific foreground color via `--fg-goto`, or
+  `:fg-goto`.
+
+### Changed
+
+- **Truncation Warning**: Previously warned users that menu
+  items would be truncated. Now only shown with `--debug` as
+  the menu itself shows it has been truncated.
+
+### Fixed
+
+- Wayland: Menu stays open after pointer events #7
+- Wayland: Missing scale factor for menu width (https://github.com/3L0C/wk/commit/09c3b2b)
+- Preprocessor: User variables not processed in :include argument #6
+- Compiler: Self-referenced %(desc) interpolation causing error (https://github.com/3L0C/wk/commit/334158f)
+- Rendering: Buffer overflow in drawTruncatedText when text couldn't fit (https://github.com/3L0C/wk/commit/d1aae91)
+
 ## [0.2.1] - 2025-12-18
 
 ### Fixed
