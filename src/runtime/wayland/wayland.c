@@ -15,7 +15,6 @@
 /* common includes */
 #include "common/common.h"
 #include "common/debug.h"
-#include "common/key_chord.h"
 #include "common/menu.h"
 
 /* runtime includes */
@@ -435,47 +434,6 @@ grabKeyboard(Wayland* wayland, bool grab)
     }
 }
 
-static MenuStatus
-pollKey(Wayland* wayland, Menu* menu)
-{
-    assert(wayland), assert(menu);
-
-    if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
-    {
-        wayland->input.keyPending = false;
-        return MENU_STATUS_RUNNING;
-    }
-
-    wayland->input.keyPending = false;
-
-    xkb_keysym_t keysym;
-    char         reprBuf[128] = { 0 };
-    size_t       reprLen      = 0;
-
-    Key key = makeKeyFromEvent(wayland, menu, &keysym, reprBuf, sizeof(reprBuf), &reprLen);
-    if (stringIsEmpty(&key.repr))
-    {
-        return MENU_STATUS_RUNNING;
-    }
-
-    /* Ungrab keyboard before processing keypress */
-    grabKeyboard(wayland, false);
-
-    MenuStatus status = menuHandleKeypress(menu, &key);
-
-    keyFree(&key);
-
-    /* Regrab keyboard if menu is still running */
-    if (menuStatusIsRunning(status))
-    {
-        grabKeyboard(wayland, true);
-        /* Clear keyboard leave flag since the release was intentional */
-        wayland->input.keyboardLeft = false;
-    }
-
-    return status;
-}
-
 static bool
 pollPointer(Wayland* wayland)
 {
@@ -522,9 +480,8 @@ pollKeyboardLeft(Wayland* wayland)
 {
     assert(wayland);
 
-    bool result                 = wayland->input.keyboardLeft;
-    wayland->input.keyboardLeft = false;
-    return result;
+    /* NOTE: Only HELD->NONE triggers exit; RELEASED->NONE is expected during commands */
+    return wayland->input.keyboardState == KEYBOARD_NONE;
 }
 
 static void
@@ -674,12 +631,82 @@ recreateWindows(Menu* menu, Wayland* wayland)
 
     setOverlap(wayland, true);
     grabKeyboard(wayland, true);
+
+    /* NOTE: Set HELD to avoid race with pollKeyboardLeft before keyboard.enter arrives */
+    wayland->input.keyboardState = KEYBOARD_HELD;
+
     return true;
 
 fail:
     free(window);
     errorMsg("Wayland window creation failed.");
     return false;
+}
+
+static bool
+moveToFocusedOutput(Wayland* wayland, Menu* menu)
+{
+    assert(wayland), assert(menu);
+
+    destroyWindows(wayland);
+    /* NOTE: NULL output lets compositor choose focused output per protocol */
+    wayland->selectedOutput = NULL;
+
+    if (!recreateWindows(menu, wayland))
+    {
+        return false;
+    }
+
+    return wayland->input.keyboardState == KEYBOARD_HELD;
+}
+
+static MenuStatus
+pollKey(Wayland* wayland, Menu* menu)
+{
+    assert(wayland), assert(menu);
+
+    if (wayland->input.keysym == XKB_KEY_NoSymbol || !wayland->input.keyPending)
+    {
+        wayland->input.keyPending = false;
+        return MENU_STATUS_RUNNING;
+    }
+
+    wayland->input.keyPending = false;
+
+    xkb_keysym_t keysym;
+    char         reprBuf[128] = { 0 };
+    size_t       reprLen      = 0;
+
+    Key key = makeKeyFromEvent(wayland, menu, &keysym, reprBuf, sizeof(reprBuf), &reprLen);
+    if (stringIsEmpty(&key.repr))
+    {
+        return MENU_STATUS_RUNNING;
+    }
+
+    wayland->input.keyboardState = KEYBOARD_RELEASED;
+    grabKeyboard(wayland, false);
+
+    MenuStatus status = menuHandleKeypress(menu, &key);
+
+    keyFree(&key);
+
+    if (menuStatusIsRunning(status))
+    {
+        grabKeyboard(wayland, true);
+
+        if (wayland->input.keyboardState == KEYBOARD_HELD)
+        {
+            return status;
+        }
+
+        if (!moveToFocusedOutput(wayland, menu))
+        {
+            errorMsg("Could not regain keyboard focus");
+            return MENU_STATUS_EXIT_SOFTWARE;
+        }
+    }
+
+    return status;
 }
 
 void

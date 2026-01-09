@@ -119,7 +119,9 @@ keyboardHandleEnter(
     struct wl_surface*  surface,
     struct wl_array*    keys)
 {
-    (void)data, (void)keyboard, (void)serial, (void)surface, (void)keys;
+    (void)keyboard, (void)serial, (void)surface, (void)keys;
+    Input* input         = data;
+    input->keyboardState = KEYBOARD_HELD;
 }
 
 static void
@@ -138,7 +140,12 @@ keyboardHandleLeave(
           .it_value.tv_nsec    = 0
     };
     timerfd_settime(*input->repeatFd, 0, &its, NULL);
-    input->keyboardLeft = true;
+
+    /* NOTE: Only transition HELD->NONE; RELEASED stays RELEASED during commands */
+    if (input->keyboardState == KEYBOARD_HELD)
+    {
+        input->keyboardState = KEYBOARD_NONE;
+    }
 }
 
 static void

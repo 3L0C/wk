@@ -35,6 +35,14 @@ enum
     POINTER_EVENT_AXIS_DISCRETE = (1 << 7),
 };
 
+typedef uint8_t KeyboardState;
+enum
+{
+    KEYBOARD_NONE,     /* Don't have keyboard focus */
+    KEYBOARD_HELD,     /* Have keyboard focus (received keyboard.enter) */
+    KEYBOARD_RELEASED, /* Intentionally released for command execution */
+};
+
 typedef struct
 {
     struct xkb_state*   state;
@@ -123,8 +131,8 @@ typedef struct
         void (*key)(enum wl_keyboard_key_state state, xkb_keysym_t keysym, uint32_t code);
     } notify;
 
-    bool keyPending;
-    bool keyboardLeft;
+    bool          keyPending;
+    KeyboardState keyboardState;
 } Input;
 
 typedef struct
