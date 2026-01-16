@@ -38,8 +38,8 @@ RUN_OBJS  := $(patsubst $(RUNTIME_DIR)/%.c, $(BUILD_DIR)/runtime/%.o, \
 			$(wildcard $(RUNTIME_DIR)/*.c))
 X11_OBJS  := $(patsubst $(X11_DIR)/%.c, $(BUILD_DIR)/runtime/x11/%.o, \
 			$(wildcard $(X11_DIR)/*.c))
-WAY_SRCS  := $(WAY_DIR)/xdg-shell.c $(WAY_DIR)/wlr-layer-shell-unstable-v1.c
-WAY_HDRS  := $(WAY_DIR)/wlr-layer-shell-unstable-v1.h
+WAY_SRCS  := $(WAY_DIR)/xdg-shell.c $(WAY_DIR)/wlr-layer-shell-unstable-v1.c $(WAY_DIR)/fractional-scale-v1.c
+WAY_HDRS  := $(WAY_DIR)/wlr-layer-shell-unstable-v1.h $(WAY_DIR)/fractional-scale-v1.h
 WAY_FILES := $(WAY_SRCS) $(WAY_HDRS)
 WAY_OBJS  := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
 			$(wildcard $(WAY_DIR)/*.c) $(WAY_SRCS))
@@ -218,6 +218,16 @@ $(WAY_DIR)/wlr-layer-shell-unstable-v1.h: $(WAY_DIR)/wlr-layer-shell-unstable-v1
 
 $(WAY_DIR)/wlr-layer-shell-unstable-v1.c: $(WAY_DIR)/wlr-layer-shell-unstable-v1.xml
 	wayland-scanner private-code < $^ > $@
+
+$(WAY_DIR)/fractional-scale-v1.h:
+	wayland-scanner client-header < \
+		"$$($(PKG_CONFIG) --variable=pkgdatadir wayland-protocols)/staging/fractional-scale/fractional-scale-v1.xml" \
+		> $@
+
+$(WAY_DIR)/fractional-scale-v1.c:
+	wayland-scanner private-code < \
+		"$$($(PKG_CONFIG) --variable=pkgdatadir wayland-protocols)/staging/fractional-scale/fractional-scale-v1.xml" \
+		> $@
 
 # Generate .scd files from templates with version and date substitution
 $(MAN_DIR)/%.1.scd: $(MAN_DIR)/%.1.scd.in

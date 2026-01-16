@@ -19,6 +19,7 @@
 #include "common/menu.h"
 
 /* local includes */
+#include "fractional-scale-v1.h"
 #include "registry.h"
 #include "wayland.h"
 #include "wlr-layer-shell-unstable-v1.h"
@@ -687,6 +688,14 @@ registryHandleGlobal(
         wl_list_insert(&wayland->outputs, &output->link);
         wl_output_add_listener(wlOut, &outputListener, output);
     }
+    else if (strcmp(interface, wp_fractional_scale_manager_v1_interface.name) == 0)
+    {
+        wayland->fractionalScaleManager = wl_registry_bind(
+            registry,
+            id,
+            &wp_fractional_scale_manager_v1_interface,
+            1);
+    }
 }
 
 static void
@@ -729,6 +738,7 @@ waylandRegistryDestroy(Wayland* wayland)
 
     if (wayland->shm) wl_shm_destroy(wayland->shm);
     if (wayland->layerShell) zwlr_layer_shell_v1_destroy(wayland->layerShell);
+    if (wayland->fractionalScaleManager) wp_fractional_scale_manager_v1_destroy(wayland->fractionalScaleManager);
     if (wayland->compositor) wl_compositor_destroy(wayland->compositor);
     if (wayland->registry) wl_registry_destroy(wayland->registry);
 

@@ -22,6 +22,7 @@
 #include "runtime/cairo.h"
 
 /* local includes */
+#include "fractional-scale-v1.h"
 #include "registry.h"
 #include "runtime/common.h"
 #include "wayland.h"
@@ -502,14 +503,14 @@ windowUpdateOutput(WaylandWindow* window)
 {
     assert(window);
 
-    int32_t  maxScale     = 1;
-    uint32_t minMaxHeight = 0;
-    uint32_t minMaxWidth  = 0;
+    int32_t  maxIntegerScale = 1;
+    uint32_t minMaxHeight    = 0;
+    uint32_t minMaxWidth     = 0;
 
     SurfaceOutput* surfaceOutput;
     wl_list_for_each(surfaceOutput, &window->surfaceOutputs, link)
     {
-        if (surfaceOutput->output->scale > maxScale) maxScale = surfaceOutput->output->scale;
+        if (surfaceOutput->output->scale > maxIntegerScale) maxIntegerScale = surfaceOutput->output->scale;
         if (minMaxHeight == 0 || surfaceOutput->output->height < minMaxHeight)
         {
             minMaxHeight = surfaceOutput->output->height;
@@ -520,9 +521,27 @@ windowUpdateOutput(WaylandWindow* window)
         }
     }
 
-    if (minMaxHeight != window->maxHeight) window->maxHeight = minMaxHeight;
-    if (minMaxWidth != window->maxWidth) window->maxWidth = minMaxWidth;
-    if (maxScale != window->scale) window->scale = maxScale;
+    /* Always use integer scale for buffer rendering (required by wl_surface.set_buffer_scale).
+     * Use fractional scale only for calculating logical dimensions if available. */
+    window->integerScale = maxIntegerScale;
+
+    double layoutScale = window->scale;
+    if (!window->fractionalScale || window->scale <= 0)
+    {
+        window->scale = (double)maxIntegerScale;
+        layoutScale   = window->scale;
+    }
+
+    /* Store logical dimensions (physical / layoutScale) so layout calculations
+     * work in user-perceived coordinates. */
+    if (layoutScale > 0)
+    {
+        uint32_t logicalHeight = (uint32_t)(minMaxHeight / layoutScale);
+        uint32_t logicalWidth  = (uint32_t)(minMaxWidth / layoutScale);
+
+        if (logicalHeight != window->maxHeight) window->maxHeight = logicalHeight;
+        if (logicalWidth != window->maxWidth) window->maxWidth = logicalWidth;
+    }
 }
 
 static void
@@ -572,6 +591,50 @@ static const struct wl_surface_listener surfaceListener = {
 };
 
 static void
+fractionalScalePreferredScale(
+    void*                          data,
+    struct wp_fractional_scale_v1* fractionalScale,
+    uint32_t                       scale)
+{
+    (void)fractionalScale;
+    WaylandWindow* window = data;
+
+    /* Scale is reported as scale * 120 (e.g., 180 = 1.5x) */
+    window->scale = (double)scale / 120.0;
+
+    uint32_t minMaxHeight = 0;
+    uint32_t minMaxWidth  = 0;
+
+    SurfaceOutput* surfaceOutput;
+    wl_list_for_each(surfaceOutput, &window->surfaceOutputs, link)
+    {
+        if (minMaxHeight == 0 || surfaceOutput->output->height < minMaxHeight)
+        {
+            minMaxHeight = surfaceOutput->output->height;
+        }
+        if (minMaxWidth == 0 || surfaceOutput->output->width < minMaxWidth)
+        {
+            minMaxWidth = surfaceOutput->output->width;
+        }
+    }
+
+    if (window->scale > 0)
+    {
+        uint32_t logicalHeight = (uint32_t)(minMaxHeight / window->scale);
+        uint32_t logicalWidth  = (uint32_t)(minMaxWidth / window->scale);
+
+        if (logicalHeight > 0) window->maxHeight = logicalHeight;
+        if (logicalWidth > 0) window->maxWidth = logicalWidth;
+    }
+
+    window->renderPending = true;
+}
+
+static const struct wp_fractional_scale_v1_listener fractionalScaleListener = {
+    .preferred_scale = fractionalScalePreferredScale,
+};
+
+static void
 setOverlap(Wayland* wayland, bool overlap)
 {
     assert(wayland);
@@ -597,14 +660,30 @@ recreateWindows(Menu* menu, Wayland* wayland)
     /* TODO this should not be necessary, but Sway 1.8.1 does not trigger event
      * surface.enter before we actually need to render the first frame.
      */
-    window->scale     = 1;
-    window->maxWidth  = 640;
-    window->maxHeight = 480;
+    window->scale        = 1.0;
+    window->integerScale = 1;
+    window->maxWidth     = 640;
+    window->maxHeight    = 480;
 
     struct wl_surface* surface = wl_compositor_create_surface(wayland->compositor);
     if (!surface) goto fail;
 
     wl_surface_add_listener(surface, &surfaceListener, window);
+
+    /* Create fractional scale object if manager is available */
+    if (wayland->fractionalScaleManager)
+    {
+        window->fractionalScale = wp_fractional_scale_manager_v1_get_fractional_scale(
+            wayland->fractionalScaleManager,
+            surface);
+        if (window->fractionalScale)
+        {
+            wp_fractional_scale_v1_add_listener(
+                window->fractionalScale,
+                &fractionalScaleListener,
+                window);
+        }
+    }
 
     Output* output = NULL;
     if (wayland->selectedOutput)

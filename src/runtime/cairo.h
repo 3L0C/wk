@@ -29,7 +29,7 @@ typedef struct
     cairo_t*         cr;
     cairo_surface_t* surface;
     CairoPaint*      paint;
-    uint32_t         scale;
+    double           scale;
     uint32_t         width;
     uint32_t         height;
 } Cairo;

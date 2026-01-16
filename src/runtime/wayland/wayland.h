@@ -159,17 +159,18 @@ typedef struct Wayland
         int32_t repeat;
     } fds;
 
-    struct wl_display*          display;
-    struct wl_registry*         registry;
-    struct wl_compositor*       compositor;
-    struct wl_list              outputs;
-    Output*                     selectedOutput;
-    struct wl_seat*             seat;
-    struct zwlr_layer_shell_v1* layerShell;
-    struct wl_shm*              shm;
-    Input                       input;
-    struct wl_list              windows;
-    uint32_t                    formats;
+    struct wl_display*                     display;
+    struct wl_registry*                    registry;
+    struct wl_compositor*                  compositor;
+    struct wl_list                         outputs;
+    Output*                                selectedOutput;
+    struct wl_seat*                        seat;
+    struct zwlr_layer_shell_v1*            layerShell;
+    struct wl_shm*                         shm;
+    struct wp_fractional_scale_manager_v1* fractionalScaleManager;
+    Input                                  input;
+    struct wl_list                         windows;
+    uint32_t                               formats;
 } Wayland;
 
 void waylandFree(Wayland* wayland);

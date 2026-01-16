@@ -26,25 +26,27 @@ typedef struct
 
 typedef struct
 {
-    struct Wayland*               wayland;
-    struct wl_list                surfaceOutputs;
-    struct wl_surface*            surface;
-    struct wl_callback*           framecb;
-    struct zwlr_layer_surface_v1* layerSurface;
-    struct wl_shm*                shm;
-    Buffer                        buffers[2];
-    CairoPaint                    paint;
-    uint32_t                      windowGap;
-    uint32_t                      width;
-    uint32_t                      height;
-    uint32_t                      maxWidth;
-    uint32_t                      maxHeight;
-    int32_t                       scale;
-    uint32_t                      displayed;
-    struct wl_list                link;
-    MenuPosition                  position;
-    uint32_t                      alignAnchor;
-    bool                          renderPending;
+    struct Wayland*                wayland;
+    struct wl_list                 surfaceOutputs;
+    struct wl_surface*             surface;
+    struct wl_callback*            framecb;
+    struct zwlr_layer_surface_v1*  layerSurface;
+    struct wp_fractional_scale_v1* fractionalScale;
+    struct wl_shm*                 shm;
+    Buffer                         buffers[2];
+    CairoPaint                     paint;
+    uint32_t                       windowGap;
+    uint32_t                       width;
+    uint32_t                       height;
+    uint32_t                       maxWidth;
+    uint32_t                       maxHeight;
+    double                         scale;
+    int32_t                        integerScale;
+    uint32_t                       displayed;
+    struct wl_list                 link;
+    MenuPosition                   position;
+    uint32_t                       alignAnchor;
+    bool                           renderPending;
     bool (*render)(Cairo* cairo, Menu* menu);
 } WaylandWindow;
 

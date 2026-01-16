@@ -22,6 +22,7 @@
 
 /* local includes */
 #include "debug.h"
+#include "fractional-scale-v1.h"
 #include "window.h"
 #include "wlr-layer-shell-unstable-v1.h"
 
@@ -131,7 +132,7 @@ createBuffer(
     int32_t        width,
     int32_t        height,
     uint32_t       format,
-    int32_t        scale,
+    double         scale,
     CairoPaint*    paint)
 {
     assert(shm), assert(buffer), assert(paint);
@@ -213,8 +214,11 @@ nextBuffer(WaylandWindow* window)
 
     if (!buffer) return NULL;
 
-    if (window->width * window->scale != buffer->width ||
-        window->height * window->scale != buffer->height)
+    int32_t intScale   = window->integerScale > 0 ? window->integerScale : 1;
+    int32_t physWidth  = window->width * intScale;
+    int32_t physHeight = window->height * intScale;
+
+    if (physWidth != (int32_t)buffer->width || physHeight != (int32_t)buffer->height)
     {
         destroyBuffer(buffer);
     }
@@ -222,16 +226,14 @@ nextBuffer(WaylandWindow* window)
     if (!buffer->buffer && !createBuffer(
                                window->shm,
                                buffer,
-                               window->width * window->scale,
-                               window->height * window->scale,
+                               physWidth,
+                               physHeight,
                                WL_SHM_FORMAT_ARGB8888,
-                               window->scale,
+                               (double)intScale,
                                &window->paint))
     {
         return NULL;
     }
-
-    wl_surface_set_buffer_scale(window->surface, window->scale);
 
     return buffer;
 }
@@ -284,10 +286,11 @@ getThrowawaySurface(WaylandWindow* window)
 {
     assert(window);
 
+    int32_t intScale = window->integerScale > 0 ? window->integerScale : 1;
     return cairo_image_surface_create(
         CAIRO_FORMAT_ARGB32,
-        window->width * window->scale,
-        window->height * window->scale);
+        window->width * intScale,
+        window->height * intScale);
 }
 
 static void
@@ -368,16 +371,20 @@ resizeWindow(WaylandWindow* window, Menu* menu)
 }
 
 static void
-moveResizeWindow(WaylandWindow* window, struct wl_display* display)
+moveResizeWindow(WaylandWindow* window, Buffer* buffer, struct wl_display* display)
 {
-    assert(window);
+    assert(window), assert(buffer);
 
-    int32_t leftMargin = ((window->maxWidth - window->width) / 2) * window->scale;
+    /* Layer shell expects logical (surface-local) coordinates.
+     * Buffer dimensions are physical (logical * scale), so divide by scale.
+     * window->maxWidth and window->windowGap are already logical (set in
+     * windowUpdateOutput), so use them directly. */
+    double  scale         = buffer->cairo.scale > 0 ? buffer->cairo.scale : 1.0;
+    int32_t logicalWidth  = (int32_t)(buffer->width / scale);
+    int32_t logicalHeight = (int32_t)(buffer->height / scale);
+    int32_t leftMargin    = ((int32_t)window->maxWidth - logicalWidth) / 2;
 
-    zwlr_layer_surface_v1_set_size(
-        window->layerSurface,
-        window->width * window->scale,
-        window->height * window->scale);
+    zwlr_layer_surface_v1_set_size(window->layerSurface, logicalWidth, logicalHeight);
     zwlr_layer_surface_v1_set_anchor(window->layerSurface, window->alignAnchor);
     if (window->position == MENU_POS_BOTTOM)
     {
@@ -385,14 +392,14 @@ moveResizeWindow(WaylandWindow* window, struct wl_display* display)
             window->layerSurface,
             0,
             0,
-            window->windowGap * window->scale,
+            window->windowGap,
             leftMargin);
     }
     else
     {
         zwlr_layer_surface_v1_set_margin(
             window->layerSurface,
-            window->windowGap * window->scale,
+            window->windowGap,
             0,
             0,
             leftMargin);
@@ -422,8 +429,10 @@ windowRender(WaylandWindow* window, struct wl_display* display, Menu* menu)
     window->render(&buffer->cairo, menu);
     cairo_surface_flush(buffer->cairo.surface);
 
-    moveResizeWindow(window, display);
+    moveResizeWindow(window, buffer, display);
 
+    int32_t bufferScale = window->integerScale > 0 ? window->integerScale : 1;
+    wl_surface_set_buffer_scale(window->surface, bufferScale);
     wl_surface_damage_buffer(window->surface, 0, 0, buffer->width, buffer->height);
     wl_surface_attach(window->surface, buffer->buffer, 0, 0);
     wl_surface_commit(window->surface);
@@ -446,6 +455,7 @@ windowDestroy(WaylandWindow* window)
         destroyBuffer(&window->buffers[i]);
     }
 
+    if (window->fractionalScale) wp_fractional_scale_v1_destroy(window->fractionalScale);
     if (window->layerSurface) zwlr_layer_surface_v1_destroy(window->layerSurface);
     if (window->surface) wl_surface_destroy(window->surface);
 }
