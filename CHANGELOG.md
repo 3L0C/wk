@@ -7,6 +7,14 @@ The format is based on
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-01-16
+
+### Fixed
+
+- Wayland: support fractional scaling
+- Wayland: menu now moves to focused monitor on keypress
+
+
 ## [0.3.0] - 2026-01-05
 
 ### Added
@@ -84,9 +92,9 @@ and this project adheres to
 
 ### Fixed
 
-- Wayland: Menu stays open after pointer events #7
+- Wayland: Menu stays open after pointer events [#7](https://github.com/3L0C/wk/issues/7)
 - Wayland: Missing scale factor for menu width (https://github.com/3L0C/wk/commit/09c3b2b)
-- Preprocessor: User variables not processed in :include argument #6
+- Preprocessor: User variables not processed in :include argument [#6](https://github.com/3L0C/wk/issues/6)
 - Compiler: Self-referenced %(desc) interpolation causing error (https://github.com/3L0C/wk/commit/334158f)
 - Rendering: Buffer overflow in drawTruncatedText when text couldn't fit (https://github.com/3L0C/wk/commit/d1aae91)
 
@@ -215,6 +223,7 @@ an improved configuration system, and several new features. See
 
 Initial documented release.
 
+[0.3.1]: https://github.com/3L0C/wk/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/3L0C/wk/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/3L0C/wk/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/3L0C/wk/compare/v0.1.3...v0.2.0
