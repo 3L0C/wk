@@ -1,0 +1,34 @@
+# wk theme: Ayu Light
+# Source: https://github.com/dempfi/ayu
+# Doom port: LoveSponge <https://github.com/LoveSponge>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#fafafa" # Default Background
+:var "base01" "#fafafa" # Lighter Background (status bars)
+:var "base02" "#575f66" # Selection Background
+:var "base03" "#abb0b6" # Comments, Invisibles, Line Highlighting
+:var "base04" "#abb0b6" # Dark Foreground (status bars)
+:var "base05" "#575f66" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#ba9199" # Light Foreground
+:var "base07" "#ba9199" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#f07171" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#fa8d3e" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#f2ae49" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#86b300" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#55b4d4" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#399ee6" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#a37acc" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#4cbf99" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

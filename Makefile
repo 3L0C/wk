@@ -1,11 +1,9 @@
 # Package info
 NAME    := wk
 VERSION := $(shell cat VERSION)
-DATE    := $(shell date '+%Y-%m-%d')
 
 # Tools
 PKG_CONFIG ?= pkg-config
-SCDOC      := $(shell command -v scdoc 2>/dev/null)
 
 # Install locations
 PREFIX        := /usr/local
@@ -16,7 +14,8 @@ ZSH_COMP_DIR  := $(PREFIX)/share/zsh/site-functions
 # Project directories
 BUILD_DIR    := ./build
 CONF_DIR     := ./config
-MAN_DIR      := ./man
+DOCS_DIR     := ./docs
+DOCS_BUILD   := $(DOCS_DIR)/_build
 SOURCE_DIR   := ./src
 COMMON_DIR   := $(SOURCE_DIR)/common
 RUNTIME_DIR  := $(SOURCE_DIR)/runtime
@@ -43,7 +42,9 @@ WAY_HDRS  := $(WAY_DIR)/wlr-layer-shell-unstable-v1.h $(WAY_DIR)/fractional-scal
 WAY_FILES := $(WAY_SRCS) $(WAY_HDRS)
 WAY_OBJS  := $(patsubst $(WAY_DIR)/%.c, $(BUILD_DIR)/runtime/wayland/%.o, \
 			$(wildcard $(WAY_DIR)/*.c) $(WAY_SRCS))
-MAN_FILES := $(MAN_DIR)/wk.1 $(MAN_DIR)/wks.5
+MAN_DIR      := ./man
+MAN_BUILD    := $(DOCS_BUILD)/man
+MAN_FILES    := $(MAN_DIR)/wk.1 $(MAN_DIR)/wks.5
 
 # Flags
 EXTRA_CFLAGS ?=
@@ -229,29 +230,26 @@ $(WAY_DIR)/fractional-scale-v1.c:
 		"$$($(PKG_CONFIG) --variable=pkgdatadir wayland-protocols)/staging/fractional-scale/fractional-scale-v1.xml" \
 		> $@
 
-# Generate .scd files from templates with version and date substitution
-$(MAN_DIR)/%.1.scd: $(MAN_DIR)/%.1.scd.in
-	sed -e 's:@VERSION@:$(VERSION):g' -e 's:@DATE@:$(DATE):g' < $< > $@
+docs: docs-html docs-man
 
-$(MAN_DIR)/%.5.scd: $(MAN_DIR)/%.5.scd.in
-	sed -e 's:@VERSION@:$(VERSION):g' -e 's:@DATE@:$(DATE):g' < $< > $@
+docs-html:
+	sphinx-build -b html $(DOCS_DIR) $(DOCS_BUILD)/html
 
-# Manfile generation from scdoc (only if scdoc is available)
-ifdef SCDOC
-$(MAN_DIR)/%.1: $(MAN_DIR)/%.1.scd
-	scdoc < $< > $@
+docs-man:
+	sphinx-build -b man $(DOCS_DIR) $(DOCS_BUILD)/man
 
-$(MAN_DIR)/%.5: $(MAN_DIR)/%.5.scd
-	scdoc < $< > $@
-else
-$(info Note: scdoc not found, man pages will not be built)
-endif
+docs-serve: docs-html
+	python3 -m http.server -d $(DOCS_BUILD)/html 8000
+
+docs-linkcheck:
+	sphinx-build -b linkcheck $(DOCS_DIR) $(DOCS_BUILD)/linkcheck
+
+docs-clean:
+	rm -rf $(DOCS_BUILD)
 
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(NAME)
-	rm -f $(MAN_DIR)/*.scd
-	rm -f $(MAN_FILES)
 	rm -f $(WAY_FILES)
 	rm -f $(CONF_DIR)/config.h
 
@@ -279,12 +277,9 @@ install: $(BUILD_DIR)/$(NAME)
 	install -Dm644 completions/wk.bash $(DESTDIR)$(BASH_COMP_DIR)/wk
 	install -Dm644 completions/_wk $(DESTDIR)$(ZSH_COMP_DIR)/_wk
 
-ifdef SCDOC
-man: $(MAN_FILES)
-else
-man:
-	@echo "scdoc not found, cannot build man pages"
-endif
+man: docs-man
+	cp -f $(MAN_BUILD)/wk.1 $(MAN_DIR)/wk.1
+	cp -f $(MAN_BUILD)/wks.5 $(MAN_DIR)/wks.5
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)

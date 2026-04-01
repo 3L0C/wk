@@ -1,0 +1,34 @@
+# wk theme: Opera Light
+# Source: original
+# Doom port: jwintz <https://github.com/jwintz>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#fafafa" # Default Background
+:var "base01" "#eeeeee" # Lighter Background (status bars)
+:var "base02" "#e0e0e0" # Selection Background
+:var "base03" "#bdbdbd" # Comments, Invisibles, Line Highlighting
+:var "base04" "#9e9e9e" # Dark Foreground (status bars)
+:var "base05" "#2a2a2a" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#454545" # Light Foreground
+:var "base07" "#424242" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#99324b" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#ac4426" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#9a7500" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#4f894c" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#398eac" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#3b6ea8" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#97365b" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#842879" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

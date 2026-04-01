@@ -1,0 +1,34 @@
+# wk theme: Laserwave
+# Source: https://github.com/Jaredk3nt/laserwave
+# Doom port: hyakt <https://github.com/hyakt>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#27212E" # Default Background
+:var "base01" "#1B1720" # Lighter Background (status bars)
+:var "base02" "#3E3549" # Selection Background
+:var "base03" "#4E415C" # Comments, Invisibles, Line Highlighting
+:var "base04" "#544863" # Dark Foreground (status bars)
+:var "base05" "#FFFFFF" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#EEEEEE" # Light Foreground
+:var "base07" "#ECEFF4" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#964C7B" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#FFB85B" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#FFE261" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#74DFC4" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#B4DCE7" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#40B4C4" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#EB64B9" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#B381C5" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

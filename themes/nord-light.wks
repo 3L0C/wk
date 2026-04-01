@@ -1,0 +1,34 @@
+# wk theme: Nord Light
+# Source: https://github.com/arcticicestudio/nord
+# Doom port: fuxialexander <https://github.com/fuxialexander>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#E5E9F0" # Default Background
+:var "base01" "#D8DEE9" # Lighter Background (status bars)
+:var "base02" "#C2D0E7" # Selection Background
+:var "base03" "#B8C5DB" # Comments, Invisibles, Line Highlighting
+:var "base04" "#AEBACF" # Dark Foreground (status bars)
+:var "base05" "#3B4252" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#2E3440" # Light Foreground
+:var "base07" "#485163" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#99324B" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#AC4426" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#9A7500" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#4F894C" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#398EAC" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#3B6EA8" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#97365B" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#842879" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

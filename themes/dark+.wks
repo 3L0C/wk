@@ -1,0 +1,33 @@
+# wk theme: Dark+
+# Doom port: ema2159 <https://github.com/ema2159>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#1e1e1e" # Default Background
+:var "base01" "#252526" # Lighter Background (status bars)
+:var "base02" "#313131" # Selection Background
+:var "base03" "#4b474c" # Comments, Invisibles, Line Highlighting
+:var "base04" "#37474F" # Dark Foreground (status bars)
+:var "base05" "#d4d4d4" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#AEAFAD" # Light Foreground
+:var "base07" "#f4f4f4" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#D16969" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#DB8E73" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#D7BA7D" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#579C4C" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#85DDFF" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#339CDB" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#C586C0" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#BB80B3" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .wk { fill: #181616; }
+    @media (prefers-color-scheme: dark) {
+      .wk { fill: #DCD7BA; }
+    }
+  </style>
+  <text x="32" y="48" font-family="'JetBrains Mono', 'Fira Code', 'Consolas', monospace"
+        font-size="56" font-weight="700" class="wk"
+        text-anchor="middle" letter-spacing="-4">wk</text>
+</svg>

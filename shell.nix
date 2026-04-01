@@ -16,7 +16,19 @@ pkgs.mkShell {
 
   inputsFrom = [ wk-package ];
 
-  nativeBuildInputs = builtins.attrValues {
+  nativeBuildInputs = [
+    (pkgs.python3.withPackages (ps: [
+      ps.sphinx
+      ps.myst-parser
+      ps.furo
+      ps.sphinx-copybutton
+      ps.sphinx-prompt
+      ps.sphinx-autobuild
+      ps.sphinx-design
+      ps.sphinx-inline-tabs
+    ]))
+  ]
+  ++ builtins.attrValues {
     inherit (pkgs)
       # Development tools
       clang-tools
@@ -25,7 +37,6 @@ pkgs.mkShell {
       # Build tools
       pkg-config
       wayland-scanner
-      scdoc
       # Version control
       git
       pre-commit
@@ -47,6 +58,11 @@ pkgs.mkShell {
     echo "  make test     - Run test suite"
     echo "  make man      - Build man pages"
     echo "  make clean    - Clean build artifacts"
+    echo ""
+    echo "Documentation:"
+    echo "  make docs-html  - Build HTML docs"
+    echo "  make docs-man   - Build man pages from docs"
+    echo "  make docs-serve - Serve docs at localhost:8000"
     echo ""
     echo "Code quality:"
     echo "  pre-commit run --all-files  - Run all pre-commit hooks"

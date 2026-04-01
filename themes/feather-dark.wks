@@ -1,0 +1,35 @@
+# wk theme: Feather Dark
+# Source: https://github.com/Plunne/doom-feather-theme
+# Doom port: Lena SAVY-LARIGALDIE <https://gitlab.com/Plunne>
+# Maintainer: Lena SAVY-LARIGALDIE <https://gitlab.com/Plunne>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#251D2F" # Default Background
+:var "base01" "#1A1521" # Lighter Background (status bars)
+:var "base02" "#1E1826" # Selection Background
+:var "base03" "#342942" # Comments, Invisibles, Line Highlighting
+:var "base04" "#503F65" # Dark Foreground (status bars)
+:var "base05" "#c4b8d3" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#503F65" # Light Foreground
+:var "base07" "#D3CADE" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#ff6c6b" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#da8548" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#ECBE7B" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#98be65" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#7dcfff" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#51afef" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#7A619A" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#9783b1" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

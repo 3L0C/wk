@@ -1,0 +1,34 @@
+# wk theme: Ephemeral
+# Source: https://github.com/elenapan/dotfiles
+# Doom port: karetsu <https://github.com/karetsu>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#323f4e" # Default Background
+:var "base01" "#28323e" # Lighter Background (status bars)
+:var "base02" "#2a3542" # Selection Background
+:var "base03" "#323f4e" # Comments, Invisibles, Line Highlighting
+:var "base04" "#364455" # Dark Foreground (status bars)
+:var "base05" "#f8f8f2" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#fdfdfd" # Light Foreground
+:var "base07" "#ebedef" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#f48fb1" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#f2a272" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#f1fa8c" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#53e2ae" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#79e6f3" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#92b6f4" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#BD99FF" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#8897f4" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

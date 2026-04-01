@@ -1,0 +1,34 @@
+# wk theme: Badger
+# Source: https://github.com/ccann/badger-theme/
+# Doom port: jsoa <https://github.com/jsoa>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#171717" # Default Background
+:var "base01" "#2f2f2f" # Lighter Background (status bars)
+:var "base02" "#23272e" # Selection Background
+:var "base03" "#433F4f" # Comments, Invisibles, Line Highlighting
+:var "base04" "#635770" # Dark Foreground (status bars)
+:var "base05" "#F6F3E8" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#FBF9F3" # Light Foreground
+:var "base07" "#DFDFDF" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#E2434C" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#EA9847" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#E0D063" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#86B187" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#46D9FF" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#8AC6F2" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#E18Cbb" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#BF93C3" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

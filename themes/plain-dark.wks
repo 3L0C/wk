@@ -1,0 +1,34 @@
+# wk theme: Plain Dark
+# Source: https://github.com/gko/plain/
+# Doom port: das-s <https://github.com/das-s>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#222222" # Default Background
+:var "base01" "#838083" # Lighter Background (status bars)
+:var "base02" "#444444" # Selection Background
+:var "base03" "#202020" # Comments, Invisibles, Line Highlighting
+:var "base04" "#545053" # Dark Foreground (status bars)
+:var "base05" "#d7d5d1" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#e7e5e3" # Light Foreground
+:var "base07" "#050505" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#d7d5d1" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#d7d5d1" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#d7d5d1" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#d7d5d1" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#d7d5d1" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#d7d5d1" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#d7d5d1" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#d7d5d1" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

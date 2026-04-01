@@ -1,0 +1,34 @@
+# wk theme: Xcode
+# Source: Xcode.app
+# Doom port: kadenbarlow <https://github.com/kadenbarlow>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#292A30" # Default Background
+:var "base01" "#252629" # Lighter Background (status bars)
+:var "base02" "#292b2b" # Selection Background
+:var "base03" "#3f4040" # Comments, Invisibles, Line Highlighting
+:var "base04" "#5c5e5e" # Dark Foreground (status bars)
+:var "base05" "#FFFFFF" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#FC6A5D" # Light Foreground
+:var "base07" "#ffffff" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#FC6A5D" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#FD8F3F" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#D0BF68" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#67B7A4" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#8abeb7" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#5DD8FF" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#D0A8FF" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#A167E6" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

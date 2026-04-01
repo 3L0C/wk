@@ -1,0 +1,34 @@
+# wk theme: Spacegrey
+# Source: http://kkga.github.io/spacegray/
+# Doom port: teesloane <https://github.com/teesloane>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#2b303b" # Default Background
+:var "base01" "#232830" # Lighter Background (status bars)
+:var "base02" "#2F3237" # Selection Background
+:var "base03" "#4f5b66" # Comments, Invisibles, Line Highlighting
+:var "base04" "#65737E" # Dark Foreground (status bars)
+:var "base05" "#c0c5ce" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#c0c5ce" # Light Foreground
+:var "base07" "#DFDFDF" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#BF616A" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#D08770" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#ECBE7B" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#A3BE8C" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#46D9FF" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#8FA1B3" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#c678dd" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#b48ead" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

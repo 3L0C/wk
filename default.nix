@@ -2,7 +2,6 @@
   lib,
   stdenv,
   pkg-config,
-  scdoc,
   installShellFiles,
   cairo,
   libxkbcommon,
@@ -105,7 +104,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     pkg-config
-    scdoc
     installShellFiles
   ]
   ++ optionals backends.hasWayland [
@@ -157,7 +155,6 @@ stdenv.mkDerivation (finalAttrs: {
   buildPhase = ''
     runHook preBuild
     make ${wks.makeTarget}
-    make man
     runHook postBuild
   '';
 

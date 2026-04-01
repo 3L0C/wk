@@ -1,0 +1,34 @@
+# wk theme: Peacock
+# Source: https://github.com/daylerees/colour-schemes/blob/master/emacs/peacock-theme.el
+# Doom port: teesloane <https://github.com/teesloane>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#2b2a27" # Default Background
+:var "base01" "#1F1E1D" # Lighter Background (status bars)
+:var "base02" "#23272e" # Selection Background
+:var "base03" "#3f444a" # Comments, Invisibles, Line Highlighting
+:var "base04" "#5B6268" # Dark Foreground (status bars)
+:var "base05" "#ede0ce" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#5B6268" # Light Foreground
+:var "base07" "#DFDFDF" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#ff5d38" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#cb4b16" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#bcd42a" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#98be65" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#46D9FF" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#51afef" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#c678dd" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#a9a1e1" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

@@ -1,0 +1,80 @@
+/* Anchor/target highlight */
+body[data-theme="dark"] { --color-highlight-on-target: #22324966; }   /* abyss wave-blue-1, semi-transparent */
+body[data-theme="light"] { --color-highlight-on-target: #d5cea366; }  /* lotus bg-alt, semi-transparent */
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) { --color-highlight-on-target: #22324966; }
+}
+@media (prefers-color-scheme: light) {
+  body:not([data-theme="dark"]) { --color-highlight-on-target: #d5cea366; }
+}
+
+/* Emphasized line highlighting */
+body[data-theme="dark"] .highlight .hll { background-color: #223249; }   /* abyss wave-blue-1 */
+body[data-theme="light"] .highlight .hll { background-color: #d5cea3; }  /* lotus bg-alt */
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) .highlight .hll { background-color: #223249; }
+}
+@media (prefers-color-scheme: light) {
+  body:not([data-theme="dark"]) .highlight .hll { background-color: #d5cea3; }
+}
+
+/* wks syntax highlighting — Kanagawa Abyss (dark) */
+body[data-theme="dark"] .highlight .c1 { color: #727169; font-style: italic; }  /* comments */
+body[data-theme="dark"] .highlight .s2 { color: #98BB6C; font-style: italic; }  /* strings */
+body[data-theme="dark"] .highlight .sb { color: #7FB4CA; }                       /* commands %{{}} */
+body[data-theme="dark"] .highlight .si { color: #FFA066; }                       /* interpolations %(key) */
+body[data-theme="dark"] .highlight .se { color: #FFA066; }                       /* string escapes */
+body[data-theme="dark"] .highlight .nb { color: #E6C384; }                       /* flags +keep */
+body[data-theme="dark"] .highlight .o  { color: #E6C384; }                       /* operators +/^/@ */
+body[data-theme="dark"] .highlight .kp { color: #C0A36E; }                       /* preprocessor :var */
+body[data-theme="dark"] .highlight .nd { color: #957FB8; }                       /* hooks ^before */
+body[data-theme="dark"] .highlight .no { color: #9CABCA; }                       /* special keys SPC */
+body[data-theme="dark"] .highlight .nl { color: #7AA89F; }                       /* modifiers C- M- */
+body[data-theme="dark"] .highlight .p  { color: #7FB4CA; }                       /* punctuation {}[] */
+
+/* wks syntax highlighting — Kanagawa Lotus (light) */
+body[data-theme="light"] .highlight .c1 { color: #8a8980; font-style: italic; } /* comments */
+body[data-theme="light"] .highlight .s2 { color: #6f894e; font-style: italic; } /* strings */
+body[data-theme="light"] .highlight .sb { color: #6693bf; }                      /* commands %{{}} */
+body[data-theme="light"] .highlight .si { color: #cc6d00; }                      /* interpolations %(key) */
+body[data-theme="light"] .highlight .se { color: #cc6d00; }                      /* string escapes */
+body[data-theme="light"] .highlight .nb { color: #77713f; }                      /* flags +keep */
+body[data-theme="light"] .highlight .o  { color: #836f4a; }                      /* operators +/^/@ */
+body[data-theme="light"] .highlight .kp { color: #c84053; }                      /* preprocessor :var */
+body[data-theme="light"] .highlight .nd { color: #624c83; }                      /* hooks ^before */
+body[data-theme="light"] .highlight .no { color: #cc6d00; }                      /* special keys SPC */
+body[data-theme="light"] .highlight .nl { color: #597b75; }                      /* modifiers C- M- */
+body[data-theme="light"] .highlight .p  { color: #6693bf; }                      /* punctuation {}[] */
+
+/* Auto mode — follows system preference */
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) .highlight .c1 { color: #727169; font-style: italic; }
+  body:not([data-theme="light"]) .highlight .s2 { color: #98BB6C; font-style: italic; }
+  body:not([data-theme="light"]) .highlight .sb { color: #7FB4CA; }
+  body:not([data-theme="light"]) .highlight .si { color: #FFA066; }
+  body:not([data-theme="light"]) .highlight .se { color: #FFA066; }
+  body:not([data-theme="light"]) .highlight .nb { color: #E6C384; }
+  body:not([data-theme="light"]) .highlight .o  { color: #E6C384; }
+  body:not([data-theme="light"]) .highlight .kp { color: #C0A36E; }
+  body:not([data-theme="light"]) .highlight .nd { color: #957FB8; }
+  body:not([data-theme="light"]) .highlight .no { color: #9CABCA; }
+  body:not([data-theme="light"]) .highlight .nl { color: #7AA89F; }
+  body:not([data-theme="light"]) .highlight .p  { color: #7FB4CA; }
+}
+
+@media (prefers-color-scheme: light) {
+  body:not([data-theme="dark"]) .highlight .c1 { color: #8a8980; font-style: italic; }
+  body:not([data-theme="dark"]) .highlight .s2 { color: #6f894e; font-style: italic; }
+  body:not([data-theme="dark"]) .highlight .sb { color: #6693bf; }
+  body:not([data-theme="dark"]) .highlight .si { color: #cc6d00; }
+  body:not([data-theme="dark"]) .highlight .se { color: #cc6d00; }
+  body:not([data-theme="dark"]) .highlight .nb { color: #77713f; }
+  body:not([data-theme="dark"]) .highlight .o  { color: #836f4a; }
+  body:not([data-theme="dark"]) .highlight .kp { color: #c84053; }
+  body:not([data-theme="dark"]) .highlight .nd { color: #624c83; }
+  body:not([data-theme="dark"]) .highlight .no { color: #cc6d00; }
+  body:not([data-theme="dark"]) .highlight .nl { color: #597b75; }
+  body:not([data-theme="dark"]) .highlight .p  { color: #6693bf; }
+}

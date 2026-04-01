@@ -1,0 +1,34 @@
+# wk theme: Monokai Classic
+# Source: https://monokai.pro
+# Doom port: ema2159 <https://github.com/ema2159>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#272822" # Default Background
+:var "base01" "#1D1E19" # Lighter Background (status bars)
+:var "base02" "#2D2E2E" # Selection Background
+:var "base03" "#4E4E4E" # Comments, Invisibles, Line Highlighting
+:var "base04" "#555556" # Dark Foreground (status bars)
+:var "base05" "#F8F8F2" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#556172" # Light Foreground
+:var "base07" "#FFFFFF" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#E74C3C" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#FD971F" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#E6DB74" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#A6E22E" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#66D9EF" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#268bd2" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#F92660" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#9C91E4" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

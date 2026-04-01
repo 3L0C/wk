@@ -1,0 +1,181 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "WK" "1" "Jan 01, 1980" "0.3.1" "wk"
+.SH NAME
+wk \- Which-Key via X11 and Wayland
+.sp
+wk is a popup menu for your custom keyboard shortcuts.
+Inspired by
+\X'tty: link https://github.com/justbur/emacs-which-key'\fI\%emacs\-which\-key\fP\X'tty: link',
+\X'tty: link https://tools.suckless.org/dmenu/'\fI\%dmenu\fP\X'tty: link', and
+\X'tty: link https://github.com/Cloudef/bemenu'\fI\%bemenu\fP\X'tty: link'\&.
+.SH SYNOPSIS
+.sp
+\fBwk\fP [options]
+.SH DESCRIPTION
+.sp
+\fBwk\fP provides visual feedback when executing user defined key chords via a popup
+menu. The key chords may be precompiled into \fBwk\fP for users who maintain their
+own copy of \fBwk\fP\&. For users looking for a more dynamic experience, \fBwk\fP can read
+key chords from a \fI\%wks\fP file or script.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+\fB\-h, \-\-help\fP
+Display help message and exit.
+.TP
+\fB\-v, \-\-version\fP
+Display version number and exit.
+.TP
+\fB\-d, \-\-debug\fP
+Print debug information during execution.
+.TP
+\fB\-D, \-\-delay\fP \fIINT\fP
+Delay the popup menu by \fIINT\fP milliseconds from startup or last keypress
+(default 1000 ms).
+.TP
+\fB\-\-keep\-delay\fP \fIINT\fP
+Delay in milliseconds after keyboard ungrab before command execution for
++keep chords. Helps prevent focus\-stealing issues with compositor commands
+(default 75 ms).
+.TP
+\fB\-t, \-\-top\fP
+Position menu at top of screen.
+.TP
+\fB\-b, \-\-bottom\fP
+Position menu at bottom of screen.
+.TP
+\fB\-s, \-\-script\fP
+Read \fBwks\fP script from stdin to use as key chords.
+.TP
+\fB\-U, \-\-unsorted\fP
+Disable sorting of key chords (sorted by default).
+.TP
+\fB\-m, \-\-max\-columns\fP \fIINT\fP
+Set the maximum menu columns to \fIINT\fP (default 5).
+.TP
+\fB\-p, \-\-press\fP \fIKEY(s)\fP
+Press \fIKEY(s)\fP before dispalying menu. See \fI\%Trigger Key\fP
+in the \fBwks\fP man page for more info.
+.TP
+\fB\-T, \-\-transpile\fP \fIFILE\fP
+Transpile \fIFILE\fP to valid \(aqkey_chords.h\(aq syntax and print to stdout.
+.TP
+\fB\-k, \-\-key\-chords\fP \fIFILE\fP
+Use \fIFILE\fP for key chords rather than those precompiled.
+.TP
+\fB\-w, \-\-menu\-width\fP \fIINT\fP
+Set menu width to \fIINT\fP\&. Set to \(aq\-1\(aq for a width equal to 1/2 of the
+screen width (default \-1).
+.TP
+\fB\-g, \-\-menu\-gap\fP \fIINT\fP
+Set menu gap between top/bottom of screen to \fIINT\fP\&. Set to \(aq\-1\(aq for a gap
+equal to 1/10th of the screen height (default \-1).
+.TP
+\fB\-\-wrap\-cmd\fP \fISTRING\fP
+Wrap all chord commands by executing them as \fI/bin/sh \-c \(dqSTRING CMD\(dq\fP
+where CMD is the original command. This does not apply to hooks (default \(dq\(dq).
+.TP
+\fB\-\-border\-width\fP \fIINT\fP
+Set border width to \fIINT\fP (default 4).
+.TP
+\fB\-\-border\-radius\fP \fINUM\fP
+Set border radius to \fINUM\fP degrees. 0 means no curve (default 0).
+.TP
+\fB\-\-wpadding\fP \fIINT\fP
+Set left and right padding around hint text to \fIINT\fP (default 6).
+.TP
+\fB\-\-hpadding\fP \fIINT\fP
+Set up and down padding around hint text to \fIINT\fP\&. (default 2)
+.TP
+\fB\-\-table\-padding\fP \fIINT\fP
+Set additional padding between the outermost cells and the border to
+\fIINT\fP\&. \-1 = same as cell padding, 0 = no additional padding (default \-1).
+.TP
+\fB\-\-fg\fP \fICOLOR\fP
+Set all menu foreground text to \fICOLOR\fP where color is some hex string
+i.e. \(aq#F1CD39\(aq (default unset).
+.TP
+\fB\-\-fg\-key\fP \fICOLOR\fP
+Set foreground key to COLOR (default \(aq#DCD7BA\(aq).
+.TP
+\fB\-\-fg\-delimiter\fP \fICOLOR\fP
+Set foreground delimiter to COLOR (default \(aq#525259\(aq).
+.TP
+\fB\-\-fg\-prefix\fP \fICOLOR\fP
+Set foreground prefix to COLOR (default \(aq#AF9FC9\(aq).
+.TP
+\fB\-\-fg\-chord\fP \fICOLOR\fP
+Set foreground chord to COLOR (default \(aq#DCD7BA\(aq).
+.TP
+\fB\-\-fg\-title\fP \fICOLOR\fP
+Set foreground title to COLOR (default \(aq#DCD7BA\(aq).
+.TP
+\fB\-\-fg\-goto\fP \fICOLOR\fP
+Set foreground goto to COLOR (default \(aq#E6C384\(aq).
+.TP
+\fB\-\-title\fP \fISTRING\fP
+Set global title displayed above menu to STRING.
+.TP
+\fB\-\-title\-font\fP \fISTRING\fP
+Set title font to STRING. Should be a valid Pango font description
+(default \(aqsans\-serif, 16\(aq).
+.TP
+\fB\-\-bg\fP \fICOLOR\fP
+Set background to COLOR (default \(aq#181616\(aq).
+.TP
+\fB\-\-bd\fP \fICOLOR\fP
+Set border to COLOR (default \(aq#7FB4CA\(aq).
+.TP
+\fB\-\-shell\fP \fISTRING\fP
+Set shell to STRING (default \(aq/bin/sh\(aq).
+.TP
+\fB\-\-font\fP \fISTRING\fP
+Set font to STRING. Should be a valid Pango font description
+(default \(aqmonospace, 14\(aq).
+.TP
+\fB\-\-implicit\-keys\fP \fISTRING\fP
+Set implicit keys to STRING (default \(aqasdfghjkl;\(aq).
+.UNINDENT
+.SH BUG REPORTS
+.sp
+If you find a bug in \fBwk\fP, please report it at https://github.com/3L0C/wk.
+.SH SEE ALSO
+.sp
+\fI\%wks(5)\fP
+.SH AUTHORS
+.sp
+3L0C <dotbox at mailbox.org>
+.SH AUTHOR
+3L0C
+.SH COPYRIGHT
+2024, 3L0C
+.\" Generated by docutils manpage writer.
+.

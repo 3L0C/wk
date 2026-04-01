@@ -1,0 +1,34 @@
+# wk theme: Ayu Dark
+# Source: https://github.com/dempfi/ayu
+# Doom port: ashton <https://github.com/ashton>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#0d1017" # Default Background
+:var "base01" "#565b66" # Lighter Background (status bars)
+:var "base02" "#bfbdb6" # Selection Background
+:var "base03" "#bfbdb6" # Comments, Invisibles, Line Highlighting
+:var "base04" "#bfbdb6" # Dark Foreground (status bars)
+:var "base05" "#bfbdb6" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#565b66" # Light Foreground
+:var "base07" "#565b66" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#f07178" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#ff8f40" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#ffb454" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#7fd962" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#39bae6" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#59c2ff" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#d2a6ff" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#73b8ff" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

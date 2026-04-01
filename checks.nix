@@ -27,6 +27,7 @@
       check-added-large-files = {
         enable = true;
         args = ["--maxkb=500"];
+        excludes = ["^docs/_static/"];
       };
     };
   };

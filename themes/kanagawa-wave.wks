@@ -1,0 +1,34 @@
+# wk theme: Kanagawa Wave
+# Source: https://github.com/rebelot/kanagawa.nvim
+# Doom port: Anskrevy <https://github.com/Anskrevy
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#1F1F28" # Default Background
+:var "base01" "#16161D" # Lighter Background (status bars)
+:var "base02" "#2A2A37" # Selection Background
+:var "base03" "#363646" # Comments, Invisibles, Line Highlighting
+:var "base04" "#54546D" # Dark Foreground (status bars)
+:var "base05" "#DCD7BA" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#C8C093" # Light Foreground
+:var "base07" "#DCD7BA" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#E46876" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#FFA066" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#E6C384" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#98BB6C" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#A3D4D5" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#7FB4CA" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#957FB8" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#9CABCA" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

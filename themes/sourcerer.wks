@@ -1,0 +1,34 @@
+# wk theme: Sourcerer
+# Source: https://github.com/xero/sourcerer
+# Doom port: fm0xb <https://github.com/fm0xb>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#171717" # Default Background
+:var "base01" "#222222" # Lighter Background (status bars)
+:var "base02" "#32353f" # Selection Background
+:var "base03" "#494952" # Comments, Invisibles, Line Highlighting
+:var "base04" "#62686E" # Dark Foreground (status bars)
+:var "base05" "#c2c2b0" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#5D656B" # Light Foreground
+:var "base07" "#faf4c6" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#aa4450" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#ff9800" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#cc8800" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#87875f" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#87ceeb" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#87AFD7" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#8787AF" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#8181a6" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

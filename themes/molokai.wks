@@ -1,0 +1,34 @@
+# wk theme: Molokai
+# Source: https://github.com/tomasr/molokai
+# Doom port: Henrik Lissner <https://github.com/hlissner>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#1c1e1f" # Default Background
+:var "base01" "#222323" # Lighter Background (status bars)
+:var "base02" "#2d2e2e" # Selection Background
+:var "base03" "#4e4e4e" # Comments, Invisibles, Line Highlighting
+:var "base04" "#555556" # Dark Foreground (status bars)
+:var "base05" "#d6d6d4" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#556172" # Light Foreground
+:var "base07" "#ffffff" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#e74c3c" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#fd971f" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#e2c770" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#b6e63e" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#66d9ef" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#268bd2" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#fb2874" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#9c91e4" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

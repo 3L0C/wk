@@ -1,0 +1,34 @@
+# wk theme: Snazzy
+# Source: https://github.com/sindresorhus/hyper-snazzy
+# Doom port: ar1a <https://github.com/ar1a>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#282a36" # Default Background
+:var "base01" "#242631" # Lighter Background (status bars)
+:var "base02" "#78787e" # Selection Background
+:var "base03" "#a5a5a9" # Comments, Invisibles, Line Highlighting
+:var "base04" "#e2e4e5" # Dark Foreground (status bars)
+:var "base05" "#f9f9f9" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#d1d1d1" # Light Foreground
+:var "base07" "#ff5c57" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#ff5c57" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#ffb86c" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#f3f99d" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#5af78e" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#9aedfe" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#57c7ff" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#ff6ac1" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#bd93f9" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

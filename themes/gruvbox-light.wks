@@ -1,0 +1,34 @@
+# wk theme: Gruvbox Light
+# Source: https://github.com/morhetz/gruvbox
+# Doom port: jsoa <https://github.com/jsoa>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#f9f5d7" # Default Background
+:var "base01" "#fbf1c7" # Lighter Background (status bars)
+:var "base02" "#bdae93" # Selection Background
+:var "base03" "#a89984" # Comments, Invisibles, Line Highlighting
+:var "base04" "#504945" # Dark Foreground (status bars)
+:var "base05" "#282828" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#1c1c1c" # Light Foreground
+:var "base07" "#1d2021" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#9d0006" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#af3a03" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#b57614" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#79740e" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#427b58" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#076678" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#b16286" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#8f3f71" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

@@ -1,0 +1,1717 @@
+'\" t
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "WKS" "5" "Jan 01, 1980" "0.3.1" "wk"
+.SH NAME
+wks \- Which-Key source file for wk
+.sp
+wks is the scripting language used by \fBwk\fP(1) to define key chords.
+This page is the complete reference. If you\(aqre new to wks, start with
+the \fI\%getting started\fP guide and the
+\fI\%examples\fP\&.
+.SH GRAMMAR
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+key_chord          \-> ( chord | prefix | chord_array ) ;
+
+chord              \-> trigger_key description keyword* ( command | meta_command ) ;
+
+prefix             \-> trigger_key description keyword* \(aq{\(aq ( key_chord )+ \(aq}\(aq ;
+
+chord_array        \-> ( implicit_array | explicit_array ) ;
+
+implicit_array     \-> modifier* \(aq...\(aq description keyword* ( command | meta_command ) ;
+
+explicit_array     \-> \(aq[\(aq ( trigger_key | chord_expression )+ \(aq]\(aq description keyword* ( command | meta_command ) ;
+
+chord_expression   \-> \(aq(\(aq trigger_key description keyword* ( command | meta_command )? \(aq)\(aq ;
+
+trigger_key        \-> modifier* ( normal_key | special_key | key_options ) ;
+
+normal_key         \-> ( \(aq\e\e\(aq [\e\e\e[\e]{}#\(dq:^+()] | [^\es\e[\e]{}#\(dq:^+()] ) ;
+
+special_key        \-> ( \(aqLeft\(aq    | \(aqRight\(aq   | \(aqUp\(aq     | \(aqDown\(aq | \(aqBS\(aq
+                      | \(aqTAB\(aq     | \(aqSPC\(aq     | \(aqRET\(aq    | \(aqDEL\(aq  | \(aqESC\(aq
+                      | \(aqHome\(aq    | \(aqPgUp\(aq    | \(aqPgDown\(aq | \(aqEnd\(aq  | \(aqBegin\(aq
+                      | \(aqVolDown\(aq | \(aqVolMute\(aq | \(aqVolUp\(aq  | \(aqPlay\(aq | \(aqStop\(aq
+                      | \(aqPrev\(aq    | \(aqNext\(aq    | \(aqF\(aq[1\-35] ) \es+ ;
+
+modifier           \-> ( \(aqC\(aq | \(aqH\(aq | \(aqM\(aq | \(aqS\(aq ) \(aq\-\(aq ;
+
+key_options        \-> \(aq<\(aq ( modifier* ( normal_key | special_key | \(aq...\(aq ) )+ \(aq>\(aq ;
+
+description        \-> \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq ;
+
+command            \-> \(aq%\(aq delimiter ( . | interpolation )* delimiter ;
+
+delimiter          \-> ( open_delim | close_delim | ([^[{(])\e1 ) ;
+
+open_delim         \-> ( \(aq{{\(aq | \(aq((\(aq | \(aq[[\(aq ) ;
+
+close_delim        \-> ( \(aq}}\(aq | \(aq))\(aq | \(aq]]\(aq ) ;
+
+interpolation      \-> \(aq%(\(aq ( chord_metadata | arg_position | user_variable ) \(aq)\(aq ;
+
+chord_metadata     \-> ( \(aqkey\(aq
+                      | \(aqindex\(aq
+                      | \(aqindex+1\(aq
+                      | \(aqdesc\(aq
+                      | \(aqdesc^\(aq
+                      | \(aqdesc^^\(aq
+                      | \(aqdesc,\(aq
+                      | \(aqdesc,,\(aq
+                      | \(aqwrap_cmd\(aq );
+
+arg_position       \-> \(aq$\(aq [0\-9]+ ;
+
+user_variable      \-> [^)]+ ;
+
+keyword            \-> ( hook | flag ) ;
+
+meta_command       \-> \(aq@\(aq ( \(aqgoto\(aq description ) ;
+
+hook               \-> \(aq^\(aq ( \(aqbefore\(aq
+                          | \(aqafter\(aq
+                          | \(aqsync\-before\(aq
+                          | \(aqsync\-after\(aq ) command ;
+
+flag               \-> \(aq+\(aq ( \(aqkeep\(aq
+                          | \(aqclose\(aq
+                          | \(aqinherit\(aq
+                          | \(aqignore\(aq
+                          | \(aqunhook\(aq
+                          | \(aqdeflag\(aq
+                          | \(aqno\-before\(aq
+                          | \(aqno\-after\(aq
+                          | \(aqwrite\(aq
+                          | \(aqexecute\(aq
+                          | \(aqsync\-command\(aq
+                          | \(aqunwrap\(aq
+                          | \(aqwrap\(aq \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq
+                          | \(aqtitle\(aq ( \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq )?
+                          | \(aqargs\(aq ( \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq )+ ) ;
+
+preprocessor_macro \-> \(aq:\(aq ( string_macro
+                          | switch_macro
+                          | integer_macro
+                          | unsigned_macro
+                          | number_macro ) ;
+
+string_macro       \-> ( \(aqinclude\(aq
+                      | \(aqfg\(aq
+                      | \(aqfg\-key\(aq
+                      | \(aqfg\-delimiter\(aq
+                      | \(aqfg\-prefix\(aq
+                      | \(aqfg\-chord\(aq
+                      | \(aqfg\-title\(aq
+                      | \(aqfg\-goto\(aq
+                      | \(aqbg\(aq
+                      | \(aqbd\(aq
+                      | \(aqshell\(aq
+                      | \(aqfont\(aq
+                      | \(aqtitle\(aq
+                      | \(aqtitle\-font\(aq
+                      | \(aqdelimiter\(aq
+                      | \(aqwrap\-cmd\(aq
+                      | \(aqvar\(aq \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | user_variable )* \(aq\(dq\(aq ) \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | user_variable )* \(aq\(dq\(aq ;
+
+switch_macro       \-> ( \(aqdebug\(aq
+                      | \(aqunsorted\(aq
+                      | \(aqtop\(aq
+                      | \(aqbottom\(aq );
+
+integer_macro      \-> ( \(aqmenu\-width\(aq
+                      | \(aqmenu\-gap\(aq
+                      | \(aqtable\-padding\(aq ) \(aq\-\(aq? [0\-9]+ ;
+
+unsigned_macro     \-> ( \(aqmax\-columns\(aq
+                      | \(aqborder\-width\(aq
+                      | \(aqwidth\-padding\(aq
+                      | \(aqheight\-padding\(aq
+                      | \(aqdelay\(aq
+                      | \(aqkeep\-delay\(aq ) [0\-9]+ ;
+
+number_macro       \-> ( \(aqborder\-radius\(aq ) \(aq\-\(aq? [0\-9]+ ( \(aq.\(aq [0\-9]* )? ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Comments begin with \fB#\fP and extend to the end of the line. The \fB#\fP
+character is literal inside descriptions and commands; it
+does not need to be escaped.
+.SH TRIGGER KEYS
+.sp
+A trigger key is the keypress that activates a chord.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+trigger_key \-> modifier* ( normal_key | special_key | key_options ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Normal Keys
+.sp
+Any printable, non\-whitespace, UTF\-8 character.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+normal_key \-> ( \(aq\e\e\(aq [\e\e\e[\e]{}#\(dq:^+()] | [^\es\e[\e]{}#\(dq:^+()] ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+The following characters have special meaning in wks and must be
+escaped with a backslash (\fB\e\fP) to use as trigger keys:
+.TS
+box center;
+l|l.
+T{
+Character
+T}	T{
+Meaning
+T}
+_
+T{
+\fB[\fP \fB]\fP
+T}	T{
+Chord array
+T}
+_
+T{
+\fB{\fP \fB}\fP
+T}	T{
+Prefix block
+T}
+_
+T{
+\fB(\fP \fB)\fP
+T}	T{
+Chord expression
+T}
+_
+T{
+\fB#\fP
+T}	T{
+Comment
+T}
+_
+T{
+\fB\(dq\fP
+T}	T{
+Description
+T}
+_
+T{
+\fB:\fP
+T}	T{
+Preprocessor macro
+T}
+_
+T{
+\fB^\fP
+T}	T{
+Hook
+T}
+_
+T{
+\fB+\fP
+T}	T{
+Flag
+T}
+.TE
+.SS Special Keys
+.sp
+Non\-printable or whitespace keys use named forms. Whitespace is
+required after a special key.
+.TS
+box center;
+l|l.
+T{
+Key
+T}	T{
+wks form
+T}
+_
+T{
+Left arrow
+T}	T{
+\fBLeft\fP
+T}
+_
+T{
+Right arrow
+T}	T{
+\fBRight\fP
+T}
+_
+T{
+Up arrow
+T}	T{
+\fBUp\fP
+T}
+_
+T{
+Down arrow
+T}	T{
+\fBDown\fP
+T}
+_
+T{
+Backspace
+T}	T{
+\fBBS\fP
+T}
+_
+T{
+Tab
+T}	T{
+\fBTAB\fP
+T}
+_
+T{
+Space
+T}	T{
+\fBSPC\fP
+T}
+_
+T{
+Enter/Return
+T}	T{
+\fBRET\fP
+T}
+_
+T{
+Delete
+T}	T{
+\fBDEL\fP
+T}
+_
+T{
+Esc
+T}	T{
+\fBESC\fP
+T}
+_
+T{
+Home
+T}	T{
+\fBHome\fP
+T}
+_
+T{
+Page up
+T}	T{
+\fBPgUp\fP
+T}
+_
+T{
+Page down
+T}	T{
+\fBPgDown\fP
+T}
+_
+T{
+End
+T}	T{
+\fBEnd\fP
+T}
+_
+T{
+Begin
+T}	T{
+\fBBegin\fP
+T}
+_
+T{
+Function keys
+T}	T{
+\fBF1\fP\-\fBF35\fP
+T}
+_
+T{
+Volume Down
+T}	T{
+\fBVolDown\fP
+T}
+_
+T{
+Mute
+T}	T{
+\fBVolMute\fP
+T}
+_
+T{
+Volume Up
+T}	T{
+\fBVolUp\fP
+T}
+_
+T{
+Play
+T}	T{
+\fBPlay\fP
+T}
+_
+T{
+Stop
+T}	T{
+\fBStop\fP
+T}
+_
+T{
+Previous Track
+T}	T{
+\fBPrev\fP
+T}
+_
+T{
+Next Track
+T}	T{
+\fBNext\fP
+T}
+.TE
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+TAB \(dqCycle\(dq %{{cycle\-windows}}
+C\-RET \(dqConfirm\(dq %{{confirm}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Modifiers
+.sp
+Zero or more modifiers can precede a key.
+.TS
+box center;
+l|l.
+T{
+Modifier
+T}	T{
+wks form
+T}
+_
+T{
+Control
+T}	T{
+\fBC\-\fP
+T}
+_
+T{
+Meta/Alt
+T}	T{
+\fBM\-\fP
+T}
+_
+T{
+Hyper/Super
+T}	T{
+\fBH\-\fP
+T}
+_
+T{
+Shift
+T}	T{
+\fBS\-\fP
+T}
+.TE
+.sp
+To match \fBControl+c\fP, write \fBC\-c\fP\&. Modifiers chain: \fBC\-M\-x\fP matches
+\fBControl+Alt+x\fP\&.
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+The Shift modifier (\fBS\-\fP) has a subtlety with normal keys. If pressing
+a key with Shift produces a different character (e.g., \fBa\fP → \fBA\fP), use
+the shifted character directly \- \fBA\fP, not \fBS\-a\fP\&. The \fBS\-\fP modifier is
+only needed for keys where Shift does not change the output (e.g.,
+special keys like \fBS\-TAB\fP).
+.UNINDENT
+.UNINDENT
+.SS Key Options
+.sp
+Key options let a chord bind to the \fBfirst available\fP key from a
+list.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+key_options \-> \(aq<\(aq ( modifier* ( normal_key | special_key | \(aq...\(aq ) )+ \(aq>\(aq ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+<s i g> \(dqSignal\(dq %{{signal}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+The parser tries \fBs\fP first; if already bound, it tries \fBi\fP, then \fBg\fP\&.
+If all keys are taken, an error is raised. The ellipsis (\fB\&...\fP)
+expands to the implicit array keys as a fallback:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+<s i g ...> \(dqSignal\(dq %{{signal}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Modifiers before \fB<\fP apply to all options. Modifiers inside apply to
+individual keys:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+M\-<a b>      # Both options get M\-
+<a M\-b>      # Only \(aqb\(aq gets M\-
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Key options are most useful with \fI\%:include\fP to avoid
+trigger key collisions across files. See the \fI\%key options
+example\fP\&.
+.SH DESCRIPTIONS
+.sp
+A description is a quoted string shown as the hint text in the menu.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+description \-> \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Descriptions can contain \fI\%interpolations\fP\&. Use \fB\e\(dq\fP
+for a literal double quote. An empty description (\fB\(dq\(dq\fP) is valid.
+.SH COMMANDS
+.sp
+A command is the action executed when a chord completes.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+command \-> \(aq%\(aq delimiter ( . | interpolation )* delimiter ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+A command starts with \fB%\fP followed by a delimiter pair. Anything
+between the delimiters is passed to the shell. If it runs in your
+terminal, it works in a wks command.
+.SS Delimiters
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+delimiter   \-> ( open_delim | close_delim | ([^[{(])\e1 ) ;
+open_delim  \-> ( \(aq{{\(aq | \(aq((\(aq | \(aq[[\(aq ) ;
+close_delim \-> ( \(aq}}\(aq | \(aq))\(aq | \(aq]]\(aq ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+The three bracket\-style delimiters have matching open/close pairs.
+Any other ASCII character repeated twice also works as a delimiter:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+%{{echo \(dqhello\(dq}}           # Standard
+%((echo \(dqhello\(dq))           # Parentheses
+%[[echo \(dqhello\(dq]]           # Brackets
+%||echo \(dqhello\(dq||           # Arbitrary
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+This flexibility, inspired by \fBsed\fP(1), means your command content
+never conflicts with the delimiter \- just pick one that doesn\(aqt appear
+in the command. Different chords can use different delimiters.
+.SH CHORDS
+.sp
+A chord is a complete key binding \- pressing its trigger key performs
+an action.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chord \-> trigger_key description keyword* ( command | meta_command ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+b \(dqBrave\(dq %{{brave}}
+C\-s \(dqSave\(dq %{{save\-file}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SH PREFIXES
+.sp
+A prefix groups related chords under a common trigger key. Pressing
+the prefix key opens a submenu rather than executing a command.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+prefix \-> trigger_key description keyword* \(aq{\(aq ( key_chord )+ \(aq}\(aq ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Prefixes can be nested arbitrarily deep:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+e \(dqEmacs\(dq
+{
+    o \(dqOpen\(dq %{{emacs}}
+    r \(dqRoam\(dq
+    {
+        h \(dqHome\(dq %{{emacs ~/Documents/roam/home.org}}
+        j \(dqJournal\(dq %{{emacs ~/Documents/roam/daily}}
+    }
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SH CHORD ARRAYS
+.sp
+Chord arrays generate multiple chords from a shared template, reducing
+repetition.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chord_array \-> ( implicit_array | explicit_array ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Implicit Arrays
+.sp
+An implicit array uses the predefined implicit array keys (set via
+\fB\-\-implicit\-keys\fP or \fB:implicit\-array\-keys\fP) as trigger keys.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+implicit_array \-> modifier* \(aq...\(aq description keyword* command ;
+
+.EE
+.UNINDENT
+.UNINDENT
+[Implicit]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+\&... \(dqWorkspace %(index+1)\(dq %{{switch\-to\-workspace %(index)}}
+
+.EE
+.UNINDENT
+.UNINDENT
+[Expanded]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+# Assuming implicit keys are \(dqasdfghjkl;\(dq
+a \(dqWorkspace 1\(dq %{{switch\-to\-workspace 0}}
+s \(dqWorkspace 2\(dq %{{switch\-to\-workspace 1}}
+d \(dqWorkspace 3\(dq %{{switch\-to\-workspace 2}}
+# ... and so on for each implicit key
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Explicit Arrays
+.sp
+An explicit array lists its trigger keys between brackets.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+explicit_array \-> \(aq[\(aq ( trigger_key | chord_expression )+ \(aq]\(aq description keyword* command ;
+
+.EE
+.UNINDENT
+.UNINDENT
+[Array]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+[asdfghjkl] \(dqWorkspace %(index+1)\(dq %{{switch\-to\-workspace %(index)}}
+
+.EE
+.UNINDENT
+.UNINDENT
+[Expanded]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+a \(dqWorkspace 1\(dq %{{switch\-to\-workspace 0}}
+s \(dqWorkspace 2\(dq %{{switch\-to\-workspace 1}}
+d \(dqWorkspace 3\(dq %{{switch\-to\-workspace 2}}
+f \(dqWorkspace 4\(dq %{{switch\-to\-workspace 3}}
+g \(dqWorkspace 5\(dq %{{switch\-to\-workspace 4}}
+h \(dqWorkspace 6\(dq %{{switch\-to\-workspace 5}}
+j \(dqWorkspace 7\(dq %{{switch\-to\-workspace 6}}
+k \(dqWorkspace 8\(dq %{{switch\-to\-workspace 7}}
+l \(dqWorkspace 9\(dq %{{switch\-to\-workspace 8}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Chord Expressions
+.sp
+A chord expression customizes an individual entry within a chord
+array. Wrap it in parentheses inside the brackets. Only a trigger key
+and description are required \- any missing command or keywords are
+filled in by the surrounding array.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+chord_expression \-> \(aq(\(aq trigger_key description keyword* command? \(aq)\(aq ;
+
+.EE
+.UNINDENT
+.UNINDENT
+[Expressive]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+[
+    (b \(dqBrave\(dq)
+    (c \(dqMullvad Chrome\(dq %{{mullvad\-exclude chrome ~/startpage.html}})
+    x
+] \(dqXDG\-OPEN\(dq %{{%(desc,,) ~/startpage.html}}
+
+.EE
+.UNINDENT
+.UNINDENT
+[Expanded]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+b \(dqBrave\(dq %{{brave ~/startpage.html}}
+c \(dqMullvad Chrome\(dq %{{mullvad\-exclude chrome ~/startpage.html}}
+x \(dqXDG\-OPEN\(dq %{{xdg\-open ~/startpage.html}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Here, \fBb\fP and \fBx\fP inherit the array\(aqs command template, while \fBc\fP
+provides its own. The \fBx\fP key has no expression, so it also inherits
+the array\(aqs description.
+.SH INTERPOLATIONS
+.sp
+An interpolation inserts dynamic values into descriptions and
+commands.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+interpolation \-> \(aq%(\(aq ( chord_metadata | arg_position | user_variable ) \(aq)\(aq ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+There are three kinds:
+.SS Chord Metadata
+.sp
+Built\-in identifiers that reference properties of the current chord.
+Valid in descriptions and commands.
+.TS
+box center;
+l|l.
+T{
+Identifier
+T}	T{
+Value
+T}
+_
+T{
+\fB%(key)\fP
+T}	T{
+The trigger key of the current chord
+T}
+_
+T{
+\fB%(index)\fP
+T}	T{
+0\-based position in parse order within the current scope
+T}
+_
+T{
+\fB%(index+1)\fP
+T}	T{
+1\-based position (same as above, offset by one)
+T}
+_
+T{
+\fB%(desc)\fP
+T}	T{
+The description (not valid inside a description)
+T}
+_
+T{
+\fB%(desc^)\fP
+T}	T{
+Description with first character capitalized
+T}
+_
+T{
+\fB%(desc^^)\fP
+T}	T{
+Description fully uppercased
+T}
+_
+T{
+\fB%(desc,)\fP
+T}	T{
+Description with first character lowercased
+T}
+_
+T{
+\fB%(desc,,)\fP
+T}	T{
+Description fully lowercased
+T}
+_
+T{
+\fB%(wrap_cmd)\fP
+T}	T{
+The global wrap command value
+T}
+.TE
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+Index values are resolved \fBbefore\fP sorting. \fB%(index)\fP reflects
+parse order, not the final display order. Prefixes start a new scope
+for their children.
+.UNINDENT
+.UNINDENT
+.SS User Variables
+.sp
+Variables defined with the \fI\%:var macro\fP\&. Valid in
+descriptions, commands, and preprocessor macro arguments.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+user_variable \-> [^)]+ ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:var \(dqCMD\(dq \(dqhyprctl dispatch workspace\(dq
+[asdfghjkl] \(dqWorkspace %(index+1)\(dq %{{%(CMD) %(index)}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Argument Positions
+.sp
+Positional references to values defined with \fB+args\fP\&. Valid in
+descriptions and commands where \fB+args\fP is defined.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+arg_position \-> \(aq$\(aq [0\-9]+ ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+\fB%($0)\fP is the first argument, \fB%($1)\fP the second, and so on.
+Undefined positions resolve to an empty string.
+.sp
+Arguments follow lexical scoping \- descendants within a prefix can
+access that prefix\(aqs arguments. When a descendant defines its own
+\fB+args\fP, its values shadow ancestor arguments at the same index, but
+other indices remain accessible:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+p \(dq+Prefix\(dq +args \(dqouter0\(dq \(dqouter1\(dq
+{
+    a \(dqUse both\(dq +write %{{%($0) %($1)}}
+    n \(dq+Nested\(dq +args \(dqinner0\(dq
+    {
+        # %($0) = \(dqinner0\(dq (shadowed), %($1) = \(dqouter1\(dq (inherited)
+        b \(dqMixed\(dq +write %{{%($0) %($1)}}
+    }
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SH HOOKS
+.sp
+Hooks attach additional commands to a chord or prefix.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+hook \-> \(aq^\(aq ( \(aqbefore\(aq | \(aqafter\(aq | \(aqsync\-before\(aq | \(aqsync\-after\(aq ) command ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+\fB^before\fP / \fB^after\fP
+Run a command before or after the chord\(aqs own command, asynchronously.
+.TP
+\fB^sync\-before\fP / \fB^sync\-after\fP
+Same, but block wk until the hook completes.
+.UNINDENT
+.sp
+\fBWARNING:\fP
+.INDENT 0.0
+.INDENT 3.5
+A blocking \fBsync\-*\fP hook that never returns will freeze wk. You may
+need to restart your system to regain keyboard control.
+.UNINDENT
+.UNINDENT
+.sp
+Hooks on a prefix apply to all direct child chords but \fBnot\fP to
+nested prefixes (see \fI\%Inheritance\fP). Use \fB+unhook\fP,
+\fB+no\-before\fP, or \fB+no\-after\fP on individual chords to opt out:
+[Hooked]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+e \(dqEmacs\(dq ^before %{{switch\-to\-workspace 1}}
+{
+    o \(dqOpen\(dq %{{emacs}}
+    r \(dqRoam\(dq %{{emacs ~/Documents/roam}}
+    s \(dqScratch\(dq +unhook %{{emacs \-\-eval \(dq(scratch\-buffer)\(dq}}
+}
+.EE
+.UNINDENT
+.UNINDENT
+[Equivalent]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+e \(dqEmacs\(dq
+{
+    o \(dqOpen\(dq %{{switch\-to\-workspace 1; emacs}}
+    r \(dqRoam\(dq %{{switch\-to\-workspace 1; emacs ~/Documents/roam}}
+    s \(dqScratch\(dq %{{emacs \-\-eval \(dq(scratch\-buffer)\(dq}}
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SH FLAGS
+.sp
+Flags modify the behavior of a chord or prefix.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+flag \-> \(aq+\(aq ( \(aqkeep\(aq | \(aqclose\(aq | \(aqinherit\(aq | \(aqignore\(aq | \(aqunhook\(aq
+            | \(aqdeflag\(aq | \(aqno\-before\(aq | \(aqno\-after\(aq | \(aqwrite\(aq
+            | \(aqexecute\(aq | \(aqsync\-command\(aq | \(aqunwrap\(aq
+            | \(aqwrap\(aq description | \(aqtitle\(aq description?
+            | \(aqargs\(aq description+ ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Menu Control
+.INDENT 0.0
+.TP
+\fB+keep\fP
+Keep the menu open after executing the chord. Turns wk into a
+\(dqhydra\(dq for repeated actions.
+.TP
+\fB+close\fP
+Force\-close the menu. Useful to override \fB+keep\fP on the enclosing
+prefix for specific chords.
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+m \(dqMusic\(dq +keep
+{
+    n \(dqNext\(dq %{{mpc next}}
+    p \(dqPrev\(dq %{{mpc prev}}
+    o \(dqOpen player\(dq +close %{{kitty \-e ncmpcpp}}
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Output Control
+.INDENT 0.0
+.TP
+\fB+write\fP
+Print the command text to stdout instead of executing it. Turns wk
+into a selection prompt, like dmenu.
+.TP
+\fB+execute\fP
+Execute the command normally. Overrides \fB+write\fP inherited from a
+parent prefix.
+.TP
+\fB+sync\-command\fP
+Execute the command synchronously (blocking). See the warning in
+\fI\%Hooks\fP about blocking commands.
+.UNINDENT
+.SS Inheritance Control
+.INDENT 0.0
+.TP
+\fB+inherit\fP
+Force a nested prefix to inherit hooks and flags from its parent.
+Has no effect on chords.
+.TP
+\fB+ignore\fP
+Ignore all inherited hooks and flags. Has no effect on prefixes.
+.TP
+\fB+unhook\fP
+Ignore all inherited hooks only.
+.TP
+\fB+deflag\fP
+Ignore all inherited flags only.
+.TP
+\fB+no\-before\fP
+Ignore inherited \fB^before\fP and \fB^sync\-before\fP hooks.
+.TP
+\fB+no\-after\fP
+Ignore inherited \fB^after\fP and \fB^sync\-after\fP hooks.
+.UNINDENT
+.SS Command Wrapping
+.INDENT 0.0
+.TP
+\fB+wrap\fP \fB\(dqwrapper\(dq\fP
+Wrap this chord\(aqs command (or all commands in a prefix) with the
+given string. The command is executed as \fB/bin/sh \-c \(dqWRAPPER CMD\(dq\fP\&.
+Supports interpolation.
+.TP
+\fB+unwrap\fP
+Prevent wrapping, even if a global wrap or inherited \fB+wrap\fP is set.
+.UNINDENT
+.sp
+Wrap precedence, most specific to least:
+.INDENT 0.0
+.IP 1. 3
+\fB+unwrap\fP on chord (no wrap)
+.IP 2. 3
+\fB+wrap \(dqcustom\(dq\fP on chord
+.IP 3. 3
+\fB+wrap\fP inherited from parent prefix
+.IP 4. 3
+Global \fB:wrap\-cmd\fP / \fB\-\-wrap\-cmd\fP
+.IP 5. 3
+No wrapper
+.UNINDENT
+[Wrapped]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:wrap\-cmd \(dquwsm\-app \-\-\(dq
+a \(dqApps\(dq
+{
+    b \(dqBrave\(dq %{{brave}}
+}
+f \(dqFoot\(dq +wrap \(dqfoot \-e\(dq
+{
+    n \(dqncmpcpp\(dq %{{ncmpcpp}}
+}
+.EE
+.UNINDENT
+.UNINDENT
+[Equivalent]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+a \(dqApps\(dq
+{
+    b \(dqBrave\(dq %{{uwsm\-app \-\- brave}}
+}
+f \(dqFoot\(dq
+{
+    n \(dqncmpcpp\(dq %{{foot \-e ncmpcpp}}
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Title
+.INDENT 0.0
+.TP
+\fB+title\fP \fB\(dqtext\(dq\fP
+Set a title displayed above the menu for this chord or prefix.
+Supports interpolation. Overrides the global \fB\-\-title\fP setting.
+An empty string (\fB\(dq\(dq\fP) clears any inherited or global title.
+Omitting the argument sets the title to the chord\(aqs description.
+.UNINDENT
+.SS Arguments
+.INDENT 0.0
+.TP
+\fB+args\fP \fB\(dqarg0\(dq\fP \fB\(dqarg1\(dq\fP ...
+Define positional arguments accessible via \fB%($0)\fP, \fB%($1)\fP, etc.
+See \fI\%Argument Positions\fP for scoping rules.
+.UNINDENT
+[Dynamic]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+[
+    (a \(dqAlice\(dq +args \(dqalice@example.com\(dq)
+    (b \(dqBob\(dq +args \(dqbob@example.com\(dq)
+    c
+] \(dqEmail %($0)\(dq +args \(dq(default)\(dq %{{mailto:%($0)}}
+# a \-> mailto:alice@example.com
+# b \-> mailto:bob@example.com
+# c \-> mailto:(default)
+
+.EE
+.UNINDENT
+.UNINDENT
+[Static]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+a \(dqAlice\(dq %{{mailto:alice@example.com}}
+b \(dqBob\(dq %{{mailto:bob@example.com}}
+c \(dqEmail (default)\(dq %{{mailto:(default)}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SH META COMMANDS
+.sp
+A meta command controls wk\(aqs menu rather than running a shell command.
+Meta commands are mutually exclusive with hooks and regular commands.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+meta_command \-> \(aq@\(aq ( \(aqgoto\(aq description ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS @goto
+.sp
+Navigates to a different location in the key chord hierarchy without
+closing and restarting wk. The argument uses the same syntax as
+\fB\-\-press\fP:
+.INDENT 0.0
+.IP \(bu 2
+\fB@goto \(dq\(dq\fP \- navigate to the root menu
+.IP \(bu 2
+\fB@goto \(dqw\(dq\fP \- navigate to the \(dqw\(dq prefix
+.IP \(bu 2
+\fB@goto \(dqw m\(dq\fP \- navigate through \(dqw\(dq then \(dqm\(dq
+.UNINDENT
+.sp
+If the path leads to a chord (not a prefix), that chord\(aqs command is
+executed.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+w \(dqWindow\(dq +keep
+{
+    m \(dqMove\(dq +keep
+    {
+        ... \(dqMove to %(index+1)\(dq %{{move\-window %(index)}}
+        BS \(dqGo back\(dq @goto \(dqw\(dq
+        S\-BS \(dqGo home\(dq @goto \(dq\(dq
+    }
+    r \(dqResize\(dq +keep +inherit
+    {
+        ... \(dqResize %(index+1)\(dq %{{resize\-window %(index)}}
+    }
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+\fB@goto\fP cannot be combined with hooks or commands. Circular goto
+chains (e.g., \fBa @goto \(dqb\(dq\fP and \fBb @goto \(dqa\(dq\fP) are detected at
+runtime and produce an error.
+.UNINDENT
+.UNINDENT
+.SH PREPROCESSOR MACROS
+.sp
+Preprocessor macros configure the menu appearance and behavior, or
+include other wks files. They start with \fB:\fP and override the
+equivalent \fBwk\fP(1) command\-line flags.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+preprocessor_macro \-> \(aq:\(aq ( string_macro | switch_macro
+                          | integer_macro | unsigned_macro
+                          | number_macro ) ;
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS String Macros
+.sp
+String macros take a quoted string argument. All string macro
+arguments support \fI\%user variable\fP interpolation.
+.TS
+box center;
+l|l|l.
+T{
+Macro
+T}	T{
+Equivalent CLI flag
+T}	T{
+Description
+T}
+_
+T{
+\fB:fg\fP
+T}	T{
+\fB\-\-fg\fP
+T}	T{
+All foreground text color
+T}
+_
+T{
+\fB:fg\-key\fP
+T}	T{
+\fB\-\-fg\-key\fP
+T}	T{
+Key text color
+T}
+_
+T{
+\fB:fg\-delimiter\fP
+T}	T{
+\fB\-\-fg\-delimiter\fP
+T}	T{
+Delimiter text color
+T}
+_
+T{
+\fB:fg\-prefix\fP
+T}	T{
+\fB\-\-fg\-prefix\fP
+T}	T{
+Prefix text color
+T}
+_
+T{
+\fB:fg\-chord\fP
+T}	T{
+\fB\-\-fg\-chord\fP
+T}	T{
+Chord text color
+T}
+_
+T{
+\fB:fg\-title\fP
+T}	T{
+\fB\-\-fg\-title\fP
+T}	T{
+Title text color
+T}
+_
+T{
+\fB:fg\-goto\fP
+T}	T{
+\fB\-\-fg\-goto\fP
+T}	T{
+Goto text color
+T}
+_
+T{
+\fB:bg\fP
+T}	T{
+\fB\-\-bg\fP
+T}	T{
+Background color
+T}
+_
+T{
+\fB:bd\fP
+T}	T{
+\fB\-\-bd\fP
+T}	T{
+Border color
+T}
+_
+T{
+\fB:shell\fP
+T}	T{
+\fB\-\-shell\fP
+T}	T{
+Shell for command execution
+T}
+_
+T{
+\fB:font\fP
+T}	T{
+\fB\-\-font\fP
+T}	T{
+Menu font (Pango format)
+T}
+_
+T{
+\fB:title\fP
+T}	T{
+\fB\-\-title\fP
+T}	T{
+Global title text
+T}
+_
+T{
+\fB:title\-font\fP
+T}	T{
+\fB\-\-title\-font\fP
+T}	T{
+Title font (Pango format)
+T}
+_
+T{
+\fB:delimiter\fP
+T}	T{
+\-
+T}	T{
+Default command delimiter
+T}
+_
+T{
+\fB:wrap\-cmd\fP
+T}	T{
+\fB\-\-wrap\-cmd\fP
+T}	T{
+Global command wrapper
+T}
+.TE
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:bg \(dq#27212E\(dq
+:fg\-key \(dq#74DFC4\(dq
+:bd \(dq#EB64B9\(dq
+:font \(dqJetBrains Mono, 14\(dq
+
+.EE
+.UNINDENT
+.UNINDENT
+.SS Include Macro
+.sp
+The \fB:include\fP macro inserts the contents of another wks file,
+similar to C\(aqs \fB#include\fP\&. Relative paths resolve from the directory
+of the file being processed.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+b \(dqBrowser\(dq { :include \(dqbrowser.wks\(dq }
+e \(dqEmacs\(dq ^before %{{switch\-to\-workspace 1}} { :include \(dqemacs.wks\(dq }
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+Self\-includes and recursive includes produce an error. The same file
+may be included multiple times. Unlike C\(aqs \fB#include\fP, the \fB:include\fP
+macro can appear anywhere \- even mid\-description (though you probably
+shouldn\(aqt).
+.UNINDENT
+.UNINDENT
+.sp
+See the \fI\%modular configs example\fP\&.
+.SS Var Macro
+.sp
+The \fB:var\fP macro defines a variable for use in descriptions, commands,
+and other preprocessor arguments. It takes two string arguments: a
+name and a value.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:var \(dqCMD\(dq \(dqhyprctl dispatch workspace\(dq
+[asdfghjkl] \(dqWorkspace %(index+1)\(dq %{{%(CMD) %(index)}}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Setting the value to an empty string (\fB\(dq\(dq\fP) unsets the variable. The
+variable name can contain any character except \fB)\fP and cannot shadow
+built\-in chord metadata identifiers.
+.sp
+Both name and value support variable interpolation, enabling
+\fBmeta\-variables\fP (variables with computed names) and \fBchained
+references\fP:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+# Meta\-variable: name computed from another variable
+:var \(dqkey\(dq \(dqGREETING\(dq
+:var \(dq%(key)\(dq \(dqHello, World!\(dq
+a \(dqSay hello\(dq %{{echo %(GREETING)}}
+
+# Chained references
+:var \(dqhome\(dq \(dq/home/user\(dq
+:var \(dqconfig\(dq \(dq%(home)/.config/wk\(dq
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Variables are resolved at definition time in a single pass \- define
+them before use.
+.sp
+A common pattern is combining \fB:var\fP with \fB:include\fP for
+environment\-specific configs:
+[Hyprland]
+.sp
+\fB~/hyprland.wks\fP
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:var \(dqWORKSPACE_CMD\(dq \(dqhyprctl dispatch workspace\(dq
+:include \(dqmain.wks\(dq
+.EE
+.UNINDENT
+.UNINDENT
+[dwm]
+.sp
+\fB~/dwm.wks\fP
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:var \(dqWORKSPACE_CMD\(dq \(dqxdotool set_desktop\(dq
+:include \(dqmain.wks\(dq
+.EE
+.UNINDENT
+.UNINDENT
+[Shared]
+.sp
+\fB~/main.wks\fP
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+w \(dqWorkspace\(dq
+{
+    [asdfghjkl] \(dq%(index+1)\(dq %{{%(WORKSPACE_CMD) %(index)}}
+}
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+See the \fI\%variables example\fP\&.
+.SS Switch Macros
+.sp
+Switch macros are simple toggles with no argument.
+.TS
+box center;
+l|l|l.
+T{
+Macro
+T}	T{
+Equivalent CLI flag
+T}	T{
+Description
+T}
+_
+T{
+\fB:debug\fP
+T}	T{
+\fB\-\-debug\fP
+T}	T{
+Print debug info
+T}
+_
+T{
+\fB:unsorted\fP
+T}	T{
+\fB\-\-unsorted\fP
+T}	T{
+Disable sorting
+T}
+_
+T{
+\fB:top\fP
+T}	T{
+\fB\-\-top\fP
+T}	T{
+Position menu at top
+T}
+_
+T{
+\fB:bottom\fP
+T}	T{
+\fB\-\-bottom\fP
+T}	T{
+Position menu at bottom
+T}
+.TE
+.SS Integer Macros
+.sp
+Take a positive or negative integer argument.
+.TS
+box center;
+l|l.
+T{
+Macro
+T}	T{
+Equivalent CLI flag
+T}
+_
+T{
+\fB:menu\-width\fP
+T}	T{
+\fB\-\-menu\-width\fP
+T}
+_
+T{
+\fB:menu\-gap\fP
+T}	T{
+\fB\-\-menu\-gap\fP
+T}
+_
+T{
+\fB:table\-padding\fP
+T}	T{
+\fB\-\-table\-padding\fP
+T}
+.TE
+.SS Unsigned Macros
+.sp
+Take a positive integer argument.
+.TS
+box center;
+l|l.
+T{
+Macro
+T}	T{
+Equivalent CLI flag
+T}
+_
+T{
+\fB:max\-columns\fP
+T}	T{
+\fB\-\-max\-columns\fP
+T}
+_
+T{
+\fB:border\-width\fP
+T}	T{
+\fB\-\-border\-width\fP
+T}
+_
+T{
+\fB:width\-padding\fP
+T}	T{
+\fB\-\-wpadding\fP
+T}
+_
+T{
+\fB:height\-padding\fP
+T}	T{
+\fB\-\-hpadding\fP
+T}
+_
+T{
+\fB:delay\fP
+T}	T{
+\fB\-\-delay\fP
+T}
+_
+T{
+\fB:keep\-delay\fP
+T}	T{
+\fB\-\-keep\-delay\fP
+T}
+.TE
+.SS Number Macros
+.sp
+Take a decimal number argument.
+.TS
+box center;
+l|l.
+T{
+Macro
+T}	T{
+Equivalent CLI flag
+T}
+_
+T{
+\fB:border\-radius\fP
+T}	T{
+\fB\-\-border\-radius\fP
+T}
+.TE
+.SH INHERITANCE
+.sp
+Hooks and flags on a prefix are inherited by its direct child chords,
+but \fBnot\fP by nested prefixes. Use \fB+inherit\fP to opt a nested prefix
+in, or use the negation flags (\fB+unhook\fP, \fB+deflag\fP, \fB+ignore\fP,
+\fB+no\-before\fP, \fB+no\-after\fP) to opt individual chords out.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+a \(dqPrefix\(dq +write
+{
+    w \(dqWritten\(dq %{{I get written!}}
+    n \(dqNested\(dq
+    {
+        r \(dqRuns\(dq %{{echo \(dqI get run!\(dq}}
+    }
+}
+# a w \-> prints \(dqI get written!\(dq to stdout
+# a n r \-> executes echo \(dqI get run!\(dq
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+To make the nested prefix inherit:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+a \(dqPrefix\(dq +write
+{
+    w \(dqWritten\(dq %{{I get written!}}
+    n \(dqNested\(dq +inherit
+    {
+        r \(dqAlso written\(dq %{{I also get written!}}
+    }
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.SH SORTING
+.sp
+Key chords are sorted alphabetically by default. Index interpolations
+are resolved \fBbefore\fP sorting, so \fB%(index)\fP reflects parse order,
+not display order.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+[neio] \(dqSwitch %(index+1)\(dq %{{xdotool set_desktop %(index)}}
+b \(dqSecond\(dq +write %{{%(index)}}
+a \(dqFirst\(dq +write %{{%(index)}}
+
+# Display order (sorted): a, b, e, i, n, o
+# But: a\(aqs command is %{{5}}, b\(aqs is %{{4}}, n\(aqs is %{{0}}, etc.
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Disable sorting with \fB\-\-unsorted\fP or \fB:unsorted\fP\&.
+.SH BUG REPORTS
+.sp
+If you find a bug, please report it at
+https://github.com/3L0C/wk/issues.
+.SH AUTHORS
+.sp
+3L0C <dotbox at mailbox.org>
+.SH AUTHOR
+3L0C
+.SH COPYRIGHT
+2024, 3L0C
+.\" Generated by docutils manpage writer.
+.

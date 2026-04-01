@@ -1,0 +1,34 @@
+# wk theme: Wilmersdorf
+# Source: https://github.com/ianpan870102/wilmersdorf-emacs-theme
+# Doom port: ema2159 <https://github.com/ema2159>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#282b33" # Default Background
+:var "base01" "#1f2024" # Lighter Background (status bars)
+:var "base02" "#41454b" # Selection Background
+:var "base03" "#515462" # Comments, Invisibles, Line Highlighting
+:var "base04" "#888395" # Dark Foreground (status bars)
+:var "base05" "#c6c6c6" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#c9d9ff" # Light Foreground
+:var "base07" "#eceff4" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#e1c1ee" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#a6c1e0" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#cfcf9c" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#5b94ab" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#7289bc" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#819cd6" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#a6c1e0" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#b0a2e7" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

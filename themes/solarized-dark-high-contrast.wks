@@ -1,0 +1,34 @@
+# wk theme: Solarized Dark High Contrast
+# Source: https://github.com/bbatsov/solarized-emacs
+# Doom port: jmorag <https://github.com/jmorag>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#002732" # Default Background
+:var "base01" "#00212B" # Lighter Background (status bars)
+:var "base02" "#13383C" # Selection Background
+:var "base03" "#56697A" # Comments, Invisibles, Line Highlighting
+:var "base04" "#62787f" # Dark Foreground (status bars)
+:var "base05" "#8d9fa1" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#60767e" # Light Foreground
+:var "base07" "#626C6C" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#ec423a" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#db5823" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#c49619" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#93a61a" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#3cafa5" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#3c98e0" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#e2468f" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#7a7ed2" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

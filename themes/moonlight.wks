@@ -1,0 +1,34 @@
+# wk theme: Moonlight
+# Source: https://github.com/atomiks/moonlight-vscode-theme
+# Doom port: Brettm12345 <https://github.com/Brettm12345>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#212337" # Default Background
+:var "base01" "#191a2a" # Lighter Background (status bars)
+:var "base02" "#222436" # Selection Background
+:var "base03" "#2f334d" # Comments, Invisibles, Line Highlighting
+:var "base04" "#444a73" # Dark Foreground (status bars)
+:var "base05" "#c8d3f5" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#b4c2f0" # Light Foreground
+:var "base07" "#b4c2f0" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#ff757f" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#ff995e" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#ffc777" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#c3e88d" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#b4f9f8" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#82aaff" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#c099ff" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#f989d3" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

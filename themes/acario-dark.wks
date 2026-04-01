@@ -1,0 +1,35 @@
+# wk theme: Acario Dark
+# Source: original
+# Doom port: gagbo <https://github.com/gagbo>
+# Maintainer: gagbo <https://github.com/gagbo>
+
+# Base16 color scheme
+# Grayscale ramp
+:var "base00" "#0D0E16" # Default Background
+:var "base01" "#040408" # Lighter Background (status bars)
+:var "base02" "#464A56" # Selection Background
+:var "base03" "#585C6C" # Comments, Invisibles, Line Highlighting
+:var "base04" "#767676" # Dark Foreground (status bars)
+:var "base05" "#CEDBE5" # Default Foreground, Caret, Delimiters, Operators
+:var "base06" "#E5F4FF" # Light Foreground
+:var "base07" "#D0D0D0" # Lightest Foreground
+
+# Accent colors
+:var "base08" "#D83441" # Variables, XML Tags, Markup Link Text, Diff Deleted
+:var "base09" "#D85F00" # Integers, Boolean, Constants, XML Attributes
+:var "base0A" "#D8B941" # Classes, Markup Bold, Search Text Background
+:var "base0B" "#79D836" # Strings, Inherited Class, Markup Code, Diff Inserted
+:var "base0C" "#36D8BD" # Support, Regular Expressions, Escape Characters
+:var "base0D" "#3679D8" # Functions, Methods, Attribute IDs, Headings
+:var "base0E" "#8041D8" # Keywords, Storage, Selector, Markup Italic, Diff Changed
+:var "base0F" "#AB11D8" # Deprecated, Embedded Language Tags
+
+# Theme
+:bg "%(base00)"
+:fg-key "%(base0C)"
+:fg-delimiter "%(base02)"
+:fg-prefix "%(base08)"
+:fg-chord "%(base0E)"
+:fg-title "%(base05)"
+:fg-goto "%(base0D)"
+:bd "%(base0D)"

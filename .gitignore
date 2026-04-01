@@ -31,3 +31,5 @@ config/*.wks
 config/*.bak.h
 config/*template.h
 config/*template.def.h
+/docs/_build/
+**/__pycache__/
