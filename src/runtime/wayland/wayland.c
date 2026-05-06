@@ -498,6 +498,22 @@ destroyWindows(Wayland* wayland)
     wl_list_init(&wayland->windows);
 }
 
+/* Odd wl_output transforms (90/270 and their flipped variants) swap mode dims. */
+static void
+outputLogicalSize(const Output* output, uint32_t* width, uint32_t* height)
+{
+    if (output->transform & 1)
+    {
+        *width  = output->height;
+        *height = output->width;
+    }
+    else
+    {
+        *width  = output->width;
+        *height = output->height;
+    }
+}
+
 static void
 windowUpdateOutput(WaylandWindow* window)
 {
@@ -511,13 +527,17 @@ windowUpdateOutput(WaylandWindow* window)
     wl_list_for_each(surfaceOutput, &window->surfaceOutputs, link)
     {
         if (surfaceOutput->output->scale > maxIntegerScale) maxIntegerScale = surfaceOutput->output->scale;
-        if (minMaxHeight == 0 || surfaceOutput->output->height < minMaxHeight)
+
+        uint32_t outputWidth, outputHeight;
+        outputLogicalSize(surfaceOutput->output, &outputWidth, &outputHeight);
+
+        if (minMaxHeight == 0 || outputHeight < minMaxHeight)
         {
-            minMaxHeight = surfaceOutput->output->height;
+            minMaxHeight = outputHeight;
         }
-        if (minMaxWidth == 0 || surfaceOutput->output->width < minMaxWidth)
+        if (minMaxWidth == 0 || outputWidth < minMaxWidth)
         {
-            minMaxWidth = surfaceOutput->output->width;
+            minMaxWidth = outputWidth;
         }
     }
 
@@ -608,13 +628,16 @@ fractionalScalePreferredScale(
     SurfaceOutput* surfaceOutput;
     wl_list_for_each(surfaceOutput, &window->surfaceOutputs, link)
     {
-        if (minMaxHeight == 0 || surfaceOutput->output->height < minMaxHeight)
+        uint32_t outputWidth, outputHeight;
+        outputLogicalSize(surfaceOutput->output, &outputWidth, &outputHeight);
+
+        if (minMaxHeight == 0 || outputHeight < minMaxHeight)
         {
-            minMaxHeight = surfaceOutput->output->height;
+            minMaxHeight = outputHeight;
         }
-        if (minMaxWidth == 0 || surfaceOutput->output->width < minMaxWidth)
+        if (minMaxWidth == 0 || outputWidth < minMaxWidth)
         {
-            minMaxWidth = surfaceOutput->output->width;
+            minMaxWidth = outputWidth;
         }
     }
 

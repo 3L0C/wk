@@ -590,7 +590,7 @@ displayHandleDone(void* data, struct wl_output* output)
 static void
 displayHandleGeometry(
     void*             data,
-    struct wl_output* output,
+    struct wl_output* wlOut,
     int               x,
     int               y,
     int               physicalw,
@@ -600,8 +600,10 @@ displayHandleGeometry(
     const char*       model,
     int               transform)
 {
-    (void)data, (void)output, (void)x, (void)y, (void)physicalw,
-        (void)physicalh, (void)subpixel, (void)make, (void)model, (void)transform;
+    (void)wlOut, (void)x, (void)y, (void)physicalw, (void)physicalh,
+        (void)subpixel, (void)make, (void)model;
+    Output* output    = data;
+    output->transform = transform;
 }
 
 static void
