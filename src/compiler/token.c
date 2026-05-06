@@ -54,6 +54,7 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_UNSORTED] = "TOKEN_UNSORTED",
     [TOKEN_TOP]      = "TOKEN_TOP",
     [TOKEN_BOTTOM]   = "TOKEN_BOTTOM",
+    [TOKEN_CENTER]   = "TOKEN_CENTER",
 
     /* [-]integer macros */
     [TOKEN_MENU_WIDTH] = "TOKEN_MENU_WIDTH",

@@ -464,11 +464,18 @@ disassembleMenu(const Menu* menu)
     debugMsgWithIndent(0, "| %-20s %04u", "Delay:", menu->delay);
     debugMsgWithIndent(0, "| %-20s %04u", "Keep Delay:", menu->keepDelay);
     debugMsgWithIndent(0, "| %-20s '%s'", "Wrap Cmd:", menu->wrapCmd ? menu->wrapCmd : "(null)");
+    const char* positionStr = "TOP";
+    switch (menu->position)
+    {
+    case MENU_POS_BOTTOM: positionStr = "BOTTOM"; break;
+    case MENU_POS_TOP:    positionStr = "TOP"; break;
+    case MENU_POS_CENTER: positionStr = "CENTER"; break;
+    }
     debugMsgWithIndent(
         0,
         "| %-20s %s",
         "Window position:",
-        (menu->position == MENU_POS_BOTTOM ? "BOTTOM" : "TOP"));
+        positionStr);
     debugMsgWithIndent(0, "| %-20s %s", "Debug:", "true");
     debugMsgWithIndent(0, "| %-20s %s", "Sort:", menu->sort ? "true" : "false");
     debugMsgWithIndent(0, "| %-20s %s", "Dirty:", menu->dirty ? "true" : "false");

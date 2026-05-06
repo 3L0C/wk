@@ -43,6 +43,9 @@ key chords from a [wks](wks) file or script.
 **-b, --bottom**
 : Position menu at bottom of screen.
 
+**-c, --center**
+: Position menu at center of screen.
+
 **-s, --script**
 : Read **wks** script from stdin to use as key chords.
 

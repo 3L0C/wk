@@ -261,7 +261,7 @@ getAlignAnchor(MenuPosition position)
     {
         anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
     }
-    else
+    else if (position == MENU_POS_TOP)
     {
         anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP;
     }
@@ -393,6 +393,15 @@ moveResizeWindow(WaylandWindow* window, Buffer* buffer, struct wl_display* displ
             0,
             0,
             window->windowGap,
+            leftMargin);
+    }
+    else if (window->position == MENU_POS_CENTER)
+    {
+        zwlr_layer_surface_v1_set_margin(
+            window->layerSurface,
+            0,
+            0,
+            0,
             leftMargin);
     }
     else

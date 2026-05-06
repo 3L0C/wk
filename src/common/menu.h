@@ -52,7 +52,8 @@ typedef uint8_t MenuPosition;
 enum
 {
     MENU_POS_BOTTOM,
-    MENU_POS_TOP
+    MENU_POS_TOP,
+    MENU_POS_CENTER
 };
 
 typedef struct

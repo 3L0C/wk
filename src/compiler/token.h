@@ -49,6 +49,7 @@ enum
     TOKEN_UNSORTED,
     TOKEN_TOP,
     TOKEN_BOTTOM,
+    TOKEN_CENTER,
 
     /* [-]integer macros */
     TOKEN_MENU_WIDTH,

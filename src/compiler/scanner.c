@@ -410,6 +410,11 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 1, "d")) result = TOKEN_BORDER_COLOR;
         break;
     }
+    case 'c':
+    {
+        if (isKeyword(scanner, 1, 5, "enter")) result = TOKEN_CENTER;
+        break;
+    }
     case 'd':
     {
         if (isKeyword(scanner, 1, 4, "ebug")) result = TOKEN_DEBUG;
