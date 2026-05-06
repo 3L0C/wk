@@ -141,6 +141,7 @@ typedef struct
     struct wl_list    link;
     uint32_t          width;
     uint32_t          height;
+    int32_t           transform;
     int               scale;
     char*             name;
 } Output;
