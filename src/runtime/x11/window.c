@@ -206,6 +206,10 @@ resizeWinHeight(X11Window* window, Menu* menu)
     {
         window->y = root->h - window->height - window->y + root->y;
     }
+    else if (desiriedPos(menu, MENU_POS_CENTER))
+    {
+        window->y = root->y + (root->h - window->height) / 2;
+    }
 }
 
 static void

@@ -497,6 +497,7 @@ usage(void)
         "                               execution for +keep chords (default 75 ms).\n"
         "    -t, --top                  Position menu at top of screen.\n"
         "    -b, --bottom               Position menu at bottom of screen.\n"
+        "    -c, --center               Position menu at center of screen.\n"
         "    -s, --script               Read script from stdin to use as key chords.\n"
         "    -U, --unsorted             Disable sorting of key chords (sorted by default).\n"
         "    -m, --max-columns INT      Set the maximum menu columns to INT (defualt 5).\n"
@@ -586,6 +587,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "debug",         no_argument,       0, 'd'                   },
         { "top",           no_argument,       0, 't'                   },
         { "bottom",        no_argument,       0, 'b'                   },
+        { "center",        no_argument,       0, 'c'                   },
         { "script",        no_argument,       0, 's'                   },
         { "unsorted",      no_argument,       0, 'U'                   },
         /*                  required argument           */
@@ -626,7 +628,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
     while (true)
     {
 
-        opt = getopt_long(*argc, *argv, ":hvdtbsUD:m:p:T:c:w:g:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvdtbcsUD:m:p:T:w:g:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
@@ -637,6 +639,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case 'd': menu->debug = true; break;
         case 't': menu->position = MENU_POS_TOP; break;
         case 'b': menu->position = MENU_POS_BOTTOM; break;
+        case 'c': menu->position = MENU_POS_CENTER; break;
         case 's': menu->client.tryScript = true; break;
         case 'U': menu->sort = false; break;
         /* requires argument */

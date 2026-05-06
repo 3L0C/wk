@@ -887,6 +887,7 @@ Switch macros are simple toggles with no argument.
 | `:unsorted` | `--unsorted`        | Disable sorting         |
 | `:top`      | `--top`             | Position menu at top    |
 | `:bottom`   | `--bottom`          | Position menu at bottom |
+| `:center`   | `--center`          | Position menu at center |
 
 ### Integer Macros
 
