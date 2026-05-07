@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WK" "1" "Jan 01, 1980" "0.3.1" "wk"
+.TH "WK" "1" "Jan 01, 1980" "0.3.2" "wk"
 .SH NAME
 wk \- Which-Key via X11 and Wayland
 .sp
@@ -72,6 +72,9 @@ Position menu at top of screen.
 \fB\-b, \-\-bottom\fP
 Position menu at bottom of screen.
 .TP
+\fB\-c, \-\-center\fP
+Position menu at center of screen.
+.TP
 \fB\-s, \-\-script\fP
 Read \fBwks\fP script from stdin to use as key chords.
 .TP
@@ -97,7 +100,9 @@ screen width (default \-1).
 .TP
 \fB\-g, \-\-menu\-gap\fP \fIINT\fP
 Set menu gap between top/bottom of screen to \fIINT\fP\&. Set to \(aq\-1\(aq for a gap
-equal to 1/10th of the screen height (default \-1).
+equal to 1/10th of the screen height (default \-1). Has no effect when
+combined with \fB\-\-center\fP, since a centered menu has no anchored edge to
+gap from.
 .TP
 \fB\-\-wrap\-cmd\fP \fISTRING\fP
 Wrap all chord commands by executing them as \fI/bin/sh \-c \(dqSTRING CMD\(dq\fP
