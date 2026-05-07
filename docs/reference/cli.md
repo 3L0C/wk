@@ -71,7 +71,9 @@ key chords from a [wks](wks) file or script.
 
 **-g, --menu-gap** *INT*
 : Set menu gap between top/bottom of screen to *INT*. Set to '-1' for a gap
-  equal to 1/10th of the screen height (default -1).
+  equal to 1/10th of the screen height (default -1). Has no effect when
+  combined with **--center**, since a centered menu has no anchored edge to
+  gap from.
 
 **--wrap-cmd** *STRING*
 : Wrap all chord commands by executing them as */bin/sh -c "STRING CMD"*
