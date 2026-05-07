@@ -10,8 +10,9 @@ _wk() {
         '(-h --help)'{-h,--help}'[Display help message and exit]'
         '(-v --version)'{-v,--version}'[Display version number and exit]'
         '(-d --debug)'{-d,--debug}'[Print debug information]'
-        '(-t --top -b --bottom)'{-t,--top}'[Position menu at top of screen]'
-        '(-t --top -b --bottom)'{-b,--bottom}'[Position menu at bottom of screen]'
+        '(-t --top -b --bottom -c --center)'{-t,--top}'[Position menu at top of screen]'
+        '(-t --top -b --bottom -c --center)'{-b,--bottom}'[Position menu at bottom of screen]'
+        '(-t --top -b --bottom -c --center)'{-c,--center}'[Position menu at center of screen]'
         '(-s --script)'{-s,--script}'[Read script from stdin]'
         '(-U --unsorted)'{-U,--unsorted}'[Disable sorting of key chords]'
 
