@@ -1,0 +1,10 @@
+# @desc: Empty @group body is rejected
+
+# @expect-error: Empty @group block
+
+@group "Empty" {
+}
+a "cmd" +write %{{echo a}}
+p "prefix" {
+    b "nested" +write %{{echo b}}
+}

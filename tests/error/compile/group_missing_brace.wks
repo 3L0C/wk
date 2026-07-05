@@ -1,0 +1,6 @@
+# @desc: @group requires a block
+
+# @expect-error: Expected '{' to begin @group block
+
+@group "NoBrace"
+a "cmd" +write %{{echo a}}

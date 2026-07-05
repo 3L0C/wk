@@ -1,0 +1,10 @@
+# @desc: Nested @group blocks are rejected
+
+# @expect-error: Cannot nest @group blocks
+
+@group "Outer" {
+    a "cmd" +write %{{echo a}}
+    @group "Inner" {
+        b "cmd" +write %{{echo b}}
+    }
+}

@@ -1,0 +1,25 @@
+# @desc: @group runtime behavior
+
+# @test: "a"
+# @expect: echo chat-a
+
+# @test: "c"
+# @expect: echo mail-c
+
+# @test: "t x"
+# @expect: echo tool-x
+
+@group "Chats" {
+    a "Chat A" +write %{{echo chat-a}}
+    b "Chat B" +write %{{echo chat-b}}
+}
+
+@group "Mail" {
+    c "Mail C" +write %{{echo mail-c}}
+}
+
+@group "Tools" +center {
+    t "Tools" {
+        x "Tool X" +write %{{echo tool-x}}
+    }
+}
