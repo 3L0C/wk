@@ -1,7 +1,6 @@
 # @desc: Header color directives are captured in transpiled config
 
 :fg-header "#ff0000"
-:bg-header "#00ff00"
 
 @group "G" {
     a "cmd" +write %{{echo a}}

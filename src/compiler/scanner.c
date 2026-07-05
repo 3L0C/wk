@@ -418,7 +418,6 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         else if (isKeyword(scanner, 1, 11, "order-width")) result = TOKEN_BORDER_WIDTH;
         else if (isKeyword(scanner, 1, 12, "order-radius")) result = TOKEN_BORDER_RADIUS;
         else if (isKeyword(scanner, 1, 1, "g")) result = TOKEN_BACKGROUND_COLOR;
-        else if (isKeyword(scanner, 1, 8, "g-header")) result = TOKEN_BACKGROUND_HEADER_COLOR;
         else if (isKeyword(scanner, 1, 1, "d")) result = TOKEN_BORDER_COLOR;
         break;
     }

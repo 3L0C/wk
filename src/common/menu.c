@@ -56,7 +56,6 @@ enum
     OPT_ARG_FG_TITLE,
     OPT_ARG_FG_GOTO,
     OPT_ARG_FG_HEADER,
-    OPT_ARG_BG_HEADER,
     OPT_ARG_BG,
     OPT_ARG_BD,
     OPT_ARG_SHELL,
@@ -377,7 +376,6 @@ menuHexColorInitColors(MenuHexColor* hexColors)
         [MENU_COLOR_TITLE]      = "#DCD7BA",
         [MENU_COLOR_GOTO]       = "#E6C384",
         [MENU_COLOR_HEADER]     = "#7FB4CA",
-        [MENU_COLOR_HEADER_BG]  = NULL,
         [MENU_COLOR_BACKGROUND] = "#181616",
         [MENU_COLOR_BORDER]     = "#7FB4CA",
     };
@@ -390,7 +388,6 @@ menuHexColorInitColors(MenuHexColor* hexColors)
         [MENU_COLOR_TITLE]      = foreground[FOREGROUND_COLOR_TITLE],
         [MENU_COLOR_GOTO]       = foreground[FOREGROUND_COLOR_GOTO],
         [MENU_COLOR_HEADER]     = foreground[FOREGROUND_COLOR_HEADER],
-        [MENU_COLOR_HEADER_BG]  = headerBg,
         [MENU_COLOR_BACKGROUND] = background,
         [MENU_COLOR_BORDER]     = border,
     };
@@ -398,11 +395,6 @@ menuHexColorInitColors(MenuHexColor* hexColors)
     for (int i = 0; i < MENU_COLOR_LAST; i++)
     {
         const char* color = colors[i] ? colors[i] : defaultColors[i];
-        if (!color)
-        {
-            hexColors[i].hex = NULL;
-            continue;
-        }
         if (!menuHexColorInitColor(&hexColors[i], color))
         {
             char* colorType;
@@ -418,14 +410,7 @@ menuHexColorInitColors(MenuHexColor* hexColors)
             case MENU_COLOR_TITLE: colorType = "title"; break;
             case MENU_COLOR_GOTO: colorType = "goto"; break;
             case MENU_COLOR_HEADER: colorType = "header"; break;
-            case MENU_COLOR_HEADER_BG: colorType = "header background"; break;
             default: colorType = "UNKNOWN"; break;
-            }
-            if (!defaultColors[i])
-            {
-                fprintf(stderr, "leaving %s unset.\n", colorType);
-                hexColors[i].hex = NULL;
-                continue;
             }
             fprintf(stderr, "setting %s to '%s'.\n", colorType, defaultColors[i]);
             menuHexColorInitColor(&hexColors[i], defaultColors[i]);
@@ -550,7 +535,6 @@ usage(void)
         "    --fg-title COLOR           Set foreground title to COLOR (default '#DCD7BA').\n"
         "    --fg-goto COLOR            Set foreground goto to COLOR (default '#E6C384').\n"
         "    --fg-header COLOR          Set foreground group-header to COLOR (default '#7FB4CA').\n"
-        "    --bg-header COLOR          Set group-header background to COLOR (default unset).\n"
         "    --bg COLOR                 Set background to COLOR (default '#181616').\n"
         "    --bd COLOR                 Set border to COLOR (default '#7FB4CA').\n"
         "    --shell STRING             Set shell to STRING (default '/bin/sh').\n"
@@ -633,7 +617,6 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "fg-title",      required_argument, 0, OPT_ARG_FG_TITLE      },
         { "fg-goto",       required_argument, 0, OPT_ARG_FG_GOTO       },
         { "fg-header",     required_argument, 0, OPT_ARG_FG_HEADER     },
-        { "bg-header",     required_argument, 0, OPT_ARG_BG_HEADER     },
         { "bg",            required_argument, 0, OPT_ARG_BG            },
         { "bd",            required_argument, 0, OPT_ARG_BD            },
         { "shell",         required_argument, 0, OPT_ARG_SHELL         },
@@ -796,7 +779,6 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case OPT_ARG_FG_TITLE: menuSetColor(menu, optarg, MENU_COLOR_TITLE); break;
         case OPT_ARG_FG_GOTO: menuSetColor(menu, optarg, MENU_COLOR_GOTO); break;
         case OPT_ARG_FG_HEADER: menuSetColor(menu, optarg, MENU_COLOR_HEADER); break;
-        case OPT_ARG_BG_HEADER: menuSetColor(menu, optarg, MENU_COLOR_HEADER_BG); break;
         case OPT_ARG_BG: menuSetColor(menu, optarg, MENU_COLOR_BACKGROUND); break;
         case OPT_ARG_BD: menuSetColor(menu, optarg, MENU_COLOR_BORDER); break;
         case OPT_ARG_SHELL: menu->shell = optarg; break;

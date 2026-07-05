@@ -1,0 +1,7 @@
+# @desc: :fg umbrella sets header foreground too
+
+:fg "#123456"
+
+@group "G" {
+    a "cmd" +write %{{echo a}}
+}

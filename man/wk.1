@@ -83,9 +83,9 @@ Disable sorting of key chords (sorted by default).
 .TP
 \fB\-m, \-\-max\-columns\fP \fIINT\fP
 Set the maximum menu columns to \fIINT\fP (default 5). Ignored for a
-menu whose chords are organized with \fI\%@group\fP in the \fBwks\fP man
-page; grouped columns are sized as menu width / number of groups
-instead.
+menu whose chords are organized into columns; grouped columns are
+sized as menu width / number of groups instead. See \fI\%@group\fP in
+the \fBwks\fP man page.
 .TP
 \fB\-p, \-\-press\fP \fIKEY(s)\fP
 Press \fIKEY(s)\fP before dispalying menu. See \fI\%Trigger Key\fP
@@ -152,10 +152,6 @@ Set foreground goto to COLOR (default \(aq#E6C384\(aq).
 \fB\-\-fg\-header\fP \fICOLOR\fP
 Set foreground group\-header to COLOR (default \(aq#7FB4CA\(aq). See
 \fI\%@group\fP in the \fBwks\fP man page.
-.TP
-\fB\-\-bg\-header\fP \fICOLOR\fP
-Set group\-header background to COLOR (default unset, meaning no
-header background is drawn).
 .TP
 \fB\-\-title\fP \fISTRING\fP
 Set global title displayed above menu to STRING.

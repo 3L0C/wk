@@ -224,11 +224,6 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
     cairoSetColor(&paint->fgTitle, &colors[MENU_COLOR_TITLE]);
     cairoSetColor(&paint->fgGoto, &colors[MENU_COLOR_GOTO]);
     cairoSetColor(&paint->fgHeader, &colors[MENU_COLOR_HEADER]);
-    paint->bgHeaderIsSet = colors[MENU_COLOR_HEADER_BG].hex != NULL;
-    if (paint->bgHeaderIsSet)
-    {
-        cairoSetColor(&paint->bgHeader, &colors[MENU_COLOR_HEADER_BG]);
-    }
     cairoSetColor(&paint->bg, &colors[MENU_COLOR_BACKGROUND]);
     cairoSetColor(&paint->bd, &colors[MENU_COLOR_BORDER]);
 }
@@ -259,7 +254,6 @@ setSourceRgba(cairo_t* cr, CairoPaint* paint, MenuColor type)
     case MENU_COLOR_TITLE: color = &paint->fgTitle; break;
     case MENU_COLOR_GOTO: color = &paint->fgGoto; break;
     case MENU_COLOR_HEADER: color = &paint->fgHeader; break;
-    case MENU_COLOR_HEADER_BG: color = &paint->bgHeader; break;
     case MENU_COLOR_BACKGROUND: color = &paint->bg; break;
     case MENU_COLOR_BORDER: color = &paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;
@@ -695,15 +689,6 @@ drawGroupedColumns(
     {
         uint32_t        colX  = startx + ((uint32_t)iter.index * cellWidth);
         const KeyChord* first = SPAN_GET(menu->keyChords, const KeyChord, column->start);
-
-        if (paint->bgHeaderIsSet)
-        {
-            if (setSourceRgba(cr, paint, MENU_COLOR_HEADER_BG))
-            {
-                cairo_rectangle(cr, colX, starty, cellWidth, cellHeight);
-                cairo_fill(cr);
-            }
-        }
 
         drawHeaderText(
             cr,

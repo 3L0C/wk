@@ -9,6 +9,12 @@
 # @test: "t x"
 # @expect: echo tool-x
 
+# @test: "g i"
+# @expect: echo inner-i
+
+# @test: "g o"
+# @expect: echo other-o
+
 @group "Chats" {
     a "Chat A" +write %{{echo chat-a}}
     b "Chat B" +write %{{echo chat-b}}
@@ -21,5 +27,16 @@
 @group "Tools" +center {
     t "Tools" {
         x "Tool X" +write %{{echo tool-x}}
+    }
+}
+
+@group "Prefixes" {
+    g "Grouped prefix" {
+        @group "Inner" {
+            i "Inner item" +write %{{echo inner-i}}
+        }
+        @group "Other" {
+            o "Other item" +write %{{echo other-o}}
+        }
     }
 }

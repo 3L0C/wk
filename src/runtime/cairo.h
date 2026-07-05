@@ -19,8 +19,6 @@ typedef struct
     CairoColor  fgTitle;
     CairoColor  fgGoto;
     CairoColor  fgHeader;
-    CairoColor  bgHeader;
-    bool        bgHeaderIsSet;
     CairoColor  bg;
     CairoColor  bd;
     const char* font;
