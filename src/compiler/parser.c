@@ -525,10 +525,28 @@ parserAdvance(Parser* p)
     return p->current.type;
 }
 
+static bool
+destHasMixedGroups(Vector* dest)
+{
+    assert(dest);
+
+    size_t grouped = 0;
+    vectorForEach(dest, KeyChord, chord)
+    {
+        if (propHasContent(chord, KC_PROP_GROUP)) grouped++;
+    }
+    return grouped != 0 && grouped != vectorLength(dest);
+}
+
 KeyChord*
 parserAllocChord(Parser* p)
 {
     assert(p);
+
+    if (!p->groupStates[p->depth].active && destHasMixedGroups(p->dest))
+    {
+        parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
+    }
 
     KeyChord* chord = VECTOR_APPEND_SLOT(p->dest, KeyChord);
     compilerInitChord(chord);
@@ -899,19 +917,6 @@ parseSharedTemplate(Parser* p)
 }
 
 static bool
-destHasMixedGroups(Vector* dest)
-{
-    assert(dest);
-
-    size_t grouped = 0;
-    vectorForEach(dest, KeyChord, chord)
-    {
-        if (propHasContent(chord, KC_PROP_GROUP)) grouped++;
-    }
-    return grouped != 0 && grouped != vectorLength(dest);
-}
-
-static bool
 parseRightBrace(Parser* p)
 {
     assert(p);
@@ -939,7 +944,7 @@ parseRightBrace(Parser* p)
 
     deduplicateVector(dest, compilerFreeChord);
 
-    if (destHasMixedGroups(dest))
+    if (!parserHadError(p) && destHasMixedGroups(dest))
     {
         parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
         return false;
@@ -1013,6 +1018,36 @@ collectGroupNameTokens(Parser* p, Vector* tokens)
     return false;
 }
 
+static void
+skipGroupConstruct(Parser* p)
+{
+    assert(p);
+
+    while (!parserIsAtEnd(p) && !parserCheck(p, TOKEN_LEFT_BRACE))
+    {
+        parserAdvance(p);
+    }
+
+    size_t braceDepth = 0;
+    while (!parserIsAtEnd(p))
+    {
+        if (parserCheck(p, TOKEN_LEFT_BRACE))
+        {
+            braceDepth++;
+        }
+        else if (parserCheck(p, TOKEN_RIGHT_BRACE))
+        {
+            braceDepth--;
+            if (braceDepth == 0)
+            {
+                parserAdvance(p);
+                return;
+            }
+        }
+        parserAdvance(p);
+    }
+}
+
 static bool
 parseGroupOpen(Parser* p)
 {
@@ -1030,12 +1065,24 @@ parseGroupOpen(Parser* p)
     compilerFreeChord(uncommitted);
     vectorRemove(dest, vectorLength(dest) - 1);
 
+    vectorForEach(dest, KeyChord, chord)
+    {
+        if (!propHasContent(chord, KC_PROP_GROUP))
+        {
+            parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
+            skipGroupConstruct(p);
+            parserAllocChord(p);
+            return false;
+        }
+    }
+
     parserAdvance(p);
 
     Token* token = parserCurrentToken(p);
     if (token->type != TOKEN_DESCRIPTION && token->type != TOKEN_DESC_INTERP)
     {
         parserErrorAtCurrent(p, "Expected group name after @group.");
+        skipGroupConstruct(p);
         parserAllocChord(p);
         return false;
     }
@@ -1043,6 +1090,7 @@ parseGroupOpen(Parser* p)
     vectorClear(&gs->nameTokens);
     if (!collectGroupNameTokens(p, &gs->nameTokens))
     {
+        skipGroupConstruct(p);
         parserAllocChord(p);
         return false;
     }
@@ -1743,10 +1791,10 @@ parseImpl(Parser* p)
     return !p->hadError;
 }
 
-Vector
-parse(Scanner* scanner, Menu* m)
+bool
+parse(Scanner* scanner, Menu* m, Vector* chords)
 {
-    assert(scanner), assert(m);
+    assert(scanner), assert(m), assert(chords);
 
     Parser p;
     parserInit(&p, scanner, m);
@@ -1754,16 +1802,19 @@ parse(Scanner* scanner, Menu* m)
     if (!parseImplicitKeysImpl(&p, m->implicitArrayKeys))
     {
         parserFree(&p);
-        return VECTOR_INIT(KeyChord);
+        *chords = VECTOR_INIT(KeyChord);
+        return false;
     }
 
     if (!parseImpl(&p))
     {
         compilerFreeChordVector(&p.rootChords);
         parserFree(&p);
-        return VECTOR_INIT(KeyChord);
+        *chords = VECTOR_INIT(KeyChord);
+        return false;
     }
 
     parserFree(&p);
-    return p.rootChords;
+    *chords = p.rootChords;
+    return true;
 }

@@ -94,7 +94,11 @@ compileKeyChords(Menu* menu, char* source, const char* filepath)
 
     if (menu->debug) debugPrintScannedTokenHeader();
 
-    Vector chords = parse(&scanner, menu);
+    Vector chords;
+    if (!parse(&scanner, menu, &chords))
+    {
+        return NULL;
+    }
 
     if (!transform(&chords, menu, &scanner))
     {
