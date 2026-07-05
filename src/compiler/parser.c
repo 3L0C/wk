@@ -1654,7 +1654,8 @@ parseSingleChord(Parser* p)
         TokenType t = p->current.type;
         if (t == TOKEN_LEFT_BRACKET || t == TOKEN_ELLIPSIS ||
             tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY ||
-            t == TOKEN_LESS_THAN || t == TOKEN_RIGHT_BRACE || t == TOKEN_EOF)
+            t == TOKEN_LESS_THAN || t == TOKEN_RIGHT_BRACE ||
+            t == TOKEN_GROUP || t == TOKEN_EOF)
         {
             return true;
         }

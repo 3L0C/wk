@@ -139,7 +139,6 @@ string_macro       \-> ( \(aqinclude\(aq
                       | \(aqfg\-title\(aq
                       | \(aqfg\-goto\(aq
                       | \(aqfg\-header\(aq
-                      | \(aqbg\-header\(aq
                       | \(aqbg\(aq
                       | \(aqbd\(aq
                       | \(aqshell\(aq
@@ -1332,9 +1331,8 @@ Grouped layout divides the menu width evenly across columns
 (\fBmenu width / number of groups\fP); \fB:max\-columns\fP /
 \fB\-\-max\-columns\fP has no effect on a grouped scope. The header row uses
 the menu font. Header colors are set with \fB:fg\-header\fP / \fB\-\-fg\-header\fP
-(default \fB#7FB4CA\fP) and the optional \fB:bg\-header\fP / \fB\-\-bg\-header\fP
-(unset by default, meaning no header background is drawn). The umbrella
-\fB\-\-fg\fP flag also sets the header foreground.
+(default \fB#7FB4CA\fP). The umbrella \fB\-\-fg\fP flag also sets the header
+foreground.
 .SH PREPROCESSOR MACROS
 .sp
 Preprocessor macros configure the menu appearance and behavior, or
@@ -1428,14 +1426,6 @@ T}	T{
 \fB\-\-fg\-header\fP
 T}	T{
 Group\-header text color
-T}
-_
-T{
-\fB:bg\-header\fP
-T}	T{
-\fB\-\-bg\-header\fP
-T}	T{
-Group\-header background color
 T}
 _
 T{
@@ -1847,7 +1837,8 @@ column no matter where they appear in the file. With \fB:unsorted\fP,
 both chords and \fB@group\fP blocks keep declaration order; only
 \fBadjacent\fP \fB@group\fP blocks sharing a name coalesce \- the same name
 used again later, with a different group in between, produces a second
-column with that header.
+column with that header. Group names are compared byte\-wise
+(case\-sensitive), so uppercase names sort before lowercase ones.
 .SH BUG REPORTS
 .sp
 If you find a bug, please report it at

@@ -176,19 +176,6 @@ writeConfigVariables(const Menu* menu)
     writeEscCString(menu->colors[MENU_COLOR_BORDER].hex);
     printf("\";\n");
 
-    /* Header background color */
-    printf("/* Menu group-header background color. NULL = no header background. */\n");
-    if (!menu->colors[MENU_COLOR_HEADER_BG].hex)
-    {
-        printf("static const char* headerBg = NULL;\n");
-    }
-    else
-    {
-        printf("static const char* headerBg = \"");
-        writeEscCString(menu->colors[MENU_COLOR_HEADER_BG].hex);
-        printf("\";\n");
-    }
-
     /* Shell */
     printf("/* Default shell to run chord commands with. */\n");
     printf("static const char* shell = \"");

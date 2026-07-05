@@ -106,7 +106,6 @@ string_macro       -> ( 'include'
                       | 'fg-title'
                       | 'fg-goto'
                       | 'fg-header'
-                      | 'bg-header'
                       | 'bg'
                       | 'bd'
                       | 'shell'
@@ -838,9 +837,7 @@ Grouped layout divides the menu width evenly across columns
 (`menu width / number of groups`); `:max-columns` / `--max-columns`
 has no effect on a grouped scope. The header row uses the menu font.
 Header colors are set with `:fg-header` / `--fg-header` (default
-`#7FB4CA`) and the optional `:bg-header` / `--bg-header` (unset by
-default, meaning no header background is drawn). The umbrella `--fg`
-flag also sets the header foreground.
+`#7FB4CA`). The umbrella `--fg` flag also sets the header foreground.
 
 ## Preprocessor Macros
 
@@ -869,7 +866,6 @@ arguments support [user variable](#user-variables) interpolation.
 | `:fg-title`      | `--fg-title`         | Title text color            |
 | `:fg-goto`       | `--fg-goto`          | Goto text color             |
 | `:fg-header`     | `--fg-header`        | Group-header text color     |
-| `:bg-header`     | `--bg-header`        | Group-header background     |
 | `:bg`            | `--bg`               | Background color            |
 | `:bd`            | `--bd`               | Border color                |
 | `:shell`         | `--shell`            | Shell for command execution |
@@ -1073,7 +1069,8 @@ single column no matter where they appear in the file. With
 `:unsorted`, both chords and `@group` blocks keep declaration order;
 only **adjacent** `@group` blocks sharing a name coalesce - the same
 name used again later, with a different group in between, produces a
-second column with that header.
+second column with that header. Group names are compared byte-wise
+(case-sensitive), so uppercase names sort before lowercase ones.
 
 ## Bug Reports
 
