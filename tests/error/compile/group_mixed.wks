@@ -1,0 +1,8 @@
+# @desc: Grouped and ungrouped chords cannot share the root scope
+
+# @expect-error: Cannot mix grouped and ungrouped chords
+
+@group "G" {
+    a "cmd" +write %{{echo a}}
+}
+b "ungrouped" +write %{{echo b}}

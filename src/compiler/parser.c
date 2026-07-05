@@ -899,6 +899,19 @@ parseSharedTemplate(Parser* p)
 }
 
 static bool
+destHasMixedGroups(Vector* dest)
+{
+    assert(dest);
+
+    size_t grouped = 0;
+    vectorForEach(dest, KeyChord, chord)
+    {
+        if (propHasContent(chord, KC_PROP_GROUP)) grouped++;
+    }
+    return grouped != 0 && grouped != vectorLength(dest);
+}
+
+static bool
 parseRightBrace(Parser* p)
 {
     assert(p);
@@ -925,6 +938,12 @@ parseRightBrace(Parser* p)
     }
 
     deduplicateVector(dest, compilerFreeChord);
+
+    if (destHasMixedGroups(dest))
+    {
+        parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
+        return false;
+    }
 
     KeyChord* parentChord = parserSavedChord(p, parserDepth(p) - 1);
 
@@ -1713,6 +1732,11 @@ parseImpl(Parser* p)
             parserErrorAtCurrent(p, "Unterminated @group block.");
             break;
         }
+    }
+
+    if (!p->hadError && destHasMixedGroups(&p->rootChords))
+    {
+        parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
     }
 
     return !p->hadError;
