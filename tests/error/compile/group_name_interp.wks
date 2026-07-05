@@ -1,0 +1,7 @@
+# @desc: Chord-specific interpolations are invalid in @group names
+
+# @expect-error: Cannot use chord interpolations in @group name
+
+@group "Bad %(key)" {
+    a "cmd" +write %{{echo a}}
+}

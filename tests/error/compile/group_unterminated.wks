@@ -1,0 +1,6 @@
+# @desc: Unterminated @group is rejected
+
+# @expect-error: Unterminated @group block
+
+@group "Open" {
+    a "cmd" +write %{{echo a}}

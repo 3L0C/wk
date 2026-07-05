@@ -1,0 +1,7 @@
+# @desc: @group requires a name string
+
+# @expect-error: Expected group name after @group
+
+@group {
+    a "cmd" +write %{{echo a}}
+}

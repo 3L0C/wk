@@ -35,6 +35,14 @@ static InternedIndex indexInterns[256] = { 0 };
 /* Maximum prefix nesting depth */
 #define MAX_DEPTH 32
 
+typedef struct
+{
+    Vector nameTokens;
+    size_t startIndex;
+    int    align;
+    bool   active;
+} GroupState;
+
 struct Parser
 {
     Scanner*    scanner;
@@ -46,6 +54,7 @@ struct Parser
     KeyChord*   parentStack[MAX_DEPTH];
     Vector*     destStack[MAX_DEPTH];
     Vector      childArrays[MAX_DEPTH];
+    GroupState  groupStates[MAX_DEPTH];
     size_t      depth;
     Expectation expect;
     Arena*      arena;
@@ -379,6 +388,11 @@ parserFree(Parser* p)
         vectorFree(&p->childArrays[i]);
     }
 
+    for (size_t i = 0; i < MAX_DEPTH; i++)
+    {
+        vectorFree(&p->groupStates[i].nameTokens);
+    }
+
     while (!stackIsEmpty(&p->argEnvStack))
     {
         ArgEnvironment* env = STACK_PEEK(&p->argEnvStack, ArgEnvironment);
@@ -405,6 +419,15 @@ parserInit(Parser* p, Scanner* scanner, Menu* m)
     for (size_t i = 0; i < MAX_DEPTH; i++)
     {
         p->childArrays[i] = VECTOR_INIT(KeyChord);
+    }
+    for (size_t i = 0; i < MAX_DEPTH; i++)
+    {
+        p->groupStates[i] = (GroupState){
+            .nameTokens = VECTOR_INIT(Token),
+            .startIndex = 0,
+            .align      = HEADER_ALIGN_LEFT,
+            .active     = false,
+        };
     }
     p->argEnvStack       = STACK_INIT(ArgEnvironment);
     p->chordPushedEnv    = false;
@@ -716,7 +739,7 @@ parserNextChordExpectation(Parser* p)
 {
     assert(p);
 
-    if (p->depth > 0)
+    if (p->depth > 0 || p->groupStates[p->depth].active)
     {
         return EXPECT_KEY_START | EXPECT_RBRACE;
     }
@@ -924,6 +947,158 @@ parseRightBrace(Parser* p)
     parserAdvance(p);
     parserAllocChord(p);
 
+    p->expect = parserNextChordExpectation(p);
+    return true;
+}
+
+static bool
+collectGroupNameTokens(Parser* p, Vector* tokens)
+{
+    assert(p), assert(tokens);
+
+    while (!parserIsAtEnd(p))
+    {
+        Token* token = parserCurrentToken(p);
+
+        switch (token->type)
+        {
+        case TOKEN_DESC_INTERP: /* FALLTHROUGH */
+        case TOKEN_USER_VAR:
+            vectorAppend(tokens, token);
+            parserAdvance(p);
+            break;
+
+        case TOKEN_DESCRIPTION:
+            vectorAppend(tokens, token);
+            parserAdvance(p);
+            return true;
+
+        case TOKEN_THIS_KEY: /* FALLTHROUGH */
+        case TOKEN_INDEX:
+        case TOKEN_INDEX_ONE:
+        case TOKEN_THIS_DESC:
+        case TOKEN_THIS_DESC_UPPER_FIRST:
+        case TOKEN_THIS_DESC_LOWER_FIRST:
+        case TOKEN_THIS_DESC_UPPER_ALL:
+        case TOKEN_THIS_DESC_LOWER_ALL:
+            parserErrorAtCurrent(p, "Cannot use chord interpolations in @group name.");
+            return false;
+
+        default:
+            parserErrorAtCurrent(p, "Unexpected token in @group name.");
+            return false;
+        }
+    }
+
+    parserErrorAtCurrent(p, "Unterminated @group name.");
+    return false;
+}
+
+static bool
+parseGroupOpen(Parser* p)
+{
+    assert(p);
+
+    GroupState* gs = &p->groupStates[p->depth];
+    if (gs->active)
+    {
+        parserErrorAtCurrent(p, "Cannot nest @group blocks.");
+        return false;
+    }
+
+    KeyChord* uncommitted = parserCurrentChord(p);
+    Vector*   dest        = parserDest(p);
+    compilerFreeChord(uncommitted);
+    vectorRemove(dest, vectorLength(dest) - 1);
+
+    parserAdvance(p);
+
+    Token* token = parserCurrentToken(p);
+    if (token->type != TOKEN_DESCRIPTION && token->type != TOKEN_DESC_INTERP)
+    {
+        parserErrorAtCurrent(p, "Expected group name after @group.");
+        parserAllocChord(p);
+        return false;
+    }
+
+    vectorClear(&gs->nameTokens);
+    if (!collectGroupNameTokens(p, &gs->nameTokens))
+    {
+        parserAllocChord(p);
+        return false;
+    }
+
+    gs->align = HEADER_ALIGN_LEFT;
+    while (true)
+    {
+        Token* flag = parserCurrentToken(p);
+        if (flag->type == TOKEN_ALIGN_LEFT) gs->align = HEADER_ALIGN_LEFT;
+        else if (flag->type == TOKEN_ALIGN_CENTER) gs->align = HEADER_ALIGN_CENTER;
+        else if (flag->type == TOKEN_ALIGN_RIGHT) gs->align = HEADER_ALIGN_RIGHT;
+        else break;
+        parserAdvance(p);
+    }
+
+    if (!parserCheck(p, TOKEN_LEFT_BRACE))
+    {
+        parserErrorAtCurrent(p, "Expected '{' to begin @group block.");
+        parserAllocChord(p);
+        return false;
+    }
+    parserAdvance(p);
+
+    gs->active     = true;
+    gs->startIndex = vectorLength(dest);
+    parserAllocChord(p);
+    p->expect = parserNextChordExpectation(p);
+    return true;
+}
+
+static bool
+parseGroupClose(Parser* p)
+{
+    assert(p);
+
+    GroupState* gs   = &p->groupStates[p->depth];
+    Vector*     dest = parserDest(p);
+
+    KeyChord* lastChord = parserCurrentChord(p);
+    if (lastChord && stringIsEmpty(&lastChord->key.repr))
+    {
+        compilerFreeChord(lastChord);
+        vectorRemove(dest, vectorLength(dest) - 1);
+    }
+
+    if (vectorLength(dest) == gs->startIndex)
+    {
+        gs->active = false;
+        parserErrorAtCurrent(p, "Empty @group block.");
+        parserAllocChord(p);
+        return false;
+    }
+
+    vectorForEachFrom(dest, KeyChord, chord, gs->startIndex)
+    {
+        Vector* groupTokens = propVector(chord, KC_PROP_GROUP);
+        vectorClear(groupTokens);
+        vectorForEach(&gs->nameTokens, const Token, nameToken)
+        {
+            vectorAppend(groupTokens, nameToken);
+        }
+
+        if (gs->align != HEADER_ALIGN_LEFT)
+        {
+            Property* alignProp = propGet(chord, KC_PROP_GROUP_ALIGN);
+            PROP_SET_TYPE(alignProp, INT);
+            alignProp->value.as_int = gs->align;
+        }
+    }
+
+    gs->active = false;
+    vectorClear(&gs->nameTokens);
+
+    parserAdvance(p);
+    parserAllocChord(p);
     p->expect = parserNextChordExpectation(p);
     return true;
 }
@@ -1497,9 +1672,13 @@ parseImpl(Parser* p)
         {
             ok = parseImplicitArray(p);
         }
+        else if (t == TOKEN_GROUP)
+        {
+            ok = parseGroupOpen(p);
+        }
         else if (t == TOKEN_RIGHT_BRACE)
         {
-            ok = parseRightBrace(p);
+            ok = p->groupStates[p->depth].active ? parseGroupClose(p) : parseRightBrace(p);
         }
         else if (tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY || t == TOKEN_LESS_THAN)
         {
@@ -1524,6 +1703,15 @@ parseImpl(Parser* p)
         {
             compilerFreeChord(last);
             vectorRemove(p->dest, vectorLength(p->dest) - 1);
+        }
+    }
+
+    for (size_t i = 0; i < MAX_DEPTH; i++)
+    {
+        if (p->groupStates[i].active)
+        {
+            parserErrorAtCurrent(p, "Unterminated @group block.");
+            break;
         }
     }
 
