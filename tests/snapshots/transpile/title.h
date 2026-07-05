@@ -42,11 +42,14 @@ static const char* foreground[FOREGROUND_COLOR_LAST] = {
     [FOREGROUND_COLOR_CHORD]     = "#DCD7BA",
     [FOREGROUND_COLOR_TITLE]     = "#ff0000",
     [FOREGROUND_COLOR_GOTO]      = "#E6C384",
+    [FOREGROUND_COLOR_HEADER]    = "#7FB4CA",
 };
 /* Menu background color */
 static const char* background = "#181616";
 /* Menu border color */
 static const char* border = "#7FB4CA";
+/* Menu group-header background color. NULL = no header background. */
+static const char* headerBg = NULL;
 /* Default shell to run chord commands with. */
 static const char* shell = "/bin/sh";
 /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */

@@ -437,7 +437,9 @@ handleMacroWithStringArg(
     case TOKEN_FOREGROUND_CHORD_COLOR:
     case TOKEN_FOREGROUND_TITLE_COLOR:
     case TOKEN_FOREGROUND_GOTO_COLOR:
+    case TOKEN_FOREGROUND_HEADER_COLOR:
     case TOKEN_BACKGROUND_COLOR:
+    case TOKEN_BACKGROUND_HEADER_COLOR:
     case TOKEN_BORDER_COLOR:
     case TOKEN_SHELL:
     case TOKEN_FONT:
@@ -467,7 +469,9 @@ handleMacroWithStringArg(
         case TOKEN_FOREGROUND_CHORD_COLOR: menuSetColor(menu, arg, MENU_COLOR_CHORD); break;
         case TOKEN_FOREGROUND_TITLE_COLOR: menuSetColor(menu, arg, MENU_COLOR_TITLE); break;
         case TOKEN_FOREGROUND_GOTO_COLOR: menuSetColor(menu, arg, MENU_COLOR_GOTO); break;
+        case TOKEN_FOREGROUND_HEADER_COLOR: menuSetColor(menu, arg, MENU_COLOR_HEADER); break;
         case TOKEN_BACKGROUND_COLOR: menuSetColor(menu, arg, MENU_COLOR_BACKGROUND); break;
+        case TOKEN_BACKGROUND_HEADER_COLOR: menuSetColor(menu, arg, MENU_COLOR_HEADER_BG); break;
         case TOKEN_BORDER_COLOR: menuSetColor(menu, arg, MENU_COLOR_BORDER); break;
         case TOKEN_SHELL: menu->shell = arg; break;
         case TOKEN_FONT: menu->font = arg; break;
@@ -718,7 +722,9 @@ preprocessorRunImpl(
         case TOKEN_FOREGROUND_CHORD_COLOR:
         case TOKEN_FOREGROUND_TITLE_COLOR:
         case TOKEN_FOREGROUND_GOTO_COLOR:
+        case TOKEN_FOREGROUND_HEADER_COLOR:
         case TOKEN_BACKGROUND_COLOR:
+        case TOKEN_BACKGROUND_HEADER_COLOR:
         case TOKEN_BORDER_COLOR:
         case TOKEN_SHELL:
         case TOKEN_FONT:

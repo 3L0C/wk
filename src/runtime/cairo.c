@@ -164,6 +164,12 @@ cairoSetColors(CairoPaint* paint, MenuHexColor* colors)
     cairoSetColor(&paint->fgChord, &colors[MENU_COLOR_CHORD]);
     cairoSetColor(&paint->fgTitle, &colors[MENU_COLOR_TITLE]);
     cairoSetColor(&paint->fgGoto, &colors[MENU_COLOR_GOTO]);
+    cairoSetColor(&paint->fgHeader, &colors[MENU_COLOR_HEADER]);
+    paint->bgHeaderIsSet = colors[MENU_COLOR_HEADER_BG].hex != NULL;
+    if (paint->bgHeaderIsSet)
+    {
+        cairoSetColor(&paint->bgHeader, &colors[MENU_COLOR_HEADER_BG]);
+    }
     cairoSetColor(&paint->bg, &colors[MENU_COLOR_BACKGROUND]);
     cairoSetColor(&paint->bd, &colors[MENU_COLOR_BORDER]);
 }
@@ -193,6 +199,8 @@ setSourceRgba(cairo_t* cr, CairoPaint* paint, MenuColor type)
     case MENU_COLOR_CHORD: color = &paint->fgChord; break;
     case MENU_COLOR_TITLE: color = &paint->fgTitle; break;
     case MENU_COLOR_GOTO: color = &paint->fgGoto; break;
+    case MENU_COLOR_HEADER: color = &paint->fgHeader; break;
+    case MENU_COLOR_HEADER_BG: color = &paint->bgHeader; break;
     case MENU_COLOR_BACKGROUND: color = &paint->bg; break;
     case MENU_COLOR_BORDER: color = &paint->bd; break;
     default: errorMsg("Invalid color request %d", type); return false;

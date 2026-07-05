@@ -42,14 +42,14 @@ static const char* foreground[FOREGROUND_COLOR_LAST] = {
     [FOREGROUND_COLOR_CHORD]     = "#DCD7BA",
     [FOREGROUND_COLOR_TITLE]     = "#DCD7BA",
     [FOREGROUND_COLOR_GOTO]      = "#E6C384",
-    [FOREGROUND_COLOR_HEADER]    = "#7FB4CA",
+    [FOREGROUND_COLOR_HEADER]    = "#ff0000",
 };
 /* Menu background color */
 static const char* background = "#181616";
 /* Menu border color */
 static const char* border = "#7FB4CA";
 /* Menu group-header background color. NULL = no header background. */
-static const char* headerBg = NULL;
+static const char* headerBg = "#00ff00";
 /* Default shell to run chord commands with. */
 static const char* shell = "/bin/sh";
 /* Pango font description i.e. 'Noto Mono, M+ 1c, ..., 16'. */
@@ -113,62 +113,14 @@ static const char* wrapCmd = NULL;
 static Span builtinKeyChords =
     SPAN_STATIC(
         KeyChord,
-        8,
+        1,
         KEY_CHORD(
             KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("First"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("first")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Second"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("second")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("c", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Array 0"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("array-0")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Array 1"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("array-1")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("s", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Implicit"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("implicit")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("x", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Explicit"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("explicit")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("a", MOD_META, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Meta First"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("meta-first")),
-            FLAG_NONE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("b", MOD_META, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Meta Second"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("meta-second")),
-            FLAG_NONE,
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("cmd"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo a"),
+                [KC_PROP_GROUP]       = PROPERTY_STRING("G")),
+            FLAG_WRITE,
             SPAN_EMPTY));
 
 #endif /* WK_CONFIG_CONFIG_H_ */
