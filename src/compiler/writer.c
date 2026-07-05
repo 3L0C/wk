@@ -242,6 +242,12 @@ writeKeyChordsDefines(void)
         "        .type  = PROP_TYPE_STRING,            \\\n"
         "        .value = {.as_string = STRING_EMPTY } \\\n"
         "    }\n"
+        "#define PROPERTY_INT(_i)           \\\n"
+        "    (Property)                     \\\n"
+        "    {                              \\\n"
+        "        .type  = PROP_TYPE_INT,    \\\n"
+        "        .value = {.as_int = (_i) } \\\n"
+        "    }\n"
         "#define PROPERTIES(...) __VA_ARGS__\n"
         "#define PROPERTIES_EMPTY\n"
         "#define KEY_CHORD(_key, _props, _flags, _chords) \\\n"
@@ -359,6 +365,8 @@ propertyIsEmpty(const Property* prop)
     {
     case PROP_TYPE_STRING:
         return stringIsEmpty(PROP_VAL(prop, as_string));
+    case PROP_TYPE_INT:
+        return false;
     case PROP_TYPE_NONE:
         return true;
     default:
@@ -384,6 +392,9 @@ writePropertyDesignator(PropId id, const Property* prop, size_t maxNameLength)
         printf("PROPERTY_STRING(");
         writeEscStringQuoted(PROP_VAL(prop, as_string));
         printf(")");
+        break;
+    case PROP_TYPE_INT:
+        printf("PROPERTY_INT(%d)", *PROP_VAL(prop, as_int));
         break;
     default:
         printf("PROPERTY_STRING_EMPTY");

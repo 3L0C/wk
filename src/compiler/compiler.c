@@ -42,6 +42,7 @@ compilerInitChord(KeyChord* chord)
         case KC_PROP_WRAP_CMD:
         case KC_PROP_TITLE:
         case KC_PROP_GOTO:
+        case KC_PROP_GROUP:
         {
             prop->type           = PROP_TYPE_ARRAY;
             prop->value.as_array = VECTOR_INIT(Token);

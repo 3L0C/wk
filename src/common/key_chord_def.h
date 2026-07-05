@@ -18,6 +18,8 @@
     KC_PROP(KC_PROP_AFTER, after, After)                   \
     KC_PROP(KC_PROP_WRAP_CMD, wrapCmd, WrapCmd)            \
     KC_PROP(KC_PROP_TITLE, title, Title)                   \
-    KC_PROP(KC_PROP_GOTO, gotoPath, Goto)
+    KC_PROP(KC_PROP_GOTO, gotoPath, Goto)                  \
+    KC_PROP(KC_PROP_GROUP, group, Group)                   \
+    KC_PROP(KC_PROP_GROUP_ALIGN, groupAlign, GroupAlign)
 
 #endif /* WK_COMMON_KEY_CHORD_DEF_H_ */
