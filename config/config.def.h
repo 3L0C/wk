@@ -83,6 +83,12 @@ static const char* wrapCmd = NULL;
         .type  = PROP_TYPE_STRING,            \
         .value = {.as_string = STRING_EMPTY } \
     }
+#define PROPERTY_INT(_i)           \
+    (Property)                     \
+    {                              \
+        .type  = PROP_TYPE_INT,    \
+        .value = {.as_int = (_i) } \
+    }
 #define PROPERTIES(...) __VA_ARGS__
 #define PROPERTIES_EMPTY
 #define KEY_CHORD(_key, _props, _flags, _chords) \

@@ -285,6 +285,7 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
     debugStringWithIndent(indent, "After:", propStringConst(keyChord, KC_PROP_AFTER));
     debugStringWithIndent(indent, "Wrap Command:", propStringConst(keyChord, KC_PROP_WRAP_CMD));
     debugStringWithIndent(indent, "Title", propStringConst(keyChord, KC_PROP_TITLE));
+    debugStringWithIndent(indent, "Group:", propStringConst(keyChord, KC_PROP_GROUP));
     disassembleChordFlag(keyChord->flags, indent);
 }
 
@@ -468,7 +469,7 @@ disassembleMenu(const Menu* menu)
     switch (menu->position)
     {
     case MENU_POS_BOTTOM: positionStr = "BOTTOM"; break;
-    case MENU_POS_TOP:    positionStr = "TOP"; break;
+    case MENU_POS_TOP: positionStr = "TOP"; break;
     case MENU_POS_CENTER: positionStr = "CENTER"; break;
     }
     debugMsgWithIndent(

@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /* common includes */
 #include "chord_flag.h"
@@ -18,6 +19,14 @@ typedef enum
 #undef KC_PROP
         KC_PROP_COUNT
 } PropId;
+
+typedef uint8_t HeaderAlign;
+enum
+{
+    HEADER_ALIGN_LEFT,
+    HEADER_ALIGN_CENTER,
+    HEADER_ALIGN_RIGHT,
+};
 
 typedef struct KeyChord
 {
