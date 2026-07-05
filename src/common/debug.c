@@ -210,7 +210,7 @@ disassembleHexColor(const MenuHexColor* color)
     assert(color);
 
     debugMsg(true, "|");
-    debugMsgWithIndent(0, "| %-20s '%s'", "Hex string:", color->hex);
+    debugMsgWithIndent(0, "| %-20s '%s'", "Hex string:", color->hex ? color->hex : "(unset)");
     debugMsgWithIndent(0, "| %-20s %#02X", "Red value:", color->r * 255);
     debugMsgWithIndent(0, "| %-20s %#02X", "Green value:", color->g * 255);
     debugMsgWithIndent(0, "| %-20s %#02X", "Blue value:", color->b * 255);
@@ -230,6 +230,8 @@ disassembleHexColors(const MenuHexColor* colors)
         [MENU_COLOR_CHORD]      = "|-- Foreground Chord Color ------",
         [MENU_COLOR_TITLE]      = "|-- Foreground Title Color ------",
         [MENU_COLOR_GOTO]       = "|-- Foreground Goto Color -------",
+        [MENU_COLOR_HEADER]     = "|-- Foreground Header Color -----",
+        [MENU_COLOR_HEADER_BG]  = "|-- Header Background Color -----",
         [MENU_COLOR_BACKGROUND] = "|-- Background color ------------",
         [MENU_COLOR_BORDER]     = "|-- Border color ----------------",
     };
