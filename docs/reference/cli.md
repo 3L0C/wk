@@ -53,7 +53,9 @@ key chords from a [wks](wks) file or script.
 : Disable sorting of key chords (sorted by default).
 
 **-m, --max-columns** *INT*
-: Set the maximum menu columns to *INT* (default 5).
+: Set the maximum menu columns to *INT* (default 5). Ignored for a
+  menu whose chords are organized with [@group](wks.md#group);
+  grouped columns are sized as menu width / number of groups instead.
 
 **-p, --press** *KEY(s)*
 : Press *KEY(s)* before dispalying menu. See [Trigger Key](wks.md#trigger-keys)
@@ -116,6 +118,14 @@ key chords from a [wks](wks) file or script.
 
 **--fg-goto** *COLOR*
 : Set foreground goto to COLOR (default '#E6C384').
+
+**--fg-header** *COLOR*
+: Set foreground group-header to COLOR (default '#7FB4CA'). See
+  [@group](wks.md#group) in the **wks** reference.
+
+**--bg-header** *COLOR*
+: Set group-header background to COLOR (default unset, meaning no
+  header background is drawn).
 
 **--title** *STRING*
 : Set global title displayed above menu to STRING.
