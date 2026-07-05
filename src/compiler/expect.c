@@ -20,7 +20,7 @@ static const ExpectEntry expectEntries[] = {
     { "hook",          EXPECT_HOOK      },
     { "flag",          EXPECT_FLAG      },
     { "command",       EXPECT_COMMAND   },
-    { "@goto",         EXPECT_META      },
+    { "meta command",  EXPECT_META      },
     { "'{'",           EXPECT_LBRACE    },
     { "'}'",           EXPECT_RBRACE    },
     { "'['",           EXPECT_LBRACKET  },
@@ -120,12 +120,16 @@ tokenToExpectation(TokenType type)
     case TOKEN_WRAP:
     case TOKEN_UNWRAP:
     case TOKEN_TITLE:
-    case TOKEN_ARGS: return EXPECT_FLAG;
+    case TOKEN_ARGS:
+    case TOKEN_ALIGN_LEFT:
+    case TOKEN_ALIGN_CENTER:
+    case TOKEN_ALIGN_RIGHT: return EXPECT_FLAG;
 
     case TOKEN_COMMAND: /* FALLTHROUGH */
     case TOKEN_COMM_INTERP: return EXPECT_COMMAND;
 
-    case TOKEN_GOTO: return EXPECT_META;
+    case TOKEN_GOTO: /* FALLTHROUGH */
+    case TOKEN_GROUP: return EXPECT_META;
 
     case TOKEN_LEFT_BRACE: return EXPECT_LBRACE;
     case TOKEN_RIGHT_BRACE: return EXPECT_RBRACE;

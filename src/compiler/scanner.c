@@ -324,6 +324,11 @@ scanFlag(Scanner* scanner, Token* token)
         if (isKeyword(scanner, 1, 3, "rgs")) result = TOKEN_ARGS;
         break;
     }
+    case 'l':
+    {
+        if (isKeyword(scanner, 1, 3, "eft")) result = TOKEN_ALIGN_LEFT;
+        break;
+    }
     case 'k':
     {
         if (isKeyword(scanner, 1, 3, "eep")) result = TOKEN_KEEP;
@@ -332,6 +337,7 @@ scanFlag(Scanner* scanner, Token* token)
     case 'c':
     {
         if (isKeyword(scanner, 1, 4, "lose")) result = TOKEN_CLOSE;
+        else if (isKeyword(scanner, 1, 5, "enter")) result = TOKEN_ALIGN_CENTER;
         break;
     }
     case 'd':
@@ -354,6 +360,11 @@ scanFlag(Scanner* scanner, Token* token)
     {
         if (isKeyword(scanner, 1, 8, "o-before")) result = TOKEN_NO_BEFORE;
         else if (isKeyword(scanner, 1, 7, "o-after")) result = TOKEN_NO_AFTER;
+        break;
+    }
+    case 'r':
+    {
+        if (isKeyword(scanner, 1, 4, "ight")) result = TOKEN_ALIGN_RIGHT;
         break;
     }
     case 'u':
@@ -511,6 +522,7 @@ scanMetaCmd(Scanner* scanner, Token* token)
     case 'g':
     {
         if (isKeyword(scanner, 1, 3, "oto")) result = TOKEN_GOTO;
+        else if (isKeyword(scanner, 1, 4, "roup")) result = TOKEN_GROUP;
         break;
     }
     default: break;

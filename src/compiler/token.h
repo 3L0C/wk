@@ -100,9 +100,13 @@ enum
     TOKEN_UNWRAP,
     TOKEN_TITLE,
     TOKEN_ARGS,
+    TOKEN_ALIGN_LEFT,
+    TOKEN_ALIGN_CENTER,
+    TOKEN_ALIGN_RIGHT,
 
     /* meta commands */
     TOKEN_GOTO,
+    TOKEN_GROUP,
 
     /* literals */
     TOKEN_COMMAND,
