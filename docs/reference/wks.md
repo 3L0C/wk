@@ -8,7 +8,7 @@ the [getting started](../quick-start/getting-started) guide and the
 ## Grammar
 
 ```text
-key_chord          -> ( chord | prefix | chord_array ) ;
+key_chord          -> ( chord | prefix | chord_array | group ) ;
 
 chord              -> trigger_key description keyword* ( command | meta_command ) ;
 
@@ -21,6 +21,10 @@ implicit_array     -> modifier* '...' description keyword* ( command | meta_comm
 explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description keyword* ( command | meta_command ) ;
 
 chord_expression   -> '(' trigger_key description keyword* ( command | meta_command )? ')' ;
+
+group              -> '@group' description align_flag? '{' ( key_chord )+ '}' ;
+
+align_flag         -> '+' ( 'left' | 'center' | 'right' ) ;
 
 trigger_key        -> modifier* ( normal_key | special_key | key_options ) ;
 
@@ -101,6 +105,8 @@ string_macro       -> ( 'include'
                       | 'fg-chord'
                       | 'fg-title'
                       | 'fg-goto'
+                      | 'fg-header'
+                      | 'bg-header'
                       | 'bg'
                       | 'bd'
                       | 'shell'
@@ -707,7 +713,11 @@ c "Email (default)" %{{mailto:(default)}}
 ## Meta Commands
 
 A meta command controls wk's menu rather than running a shell command.
-Meta commands are mutually exclusive with hooks and regular commands.
+`@goto` is mutually exclusive with hooks and regular commands.
+`@group` is different: it does not attach to a single chord's action
+position. Instead it wraps a block of chords, assigning them all to
+the same labeled menu column (see the `group` production under
+[Grammar](#grammar) above).
 
 ```text
 meta_command -> '@' ( 'goto' description ) ;
@@ -748,6 +758,90 @@ chains (e.g., `a @goto "b"` and `b @goto "a"`) are detected at
 runtime and produce an error.
 ```
 
+### @group
+
+Groups a block of chords into a single labeled menu column:
+
+```text
+@group "Name" [+left|+center|+right] { <chords> }
+```
+
+The block is **not** a submenu - the chords inside it belong to the
+enclosing scope (root menu or prefix body) exactly as if `@group` were
+not there. `@group` only stamps each contained chord with a column
+name and, optionally, a header alignment.
+
+The optional flag sets the header's text alignment: `+left` (the
+default), `+center`, or `+right`.
+
+```wks
+@group "Chats" {
+    a "Chat A" %{{chat-a}}
+    b "Chat B" %{{chat-b}}
+}
+
+@group "Mail" {
+    c "Mail C" %{{mail-c}}
+}
+
+@group "Tools" +center {
+    t "Tools" {
+        x "Tool X" %{{tool-x}}
+    }
+}
+```
+
+A prefix declared inside a `@group` block joins the column like any
+other chord, but its own submenu is an independent scope - it is not
+part of the group and may declare its own `@group` blocks (or none).
+In the example above, `t` joins the "Tools" column, but the submenu
+reached via `t` is ungrouped.
+
+Array expansions ([Chord Arrays](#chord-arrays)) inside a `@group`
+block put every expanded chord in the group.
+
+A submenu (root or prefix body) must be entirely grouped or entirely
+ungrouped; mixing grouped and ungrouped chords in the same scope is a
+compile error.
+
+```{note}
+The following are compile errors:
+
+- `Cannot mix grouped and ungrouped chords in the same block.` - a
+  submenu has both grouped and ungrouped chords.
+- `Empty @group block.` - a `@group` block adds no chords.
+- `Cannot nest @group blocks.` - a `@group` appears inside another
+  `@group`.
+- `Unterminated @group block.` - end of file reached before the
+  block's closing `}`.
+- `Expected group name after @group.` - no description string follows
+  `@group`.
+- `Expected '{' to begin @group block.` - the name (and optional
+  alignment flag) is not followed by `{`.
+- `Cannot use chord interpolations in @group name.` - the group name
+  uses `%(key)`, `%(index)`, `%(desc)`, or similar per-chord
+  interpolations. [User variable](#user-variables) interpolation
+  (`%(user_var)`) is allowed, since the name is resolved once for the
+  whole block.
+```
+
+By default, columns are sorted alphabetically by group name, with
+keys sorted within each column; chords sharing a group name coalesce
+into one column regardless of where they appear in the file. With
+`:unsorted` / `--unsorted`, columns and chords keep declaration
+order; **adjacent** `@group` blocks with the same name still coalesce
+into one column, but the same name used again later, separated by a
+different group, produces a second column with that header. See
+[Sorting](#sorting).
+
+Grouped layout divides the menu width evenly across columns
+(`menu width / number of groups`); `:max-columns` / `--max-columns`
+has no effect on a grouped scope. The header row uses the menu font.
+Header colors are set with `:fg-header` / `--fg-header` (default
+`#7FB4CA`) and the optional `:bg-header` / `--bg-header` (unset by
+default, meaning no header background is drawn). The umbrella `--fg`
+flag also sets the header foreground.
+
 ## Preprocessor Macros
 
 Preprocessor macros configure the menu appearance and behavior, or
@@ -774,6 +868,8 @@ arguments support [user variable](#user-variables) interpolation.
 | `:fg-chord`      | `--fg-chord`         | Chord text color            |
 | `:fg-title`      | `--fg-title`         | Title text color            |
 | `:fg-goto`       | `--fg-goto`          | Goto text color             |
+| `:fg-header`     | `--fg-header`        | Group-header text color     |
+| `:bg-header`     | `--bg-header`        | Group-header background     |
 | `:bg`            | `--bg`               | Background color            |
 | `:bd`            | `--bd`               | Border color                |
 | `:shell`         | `--shell`            | Shell for command execution |
@@ -969,6 +1065,15 @@ a "First" +write %{{%(index)}}
 ```
 
 Disable sorting with `--unsorted` or `:unsorted`.
+
+A grouped scope (see [@group](#group)) sorts differently: the primary
+key is the group name (alphabetical), the secondary key is the chord
+key within each column. Chords sharing a group name coalesce into a
+single column no matter where they appear in the file. With
+`:unsorted`, both chords and `@group` blocks keep declaration order;
+only **adjacent** `@group` blocks sharing a name coalesce - the same
+name used again later, with a different group in between, produces a
+second column with that header.
 
 ## Bug Reports
 

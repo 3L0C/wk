@@ -18,6 +18,8 @@ Inspired by
   complex workflows
 - **Themeable** - customize colors, fonts, borders, and
   padding
+- **Column grouping** - organize a menu into labeled columns
+  with `@group`
 - **Flexible input** - compile key chords into the binary,
   load from a file, or pipe via stdin for dynamic scripting
 

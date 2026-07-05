@@ -41,7 +41,7 @@ the \fI\%getting started\fP guide and the
 .INDENT 3.5
 .sp
 .EX
-key_chord          \-> ( chord | prefix | chord_array ) ;
+key_chord          \-> ( chord | prefix | chord_array | group ) ;
 
 chord              \-> trigger_key description keyword* ( command | meta_command ) ;
 
@@ -54,6 +54,10 @@ implicit_array     \-> modifier* \(aq...\(aq description keyword* ( command | me
 explicit_array     \-> \(aq[\(aq ( trigger_key | chord_expression )+ \(aq]\(aq description keyword* ( command | meta_command ) ;
 
 chord_expression   \-> \(aq(\(aq trigger_key description keyword* ( command | meta_command )? \(aq)\(aq ;
+
+group              \-> \(aq@group\(aq description align_flag? \(aq{\(aq ( key_chord )+ \(aq}\(aq ;
+
+align_flag         \-> \(aq+\(aq ( \(aqleft\(aq | \(aqcenter\(aq | \(aqright\(aq ) ;
 
 trigger_key        \-> modifier* ( normal_key | special_key | key_options ) ;
 
@@ -134,6 +138,8 @@ string_macro       \-> ( \(aqinclude\(aq
                       | \(aqfg\-chord\(aq
                       | \(aqfg\-title\(aq
                       | \(aqfg\-goto\(aq
+                      | \(aqfg\-header\(aq
+                      | \(aqbg\-header\(aq
                       | \(aqbg\(aq
                       | \(aqbd\(aq
                       | \(aqshell\(aq
@@ -1166,7 +1172,11 @@ c \(dqEmail (default)\(dq %{{mailto:(default)}}
 .SH META COMMANDS
 .sp
 A meta command controls wk\(aqs menu rather than running a shell command.
-Meta commands are mutually exclusive with hooks and regular commands.
+\fB@goto\fP is mutually exclusive with hooks and regular commands.
+\fB@group\fP is different: it does not attach to a single chord\(aqs action
+position. Instead it wraps a block of chords, assigning them all to the
+same labeled menu column (see the \fBgroup\fP production under GRAMMAR
+above).
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1222,6 +1232,109 @@ chains (e.g., \fBa @goto \(dqb\(dq\fP and \fBb @goto \(dqa\(dq\fP) are detected 
 runtime and produce an error.
 .UNINDENT
 .UNINDENT
+.SS @group
+.sp
+Groups a block of chords into a single labeled menu column:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+@group \(dqName\(dq [+left|+center|+right] { <chords> }
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+The block is \fBnot\fP a submenu \- the chords inside it belong to the
+enclosing scope (root menu or prefix body) exactly as if \fB@group\fP were
+not there. \fB@group\fP only stamps each contained chord with a column
+name and, optionally, a header alignment.
+.sp
+The optional flag sets the header\(aqs text alignment: \fB+left\fP (the
+default), \fB+center\fP, or \fB+right\fP\&.
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+@group \(dqChats\(dq {
+    a \(dqChat A\(dq %{{chat\-a}}
+    b \(dqChat B\(dq %{{chat\-b}}
+}
+
+@group \(dqMail\(dq {
+    c \(dqMail C\(dq %{{mail\-c}}
+}
+
+@group \(dqTools\(dq +center {
+    t \(dqTools\(dq {
+        x \(dqTool X\(dq %{{tool\-x}}
+    }
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+A prefix declared inside a \fB@group\fP block joins the column like any
+other chord, but its own submenu is an independent scope \- it is not
+part of the group and may declare its own \fB@group\fP blocks (or none).
+In the example above, \fBt\fP joins the \(dqTools\(dq column, but the submenu
+reached via \fBt\fP is ungrouped.
+.sp
+Array expansions (\fI\%Chord Arrays\fP) inside a \fB@group\fP block put every
+expanded chord in the group.
+.sp
+A submenu (root or prefix body) must be entirely grouped or entirely
+ungrouped; mixing grouped and ungrouped chords in the same scope is a
+compile error.
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+The following are compile errors:
+.INDENT 0.0
+.IP \(bu 2
+\fBCannot mix grouped and ungrouped chords in the same block.\fP \- a
+submenu has both grouped and ungrouped chords.
+.IP \(bu 2
+\fBEmpty @group block.\fP \- a \fB@group\fP block adds no chords.
+.IP \(bu 2
+\fBCannot nest @group blocks.\fP \- a \fB@group\fP appears inside another
+\fB@group\fP\&.
+.IP \(bu 2
+\fBUnterminated @group block.\fP \- end of file reached before the
+block\(aqs closing \fB}\fP\&.
+.IP \(bu 2
+\fBExpected group name after @group.\fP \- no description string follows
+\fB@group\fP\&.
+.IP \(bu 2
+\fBExpected \(aq{\(aq to begin @group block.\fP \- the name (and optional
+alignment flag) is not followed by \fB{\fP\&.
+.IP \(bu 2
+\fBCannot use chord interpolations in @group name.\fP \- the group name
+uses \fB%(key)\fP, \fB%(index)\fP, \fB%(desc)\fP, or similar per\-chord
+interpolations. \fI\%User Variables\fP interpolation (\fB%(user_var)\fP) is
+allowed, since the name is resolved once for the whole block.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+By default, columns are sorted alphabetically by group name, with keys
+sorted within each column; chords sharing a group name coalesce into
+one column regardless of where they appear in the file. With
+\fB:unsorted\fP / \fB\-\-unsorted\fP, columns and chords keep declaration
+order; \fBadjacent\fP \fB@group\fP blocks with the same name still coalesce
+into one column, but the same name used again later, separated by a
+different group, produces a second column with that header. See
+\fI\%SORTING\fP\&.
+.sp
+Grouped layout divides the menu width evenly across columns
+(\fBmenu width / number of groups\fP); \fB:max\-columns\fP /
+\fB\-\-max\-columns\fP has no effect on a grouped scope. The header row uses
+the menu font. Header colors are set with \fB:fg\-header\fP / \fB\-\-fg\-header\fP
+(default \fB#7FB4CA\fP) and the optional \fB:bg\-header\fP / \fB\-\-bg\-header\fP
+(unset by default, meaning no header background is drawn). The umbrella
+\fB\-\-fg\fP flag also sets the header foreground.
 .SH PREPROCESSOR MACROS
 .sp
 Preprocessor macros configure the menu appearance and behavior, or
@@ -1307,6 +1420,22 @@ T}	T{
 \fB\-\-fg\-goto\fP
 T}	T{
 Goto text color
+T}
+_
+T{
+\fB:fg\-header\fP
+T}	T{
+\fB\-\-fg\-header\fP
+T}	T{
+Group\-header text color
+T}
+_
+T{
+\fB:bg\-header\fP
+T}	T{
+\fB\-\-bg\-header\fP
+T}	T{
+Group\-header background color
 T}
 _
 T{
@@ -1710,6 +1839,15 @@ a \(dqFirst\(dq +write %{{%(index)}}
 .UNINDENT
 .sp
 Disable sorting with \fB\-\-unsorted\fP or \fB:unsorted\fP\&.
+.sp
+A grouped scope (see \fI\%@group\fP) sorts differently: the primary key is
+the group name (alphabetical), the secondary key is the chord key
+within each column. Chords sharing a group name coalesce into a single
+column no matter where they appear in the file. With \fB:unsorted\fP,
+both chords and \fB@group\fP blocks keep declaration order; only
+\fBadjacent\fP \fB@group\fP blocks sharing a name coalesce \- the same name
+used again later, with a different group in between, produces a second
+column with that header.
 .SH BUG REPORTS
 .sp
 If you find a bug, please report it at
