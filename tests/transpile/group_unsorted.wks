@@ -1,0 +1,12 @@
+# @desc: @group transpile with :unsorted keeps declaration order
+
+:unsorted
+
+@group "Zeta" {
+    z "Zed" +write %{{echo z}}
+}
+
+@group "Alpha" {
+    b "Bee" +write %{{echo b}}
+    a "Ay" +write %{{echo a}}
+}
