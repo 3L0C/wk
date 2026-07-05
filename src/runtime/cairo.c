@@ -20,6 +20,7 @@
 #include "common/key_chord.h"
 #include "common/menu.h"
 #include "common/span.h"
+#include "common/vector.h"
 
 /* local includes */
 #include "cairo.h"
@@ -110,6 +111,45 @@ getFontHeight(cairo_t* cr, const char* font)
     return rect.height;
 }
 
+typedef struct
+{
+    size_t start;
+    size_t count;
+} GroupColumn;
+
+static bool
+menuIsGrouped(const Menu* menu)
+{
+    assert(menu);
+
+    if (menu->keyChords->count == 0) return false;
+    const KeyChord* first = SPAN_GET(menu->keyChords, const KeyChord, 0);
+    return propIsSet(first, KC_PROP_GROUP);
+}
+
+static void
+partitionGroups(const Span* keyChords, Vector* columns)
+{
+    assert(keyChords), assert(columns);
+
+    const String* prevName = NULL;
+    for (size_t i = 0; i < keyChords->count; i++)
+    {
+        const KeyChord* chord = SPAN_GET(keyChords, const KeyChord, i);
+        const String*   name  = propStringConst(chord, KC_PROP_GROUP);
+
+        if (!prevName || !name || !stringEquals(prevName, name))
+        {
+            GroupColumn column = { .start = i, .count = 0 };
+            vectorAppend(columns, &column);
+        }
+
+        GroupColumn* current = VECTOR_GET(columns, GroupColumn, vectorLength(columns) - 1);
+        current->count++;
+        prevName = name;
+    }
+}
+
 uint32_t
 cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 {
@@ -126,7 +166,26 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
 
     menu->cellHeight  = cellHeight;
     menu->titleHeight = (menu->title && strlen(menu->title) > 0) ? titleHeight : 0;
-    calculateGrid(menu->keyChords->count, menu->maxCols, &menu->rows, &menu->cols);
+
+    if (menuIsGrouped(menu))
+    {
+        Vector columns = VECTOR_INIT(GroupColumn);
+        partitionGroups(menu->keyChords, &columns);
+
+        uint32_t maxRows = 0;
+        vectorForEach(&columns, GroupColumn, column)
+        {
+            if (column->count > maxRows) maxRows = (uint32_t)column->count;
+        }
+
+        menu->cols = (uint32_t)vectorLength(&columns);
+        menu->rows = maxRows + 1; /* header row */
+        vectorFree(&columns);
+    }
+    else
+    {
+        calculateGrid(menu->keyChords->count, menu->maxCols, &menu->rows, &menu->cols);
+    }
 
     /* Calculate table padding for height calculation - if -1, use cell padding,
      * otherwise use the * specified value */
@@ -579,6 +638,107 @@ drawHintText(
     if (!drawDescriptionText(cr, paint, layout, keyChord, &cellw, &x, &y, ellipsisWidth)) return;
 }
 
+static void
+drawHeaderText(
+    cairo_t*        cr,
+    CairoPaint*     paint,
+    PangoLayout*    layout,
+    const KeyChord* first,
+    uint32_t        colX,
+    uint32_t        y,
+    uint32_t        cellWidth,
+    uint32_t        wpadding,
+    int             ellipsisWidth)
+{
+    assert(cr), assert(paint), assert(layout), assert(first);
+
+    const String* name = propStringConst(first, KC_PROP_GROUP);
+    if (!name || stringIsEmpty(name)) return;
+
+    const int32_t* alignValue = propIntConst(first, KC_PROP_GROUP_ALIGN);
+    HeaderAlign    align      = alignValue ? (HeaderAlign)*alignValue : HEADER_ALIGN_LEFT;
+
+    uint32_t cellw = cellWidth - (wpadding * 2);
+    int      textw, texth;
+    pango_layout_set_text(layout, name->data, -1);
+    pango_layout_get_pixel_size(layout, &textw, &texth);
+
+    uint32_t x = colX + wpadding;
+    if ((uint32_t)textw < cellw)
+    {
+        if (align == HEADER_ALIGN_CENTER) x = colX + wpadding + (cellw - (uint32_t)textw) / 2;
+        else if (align == HEADER_ALIGN_RIGHT) x = colX + cellWidth - wpadding - (uint32_t)textw;
+    }
+
+    if (!setSourceRgba(cr, paint, MENU_COLOR_HEADER)) return;
+    drawString(cr, layout, name, &cellw, &x, &y, ellipsisWidth);
+}
+
+static void
+drawGroupedColumns(
+    cairo_t*        cr,
+    CairoPaint*     paint,
+    Menu*           menu,
+    PangoLayout*    layout,
+    uint32_t        startx,
+    uint32_t        starty,
+    uint32_t        cellWidth,
+    uint32_t        cellHeight,
+    DrawingContext* ctx)
+{
+    assert(cr), assert(paint), assert(menu), assert(layout), assert(ctx);
+
+    Vector columns = VECTOR_INIT(GroupColumn);
+    partitionGroups(menu->keyChords, &columns);
+
+    vectorForEach(&columns, GroupColumn, column)
+    {
+        uint32_t        colX  = startx + ((uint32_t)iter.index * cellWidth);
+        const KeyChord* first = SPAN_GET(menu->keyChords, const KeyChord, column->start);
+
+        if (paint->bgHeaderIsSet)
+        {
+            if (setSourceRgba(cr, paint, MENU_COLOR_HEADER_BG))
+            {
+                cairo_rectangle(cr, colX, starty, cellWidth, cellHeight);
+                cairo_fill(cr);
+            }
+        }
+
+        drawHeaderText(
+            cr,
+            paint,
+            layout,
+            first,
+            colX,
+            starty + menu->hpadding,
+            cellWidth,
+            menu->wpadding,
+            ctx->ellipsisWidth);
+
+        for (size_t row = 0; row < column->count; row++)
+        {
+            const KeyChord* keyChord =
+                SPAN_GET(menu->keyChords, const KeyChord, column->start + row);
+            uint32_t x = colX + menu->wpadding;
+            uint32_t y = starty + (((uint32_t)row + 1) * cellHeight) + menu->hpadding;
+
+            drawHintText(
+                cr,
+                paint,
+                layout,
+                menu->delimiter,
+                keyChord,
+                cellWidth - (menu->wpadding * 2),
+                x,
+                y,
+                ctx->ellipsisWidth);
+        }
+    }
+
+    vectorFree(&columns);
+}
+
 static bool
 drawGrid(
     cairo_t*        cr,
@@ -673,26 +833,33 @@ drawGrid(
 
     starty += titleOffset;
 
-    size_t chordIdx = 0;
-    for (uint32_t i = 0; i < cols; i++)
+    if (menuIsGrouped(menu))
     {
-        uint32_t x = startx + (i * cellWidth) + wpadding;
-        for (uint32_t j = 0; j < rows; j++)
+        drawGroupedColumns(cr, paint, menu, layout, startx, starty, cellWidth, cellHeight, ctx);
+    }
+    else
+    {
+        size_t chordIdx = 0;
+        for (uint32_t i = 0; i < cols; i++)
         {
-            if (chordIdx >= menu->keyChords->count) goto done;
-            const KeyChord* keyChord = SPAN_GET(menu->keyChords, const KeyChord, chordIdx++);
+            uint32_t x = startx + (i * cellWidth) + wpadding;
+            for (uint32_t j = 0; j < rows; j++)
+            {
+                if (chordIdx >= menu->keyChords->count) goto done;
+                const KeyChord* keyChord = SPAN_GET(menu->keyChords, const KeyChord, chordIdx++);
 
-            uint32_t y = starty + (j * cellHeight) + hpadding;
-            drawHintText(
-                cr,
-                paint,
-                layout,
-                menu->delimiter,
-                keyChord,
-                cellWidth - (wpadding * 2),
-                x,
-                y,
-                ctx->ellipsisWidth);
+                uint32_t y = starty + (j * cellHeight) + hpadding;
+                drawHintText(
+                    cr,
+                    paint,
+                    layout,
+                    menu->delimiter,
+                    keyChord,
+                    cellWidth - (wpadding * 2),
+                    x,
+                    y,
+                    ctx->ellipsisWidth);
+            }
         }
     }
 
