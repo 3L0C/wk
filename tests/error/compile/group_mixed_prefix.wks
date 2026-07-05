@@ -1,0 +1,10 @@
+# @desc: Grouped and ungrouped chords cannot share a prefix scope
+
+# @expect-error: Cannot mix grouped and ungrouped chords
+
+p "Prefix" {
+    @group "G" {
+        a "cmd" +write %{{echo a}}
+    }
+    b "ungrouped" +write %{{echo b}}
+}
