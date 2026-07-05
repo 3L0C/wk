@@ -45,12 +45,37 @@ getKeyCategory(char c, SpecialKey special)
 }
 
 static int
+compareGroupNames(const KeyChord* a, const KeyChord* b)
+{
+    const String* ga = propStringConst(a, KC_PROP_GROUP);
+    const String* gb = propStringConst(b, KC_PROP_GROUP);
+
+    bool aHas = ga && !stringIsEmpty(ga);
+    bool bHas = gb && !stringIsEmpty(gb);
+
+    if (!aHas && !bHas) return 0;
+    if (aHas != bHas) return aHas ? 1 : -1;
+
+    size_t minLen = (ga->length < gb->length) ? ga->length : gb->length;
+    int    cmp    = memcmp(ga->data, gb->data, minLen);
+    if (cmp != 0) return cmp;
+
+    if (ga->length < gb->length) return -1;
+    if (ga->length > gb->length) return 1;
+    return 0;
+}
+
+static int
 compareKeyChords(const void* a, const void* b)
 {
     const KeyChord* ca = a;
     const KeyChord* cb = b;
-    const Key*      ka = &ca->key;
-    const Key*      kb = &cb->key;
+
+    int groupCmp = compareGroupNames(ca, cb);
+    if (groupCmp != 0) return groupCmp;
+
+    const Key* ka = &ca->key;
+    const Key* kb = &cb->key;
 
     char        ac   = getFirstChar(&ka->repr);
     char        bc   = getFirstChar(&kb->repr);
