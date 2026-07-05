@@ -1,0 +1,5 @@
+# @desc: A file with no chord definitions should not be silently compiled
+
+# @expect-error: No key chords found
+
+:delay 0

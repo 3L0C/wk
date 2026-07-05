@@ -59,6 +59,6 @@ void        parserSetPushedEnvAtDepth(Parser* p, size_t depth, bool pushed);
 Vector*     parserUserVars(Parser* p);
 void        parserWarnAt(Parser* p, Token* token, const char* fmt, ...);
 
-Vector parse(Scanner* scanner, Menu* m);
+bool parse(Scanner* scanner, Menu* m, Vector* chords);
 
 #endif /* WK_COMPILER_PARSER_H_ */
