@@ -8,7 +8,7 @@ the [getting started](../quick-start/getting-started) guide and the
 ## Grammar
 
 ```text
-key_chord          -> ( chord | prefix | chord_array | group ) ;
+key_chord          -> ( chord | prefix | chord_array | meta_command ) ;
 
 chord              -> trigger_key description keyword* ( command | meta_command ) ;
 
@@ -21,8 +21,6 @@ implicit_array     -> modifier* '...' description keyword* ( command | meta_comm
 explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description keyword* ( command | meta_command ) ;
 
 chord_expression   -> '(' trigger_key description keyword* ( command | meta_command )? ')' ;
-
-group              -> '@group' description '{' ( key_chord )+ '}' ;
 
 trigger_key        -> modifier* ( normal_key | special_key | key_options ) ;
 
@@ -66,7 +64,8 @@ user_variable      -> [^)]+ ;
 
 keyword            -> ( hook | flag ) ;
 
-meta_command       -> '@' ( 'goto' description ) ;
+meta_command       -> '@' ( 'goto' description
+                          | 'group' description '{' ( key_chord )+ '}' ) ;
 
 hook               -> '^' ( 'before'
                           | 'after'
@@ -711,15 +710,17 @@ c "Email (default)" %{{mailto:(default)}}
 
 ## Meta Commands
 
-A meta command controls wk's menu rather than running a shell command.
-`@goto` is mutually exclusive with hooks and regular commands.
-`@group` is different: it does not attach to a single chord's action
-position. Instead it wraps a block of chords, assigning them all to
-the same labeled menu column (see the `group` production under
-[Grammar](#grammar) above).
+Meta commands control wk's menu rather than running a shell command.
+Every keyword introduced by `@` is a meta command, just as `^`
+introduces hooks, `+` introduces flags, and `:` introduces
+preprocessor macros. wk provides two meta commands: `@goto`, which
+appears in a chord's command position, and `@group`, which appears
+wherever a key chord may begin and wraps a block of chords, assigning
+them all to the same labeled menu column.
 
 ```text
-meta_command -> '@' ( 'goto' description ) ;
+meta_command -> '@' ( 'goto' description
+                    | 'group' description '{' ( key_chord )+ '}' ) ;
 ```
 
 ### @goto
