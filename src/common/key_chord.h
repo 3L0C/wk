@@ -20,14 +20,6 @@ typedef enum
         KC_PROP_COUNT
 } PropId;
 
-typedef uint8_t HeaderAlign;
-enum
-{
-    HEADER_ALIGN_LEFT,
-    HEADER_ALIGN_CENTER,
-    HEADER_ALIGN_RIGHT,
-};
-
 typedef struct KeyChord
 {
     Key       key;

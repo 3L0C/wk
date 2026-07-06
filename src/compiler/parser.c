@@ -39,7 +39,6 @@ typedef struct
 {
     Vector nameTokens;
     size_t startIndex;
-    int    align;
     bool   active;
 } GroupState;
 
@@ -425,7 +424,6 @@ parserInit(Parser* p, Scanner* scanner, Menu* m)
         p->groupStates[i] = (GroupState){
             .nameTokens = VECTOR_INIT(Token),
             .startIndex = 0,
-            .align      = HEADER_ALIGN_LEFT,
             .active     = false,
         };
     }
@@ -1095,17 +1093,6 @@ parseGroupOpen(Parser* p)
         return false;
     }
 
-    gs->align = HEADER_ALIGN_LEFT;
-    while (true)
-    {
-        Token* flag = parserCurrentToken(p);
-        if (flag->type == TOKEN_ALIGN_LEFT) gs->align = HEADER_ALIGN_LEFT;
-        else if (flag->type == TOKEN_ALIGN_CENTER) gs->align = HEADER_ALIGN_CENTER;
-        else if (flag->type == TOKEN_ALIGN_RIGHT) gs->align = HEADER_ALIGN_RIGHT;
-        else break;
-        parserAdvance(p);
-    }
-
     if (!parserCheck(p, TOKEN_LEFT_BRACE))
     {
         parserErrorAtCurrent(p, "Expected '{' to begin @group block.");
@@ -1151,13 +1138,6 @@ parseGroupClose(Parser* p)
         vectorForEach(&gs->nameTokens, const Token, nameToken)
         {
             vectorAppend(groupTokens, nameToken);
-        }
-
-        if (gs->align != HEADER_ALIGN_LEFT)
-        {
-            Property* alignProp = propGet(chord, KC_PROP_GROUP_ALIGN);
-            PROP_SET_TYPE(alignProp, INT);
-            alignProp->value.as_int = gs->align;
         }
     }
 

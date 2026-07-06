@@ -160,6 +160,8 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     cairo_t* cr          = cairo_create(surface);
     uint32_t cellHeight  = getFontHeight(cr, menu->font) + (menu->hpadding * 2);
     uint32_t titleHeight = getFontHeight(cr, menu->titleFont) + (menu->hpadding * 2);
+    uint32_t headerHeight =
+        getFontHeight(cr, menu->headerFont ? menu->headerFont : menu->font) + (menu->hpadding * 2);
 
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
@@ -178,13 +180,15 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
             if (column->count > maxRows) maxRows = (uint32_t)column->count;
         }
 
-        menu->cols = (uint32_t)vectorLength(&columns);
-        menu->rows = maxRows + 1; /* header row */
+        menu->cols         = (uint32_t)vectorLength(&columns);
+        menu->rows         = maxRows;
+        menu->headerHeight = headerHeight;
         vectorFree(&columns);
     }
     else
     {
         calculateGrid(menu->keyChords->count, menu->maxCols, &menu->rows, &menu->cols);
+        menu->headerHeight = 0;
     }
 
     /* Calculate table padding for height calculation - if -1, use cell padding,
@@ -194,6 +198,7 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
                                 : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
 
     height = menu->titleHeight +
+             menu->headerHeight +
              (menu->cellHeight * menu->rows) +
              (tablePadding * 2) +
              (menu->borderWidth * 2);
@@ -234,8 +239,9 @@ cairoPaintInit(Menu* menu, CairoPaint* paint)
     assert(menu), assert(paint);
 
     cairoSetColors(paint, menu->colors);
-    paint->font      = menu->font;
-    paint->titleFont = menu->titleFont;
+    paint->font       = menu->font;
+    paint->titleFont  = menu->titleFont;
+    paint->headerFont = menu->headerFont ? menu->headerFont : menu->font;
 }
 
 static bool
@@ -636,24 +642,33 @@ static void
 drawHeaderText(
     cairo_t*        cr,
     CairoPaint*     paint,
-    PangoLayout*    layout,
     const KeyChord* first,
+    HeaderAlign     align,
     uint32_t        colX,
     uint32_t        y,
     uint32_t        cellWidth,
-    uint32_t        wpadding,
-    int             ellipsisWidth)
+    uint32_t        wpadding)
 {
-    assert(cr), assert(paint), assert(layout), assert(first);
+    assert(cr), assert(paint), assert(first);
 
     const String* name = propStringConst(first, KC_PROP_GROUP);
     if (!name || stringIsEmpty(name)) return;
 
-    const int32_t* alignValue = propIntConst(first, KC_PROP_GROUP_ALIGN);
-    HeaderAlign    align      = alignValue ? (HeaderAlign)*alignValue : HEADER_ALIGN_LEFT;
+    PangoFontDescription* fontDesc = pango_font_description_from_string(paint->headerFont);
+    PangoLayout*          layout   = pango_cairo_create_layout(cr);
+
+    pango_layout_set_font_description(layout, fontDesc);
+
+    /* Measure the ellipsis in the header's own font so truncation math never
+     * uses a threshold computed from a differently-sized chord font. */
+    int ellipsisWidth, ellipsisHeight;
+    pango_layout_set_text(layout, "...", -1);
+    pango_layout_get_pixel_size(layout, &ellipsisWidth, &ellipsisHeight);
 
     uint32_t cellw = cellWidth - (wpadding * 2);
-    int      textw, texth;
+    if ((uint32_t)ellipsisWidth > cellw) ellipsisWidth = 0;
+
+    int textw, texth;
     pango_layout_set_text(layout, name->data, -1);
     pango_layout_get_pixel_size(layout, &textw, &texth);
 
@@ -664,8 +679,13 @@ drawHeaderText(
         else if (align == HEADER_ALIGN_RIGHT) x = colX + cellWidth - wpadding - (uint32_t)textw;
     }
 
-    if (!setSourceRgba(cr, paint, MENU_COLOR_HEADER)) return;
-    drawString(cr, layout, name, &cellw, &x, &y, ellipsisWidth);
+    if (setSourceRgba(cr, paint, MENU_COLOR_HEADER))
+    {
+        drawString(cr, layout, name, &cellw, &x, &y, ellipsisWidth);
+    }
+
+    pango_font_description_free(fontDesc);
+    g_object_unref(layout);
 }
 
 static void
@@ -693,20 +713,19 @@ drawGroupedColumns(
         drawHeaderText(
             cr,
             paint,
-            layout,
             first,
+            menu->headerAlign,
             colX,
             starty + menu->hpadding,
             cellWidth,
-            menu->wpadding,
-            ctx->ellipsisWidth);
+            menu->wpadding);
 
         for (size_t row = 0; row < column->count; row++)
         {
             const KeyChord* keyChord =
                 SPAN_GET(menu->keyChords, const KeyChord, column->start + row);
             uint32_t x = colX + menu->wpadding;
-            uint32_t y = starty + (((uint32_t)row + 1) * cellHeight) + menu->hpadding;
+            uint32_t y = starty + menu->headerHeight + ((uint32_t)row * cellHeight) + menu->hpadding;
 
             drawHintText(
                 cr,

@@ -24,7 +24,7 @@
     c "Mail C" +write %{{echo mail-c}}
 }
 
-@group "Tools" +center {
+@group "Tools" {
     t "Tools" {
         x "Tool X" +write %{{echo tool-x}}
     }

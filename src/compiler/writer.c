@@ -130,6 +130,10 @@ writeConfigVariables(const Menu* menu)
     printf("/* Position to place the menu. '0' = bottom; '1' = top. */\n");
     printf("static const uint32_t menuPosition = %u;\n", (uint32_t)menu->position);
 
+    /* Group header alignment */
+    printf("/* Group header alignment. '0' = left; '1' = center; '2' = right. */\n");
+    printf("static const uint32_t headerAlign = %u;\n", (uint32_t)menu->headerAlign);
+
     /* Border width */
     printf("/* Menu border width */\n");
     printf("static const uint32_t borderWidth = %u;\n", menu->borderWidth);
@@ -194,6 +198,19 @@ writeConfigVariables(const Menu* menu)
     writeEscCString(menu->titleFont);
     printf("\";\n");
 
+    /* Header Font */
+    printf("/* Pango font description for group headers. NULL means use the menu font. */\n");
+    if (menu->headerFont == NULL)
+    {
+        printf("static const char* headerFont = NULL;\n");
+    }
+    else
+    {
+        printf("static const char* headerFont = \"");
+        writeEscCString(menu->headerFont);
+        printf("\";\n");
+    }
+
     /* Implicit array keys */
     printf("/* Keys to use for chord arrays */\n");
     printf("static const char* implicitArrayKeys = \"");
@@ -244,12 +261,6 @@ writeKeyChordsDefines(void)
         "    {                                         \\\n"
         "        .type  = PROP_TYPE_STRING,            \\\n"
         "        .value = {.as_string = STRING_EMPTY } \\\n"
-        "    }\n"
-        "#define PROPERTY_INT(_i)           \\\n"
-        "    (Property)                     \\\n"
-        "    {                              \\\n"
-        "        .type  = PROP_TYPE_INT,    \\\n"
-        "        .value = {.as_int = (_i) } \\\n"
         "    }\n"
         "#define PROPERTIES(...) __VA_ARGS__\n"
         "#define PROPERTIES_EMPTY\n"
@@ -368,8 +379,6 @@ propertyIsEmpty(const Property* prop)
     {
     case PROP_TYPE_STRING:
         return stringIsEmpty(PROP_VAL(prop, as_string));
-    case PROP_TYPE_INT:
-        return false;
     case PROP_TYPE_NONE:
         return true;
     default:
@@ -395,9 +404,6 @@ writePropertyDesignator(PropId id, const Property* prop, size_t maxNameLength)
         printf("PROPERTY_STRING(");
         writeEscStringQuoted(PROP_VAL(prop, as_string));
         printf(")");
-        break;
-    case PROP_TYPE_INT:
-        printf("PROPERTY_INT(%d)", *PROP_VAL(prop, as_int));
         break;
     default:
         printf("PROPERTY_STRING_EMPTY");

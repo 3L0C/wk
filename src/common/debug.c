@@ -287,11 +287,6 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
     debugStringWithIndent(indent, "Wrap Command:", propStringConst(keyChord, KC_PROP_WRAP_CMD));
     debugStringWithIndent(indent, "Title", propStringConst(keyChord, KC_PROP_TITLE));
     debugStringWithIndent(indent, "Group:", propStringConst(keyChord, KC_PROP_GROUP));
-    const int32_t* groupAlign = propIntConst(keyChord, KC_PROP_GROUP_ALIGN);
-    if (groupAlign)
-    {
-        debugMsgWithIndent(indent, "| %-20s %d", "Group Align:", *groupAlign);
-    }
     disassembleChordFlag(keyChord->flags, indent);
 }
 

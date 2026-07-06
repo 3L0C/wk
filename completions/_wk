@@ -40,6 +40,8 @@ _wk() {
         '--title[Set menu title]:title:'
         '--implicit-keys[Set implicit keys for arrays]:keys:'
         '--wrap-cmd[Wrap all commands with this string]:wrapper:'
+        '--header-align[Set group-header text alignment]:alignment:(left center right)'
+        '--header-font[Set group-header font (Pango description)]:font:'
 
         # Options with color arguments
         '--fg[Set all foreground text color]:color:'

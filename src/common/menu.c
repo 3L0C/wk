@@ -65,6 +65,8 @@ enum
     OPT_ARG_TITLE,
     OPT_ARG_TITLE_FONT,
     OPT_ARG_KEEP_DELAY,
+    OPT_ARG_HEADER_ALIGN,
+    OPT_ARG_HEADER_FONT,
 };
 
 int
@@ -429,6 +431,7 @@ menuInit(Menu* menu)
     menu->rootTitle         = NULL;
     menu->font              = font;
     menu->titleFont         = titleFont;
+    menu->headerFont        = headerFont;
     menu->implicitArrayKeys = implicitArrayKeys;
     menu->borderRadius      = borderRadius;
     menuHexColorInitColors(menu->colors);
@@ -455,6 +458,7 @@ menuInit(Menu* menu)
     menu->tablePadding = tablePadding;
     menu->cellHeight   = 0;
     menu->titleHeight  = 0;
+    menu->headerHeight = 0;
     menu->rows         = 0;
     menu->cols         = 0;
     menu->width        = 0;
@@ -463,11 +467,12 @@ menuInit(Menu* menu)
     menu->delay        = delay;
     menu->keepDelay    = keepDelay;
 
-    menu->position = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
-    menu->debug    = false;
-    menu->sort     = true;
-    menu->dirty    = true;
-    menu->wrapCmd  = wrapCmd;
+    menu->position    = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
+    menu->headerAlign = (HeaderAlign)headerAlign;
+    menu->debug       = false;
+    menu->sort        = true;
+    menu->dirty       = true;
+    menu->wrapCmd     = wrapCmd;
 }
 
 bool
@@ -535,6 +540,11 @@ usage(void)
         "    --fg-title COLOR           Set foreground title to COLOR (default '#DCD7BA').\n"
         "    --fg-goto COLOR            Set foreground goto to COLOR (default '#E6C384').\n"
         "    --fg-header COLOR          Set foreground group-header to COLOR (default '#7FB4CA').\n"
+        "    --header-align ALIGN       Set group-header text alignment to ALIGN. One of\n"
+        "                               'left', 'center', or 'right' (default 'left').\n"
+        "    --header-font STRING       Set group-header font to STRING. Should be a valid\n"
+        "                               Pango font description (default: falls back to\n"
+        "                               --font).\n"
         "    --bg COLOR                 Set background to COLOR (default '#181616').\n"
         "    --bd COLOR                 Set border to COLOR (default '#7FB4CA').\n"
         "    --shell STRING             Set shell to STRING (default '/bin/sh').\n"
@@ -626,6 +636,8 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "title",         required_argument, 0, OPT_ARG_TITLE         },
         { "title-font",    required_argument, 0, OPT_ARG_TITLE_FONT    },
         { "keep-delay",    required_argument, 0, OPT_ARG_KEEP_DELAY    },
+        { "header-align",  required_argument, 0, OPT_ARG_HEADER_ALIGN  },
+        { "header-font",   required_argument, 0, OPT_ARG_HEADER_FONT   },
         { 0,               0,                 0, 0                     }
     };
 
@@ -799,6 +811,19 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
             menu->keepDelay = (uint32_t)n;
             break;
         }
+        case OPT_ARG_HEADER_ALIGN:
+        {
+            if (strcmp(optarg, "left") == 0) menu->headerAlign = HEADER_ALIGN_LEFT;
+            else if (strcmp(optarg, "center") == 0) menu->headerAlign = HEADER_ALIGN_CENTER;
+            else if (strcmp(optarg, "right") == 0) menu->headerAlign = HEADER_ALIGN_RIGHT;
+            else
+            {
+                warnMsg("Invalid value '%s' for header-align.", optarg);
+                warnMsg("Expected 'left', 'center', or 'right'. Using default value.");
+            }
+            break;
+        }
+        case OPT_ARG_HEADER_FONT: menu->headerFont = optarg; break;
         /* Errors */
         case '?':
         {

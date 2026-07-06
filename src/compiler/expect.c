@@ -120,10 +120,7 @@ tokenToExpectation(TokenType type)
     case TOKEN_WRAP:
     case TOKEN_UNWRAP:
     case TOKEN_TITLE:
-    case TOKEN_ARGS:
-    case TOKEN_ALIGN_LEFT:
-    case TOKEN_ALIGN_CENTER:
-    case TOKEN_ALIGN_RIGHT: return EXPECT_FLAG;
+    case TOKEN_ARGS: return EXPECT_FLAG;
 
     case TOKEN_COMMAND: /* FALLTHROUGH */
     case TOKEN_COMM_INTERP: return EXPECT_COMMAND;

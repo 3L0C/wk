@@ -92,7 +92,7 @@ Press \fIKEY(s)\fP before dispalying menu. See \fI\%Trigger Key\fP
 in the \fBwks\fP man page for more info.
 .TP
 \fB\-T, \-\-transpile\fP \fIFILE\fP
-Transpile \fIFILE\fP to valid \(aqkey_chords.h\(aq syntax and print to stdout.
+Transpile \fIFILE\fP to valid \(aqconfig.h\(aq syntax and print to stdout.
 .TP
 \fB\-k, \-\-key\-chords\fP \fIFILE\fP
 Use \fIFILE\fP for key chords rather than those precompiled.
@@ -152,6 +152,16 @@ Set foreground goto to COLOR (default \(aq#E6C384\(aq).
 \fB\-\-fg\-header\fP \fICOLOR\fP
 Set foreground group\-header to COLOR (default \(aq#7FB4CA\(aq). See
 \fI\%@group\fP in the \fBwks\fP man page.
+.TP
+\fB\-\-header\-align\fP \fIALIGN\fP
+Set group\-header text alignment to ALIGN. One of \(aqleft\(aq, \(aqcenter\(aq,
+or \(aqright\(aq (default \(aqleft\(aq). See \fI\%@group\fP in the \fBwks\fP man
+page.
+.TP
+\fB\-\-header\-font\fP \fISTRING\fP
+Set group\-header font to STRING. Should be a valid Pango font
+description (default: falls back to \fB\-\-font\fP). See \fI\%@group\fP in
+the \fBwks\fP man page.
 .TP
 \fB\-\-title\fP \fISTRING\fP
 Set global title displayed above menu to STRING.

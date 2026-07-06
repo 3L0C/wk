@@ -21,7 +21,10 @@ _wk() {
 
     # Options that take string arguments
     local str_opts='-p --press --shell --font --title-font --title
-                    --implicit-keys --wrap-cmd'
+                    --implicit-keys --wrap-cmd --header-font'
+
+    # Options that take an alignment argument
+    local align_opts='--header-align'
 
     # All options
     local all_opts='-h --help -v --version -d --debug -t --top -b --bottom
@@ -32,7 +35,8 @@ _wk() {
                     --wpadding --hpadding --table-padding
                     --fg --fg-key --fg-delimiter --fg-prefix --fg-chord
                     --fg-title --fg-goto --fg-header --bg --bd
-                    --shell --font --title-font --title --implicit-keys --wrap-cmd'
+                    --shell --font --title-font --title --implicit-keys --wrap-cmd
+                    --header-align --header-font'
 
     case $prev in
         -T|--transpile|-k|--key-chords)
@@ -55,8 +59,13 @@ _wk() {
             # Color arguments - no completion (user enters hex color)
             return
             ;;
-        -p|--press|--font|--title-font|--title|--implicit-keys|--wrap-cmd)
+        -p|--press|--font|--title-font|--title|--implicit-keys|--wrap-cmd|--header-font)
             # String arguments - no completion
+            return
+            ;;
+        --header-align)
+            # Alignment argument - complete known values
+            COMPREPLY=($(compgen -W "left center right" -- "$cur"))
             return
             ;;
     esac

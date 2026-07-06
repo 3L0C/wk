@@ -1,6 +1,8 @@
 # @desc: Header color directives are captured in transpiled config
 
 :fg-header "#ff0000"
+:header-align "center"
+:header-font "sans-serif, 15"
 
 @group "G" {
     a "cmd" +write %{{echo a}}
