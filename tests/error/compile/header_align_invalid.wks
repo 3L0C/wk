@@ -1,0 +1,7 @@
+# @desc: Invalid :header-align value is rejected
+
+# @expect-error: Invalid :header-align value
+
+:header-align "middle"
+
+a "cmd" +write %{{echo a}}

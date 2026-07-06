@@ -23,6 +23,7 @@ typedef struct
     CairoColor  bd;
     const char* font;
     const char* titleFont;
+    const char* headerFont;
 } CairoPaint;
 
 typedef struct

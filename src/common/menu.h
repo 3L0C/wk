@@ -58,6 +58,14 @@ enum
     MENU_POS_CENTER
 };
 
+typedef uint8_t HeaderAlign;
+enum
+{
+    HEADER_ALIGN_LEFT,
+    HEADER_ALIGN_CENTER,
+    HEADER_ALIGN_RIGHT,
+};
+
 typedef struct
 {
     const char* hex;
@@ -81,6 +89,7 @@ typedef struct
     const char*  rootTitle;
     const char*  font;
     const char*  titleFont;
+    const char*  headerFont;
     const char*  implicitArrayKeys;
     double       borderRadius;
     MenuHexColor colors[MENU_COLOR_LAST];
@@ -110,6 +119,7 @@ typedef struct
     int32_t     tablePadding;
     uint32_t    cellHeight;
     uint32_t    titleHeight;
+    uint32_t    headerHeight;
     uint32_t    rows;
     uint32_t    cols;
     uint32_t    width;
@@ -120,6 +130,7 @@ typedef struct
     const char* wrapCmd;
 
     MenuPosition position;
+    HeaderAlign  headerAlign;
     bool         debug;
     bool         sort;
     bool         dirty;

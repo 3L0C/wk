@@ -44,6 +44,8 @@ enum
     TOKEN_DELIMITER,
     TOKEN_MENU_TITLE,
     TOKEN_MENU_TITLE_FONT,
+    TOKEN_HEADER_ALIGN,
+    TOKEN_HEADER_FONT,
 
     /* switch macros */
     TOKEN_DEBUG,
@@ -101,9 +103,6 @@ enum
     TOKEN_UNWRAP,
     TOKEN_TITLE,
     TOKEN_ARGS,
-    TOKEN_ALIGN_LEFT,
-    TOKEN_ALIGN_CENTER,
-    TOKEN_ALIGN_RIGHT,
 
     /* meta commands */
     TOKEN_GOTO,

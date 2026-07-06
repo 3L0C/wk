@@ -30,6 +30,8 @@ static const uint32_t heightPadding = 2;
 static const int32_t tablePadding = -1;
 /* Position to place the menu. '0' = bottom; '1' = top. */
 static const uint32_t menuPosition = 0;
+/* Group header alignment. '0' = left; '1' = center; '2' = right. */
+static const uint32_t headerAlign = 0;
 /* Menu border width */
 static const uint32_t borderWidth = 4;
 /* Menu border radius. 0 means no curve */
@@ -54,6 +56,8 @@ static const char* shell = "/bin/sh";
 static const char* font = "monospace, 14";
 /* Pango font description i.e. 'Inter Nerd Font, M+ 1c, ..., 16'. */
 static const char* titleFont = "sans-serif, 16";
+/* Pango font description for group headers. NULL means use the menu font. */
+static const char* headerFont = NULL;
 /* Keys to use for chord arrays */
 static const char* implicitArrayKeys = "asdfghjkl;";
 /* Command wrapper prefix. Set to NULL or "" to disable. Examples: "uwsm app --", "firefox", etc. */
@@ -83,12 +87,6 @@ static const char* wrapCmd = "wrapper";
     {                                         \
         .type  = PROP_TYPE_STRING,            \
         .value = {.as_string = STRING_EMPTY } \
-    }
-#define PROPERTY_INT(_i)           \
-    (Property)                     \
-    {                              \
-        .type  = PROP_TYPE_INT,    \
-        .value = {.as_int = (_i) } \
     }
 #define PROPERTIES(...) __VA_ARGS__
 #define PROPERTIES_EMPTY

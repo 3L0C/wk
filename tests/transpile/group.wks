@@ -1,6 +1,6 @@
 # @desc: @group transpile (default sort: groups alphabetical, coalesced)
 
-@group "Zeta" +right {
+@group "Zeta" {
     b "Bee" +write %{{echo b}}
 }
 
@@ -9,11 +9,11 @@
     [xy] "Item %(key)" +write %{{echo %(key)}}
 }
 
-@group "Zeta" +right {
+@group "Zeta" {
     a "Ay" +write %{{echo a}}
 }
 
-@group "Mid" +center {
+@group "Mid" {
     m "Prefix in group" {
         n "Nested" +write %{{echo n}}
     }

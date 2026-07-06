@@ -22,9 +22,7 @@ explicit_array     -> '[' ( trigger_key | chord_expression )+ ']' description ke
 
 chord_expression   -> '(' trigger_key description keyword* ( command | meta_command )? ')' ;
 
-group              -> '@group' description align_flag? '{' ( key_chord )+ '}' ;
-
-align_flag         -> '+' ( 'left' | 'center' | 'right' ) ;
+group              -> '@group' description '{' ( key_chord )+ '}' ;
 
 trigger_key        -> modifier* ( normal_key | special_key | key_options ) ;
 
@@ -114,6 +112,8 @@ string_macro       -> ( 'include'
                       | 'title-font'
                       | 'delimiter'
                       | 'wrap-cmd'
+                      | 'header-align'
+                      | 'header-font'
                       | 'var' '"' ( '\\"' | [^"] | user_variable )* '"' ) '"' ( '\\"' | [^"] | user_variable )* '"' ;
 
 switch_macro       -> ( 'debug'
@@ -762,16 +762,16 @@ runtime and produce an error.
 Groups a block of chords into a single labeled menu column:
 
 ```text
-@group "Name" [+left|+center|+right] { <chords> }
+@group "Name" { <chords> }
 ```
 
 The block is **not** a submenu - the chords inside it belong to the
 enclosing scope (root menu or prefix body) exactly as if `@group` were
 not there. `@group` only stamps each contained chord with a column
-name and, optionally, a header alignment.
+name.
 
-The optional flag sets the header's text alignment: `+left` (the
-default), `+center`, or `+right`.
+Header text may be aligned. See `:header-align` /
+`--header-align` below.
 
 ```wks
 @group "Chats" {
@@ -783,7 +783,7 @@ default), `+center`, or `+right`.
     c "Mail C" %{{mail-c}}
 }
 
-@group "Tools" +center {
+@group "Tools" {
     t "Tools" {
         x "Tool X" %{{tool-x}}
     }
@@ -815,8 +815,8 @@ The following are compile errors:
   block's closing `}`.
 - `Expected group name after @group.` - no description string follows
   `@group`.
-- `Expected '{' to begin @group block.` - the name (and optional
-  alignment flag) is not followed by `{`.
+- `Expected '{' to begin @group block.` - the name is not followed
+  by `{`.
 - `Cannot use chord interpolations in @group name.` - the group name
   uses `%(key)`, `%(index)`, `%(desc)`, or similar per-chord
   interpolations. [User variable](#user-variables) interpolation
@@ -835,9 +835,13 @@ different group, produces a second column with that header. See
 
 Grouped layout divides the menu width evenly across columns
 (`menu width / number of groups`); `:max-columns` / `--max-columns`
-has no effect on a grouped scope. The header row uses the menu font.
-Header colors are set with `:fg-header` / `--fg-header` (default
-`#7FB4CA`). The umbrella `--fg` flag also sets the header foreground.
+has no effect on a grouped scope. Header colors are set with
+`:fg-header` / `--fg-header` (default `#7FB4CA`). The umbrella `--fg`
+flag also sets the header foreground. Header text alignment is set
+menu-wide with `:header-align` / `--header-align` (default `left`;
+also accepts `center` or `right`). The header row uses its own font,
+set with `:header-font` / `--header-font`; when unset it falls back
+to the menu font (`:font` / `--font`).
 
 ## Preprocessor Macros
 
@@ -874,6 +878,8 @@ arguments support [user variable](#user-variables) interpolation.
 | `:title-font`    | `--title-font`       | Title font (Pango format)   |
 | `:delimiter`     | -                    | Default command delimiter   |
 | `:wrap-cmd`      | `--wrap-cmd`         | Global command wrapper      |
+| `:header-align`  | `--header-align`     | Group-header text alignment (`left`, `center`, or `right`) |
+| `:header-font`   | `--header-font`      | Group-header font (Pango format); falls back to the menu font when unset |
 
 ```wks
 :bg "#27212E"

@@ -63,7 +63,7 @@ key chords from a [wks](wks) file or script.
   in the **wks** man page for more info.
 
 **-T, --transpile** *FILE*
-: Transpile *FILE* to valid 'key_chords.h' syntax and print to stdout.
+: Transpile *FILE* to valid 'config.h' syntax and print to stdout.
 
 **-k, --key-chords** *FILE*
 : Use *FILE* for key chords rather than those precompiled.
@@ -122,6 +122,16 @@ key chords from a [wks](wks) file or script.
 
 **--fg-header** *COLOR*
 : Set foreground group-header to COLOR (default '#7FB4CA'). See
+  [@group](wks.md#group) in the **wks** reference.
+
+**--header-align** *ALIGN*
+: Set group-header text alignment to *ALIGN*. One of 'left', 'center',
+  or 'right' (default 'left'). See [@group](wks.md#group) in the
+  **wks** reference.
+
+**--header-font** *STRING*
+: Set group-header font to STRING. Should be a valid Pango font
+  description (default: falls back to `--font`). See
   [@group](wks.md#group) in the **wks** reference.
 
 **--title** *STRING*

@@ -447,6 +447,8 @@ handleMacroWithStringArg(
     case TOKEN_IMPLICIT_ARRAY_KEYS:
     case TOKEN_WRAP_CMD:
     case TOKEN_DELIMITER:
+    case TOKEN_HEADER_ALIGN:
+    case TOKEN_HEADER_FONT:
     {
         /* Menu settings must persist past compilation, so use menu->arena not compilerArena */
         char* arg = getArg(menu, scanner, &menu->arena, &argToken, "macro argument");
@@ -479,6 +481,23 @@ handleMacroWithStringArg(
         case TOKEN_IMPLICIT_ARRAY_KEYS: menu->implicitArrayKeys = arg; break;
         case TOKEN_WRAP_CMD: menuSetWrapCmd(menu, arg); break;
         case TOKEN_DELIMITER: menu->delimiter = arg; break;
+        case TOKEN_HEADER_ALIGN:
+        {
+            if (strcmp(arg, "left") == 0) menu->headerAlign = HEADER_ALIGN_LEFT;
+            else if (strcmp(arg, "center") == 0) menu->headerAlign = HEADER_ALIGN_CENTER;
+            else if (strcmp(arg, "right") == 0) menu->headerAlign = HEADER_ALIGN_RIGHT;
+            else
+            {
+                scannerErrorAt(
+                    scanner,
+                    &argToken,
+                    "Invalid :header-align value '%s'. Expected left, center, or right.",
+                    arg);
+                scanner->hadError = true;
+            }
+            break;
+        }
+        case TOKEN_HEADER_FONT: menu->headerFont = arg; break;
         default: break;
         }
         break;
@@ -731,6 +750,8 @@ preprocessorRunImpl(
         case TOKEN_IMPLICIT_ARRAY_KEYS:
         case TOKEN_WRAP_CMD:
         case TOKEN_DELIMITER:
+        case TOKEN_HEADER_ALIGN:
+        case TOKEN_HEADER_FONT:
         case TOKEN_INCLUDE:
         case TOKEN_VAR:
         {
