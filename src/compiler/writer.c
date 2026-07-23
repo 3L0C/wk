@@ -102,6 +102,10 @@ writeConfigVariables(const Menu* menu)
     printf("/* Delay in milliseconds after ungrab before command execution for +keep chords. */\n");
     printf("static uint32_t keepDelay = %u;\n", menu->keepDelay);
 
+    /* Release default */
+    printf("/* Release the keyboard by default for every chord. 'false' holds the grab. */\n");
+    printf("static bool releaseByDefault = %s;\n", menu->releaseByDefault ? "true" : "false");
+
     /* Max columns */
     printf("/* Max number of columns to use. */\n");
     printf("static const uint32_t maxCols = %u;\n", menu->maxCols);
@@ -351,6 +355,8 @@ writeChordFlag(const ChordFlag flags, int indent)
         if (chordFlagIsActive(flags, FLAG_SYNC_BEFORE)) printf("FLAG_SYNC_BEFORE%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_SYNC_AFTER)) printf("FLAG_SYNC_AFTER%s", getSeparator(&count, " | ", ","));
         if (chordFlagIsActive(flags, FLAG_UNWRAP)) printf("FLAG_UNWRAP%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_RELEASE)) printf("FLAG_RELEASE%s", getSeparator(&count, " | ", ","));
+        if (chordFlagIsActive(flags, FLAG_HOLD)) printf("FLAG_HOLD%s", getSeparator(&count, " | ", ","));
     }
 }
 

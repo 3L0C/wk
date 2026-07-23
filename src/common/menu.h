@@ -12,6 +12,7 @@
 #define MENU_MIN_WIDTH 80
 
 typedef void (*CleanupFP)(void* xp);
+typedef void (*ReleaseGrabFP)(void* xp);
 
 typedef uint8_t ForegroundColor;
 enum
@@ -103,6 +104,7 @@ typedef struct
     } client;
     struct timespec timer;
     CleanupFP       cleanupfp;
+    ReleaseGrabFP   releaseGrabfp;
     Vector          userVars;
     Span            compiledKeyChords;
     Span*           builtinKeyChords;
@@ -133,6 +135,8 @@ typedef struct
     HeaderAlign  headerAlign;
     bool         debug;
     bool         sort;
+    bool         releaseByDefault;
+    bool         grabReleased;
     bool         dirty;
 } Menu;
 

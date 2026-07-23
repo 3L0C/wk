@@ -1,0 +1,11 @@
+# @desc: +release and +hold cascade from a prefix to its subtree
+
+r "release prefix" +release {
+    a "inherits release" %{{echo a}}
+    b "holds, blocks release" +hold %{{echo b}}
+}
+
+h "hold prefix" +hold {
+    c "inherits hold" %{{echo c}}
+    d "releases, blocks hold" +release %{{echo d}}
+}

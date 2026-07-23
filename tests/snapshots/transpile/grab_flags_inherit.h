@@ -113,41 +113,48 @@ static Span builtinKeyChords =
         KeyChord,
         2,
         KEY_CHORD(
-            KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
+            KEY("h", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A chord"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("Hello, world!")),
-            FLAG_WRITE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("p", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A prefix")),
-            FLAG_WRITE,
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("hold prefix")),
+            FLAG_HOLD,
             SPAN_STATIC(
                 KeyChord,
                 2,
                 KEY_CHORD(
-                    KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A chord"),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING("Hello from inside prefix 'p b'")),
-                    FLAG_WRITE,
-                    SPAN_EMPTY),
-                KEY_CHORD(
                     KEY("c", MOD_NONE, SPECIAL_KEY_NONE),
                     PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Another prefix")),
-                    FLAG_WRITE,
-                    SPAN_STATIC(
-                        KeyChord,
-                        1,
-                        KEY_CHORD(
-                            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
-                            PROPERTIES(
-                                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Done"),
-                                [KC_PROP_COMMAND]     = PROPERTY_STRING("You've reached the end!")),
-                            FLAG_WRITE,
-                            SPAN_EMPTY))))));
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("inherits hold"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo c")),
+                    FLAG_HOLD,
+                    SPAN_EMPTY),
+                KEY_CHORD(
+                    KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("releases, blocks hold"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo d")),
+                    FLAG_RELEASE,
+                    SPAN_EMPTY))),
+        KEY_CHORD(
+            KEY("r", MOD_NONE, SPECIAL_KEY_NONE),
+            PROPERTIES(
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("release prefix")),
+            FLAG_RELEASE,
+            SPAN_STATIC(
+                KeyChord,
+                2,
+                KEY_CHORD(
+                    KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("inherits release"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo a")),
+                    FLAG_RELEASE,
+                    SPAN_EMPTY),
+                KEY_CHORD(
+                    KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
+                    PROPERTIES(
+                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("holds, blocks release"),
+                        [KC_PROP_COMMAND]     = PROPERTY_STRING("echo b")),
+                    FLAG_HOLD,
+                    SPAN_EMPTY))));
 
 #endif /* WK_CONFIG_CONFIG_H_ */

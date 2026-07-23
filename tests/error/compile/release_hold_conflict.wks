@@ -1,0 +1,6 @@
+# @desc: +release and +hold conflict on one chord
+
+# @test: "a"
+# @expect-error: Cannot use '+release' and '+hold'
+
+a "conflict" +release +hold %{{echo a}}

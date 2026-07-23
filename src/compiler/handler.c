@@ -56,6 +56,8 @@ static TokenHandler handlers[TOKEN_LAST] = {
     [TOKEN_EXECUTE]     = handleFlag,
     [TOKEN_SYNC_CMD]    = handleFlag,
     [TOKEN_UNWRAP]      = handleFlag,
+    [TOKEN_RELEASE]     = handleFlag,
+    [TOKEN_HOLD]        = handleFlag,
     [TOKEN_TITLE]       = handleFlagWithArg,
     [TOKEN_WRAP]        = handleFlagWithArg,
     [TOKEN_ARGS]        = handleArgs,
@@ -319,6 +321,22 @@ handleFlag(Parser* p)
     case TOKEN_EXECUTE: chord->flags |= FLAG_EXECUTE; break;
     case TOKEN_SYNC_CMD: chord->flags |= FLAG_SYNC_COMMAND; break;
     case TOKEN_UNWRAP: chord->flags |= FLAG_UNWRAP; break;
+    case TOKEN_RELEASE:
+        if (chordFlagIsActive(chord->flags, FLAG_HOLD))
+        {
+            parserErrorAtCurrent(p, "Cannot use '+release' and '+hold' on the same chord.");
+            return handleResultError();
+        }
+        chord->flags |= FLAG_RELEASE;
+        break;
+    case TOKEN_HOLD:
+        if (chordFlagIsActive(chord->flags, FLAG_RELEASE))
+        {
+            parserErrorAtCurrent(p, "Cannot use '+release' and '+hold' on the same chord.");
+            return handleResultError();
+        }
+        chord->flags |= FLAG_HOLD;
+        break;
     default:
         parserErrorAtCurrent(p, "Unexpected flag type.");
         return handleResultError();

@@ -119,6 +119,8 @@ tokenToExpectation(TokenType type)
     case TOKEN_SYNC_CMD:
     case TOKEN_WRAP:
     case TOKEN_UNWRAP:
+    case TOKEN_RELEASE:
+    case TOKEN_HOLD:
     case TOKEN_TITLE:
     case TOKEN_ARGS: return EXPECT_FLAG;
 

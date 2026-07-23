@@ -22,6 +22,8 @@ enum
     FLAG_SYNC_BEFORE  = 1 << 11,
     FLAG_SYNC_AFTER   = 1 << 12,
     FLAG_UNWRAP       = 1 << 13,
+    FLAG_RELEASE      = 1 << 14,
+    FLAG_HOLD         = 1 << 15,
 };
 
 int       chordFlagCount(ChordFlag flag);

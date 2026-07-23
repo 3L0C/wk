@@ -342,8 +342,8 @@ initX11(X11* x11, X11Window* window, Menu* menu)
     window->monitor                = -1;
     window->visual                 = DefaultVisual(display, window->screen);
     XSetWindowAttributes wa        = {
-               .event_mask        = ExposureMask | KeyPressMask | ButtonPressMask | VisibilityChangeMask,
-               .override_redirect = True
+        .event_mask        = ExposureMask | KeyPressMask | ButtonPressMask | VisibilityChangeMask,
+        .override_redirect = True
     };
 
     XVisualInfo   vinfo;
@@ -790,29 +790,28 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
         }
         case KeyPress:
         {
-            /* Ungrab keyboard before processing keypress */
-            XUngrabKeyboard(window->display, CurrentTime);
-            XFlush(window->display);
-
             MenuStatus status = keypress(window, menu, &ev.xkey);
 
-            /* Regrab keyboard if menu is still running */
+            /* Regrab keyboard if the chord released it and the menu still runs */
             switch (status)
             {
             case MENU_STATUS_RUNNING:
             case MENU_STATUS_DAMAGED:
-                /* Menu is still active, regrab keyboard */
-                if (XGrabKeyboard(
-                        window->display,
-                        DefaultRootWindow(window->display),
-                        True,
-                        GrabModeAsync,
-                        GrabModeAsync,
-                        CurrentTime) != GrabSuccess)
+                if (menu->grabReleased)
                 {
-                    cleanup(x11);
-                    errorMsg("Could not regrab keyboard after keypress.");
-                    return EX_SOFTWARE;
+                    menu->grabReleased = false;
+                    if (XGrabKeyboard(
+                            window->display,
+                            DefaultRootWindow(window->display),
+                            True,
+                            GrabModeAsync,
+                            GrabModeAsync,
+                            CurrentTime) != GrabSuccess)
+                    {
+                        cleanup(x11);
+                        errorMsg("Could not regrab keyboard after keypress.");
+                        return EX_SOFTWARE;
+                    }
                 }
 
                 if (status == MENU_STATUS_DAMAGED)
@@ -841,6 +840,16 @@ eventHandler(X11* x11, X11Window* window, Menu* menu)
     return EX_OK;
 }
 
+static void
+releaseGrab(void* xp)
+{
+    assert(xp);
+
+    X11* x11 = xp;
+    XUngrabKeyboard(x11->window.display, CurrentTime);
+    XFlush(x11->window.display);
+}
+
 int
 x11Run(Menu* menu)
 {
@@ -848,10 +857,11 @@ x11Run(Menu* menu)
 
     int result = EX_SOFTWARE;
     checkLocale(menu);
-    X11 x11         = { 0 };
-    x11.menu        = menu;
-    menu->cleanupfp = cleanupAsync;
-    menu->xp        = &x11;
+    X11 x11             = { 0 };
+    x11.menu            = menu;
+    menu->cleanupfp     = cleanupAsync;
+    menu->releaseGrabfp = releaseGrab;
+    menu->xp            = &x11;
     if (!initX11(&x11, &x11.window, menu)) return result;
     grabkeyboard(&x11, &x11.window);
     if (render(&x11.window, menu))
