@@ -122,8 +122,8 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ optionals backends.hasX11 [
     # X11
-    xorg.libX11
-    xorg.libXinerama
+    xorg.libx11
+    xorg.libxinerama
   ];
 
   inherit patches;
