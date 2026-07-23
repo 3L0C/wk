@@ -15,6 +15,7 @@ _wk() {
         '(-t --top -b --bottom -c --center)'{-c,--center}'[Position menu at center of screen]'
         '(-s --script)'{-s,--script}'[Read script from stdin]'
         '(-U --unsorted)'{-U,--unsorted}'[Disable sorting of key chords]'
+        '--release[Release the keyboard grab for every chord by default]'
 
         # Options with integer arguments
         '(-D --delay)'{-D,--delay}'[Delay popup menu by N milliseconds]:delay (ms):'

@@ -28,7 +28,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WK" "1" "Jan 01, 1980" "0.3.2" "wk"
+.TH "WK" "1" "Jan 01, 1980" "0.3.3" "wk"
 .SH NAME
 wk \- Which-Key via X11 and Wayland
 .sp
@@ -66,6 +66,10 @@ Delay the popup menu by \fIINT\fP milliseconds from startup or last keypress
 Delay in milliseconds after keyboard ungrab before command execution for
 +keep chords. Helps prevent focus\-stealing issues with compositor commands
 (default 75 ms).
+.TP
+\fB\-\-release\fP
+Release the keyboard grab for every chord by default. Without this flag,
+wk holds the grab, and only a \fB+release\fP chord drops it.
 .TP
 \fB\-t, \-\-top\fP
 Position menu at top of screen.
