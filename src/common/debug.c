@@ -175,6 +175,8 @@ disassembleChordFlag(ChordFlag flag, int indent)
     if (chordFlagIsActive(flag, FLAG_SYNC_BEFORE)) printf("BEFORE_SYNC%s", getSeparator(&count, "|", "\n"));
     if (chordFlagIsActive(flag, FLAG_SYNC_AFTER)) printf("AFTER_SYNC%s", getSeparator(&count, "|", "\n"));
     if (chordFlagIsActive(flag, FLAG_UNWRAP)) printf("UNWRAP%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_RELEASE)) printf("RELEASE%s", getSeparator(&count, "|", "\n"));
+    if (chordFlagIsActive(flag, FLAG_HOLD)) printf("HOLD%s", getSeparator(&count, "|", "\n"));
 }
 
 void

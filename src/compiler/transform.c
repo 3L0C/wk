@@ -213,6 +213,14 @@ setFlags(ChordFlag parent, ChordFlag child)
     {
         child |= FLAG_KEEP;
     }
+    if (!chordFlagIsActive(child, FLAG_HOLD) && chordFlagIsActive(parent, FLAG_RELEASE))
+    {
+        child |= FLAG_RELEASE;
+    }
+    if (!chordFlagIsActive(child, FLAG_RELEASE) && chordFlagIsActive(parent, FLAG_HOLD))
+    {
+        child |= FLAG_HOLD;
+    }
     if (!chordFlagIsActive(child, FLAG_EXECUTE) && chordFlagIsActive(parent, FLAG_WRITE))
     {
         child |= FLAG_WRITE;

@@ -84,6 +84,8 @@ flag               -> '+' ( 'keep'
                           | 'execute'
                           | 'sync-command'
                           | 'unwrap'
+                          | 'release'
+                          | 'hold'
                           | 'wrap' '"' ( '\\"' | [^"] | interpolation )* '"'
                           | 'title' ( '"' ( '\\"' | [^"] | interpolation )* '"' )?
                           | 'args' ( '"' ( '\\"' | [^"] | interpolation )* '"' )+ ) ;
@@ -118,7 +120,8 @@ string_macro       -> ( 'include'
 switch_macro       -> ( 'debug'
                       | 'unsorted'
                       | 'top'
-                      | 'bottom' );
+                      | 'bottom'
+                      | 'release' );
 
 integer_macro      -> ( 'menu-width'
                       | 'menu-gap'
@@ -568,6 +571,7 @@ Flags modify the behavior of a chord or prefix.
 flag -> '+' ( 'keep' | 'close' | 'inherit' | 'ignore' | 'unhook'
             | 'deflag' | 'no-before' | 'no-after' | 'write'
             | 'execute' | 'sync-command' | 'unwrap'
+            | 'release' | 'hold'
             | 'wrap' description | 'title' description?
             | 'args' description+ ) ;
 ```
@@ -591,28 +595,56 @@ m "Music" +keep
 }
 ```
 
+### Keyboard Control
+
+By default wk holds the keyboard grab while a chord runs.
+A `+release` chord drops the grab before it runs its
+command.
+
+**+release**
+: Release the keyboard grab before the chord runs its
+  command. Use it for a command requires wk to not be
+  focused (e.g., xdotool/ydotool). On a prefix, the flag
+  cascades to the chords in the subtree.
+
+**+hold**
+: Hold the keyboard grab while the chord runs. This is the
+  default. Use it to override a `:release` default or an
+  inherited `+release`. A chord with both `+release` and
+  `+hold` is an error.
+
+```wks
+:release
+w "Window" +keep
+{
+    f "Type something" %{{xdotool type 'foobar'}}
+    s "Screenshot" +hold %{{grim}}
+}
+```
+
 ### Output Control
 
 **+write**
-: Print the command text to stdout instead of executing it. Turns wk
-  into a selection prompt, like dmenu.
+: Print the command text to stdout instead of executing it.
+  Turns wk into a selection prompt, like dmenu.
 
 **+execute**
-: Execute the command normally. Overrides `+write` inherited from a
-  parent prefix.
+: Execute the command normally. Overrides `+write` inherited
+  from a parent prefix.
 
 **+sync-command**
-: Execute the command synchronously (blocking). See the warning in
-  [Hooks](#hooks) about blocking commands.
+: Execute the command synchronously (blocking). See the
+  warning in [Hooks](#hooks) about blocking commands.
 
 ### Inheritance Control
 
 **+inherit**
-: Force a nested prefix to inherit hooks and flags from its parent.
-  Has no effect on chords.
+: Force a nested prefix to inherit hooks and flags from its
+  parent.  Has no effect on chords.
 
 **+ignore**
-: Ignore all inherited hooks and flags. Has no effect on prefixes.
+: Ignore all inherited hooks and flags. Has no effect on
+  prefixes.
 
 **+unhook**
 : Ignore all inherited hooks only.
@@ -987,6 +1019,7 @@ Switch macros are simple toggles with no argument.
 | `:top`      | `--top`             | Position menu at top    |
 | `:bottom`   | `--bottom`          | Position menu at bottom |
 | `:center`   | `--center`          | Position menu at center |
+| `:release`  | `--release`         | Release grab by default |
 
 ### Integer Macros
 

@@ -17,7 +17,7 @@ static uint32_t delay = 1000;
 /* Delay in milliseconds after ungrab before command execution for +keep chords. */
 static uint32_t keepDelay = 75;
 /* Release the keyboard by default for every chord. 'false' holds the grab. */
-static bool releaseByDefault = false;
+static bool releaseByDefault = true;
 /* Max number of columns to use. */
 static const uint32_t maxCols = 5;
 /* Menu width. Set to '-1' for 1/2 the width of your screen. */
@@ -111,43 +111,13 @@ static const char* wrapCmd = NULL;
 static Span builtinKeyChords =
     SPAN_STATIC(
         KeyChord,
-        2,
+        1,
         KEY_CHORD(
             KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A chord"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("Hello, world!")),
-            FLAG_WRITE,
-            SPAN_EMPTY),
-        KEY_CHORD(
-            KEY("p", MOD_NONE, SPECIAL_KEY_NONE),
-            PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A prefix")),
-            FLAG_WRITE,
-            SPAN_STATIC(
-                KeyChord,
-                2,
-                KEY_CHORD(
-                    KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("A chord"),
-                        [KC_PROP_COMMAND]     = PROPERTY_STRING("Hello from inside prefix 'p b'")),
-                    FLAG_WRITE,
-                    SPAN_EMPTY),
-                KEY_CHORD(
-                    KEY("c", MOD_NONE, SPECIAL_KEY_NONE),
-                    PROPERTIES(
-                        [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Another prefix")),
-                    FLAG_WRITE,
-                    SPAN_STATIC(
-                        KeyChord,
-                        1,
-                        KEY_CHORD(
-                            KEY("d", MOD_NONE, SPECIAL_KEY_NONE),
-                            PROPERTIES(
-                                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Done"),
-                                [KC_PROP_COMMAND]     = PROPERTY_STRING("You've reached the end!")),
-                            FLAG_WRITE,
-                            SPAN_EMPTY))))));
+                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("plain chord"),
+                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo a")),
+            FLAG_NONE,
+            SPAN_EMPTY));
 
 #endif /* WK_CONFIG_CONFIG_H_ */
