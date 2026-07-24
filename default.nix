@@ -9,7 +9,8 @@
   wayland,
   wayland-scanner,
   wayland-protocols,
-  xorg,
+  libx11,
+  libxinerama,
   # customization
   backend ? "both",
   patches ? [ ],
@@ -122,8 +123,8 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ optionals backends.hasX11 [
     # X11
-    xorg.libx11
-    xorg.libxinerama
+    libx11
+    libxinerama
   ];
 
   inherit patches;
