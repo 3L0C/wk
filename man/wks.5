@@ -29,7 +29,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "WKS" "5" "Jan 01, 1980" "0.3.2" "wk"
+.TH "WKS" "5" "Jan 01, 1980" "0.3.3" "wk"
 .SH NAME
 wks \- Which-Key source file for wk
 .sp
@@ -118,6 +118,8 @@ flag               \-> \(aq+\(aq ( \(aqkeep\(aq
                           | \(aqexecute\(aq
                           | \(aqsync\-command\(aq
                           | \(aqunwrap\(aq
+                          | \(aqrelease\(aq
+                          | \(aqhold\(aq
                           | \(aqwrap\(aq \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq
                           | \(aqtitle\(aq ( \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq )?
                           | \(aqargs\(aq ( \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(aq\(dq\(aq )+ ) ;
@@ -152,7 +154,8 @@ string_macro       \-> ( \(aqinclude\(aq
 switch_macro       \-> ( \(aqdebug\(aq
                       | \(aqunsorted\(aq
                       | \(aqtop\(aq
-                      | \(aqbottom\(aq );
+                      | \(aqbottom\(aq
+                      | \(aqrelease\(aq );
 
 integer_macro      \-> ( \(aqmenu\-width\(aq
                       | \(aqmenu\-gap\(aq
@@ -996,6 +999,7 @@ Flags modify the behavior of a chord or prefix.
 flag \-> \(aq+\(aq ( \(aqkeep\(aq | \(aqclose\(aq | \(aqinherit\(aq | \(aqignore\(aq | \(aqunhook\(aq
             | \(aqdeflag\(aq | \(aqno\-before\(aq | \(aqno\-after\(aq | \(aqwrite\(aq
             | \(aqexecute\(aq | \(aqsync\-command\(aq | \(aqunwrap\(aq
+            | \(aqrelease\(aq | \(aqhold\(aq
             | \(aqwrap\(aq description | \(aqtitle\(aq description?
             | \(aqargs\(aq description+ ) ;
 
@@ -1027,30 +1031,64 @@ m \(dqMusic\(dq +keep
 .EE
 .UNINDENT
 .UNINDENT
+.SS Keyboard Control
+.sp
+By default wk holds the keyboard grab while a chord runs.
+A \fB+release\fP chord drops the grab before it runs its
+command.
+.INDENT 0.0
+.TP
+\fB+release\fP
+Release the keyboard grab before the chord runs its
+command. Use it for a command requires wk to not be
+focused (e.g., xdotool/ydotool). On a prefix, the flag
+cascades to the chords in the subtree.
+.TP
+\fB+hold\fP
+Hold the keyboard grab while the chord runs. This is the
+default. Use it to override a \fB:release\fP default or an
+inherited \fB+release\fP\&. A chord with both \fB+release\fP and
+\fB+hold\fP is an error.
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+:release
+w \(dqWindow\(dq +keep
+{
+    f \(dqType something\(dq %{{xdotool type \(aqfoobar\(aq}}
+    s \(dqScreenshot\(dq +hold %{{grim}}
+}
+
+.EE
+.UNINDENT
+.UNINDENT
 .SS Output Control
 .INDENT 0.0
 .TP
 \fB+write\fP
-Print the command text to stdout instead of executing it. Turns wk
-into a selection prompt, like dmenu.
+Print the command text to stdout instead of executing it.
+Turns wk into a selection prompt, like dmenu.
 .TP
 \fB+execute\fP
-Execute the command normally. Overrides \fB+write\fP inherited from a
-parent prefix.
+Execute the command normally. Overrides \fB+write\fP inherited
+from a parent prefix.
 .TP
 \fB+sync\-command\fP
-Execute the command synchronously (blocking). See the warning in
-Hooks about blocking commands.
+Execute the command synchronously (blocking). See the
+warning in Hooks about blocking commands.
 .UNINDENT
 .SS Inheritance Control
 .INDENT 0.0
 .TP
 \fB+inherit\fP
-Force a nested prefix to inherit hooks and flags from its parent.
-Has no effect on chords.
+Force a nested prefix to inherit hooks and flags from its
+parent.  Has no effect on chords.
 .TP
 \fB+ignore\fP
-Ignore all inherited hooks and flags. Has no effect on prefixes.
+Ignore all inherited hooks and flags. Has no effect on
+prefixes.
 .TP
 \fB+unhook\fP
 Ignore all inherited hooks only.
@@ -1690,6 +1728,14 @@ T}	T{
 \fB\-\-center\fP
 T}	T{
 Position menu at center
+T}
+_
+T{
+\fB:release\fP
+T}	T{
+\fB\-\-release\fP
+T}	T{
+Release grab by default
 T}
 .TE
 .SS Integer Macros

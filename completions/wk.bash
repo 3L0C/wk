@@ -28,7 +28,7 @@ _wk() {
 
     # All options
     local all_opts='-h --help -v --version -d --debug -t --top -b --bottom
-                    -c --center -s --script -U --unsorted
+                    -c --center -s --script -U --unsorted --release
                     -D --delay -m --max-columns -p --press -T --transpile
                     -k --key-chords -w --menu-width -g --menu-gap
                     --keep-delay --border-width --border-radius

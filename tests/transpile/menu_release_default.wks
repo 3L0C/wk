@@ -1,0 +1,5 @@
+# @desc: :release sets the menu-wide release default to true
+
+:release
+
+a "plain chord" %{{echo a}}

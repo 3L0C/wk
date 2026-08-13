@@ -1,0 +1,4 @@
+# @desc: +release and +hold set FLAG_RELEASE and FLAG_HOLD
+
+a "release" +release %{{echo a}}
+b "hold" +hold %{{echo b}}

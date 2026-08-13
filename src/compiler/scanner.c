@@ -344,6 +344,16 @@ scanFlag(Scanner* scanner, Token* token)
         if (isKeyword(scanner, 1, 6, "xecute")) result = TOKEN_EXECUTE;
         break;
     }
+    case 'h':
+    {
+        if (isKeyword(scanner, 1, 3, "old")) result = TOKEN_HOLD;
+        break;
+    }
+    case 'r':
+    {
+        if (isKeyword(scanner, 1, 6, "elease")) result = TOKEN_RELEASE;
+        break;
+    }
     case 'i':
     {
         if (isKeyword(scanner, 1, 6, "nherit")) result = TOKEN_INHERIT;
@@ -458,6 +468,11 @@ scanPreprocessorMacro(Scanner* scanner, Token* token)
         if (isKeyword(scanner, 1, 10, "ax-columns")) result = TOKEN_MAX_COLUMNS;
         else if (isKeyword(scanner, 1, 9, "enu-width")) result = TOKEN_MENU_WIDTH;
         else if (isKeyword(scanner, 1, 7, "enu-gap")) result = TOKEN_MENU_GAP;
+        break;
+    }
+    case 'r':
+    {
+        if (isKeyword(scanner, 1, 6, "elease")) result = TOKEN_RELEASE_DEFAULT;
         break;
     }
     case 's':

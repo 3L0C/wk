@@ -67,6 +67,7 @@ enum
     OPT_ARG_KEEP_DELAY,
     OPT_ARG_HEADER_ALIGN,
     OPT_ARG_HEADER_FONT,
+    OPT_ARG_RELEASE,
 };
 
 int
@@ -236,10 +237,33 @@ menuHandleCommand(Menu* menu, KeyChord* keyChord)
     menuSpawn(menu, keyChord, &cmd, chordFlagIsActive(keyChord->flags, FLAG_SYNC_COMMAND));
 }
 
+static bool
+keyChordReleasesGrab(const Menu* menu, const KeyChord* keyChord)
+{
+    assert(menu), assert(keyChord);
+
+    if (chordFlagIsActive(keyChord->flags, FLAG_RELEASE)) return true;
+    if (chordFlagIsActive(keyChord->flags, FLAG_HOLD)) return false;
+    return menu->releaseByDefault;
+}
+
 static MenuStatus
 menuHandleCommands(Menu* menu, KeyChord* keyChord)
 {
     assert(menu), assert(keyChord);
+
+    bool release = keyChordReleasesGrab(menu, keyChord);
+    debugMsg(
+        menu->debug,
+        "Chord '%s' %s the keyboard grab.",
+        keyChord->key.repr.data,
+        release ? "releases" : "holds");
+
+    if (release && menu->releaseGrabfp)
+    {
+        menu->releaseGrabfp(menu->xp);
+        menu->grabReleased = true;
+    }
 
     menuSpawn(
         menu,
@@ -253,9 +277,11 @@ menuHandleCommands(Menu* menu, KeyChord* keyChord)
         propStringConst(keyChord, KC_PROP_AFTER),
         chordFlagIsActive(keyChord->flags, FLAG_SYNC_AFTER));
 
-    /* If chord has +keep flag and a command to execute, sleep to allow
-     * compositor to process the ungrab before the command executes */
-    if (chordFlagIsActive(keyChord->flags, FLAG_KEEP) && propIsSet(keyChord, KC_PROP_COMMAND))
+    /* If the chord released the grab and keeps the menu open with a command,
+     * sleep to let the compositor process the ungrab before the re-grab. */
+    if (release &&
+        chordFlagIsActive(keyChord->flags, FLAG_KEEP) &&
+        propIsSet(keyChord, KC_PROP_COMMAND))
     {
         struct timespec sleep_duration = {
             .tv_sec  = 0,
@@ -467,12 +493,15 @@ menuInit(Menu* menu)
     menu->delay        = delay;
     menu->keepDelay    = keepDelay;
 
-    menu->position    = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
-    menu->headerAlign = (HeaderAlign)headerAlign;
-    menu->debug       = false;
-    menu->sort        = true;
-    menu->dirty       = true;
-    menu->wrapCmd     = wrapCmd;
+    menu->position         = (menuPosition ? MENU_POS_TOP : MENU_POS_BOTTOM);
+    menu->headerAlign      = (HeaderAlign)headerAlign;
+    menu->debug            = false;
+    menu->sort             = true;
+    menu->releaseByDefault = releaseByDefault;
+    menu->grabReleased     = false;
+    menu->releaseGrabfp    = NULL;
+    menu->dirty            = true;
+    menu->wrapCmd          = wrapCmd;
 }
 
 bool
@@ -505,6 +534,7 @@ usage(void)
         "                               startup/last keypress (default 1000 ms).\n"
         "    --keep-delay INT           Delay in milliseconds after ungrab before command\n"
         "                               execution for +keep chords (default 75 ms).\n"
+        "    --release                  Release the keyboard by default for every chord.\n"
         "    -t, --top                  Position menu at top of screen.\n"
         "    -b, --bottom               Position menu at bottom of screen.\n"
         "    -c, --center               Position menu at center of screen.\n"
@@ -606,6 +636,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         { "center",        no_argument,       0, 'c'                   },
         { "script",        no_argument,       0, 's'                   },
         { "unsorted",      no_argument,       0, 'U'                   },
+        { "release",       no_argument,       0, OPT_ARG_RELEASE       },
         /*                  required argument           */
         { "delay",         required_argument, 0, 'D'                   },
         { "max-columns",   required_argument, 0, 'm'                   },
@@ -661,6 +692,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
         case 'c': menu->position = MENU_POS_CENTER; break;
         case 's': menu->client.tryScript = true; break;
         case 'U': menu->sort = false; break;
+        case OPT_ARG_RELEASE: menu->releaseByDefault = true; break;
         /* requires argument */
         case 'D':
         {

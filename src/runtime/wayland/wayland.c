@@ -435,6 +435,16 @@ grabKeyboard(Wayland* wayland, bool grab)
     }
 }
 
+static void
+releaseGrab(void* xp)
+{
+    assert(xp);
+
+    Wayland* wayland             = xp;
+    wayland->input.keyboardState = KEYBOARD_RELEASED;
+    grabKeyboard(wayland, false);
+}
+
 static bool
 pollPointer(Wayland* wayland)
 {
@@ -785,15 +795,13 @@ pollKey(Wayland* wayland, Menu* menu)
         return MENU_STATUS_RUNNING;
     }
 
-    wayland->input.keyboardState = KEYBOARD_RELEASED;
-    grabKeyboard(wayland, false);
-
     MenuStatus status = menuHandleKeypress(menu, &key);
 
     keyFree(&key);
 
-    if (menuStatusIsRunning(status))
+    if (menuStatusIsRunning(status) && menu->grabReleased)
     {
+        menu->grabReleased = false;
         grabKeyboard(wayland, true);
 
         if (wayland->input.keyboardState == KEYBOARD_HELD)
@@ -881,6 +889,9 @@ waylandRun(Menu* menu)
         errorMsg("Failed to create Wayland structure.");
         return EX_SOFTWARE;
     }
+
+    menu->releaseGrabfp = releaseGrab;
+    menu->xp            = &wayland;
 
     MenuStatus status = MENU_STATUS_EXIT_SOFTWARE;
     do

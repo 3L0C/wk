@@ -33,7 +33,9 @@ chordFlagHasAnyActive(ChordFlag flag)
         FLAG_SYNC_COMMAND |
         FLAG_SYNC_BEFORE |
         FLAG_SYNC_AFTER |
-        FLAG_UNWRAP;
+        FLAG_UNWRAP |
+        FLAG_RELEASE |
+        FLAG_HOLD;
 
     return (flag & any) != 0;
 }

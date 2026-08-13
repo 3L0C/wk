@@ -37,6 +37,10 @@ key chords from a [wks](wks) file or script.
   +keep chords. Helps prevent focus-stealing issues with compositor commands
   (default 75 ms).
 
+**--release**
+: Release the keyboard grab for every chord by default. Without this flag,
+  wk holds the grab, and only a `+release` chord drops it.
+
 **-t, --top**
 : Position menu at top of screen.
 

@@ -715,6 +715,7 @@ preprocessorRunImpl(
         case TOKEN_TOP: menu->position = MENU_POS_TOP; break;
         case TOKEN_BOTTOM: menu->position = MENU_POS_BOTTOM; break;
         case TOKEN_CENTER: menu->position = MENU_POS_CENTER; break;
+        case TOKEN_RELEASE_DEFAULT: menu->releaseByDefault = true; break;
 
         /* Switches with signed integer args. */
         case TOKEN_MENU_WIDTH: /* FALLTHROUGH */
