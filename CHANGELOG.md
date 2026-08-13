@@ -9,9 +9,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-08-13
+
 ### Fixed
 
 - Menu flickering when releasing keyboard with `+keep` keys.
+
+### Added
+
+- **Release as a flag**: The flicker fix changed the default
+  release behavior. Restore globally with `--release` or
+  `:release`.
 
 ## [0.3.3] - 2026-07-23
 
@@ -284,6 +292,7 @@ an improved configuration system, and several new features. See
 
 Initial documented release.
 
+[0.3.4]: https://github.com/3L0C/wk/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/3L0C/wk/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/3L0C/wk/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/3L0C/wk/compare/v0.3.0...v0.3.1
