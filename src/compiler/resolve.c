@@ -222,6 +222,7 @@ resolveEmptyProp(const KeyChord* chord, PropId id)
     case KC_PROP_WRAP_CMD:
     case KC_PROP_GOTO:
     case KC_PROP_GROUP:
+    case KC_PROP_GROUP_COLUMN:
     case KC_PROP_COUNT: assert(false);
     }
 

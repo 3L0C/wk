@@ -1,6 +1,6 @@
 '\" t
 .\" Man page generated from reStructuredText
-.\" by the Docutils 0.22.4 manpage writer.
+.\" by the Docutils 0.23 manpage writer.
 .
 .
 .nr rst2man-indent-level 0
@@ -33,10 +33,10 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .SH NAME
 wks \- Which-Key source file for wk
 .sp
-wks is the scripting language used by \fBwk\fP(1) to define key chords.
-This page is the complete reference. If you\(aqre new to wks, start with
-the getting started \%<> guide and the
-examples \%<>\&.
+wks is the scripting language used by \fBwk\fP(1) to define
+key chords.  This page is the complete reference. If you\(aqre
+new to wks, start with the getting started \%<>
+guide and the examples \%<>\&.
 .SH GRAMMAR
 .INDENT 0.0
 .INDENT 3.5
@@ -174,9 +174,9 @@ number_macro       \-> ( \(aqborder\-radius\(aq ) \(aq\-\(aq? [0\-9]+ ( \(aq.\(a
 .UNINDENT
 .UNINDENT
 .sp
-Comments begin with \fB#\fP and extend to the end of the line. The \fB#\fP
-character is literal inside descriptions and commands; it
-does not need to be escaped.
+Comments begin with \fB#\fP and extend to the end of the line.
+The \fB#\fP character is literal inside descriptions and
+commands; it does not need to be escaped.
 .SH TRIGGER KEYS
 .sp
 A trigger key is the keypress that activates a chord.
@@ -202,8 +202,9 @@ normal_key \-> ( \(aq\e\e\(aq [\e\e\e[\e]{}#\(dq:^+()] | [^\es\e[\e]{}#\(dq:^+()
 .UNINDENT
 .UNINDENT
 .sp
-The following characters have special meaning in wks and must be
-escaped with a backslash (\fB\e\fP) to use as trigger keys:
+The following characters have special meaning in wks and
+must be escaped with a backslash (\fB\e\fP) to use as trigger
+keys:
 .TS
 box center;
 l|l.
@@ -263,8 +264,8 @@ T}
 .TE
 .SS Special Keys
 .sp
-Non\-printable or whitespace keys use named forms. Whitespace is
-required after a special key.
+Non\-printable or whitespace keys use named forms. Whitespace
+is required after a special key.
 .TS
 box center;
 l|l.
@@ -459,23 +460,24 @@ T}	T{
 T}
 .TE
 .sp
-To match \fBControl+c\fP, write \fBC\-c\fP\&. Modifiers chain: \fBC\-M\-x\fP matches
-\fBControl+Alt+x\fP\&.
+To match \fBControl+c\fP, write \fBC\-c\fP\&. Modifiers chain: \fBC\-M\-x\fP
+matches \fBControl+Alt+x\fP\&.
 .sp
 \fBNote:\fP
 .INDENT 0.0
 .INDENT 3.5
-The Shift modifier (\fBS\-\fP) has a subtlety with normal keys. If pressing
-a key with Shift produces a different character (e.g., \fBa\fP → \fBA\fP), use
-the shifted character directly \- \fBA\fP, not \fBS\-a\fP\&. The \fBS\-\fP modifier is
-only needed for keys where Shift does not change the output (e.g.,
-special keys like \fBS\-TAB\fP).
+The Shift modifier (\fBS\-\fP) has a subtlety with normal keys.
+If pressing a key with Shift produces a different character
+(e.g., \fBa\fP \-> \fBA\fP), use the shifted character directly; \fBA\fP,
+not \fBS\-a\fP\&. The \fBS\-\fP modifier is only needed for keys where
+Shift does not change the output (e.g., special keys like
+\fBS\-SPC\fP).
 .UNINDENT
 .UNINDENT
 .SS Key Options
 .sp
-Key options let a chord bind to the \fBfirst available\fP key from a
-list.
+Key options let a chord bind to the \fBfirst available\fP key
+from a list.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -495,9 +497,10 @@ key_options \-> \(aq<\(aq ( modifier* ( normal_key | special_key | \(aq...\(aq )
 .UNINDENT
 .UNINDENT
 .sp
-The parser tries \fBs\fP first; if already bound, it tries \fBi\fP, then \fBg\fP\&.
-If all keys are taken, an error is raised. The ellipsis (\fB\&...\fP)
-expands to the implicit array keys as a fallback:
+The parser tries \fBs\fP first; if already bound, it tries \fBi\fP,
+then \fBg\fP\&.  If all keys are taken, an error is raised. The
+ellipsis (\fB\&...\fP)  expands to the implicit array keys and may
+be useful as a fallback to decrease the chance of an error:
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -508,8 +511,8 @@ expands to the implicit array keys as a fallback:
 .UNINDENT
 .UNINDENT
 .sp
-Modifiers before \fB<\fP apply to all options. Modifiers inside apply to
-individual keys:
+Modifiers before \fB<\fP apply to all options. Modifiers inside
+apply to individual keys:
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -521,12 +524,13 @@ M\-<a b>      # Both options get M\-
 .UNINDENT
 .UNINDENT
 .sp
-Key options are most useful with \fB:include\fP to avoid
-trigger key collisions across files. See the key options
-example \%<>\&.
+Key options are most useful with
+\fB:include\fP to avoid trigger key collisions
+across files. See the key options example \%<>\&.
 .SH DESCRIPTIONS
 .sp
-A description is a quoted string shown as the hint text in the menu.
+A description is a quoted string shown as the hint text in
+the menu.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -537,8 +541,9 @@ description \-> \(aq\(dq\(aq ( \(aq\e\e\(dq\(aq | [^\(dq] | interpolation )* \(a
 .UNINDENT
 .UNINDENT
 .sp
-Descriptions can contain interpolations\&. Use \fB\e\(dq\fP
-for a literal double quote. An empty description (\fB\(dq\(dq\fP) is valid.
+Descriptions can contain interpolations\&.
+Use \fB\e\(dq\fP for a literal double quote. An empty description
+(\fB\(dq\(dq\fP) is valid.
 .SH COMMANDS
 .sp
 A command is the action executed when a chord completes.
@@ -552,9 +557,9 @@ command \-> \(aq%\(aq delimiter ( . | interpolation )* delimiter ;
 .UNINDENT
 .UNINDENT
 .sp
-A command starts with \fB%\fP followed by a delimiter pair. Anything
-between the delimiters is passed to the shell. If it runs in your
-terminal, it works in a wks command.
+A command starts with \fB%\fP followed by a delimiter pair.
+Anything between the delimiters is passed to the shell. If
+it runs in your terminal, it works in a wks command.
 .SS Delimiters
 .INDENT 0.0
 .INDENT 3.5
@@ -568,28 +573,30 @@ close_delim \-> ( \(aq}}\(aq | \(aq))\(aq | \(aq]]\(aq ) ;
 .UNINDENT
 .UNINDENT
 .sp
-The three bracket\-style delimiters have matching open/close pairs.
-Any other ASCII character repeated twice also works as a delimiter:
+The three bracket\-style delimiters have matching open/close
+pairs. Any other ASCII character repeated twice also works
+as a delimiter:
 .INDENT 0.0
 .INDENT 3.5
 .sp
 .EX
-%{{echo \(dqhello\(dq}}           # Standard
-%((echo \(dqhello\(dq))           # Parentheses
-%[[echo \(dqhello\(dq]]           # Brackets
-%||echo \(dqhello\(dq||           # Arbitrary
+%{{echo \(dqhello\(dq}} # Standard
+%((echo \(dqhello\(dq)) # Parentheses
+%[[echo \(dqhello\(dq]] # Brackets
+%||echo \(dqhello\(dq|| # Arbitrary
 
 .EE
 .UNINDENT
 .UNINDENT
 .sp
-This flexibility, inspired by \fBsed\fP(1), means your command content
-never conflicts with the delimiter \- just pick one that doesn\(aqt appear
-in the command. Different chords can use different delimiters.
+This flexibility, inspired by \fBsed\fP(1), means your command
+content never conflicts with the delimiter; just pick one
+that doesn\(aqt appear in the command. Different chords can use
+different delimiters.
 .SH CHORDS
 .sp
-A chord is a complete key binding \- pressing its trigger key performs
-an action.
+A chord is a complete key binding. Pressing its trigger key
+performs an action.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -611,8 +618,9 @@ C\-s \(dqSave\(dq %{{save\-file}}
 .UNINDENT
 .SH PREFIXES
 .sp
-A prefix groups related chords under a common trigger key. Pressing
-the prefix key opens a submenu rather than executing a command.
+A prefix groups related chords under a common trigger key.
+Pressing the prefix key opens a submenu rather than
+executing a command.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -643,8 +651,8 @@ e \(dqEmacs\(dq
 .UNINDENT
 .SH CHORD ARRAYS
 .sp
-Chord arrays generate multiple chords from a shared template, reducing
-repetition.
+Chord arrays generate multiple chords from a shared
+template, reducing repetition.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -656,8 +664,9 @@ chord_array \-> ( implicit_array | explicit_array ) ;
 .UNINDENT
 .SS Implicit Arrays
 .sp
-An implicit array uses the predefined implicit array keys (set via
-\fB\-\-implicit\-keys\fP or \fB:implicit\-array\-keys\fP) as trigger keys.
+An implicit array uses the predefined implicit array keys
+(set via \fB\-\-implicit\-keys\fP or \fB:implicit\-array\-keys\fP) as
+trigger keys.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -733,10 +742,10 @@ l \(dqWorkspace 9\(dq %{{switch\-to\-workspace 8}}
 .UNINDENT
 .SS Chord Expressions
 .sp
-A chord expression customizes an individual entry within a chord
-array. Wrap it in parentheses inside the brackets. Only a trigger key
-and description are required \- any missing command or keywords are
-filled in by the surrounding array.
+A chord expression customizes an individual entry within a
+chord array. Wrap it in parentheses inside the brackets.
+Only a trigger key and description are required. Any missing
+command or keywords are filled in by the surrounding array.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -773,13 +782,13 @@ x \(dqXDG\-OPEN\(dq %{{xdg\-open ~/startpage.html}}
 .UNINDENT
 .UNINDENT
 .sp
-Here, \fBb\fP and \fBx\fP inherit the array\(aqs command template, while \fBc\fP
-provides its own. The \fBx\fP key has no expression, so it also inherits
-the array\(aqs description.
+Here, \fBb\fP and \fBx\fP inherit the array\(aqs command template,
+while \fBc\fP provides its own. The \fBx\fP key has no expression,
+so it also inherits the array\(aqs description.
 .SH INTERPOLATIONS
 .sp
-An interpolation inserts dynamic values into descriptions and
-commands.
+An interpolation inserts dynamic values into descriptions
+and commands.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -793,8 +802,8 @@ interpolation \-> \(aq%(\(aq ( chord_metadata | arg_position | user_variable ) \
 There are three kinds:
 .SS Chord Metadata
 .sp
-Built\-in identifiers that reference properties of the current chord.
-Valid in descriptions and commands.
+Built\-in identifiers that reference properties of the
+current chord. Valid in descriptions and commands.
 .TS
 box center;
 l|l.
@@ -869,8 +878,8 @@ for their children.
 .UNINDENT
 .SS User Variables
 .sp
-Variables defined with the \fB:var\fP macro\&. Valid in
-descriptions, commands, and preprocessor macro arguments.
+Variables defined with the \fB:var\fP macro\&. Valid
+in descriptions, commands, and preprocessor macro arguments.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -892,8 +901,8 @@ user_variable \-> [^)]+ ;
 .UNINDENT
 .SS Argument Positions
 .sp
-Positional references to values defined with \fB+args\fP\&. Valid in
-descriptions and commands where \fB+args\fP is defined.
+Positional references to values defined with \fB+args\fP\&. Valid
+in descriptions and commands where \fB+args\fP is defined.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -904,13 +913,14 @@ arg_position \-> \(aq$\(aq [0\-9]+ ;
 .UNINDENT
 .UNINDENT
 .sp
-\fB%($0)\fP is the first argument, \fB%($1)\fP the second, and so on.
-Undefined positions resolve to an empty string.
+\fB%($0)\fP is the first argument, \fB%($1)\fP the second, and so
+on. Undefined positions resolve to an empty string.
 .sp
-Arguments follow lexical scoping \- descendants within a prefix can
-access that prefix\(aqs arguments. When a descendant defines its own
-\fB+args\fP, its values shadow ancestor arguments at the same index, but
-other indices remain accessible:
+Arguments follow lexical scoping. Descendants within a
+prefix can access that prefix\(aqs arguments. When a descendant
+defines its own \fB+args\fP, its values shadow ancestor
+arguments at the same index, but other indices remain
+accessible:
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -943,7 +953,8 @@ hook \-> \(aq^\(aq ( \(aqbefore\(aq | \(aqafter\(aq | \(aqsync\-before\(aq | \(a
 .INDENT 0.0
 .TP
 \fB^before\fP / \fB^after\fP
-Run a command before or after the chord\(aqs own command, asynchronously.
+Run a command before or after the chord\(aqs own command,
+asynchronously.
 .TP
 \fB^sync\-before\fP / \fB^sync\-after\fP
 Same, but block wk until the hook completes.
@@ -952,14 +963,16 @@ Same, but block wk until the hook completes.
 \fBWarning:\fP
 .INDENT 0.0
 .INDENT 3.5
-A blocking \fBsync\-*\fP hook that never returns will freeze wk. You may
-need to restart your system to regain keyboard control.
+A blocking \fBsync\-*\fP hook that never returns will freeze wk.
+You may need to restart your system to regain keyboard
+control.
 .UNINDENT
 .UNINDENT
 .sp
-Hooks on a prefix apply to all direct child chords but \fBnot\fP to
-nested prefixes (see Inheritance). Use \fB+unhook\fP,
-\fB+no\-before\fP, or \fB+no\-after\fP on individual chords to opt out:
+Hooks on a prefix apply to all direct child chords but
+\fBnot\fP to nested prefixes (see
+Inheritance). Use \fB+unhook\fP, \fB+no\-before\fP,
+or \fB+no\-after\fP on individual chords to opt out:
 [Hooked]
 .INDENT 0.0
 .INDENT 3.5
@@ -1010,12 +1023,12 @@ flag \-> \(aq+\(aq ( \(aqkeep\(aq | \(aqclose\(aq | \(aqinherit\(aq | \(aqignore
 .INDENT 0.0
 .TP
 \fB+keep\fP
-Keep the menu open after executing the chord. Turns wk into a
-\(dqhydra\(dq for repeated actions.
+Keep the menu open after executing the chord. Turns wk
+into a \(dqhydra\(dq for repeated actions.
 .TP
 \fB+close\fP
-Force\-close the menu. Useful to override \fB+keep\fP on the enclosing
-prefix for specific chords.
+Force\-close the menu. Useful to override \fB+keep\fP on the
+enclosing prefix for specific chords.
 .UNINDENT
 .INDENT 0.0
 .INDENT 3.5
@@ -1033,9 +1046,8 @@ m \(dqMusic\(dq +keep
 .UNINDENT
 .SS Keyboard Control
 .sp
-By default wk holds the keyboard grab while a chord runs.
-A \fB+release\fP chord drops the grab before it runs its
-command.
+By default wk holds the keyboard grab while a chord runs. A
+\fB+release\fP chord drops the grab before it runs its command.
 .INDENT 0.0
 .TP
 \fB+release\fP
@@ -1084,7 +1096,7 @@ warning in Hooks about blocking commands.
 .TP
 \fB+inherit\fP
 Force a nested prefix to inherit hooks and flags from its
-parent.  Has no effect on chords.
+parent. Has no effect on chords.
 .TP
 \fB+ignore\fP
 Ignore all inherited hooks and flags. Has no effect on
@@ -1105,13 +1117,13 @@ Ignore inherited \fB^after\fP and \fB^sync\-after\fP hooks.
 .SS Command Wrapping
 .INDENT 0.0
 .TP
-\fB+wrap\fP \fB\(dqwrapper\(dq\fP
-Wrap this chord\(aqs command (or all commands in a prefix) with the
-given string. The command is executed as \fB/bin/sh \-c \(dqWRAPPER CMD\(dq\fP\&.
-Supports interpolation.
+\fB+wrap\fP \fB\(dqWRAPPER_CMD\(dq\fP
+Wrap this chord\(aqs command (or all commands in a prefix)
+with the given string. The command is executed as \fB/bin/sh \-c \(dqWRAPPER_CMD\(dq\fP\&. Supports interpolation.
 .TP
 \fB+unwrap\fP
-Prevent wrapping, even if a global wrap or inherited \fB+wrap\fP is set.
+Prevent wrapping, even if a global wrap or inherited
+\fB+wrap\fP is set.
 .UNINDENT
 .sp
 Wrap precedence, most specific to least:
@@ -1165,17 +1177,20 @@ f \(dqFoot\(dq
 .INDENT 0.0
 .TP
 \fB+title\fP \fB\(dqtext\(dq\fP
-Set a title displayed above the menu for this chord or prefix.
-Supports interpolation. Overrides the global \fB\-\-title\fP setting.
-An empty string (\fB\(dq\(dq\fP) clears any inherited or global title.
-Omitting the argument sets the title to the chord\(aqs description.
+Set a title displayed above the menu for this chord or
+prefix. Supports interpolation. Overrides the global
+\fB\-\-title\fP setting. An empty string (\fB\(dq\(dq\fP) clears any
+inherited or global title. Omitting the argument sets the
+title to the chord\(aqs description.
 .UNINDENT
 .SS Arguments
 .INDENT 0.0
 .TP
 \fB+args\fP \fB\(dqarg0\(dq\fP \fB\(dqarg1\(dq\fP ...
-Define positional arguments accessible via \fB%($0)\fP, \fB%($1)\fP, etc.
-See Argument Positions for scoping rules.
+Define positional arguments accessible via \fB%($0)\fP,
+\fB%($1)\fP, etc. See
+Argument Positions for scoping
+rules.
 .UNINDENT
 [Dynamic]
 .INDENT 0.0
@@ -1208,39 +1223,49 @@ c \(dqEmail (default)\(dq %{{mailto:(default)}}
 .UNINDENT
 .SH META COMMANDS
 .sp
-Meta commands control wk\(aqs menu rather than running a shell command.
-Every keyword introduced by \fB@\fP is a meta command, just as \fB^\fP
-introduces hooks, \fB+\fP introduces flags, and \fB:\fP introduces
-preprocessor macros. wk provides two meta commands: \fB@goto\fP, which
-appears in a chord\(aqs command position, and \fB@group\fP, which appears
-wherever a key chord may begin and wraps a block of chords, assigning
-them all to the same labeled menu column.
+Meta commands control wk\(aqs menu rather than running a shell
+command. Every keyword introduced by \fB@\fP is a meta command,
+just as \fB^\fP introduces hooks, \fB+\fP introduces flags, and \fB:\fP
+introduces preprocessor macros. wk provides three meta
+commands:
+.INDENT 0.0
+.IP \(bu 2
+\fB@goto\fP, which appears in a chord\(aqs command position,
+.IP \(bu 2
+\fB@group\fP, which appears wherever a key chord may begin and
+wraps a block of chords, assigning them all to the same
+labeled menu column, and
+.IP \(bu 2
+\fB@column\fP, which appear wherever a key chord may begin and
+wraps a block of \fB@group\fPs into a single column.
+.UNINDENT
 .INDENT 0.0
 .INDENT 3.5
 .sp
 .EX
 meta_command \-> \(aq@\(aq ( \(aqgoto\(aq description
-                    | \(aqgroup\(aq description \(aq{\(aq ( key_chord )+ \(aq}\(aq ) ;
+                    | \(aqgroup\(aq description \(aq{\(aq ( key_chord )+ \(aq}\(aq
+                    | \(aqcolumn\(aq \(aq{\(aq ( key_chord )+ \(aq}\(aq ) ;
 
 .EE
 .UNINDENT
 .UNINDENT
 .SS @goto
 .sp
-Navigates to a different location in the key chord hierarchy without
-closing and restarting wk. The argument uses the same syntax as
-\fB\-\-press\fP:
+Navigates to a different location in the key chord hierarchy
+without closing and restarting wk. The argument uses the
+same syntax as \fB\-\-press\fP:
 .INDENT 0.0
 .IP \(bu 2
-\fB@goto \(dq\(dq\fP \- navigate to the root menu
+\fB@goto \(dq\(dq\fP: navigate to the root menu
 .IP \(bu 2
-\fB@goto \(dqw\(dq\fP \- navigate to the \(dqw\(dq prefix
+\fB@goto \(dqw\(dq\fP: navigate to the \(dqw\(dq prefix
 .IP \(bu 2
-\fB@goto \(dqw m\(dq\fP \- navigate through \(dqw\(dq then \(dqm\(dq
+\fB@goto \(dqw m\(dq\fP: navigate through \(dqw\(dq then \(dqm\(dq
 .UNINDENT
 .sp
-If the path leads to a chord (not a prefix), that chord\(aqs command is
-executed.
+If the path leads to a chord (not a prefix), that chord\(aqs
+command is executed.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1278,34 +1303,21 @@ Groups a block of chords into a single labeled menu column:
 .INDENT 3.5
 .sp
 .EX
-@group \(dqName\(dq { <chords> }
-
-.EE
-.UNINDENT
-.UNINDENT
-.sp
-The block is \fBnot\fP a submenu \- the chords inside it belong to the
-enclosing scope (root menu or prefix body) exactly as if \fB@group\fP were
-not there. \fB@group\fP only stamps each contained chord with a column
-name.
-.sp
-Header text may be aligned. See \fB:header\-align\fP /
-\fB\-\-header\-align\fP below.
-.INDENT 0.0
-.INDENT 3.5
-.sp
-.EX
-@group \(dqChats\(dq {
+@group \(dqChats\(dq
+{
     a \(dqChat A\(dq %{{chat\-a}}
     b \(dqChat B\(dq %{{chat\-b}}
 }
 
-@group \(dqMail\(dq {
+@group \(dqMail\(dq
+{
     c \(dqMail C\(dq %{{mail\-c}}
 }
 
-@group \(dqTools\(dq {
-    t \(dqTools\(dq {
+@group \(dqTools\(dq
+{
+    t \(dqTools\(dq
+    {
         x \(dqTool X\(dq %{{tool\-x}}
     }
 }
@@ -1314,74 +1326,171 @@ Header text may be aligned. See \fB:header\-align\fP /
 .UNINDENT
 .UNINDENT
 .sp
-A prefix declared inside a \fB@group\fP block joins the column like any
-other chord, but its own submenu is an independent scope \- it is not
-part of the group and may declare its own \fB@group\fP blocks (or none).
-In the example above, \fBt\fP joins the \(dqTools\(dq column, but the submenu
-reached via \fBt\fP is ungrouped.
+The block is \fBnot\fP a submenu. The chords inside it belong
+to the enclosing scope (root menu or prefix body) exactly as
+if \fB@group\fP were not there. \fB@group\fP only stamps each
+contained chord with a column name.
 .sp
-Array expansions (Chord Arrays) inside a \fB@group\fP
-block put every expanded chord in the group.
+Header text may be aligned. See \fB:header\-align\fP /
+\fB\-\-header\-align\fP below.
 .sp
-A submenu (root or prefix body) must be entirely grouped or entirely
-ungrouped; mixing grouped and ungrouped chords in the same scope is a
-compile error.
+A prefix declared inside a \fB@group\fP block joins the column
+like any other chord, but its own submenu is an independent
+scope. It is not part of the group and may declare its own
+\fB@group\fP blocks (or none). In the example above, \fBt\fP joins
+the \(dqTools\(dq column, but the submenu reached via \fBt\fP is
+ungrouped.
 .sp
-\fBNote:\fP
+Array expansions (Chord Arrays) inside a
+\fB@group\fP block put every expanded chord in the group.
+.sp
+A submenu (root or prefix body) must be entirely grouped or
+entirely ungrouped; mixing grouped and ungrouped chords in
+the same scope is a compile error.
+.sp
+Group sorting is effected by the use of \fB@column\fP\&. Please
+see
+sorting and merging columns
+for a full explanation explanation.
+.SS @column
+.sp
+A \fB@column\fP is a group of one or more \fB@group blocks\fP:
 .INDENT 0.0
 .INDENT 3.5
-The following are compile errors:
-.INDENT 0.0
-.IP \(bu 2
-\fBCannot mix grouped and ungrouped chords in the same block.\fP \- a
-submenu has both grouped and ungrouped chords.
-.IP \(bu 2
-\fBEmpty @group block.\fP \- a \fB@group\fP block adds no chords.
-.IP \(bu 2
-\fBCannot nest @group blocks.\fP \- a \fB@group\fP appears inside another
-\fB@group\fP\&.
-.IP \(bu 2
-\fBUnterminated @group block.\fP \- end of file reached before the
-block\(aqs closing \fB}\fP\&.
-.IP \(bu 2
-\fBExpected group name after @group.\fP \- no description string follows
-\fB@group\fP\&.
-.IP \(bu 2
-\fBExpected \(aq{\(aq to begin @group block.\fP \- the name is not followed
-by \fB{\fP\&.
-.IP \(bu 2
-\fBCannot use chord interpolations in @group name.\fP \- the group name
-uses \fB%(key)\fP, \fB%(index)\fP, \fB%(desc)\fP, or similar per\-chord
-interpolations. User variable interpolation
-(\fB%(user_var)\fP) is allowed, since the name is resolved once for the
-whole block.
-.UNINDENT
+.sp
+.EX
+@column
+{
+    @group \(dqChats\(dq
+    {
+        a \(dqChat A\(dq %{{chat\-a}}
+        b \(dqChat B\(dq %{{chat\-b}}
+    }
+
+    @group \(dqMail\(dq
+    {
+        c \(dqMail C\(dq %{{mail\-c}}
+    }
+}
+
+@group \(dqTools\(dq
+{
+    t \(dqTools\(dq
+    {
+        x \(dqTool X\(dq %{{tool\-x}}
+    }
+}
+
+.EE
 .UNINDENT
 .UNINDENT
 .sp
-By default, columns are sorted alphabetically by group name, with
-keys sorted within each column; chords sharing a group name coalesce
-into one column regardless of where they appear in the file. With
-\fB:unsorted\fP / \fB\-\-unsorted\fP, columns and chords keep declaration
-order; \fBadjacent\fP \fB@group\fP blocks with the same name still coalesce
-into one column, but the same name used again later, separated by a
-different group, produces a second column with that header. See
-Sorting\&.
+This menu has two columns. The first column stacks the
+\(dqChats\(dq and \(dqMail\(dq groups, each with its own header. The
+second column holds \(dqTools\(dq. Groups are visual only. Every
+chord still belongs to the enclosing scope and shares one
+keymap, so two groups in one column cannot bind the same key
+to different commands.
+.SS Sorting and merging columns
+.sp
+When sorting is enabled column groups are sorted. Then,
+columns are merged according to the header group:
+[Plain]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+@column
+{
+    @group \(dqx\(dq
+    {
+        a \(dqa\(dq +write %{{a}}
+    }
+}
+
+@group \(dqz\(dq
+{
+    z \(dqz\(dq +write %{{z}}
+}
+
+@group \(dqx\(dq
+{
+    c \(dqc\(dq +write %{{c}}
+}
+
+@column
+{
+    @group \(dqy\(dq
+    {
+        y \(dqy\(dq +write %{{y}}
+    }
+    @group \(dqx\(dq
+    {
+        b \(dqb\(dq +write %{{b}}
+    }
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+[Sorted equivalent]
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+@column
+{
+    @group \(dqx\(dq
+    {
+        a \(dqa\(dq +write %{{a}}
+        b \(dqb\(dq +write %{{b}}
+        c \(dqc\(dq +write %{{c}}
+    }
+    @group \(dqy\(dq
+    {
+        y \(dqy\(dq +write %{{y}}
+    }
+}
+
+@group \(dqz\(dq
+{
+    z \(dqz\(dq +write %{{z}}
+}
+
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+\fBAttention:\fP
+.INDENT 0.0
+.INDENT 3.5
+Notice that the solo \fB@group \(dqx\(dq\fP is merged into the
+\fB@column\fP\&.
+.UNINDENT
+.UNINDENT
+.sp
+With \fB:unsorted\fP / \fB\-\-unsorted\fP, columns, groups, and chords
+keep declaration order; \fBadjacent\fP \fB@group\fP blocks with
+the same name still merge into one column, but the same name
+used again later, separated by a different group, produces a
+second column with that header.
 .sp
 Grouped layout divides the menu width evenly across columns
-(\fBmenu width / number of groups\fP); \fB:max\-columns\fP / \fB\-\-max\-columns\fP
-has no effect on a grouped scope. Header colors are set with
-\fB:fg\-header\fP / \fB\-\-fg\-header\fP (default \fB#7FB4CA\fP). The umbrella \fB\-\-fg\fP
-flag also sets the header foreground. Header text alignment is set
-menu\-wide with \fB:header\-align\fP / \fB\-\-header\-align\fP (default \fBleft\fP;
-also accepts \fBcenter\fP or \fBright\fP). The header row uses its own font,
-set with \fB:header\-font\fP / \fB\-\-header\-font\fP; when unset it falls back
+(\fBmenu width / number of columns\fP); \fB:max\-columns\fP /
+\fB\-\-max\-columns\fP has no effect on a grouped scope. Header
+colors are set with \fB:fg\-header\fP / \fB\-\-fg\-header\fP (default
+\fB#7FB4CA\fP).
+.sp
+Header text alignment is set menu\-wide with \fB:header\-align\fP
+/ \fB\-\-header\-align\fP (default \fBleft\fP; also accepts \fBcenter\fP or
+\fBright\fP). The header row uses its own font, set with
+\fB:header\-font\fP / \fB\-\-header\-font\fP; when unset it falls back
 to the menu font (\fB:font\fP / \fB\-\-font\fP).
 .SH PREPROCESSOR MACROS
 .sp
-Preprocessor macros configure the menu appearance and behavior, or
-include other wks files. They start with \fB:\fP and override the
-equivalent \fBwk\fP(1) command\-line flags.
+Preprocessor macros configure the menu appearance and
+behavior, or include other wks files. They start with \fB:\fP
+and override the equivalent \fBwk\fP(1) command\-line flags.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1395,8 +1504,9 @@ preprocessor_macro \-> \(aq:\(aq ( string_macro | switch_macro
 .UNINDENT
 .SS String Macros
 .sp
-String macros take a quoted string argument. All string macro
-arguments support user variable interpolation.
+String macros take a quoted string argument. All string
+macro arguments support user variable
+interpolation.
 .TS
 box center;
 l|l|l.
@@ -1566,9 +1676,9 @@ T}
 .UNINDENT
 .SS Include Macro
 .sp
-The \fB:include\fP macro inserts the contents of another wks file,
-similar to C\(aqs \fB#include\fP\&. Relative paths resolve from the directory
-of the file being processed.
+The \fB:include\fP macro inserts the contents of another wks
+file, similar to C\(aqs \fB#include\fP\&. Relative paths resolve from
+the directory of the file being processed.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1583,19 +1693,19 @@ e \(dqEmacs\(dq ^before %{{switch\-to\-workspace 1}} { :include \(dqemacs.wks\(d
 \fBNote:\fP
 .INDENT 0.0
 .INDENT 3.5
-Self\-includes and recursive includes produce an error. The same file
-may be included multiple times. Unlike C\(aqs \fB#include\fP, the \fB:include\fP
-macro can appear anywhere \- even mid\-description (though you probably
-shouldn\(aqt).
+Self\-includes and recursive includes produce an error. The
+same file may be included multiple times. Unlike C\(aqs
+\fB#include\fP, the \fB:include\fP macro can appear anywhere, even
+mid\-description (though you probably shouldn\(aqt).
 .UNINDENT
 .UNINDENT
 .sp
 See the modular configs example \%<>\&.
 .SS Var Macro
 .sp
-The \fB:var\fP macro defines a variable for use in descriptions, commands,
-and other preprocessor arguments. It takes two string arguments: a
-name and a value.
+The \fB:var\fP macro defines a variable for use in descriptions,
+commands, and other preprocessor arguments. It takes two
+string arguments: a name and a value.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1607,13 +1717,13 @@ name and a value.
 .UNINDENT
 .UNINDENT
 .sp
-Setting the value to an empty string (\fB\(dq\(dq\fP) unsets the variable. The
-variable name can contain any character except \fB)\fP and cannot shadow
-built\-in chord metadata identifiers.
+Setting the value to an empty string (\fB\(dq\(dq\fP) unsets the
+variable. The variable name can contain any character except
+\fB)\fP and cannot shadow built\-in chord metadata identifiers.
 .sp
 Both name and value support variable interpolation, enabling
-\fBmeta\-variables\fP (variables with computed names) and \fBchained
-references\fP:
+\fBmeta\-variables\fP (variables with computed names) and
+\fBchained references\fP:
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1631,8 +1741,13 @@ a \(dqSay hello\(dq %{{echo %(GREETING)}}
 .UNINDENT
 .UNINDENT
 .sp
-Variables are resolved at definition time in a single pass \- define
-them before use.
+\fBNote:\fP
+.INDENT 0.0
+.INDENT 3.5
+Variables are resolved at definition time in a single pass.
+Meaning they must be defined before you use them.
+.UNINDENT
+.UNINDENT
 .sp
 A common pattern is combining \fB:var\fP with \fB:include\fP for
 environment\-specific configs:
@@ -1836,10 +1951,11 @@ T}
 .TE
 .SH INHERITANCE
 .sp
-Hooks and flags on a prefix are inherited by its direct child chords,
-but \fBnot\fP by nested prefixes. Use \fB+inherit\fP to opt a nested prefix
-in, or use the negation flags (\fB+unhook\fP, \fB+deflag\fP, \fB+ignore\fP,
-\fB+no\-before\fP, \fB+no\-after\fP) to opt individual chords out.
+Hooks and flags on a prefix are inherited by its direct
+child chords, but \fBnot\fP by nested prefixes. Use \fB+inherit\fP
+to opt a nested prefix in, or use the negation flags
+(\fB+unhook\fP, \fB+deflag\fP, \fB+ignore\fP, \fB+no\-before\fP, \fB+no\-after\fP)
+to opt individual chords out.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1878,9 +1994,9 @@ a \(dqPrefix\(dq +write
 .UNINDENT
 .SH SORTING
 .sp
-Key chords are sorted alphabetically by default. Index interpolations
-are resolved \fBbefore\fP sorting, so \fB%(index)\fP reflects parse order,
-not display order.
+Key chords are sorted alphabetically by default. Index
+interpolations are resolved \fBbefore\fP sorting, so
+\fB%(index)\fP reflects parse order, not display order.
 .INDENT 0.0
 .INDENT 3.5
 .sp
@@ -1898,15 +2014,10 @@ a \(dqFirst\(dq +write %{{%(index)}}
 .sp
 Disable sorting with \fB\-\-unsorted\fP or \fB:unsorted\fP\&.
 .sp
-A grouped scope (see @group) sorts differently: the primary
-key is the group name (alphabetical), the secondary key is the chord
-key within each column. Chords sharing a group name coalesce into a
-single column no matter where they appear in the file. With
-\fB:unsorted\fP, both chords and \fB@group\fP blocks keep declaration order;
-only \fBadjacent\fP \fB@group\fP blocks sharing a name coalesce \- the same
-name used again later, with a different group in between, produces a
-second column with that header. Group names are compared byte\-wise
-(case\-sensitive), so uppercase names sort before lowercase ones.
+See
+sorting and merging columns
+for the specifics of sorting with regards to \fB@column\fP and
+\fB@group\fP\&.
 .SH BUG REPORTS
 .sp
 If you find a bug, please report it at

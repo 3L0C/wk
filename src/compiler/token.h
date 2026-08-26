@@ -108,6 +108,7 @@ enum
     TOKEN_ARGS,
 
     /* meta commands */
+    TOKEN_COLUMN,
     TOKEN_GOTO,
     TOKEN_GROUP,
 

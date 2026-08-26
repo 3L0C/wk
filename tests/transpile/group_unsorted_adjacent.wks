@@ -1,0 +1,19 @@
+# @desc: With :unsorted, adjacent same-named @group blocks coalesce into one column
+
+:unsorted
+
+@group "X" {
+    a "Ay" +write %{{echo a}}
+}
+
+@group "X" {
+    b "Bee" +write %{{echo b}}
+}
+
+@group "Y" {
+    c "Cee" +write %{{echo c}}
+}
+
+@group "X" {
+    d "Dee" +write %{{echo d}}
+}

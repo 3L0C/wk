@@ -1,0 +1,9 @@
+# @desc: Bare chords inside a @column block are rejected
+
+# @test: "a"
+# @expect-error: must be in a @group block
+
+@column
+{
+    a "cmd" +write %{{echo a}}
+}

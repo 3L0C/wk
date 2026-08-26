@@ -526,6 +526,11 @@ scanMetaCmd(Scanner* scanner, Token* token)
     /* Switch on start of keyword */
     switch (peekStart(scanner))
     {
+    case 'c':
+    {
+        if (isKeyword(scanner, 1, 5, "olumn")) result = TOKEN_COLUMN;
+        break;
+    }
     case 'g':
     {
         if (isKeyword(scanner, 1, 3, "oto")) result = TOKEN_GOTO;

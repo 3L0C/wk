@@ -289,6 +289,11 @@ disassembleKeyChord(const KeyChord* keyChord, int indent)
     debugStringWithIndent(indent, "Wrap Command:", propStringConst(keyChord, KC_PROP_WRAP_CMD));
     debugStringWithIndent(indent, "Title", propStringConst(keyChord, KC_PROP_TITLE));
     debugStringWithIndent(indent, "Group:", propStringConst(keyChord, KC_PROP_GROUP));
+    const int32_t* groupColumn = propIntConst(keyChord, KC_PROP_GROUP_COLUMN);
+    if (groupColumn)
+    {
+        debugMsgWithIndent(indent, "| %-20s %d", "Group Column:", *groupColumn);
+    }
     disassembleChordFlag(keyChord->flags, indent);
 }
 

@@ -1,0 +1,17 @@
+# @desc: @column transpile with :unsorted keeps source order and column ordinals
+
+:unsorted
+
+@column
+{
+    @group "X" {
+        a "Ay" +write %{{echo a}}
+    }
+    @group "Y" {
+        b "Bee" +write %{{echo b}}
+    }
+}
+
+@group "Solo" {
+    c "Cee" +write %{{echo c}}
+}

@@ -1,0 +1,24 @@
+# @desc: @column packs named groups into one column
+
+# @test: "a"
+# @expect: echo x-a
+
+# @test: "b"
+# @expect: echo y-b
+
+# @test: "c"
+# @expect: echo solo-c
+
+@column
+{
+    @group "X" {
+        a "X a" +write %{{echo x-a}}
+    }
+    @group "Y" {
+        b "Y b" +write %{{echo y-b}}
+    }
+}
+
+@group "Solo" {
+    c "Solo c" +write %{{echo solo-c}}
+}

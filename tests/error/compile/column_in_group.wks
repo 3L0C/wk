@@ -1,0 +1,12 @@
+# @desc: A @column block inside a @group block is rejected
+
+# @test: "a"
+# @expect-error: Cannot use @column inside a @group block
+
+@group "Outer"
+{
+    @column
+    {
+        a "cmd" +write %{{echo a}}
+    }
+}

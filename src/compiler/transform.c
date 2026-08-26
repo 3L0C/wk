@@ -45,6 +45,18 @@ getKeyCategory(char c, SpecialKey special)
 }
 
 static int
+compareStringValues(const String* a, const String* b)
+{
+    size_t minLen = (a->length < b->length) ? a->length : b->length;
+    int    cmp    = memcmp(a->data, b->data, minLen);
+    if (cmp != 0) return cmp;
+
+    if (a->length < b->length) return -1;
+    if (a->length > b->length) return 1;
+    return 0;
+}
+
+static int
 compareGroupNames(const KeyChord* a, const KeyChord* b)
 {
     const String* ga = propStringConst(a, KC_PROP_GROUP);
@@ -56,12 +68,20 @@ compareGroupNames(const KeyChord* a, const KeyChord* b)
     if (!aHas && !bHas) return 0;
     if (aHas != bHas) return aHas ? 1 : -1;
 
-    size_t minLen = (ga->length < gb->length) ? ga->length : gb->length;
-    int    cmp    = memcmp(ga->data, gb->data, minLen);
-    if (cmp != 0) return cmp;
+    return compareStringValues(ga, gb);
+}
 
-    if (ga->length < gb->length) return -1;
-    if (ga->length > gb->length) return 1;
+static int
+compareGroupColumns(const KeyChord* a, const KeyChord* b)
+{
+    const int32_t* ca = propIntConst(a, KC_PROP_GROUP_COLUMN);
+    const int32_t* cb = propIntConst(b, KC_PROP_GROUP_COLUMN);
+
+    int32_t va = ca ? *ca : -1;
+    int32_t vb = cb ? *cb : -1;
+
+    if (va < vb) return -1;
+    if (va > vb) return 1;
     return 0;
 }
 
@@ -70,6 +90,9 @@ compareKeyChords(const void* a, const void* b)
 {
     const KeyChord* ca = a;
     const KeyChord* cb = b;
+
+    int columnCmp = compareGroupColumns(ca, cb);
+    if (columnCmp != 0) return columnCmp;
 
     int groupCmp = compareGroupNames(ca, cb);
     if (groupCmp != 0) return groupCmp;
@@ -109,6 +132,101 @@ compareKeyChords(const void* a, const void* b)
     else return 0;
 }
 
+/* Sorted columns keep alphabetical order: rewrite each scope's column
+ * ordinals to the rank of the column's alphabetically-first group name. */
+typedef struct
+{
+    int32_t       ordinal;
+    const String* name;
+} ColumnRank;
+
+static int
+compareColumnRanks(const void* a, const void* b)
+{
+    const ColumnRank* ra = a;
+    const ColumnRank* rb = b;
+
+    int cmp = compareStringValues(ra->name, rb->name);
+    if (cmp != 0) return cmp;
+
+    if (ra->ordinal < rb->ordinal) return -1;
+    if (ra->ordinal > rb->ordinal) return 1;
+    return 0;
+}
+
+static ColumnRank*
+findColumnRank(Vector* ranks, int32_t ordinal)
+{
+    assert(ranks);
+
+    vectorForEach(ranks, ColumnRank, rank)
+    {
+        if (rank->ordinal == ordinal) return rank;
+    }
+    return NULL;
+}
+
+/* Columns that share a first group name merge into one column, so sorted
+ * mode keeps the pre-packing behavior: same-named groups coalesce. */
+static size_t
+firstRankIndexForName(const Vector* ranks, const String* name)
+{
+    assert(ranks), assert(name);
+
+    vectorForEach(ranks, const ColumnRank, rank)
+    {
+        if (compareStringValues(rank->name, name) == 0) return iter.index;
+    }
+    return 0;
+}
+
+static void
+remapColumnOrdinals(KeyChord* chords, size_t count)
+{
+    assert(chords);
+
+    /* ponytail: linear rank lookups, fine for tens of columns */
+    Vector ranks = VECTOR_INIT(ColumnRank);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        const int32_t* column = propIntConst(&chords[i], KC_PROP_GROUP_COLUMN);
+        const String*  name   = propStringConst(&chords[i], KC_PROP_GROUP);
+        if (!column || !name) continue;
+
+        ColumnRank* found = findColumnRank(&ranks, *column);
+        if (!found)
+        {
+            ColumnRank rank = { .ordinal = *column, .name = name };
+            vectorAppend(&ranks, &rank);
+        }
+        else if (compareStringValues(name, found->name) < 0)
+        {
+            found->name = name;
+        }
+    }
+
+    if (!vectorIsEmpty(&ranks))
+    {
+        qsort(
+            VECTOR_AS(&ranks, ColumnRank),
+            vectorLength(&ranks),
+            sizeof(ColumnRank),
+            compareColumnRanks);
+
+        for (size_t i = 0; i < count; i++)
+        {
+            int32_t* column = propInt(&chords[i], KC_PROP_GROUP_COLUMN);
+            if (!column) continue;
+
+            ColumnRank* found = findColumnRank(&ranks, *column);
+            if (found) *column = (int32_t)firstRankIndexForName(&ranks, found->name);
+        }
+    }
+
+    vectorFree(&ranks);
+}
+
 void
 keyChordSpanSort(Span* chords)
 {
@@ -125,6 +243,7 @@ keyChordSpanSort(Span* chords)
 
     if (chords->count < 2) return;
 
+    remapColumnOrdinals(chords->data, chords->count);
     qsort(chords->data, chords->count, sizeof(KeyChord), compareKeyChords);
 }
 
@@ -145,6 +264,7 @@ keyChordVectorSort(Vector* chords)
     size_t n = vectorLength(chords);
     if (n < 2) return;
 
+    remapColumnOrdinals(VECTOR_AS(chords, KeyChord), n);
     qsort(VECTOR_AS(chords, KeyChord), n, sizeof(KeyChord), compareKeyChords);
 }
 

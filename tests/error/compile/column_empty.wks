@@ -1,0 +1,8 @@
+# @desc: Empty @column block is rejected
+
+# @test: "a"
+# @expect-error: Empty @column block
+
+@column
+{
+}

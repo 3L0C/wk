@@ -1,0 +1,16 @@
+# @desc: Sorted mode orders columns by their first group name and keeps packed groups together
+
+@group "Zeta" {
+    z "Zed" +write %{{echo z}}
+}
+
+@column
+{
+    @group "Mid" {
+        m "Em" +write %{{echo m}}
+    }
+    @group "Alpha" {
+        b "Bee" +write %{{echo b}}
+        a "Ay" +write %{{echo a}}
+    }
+}
