@@ -161,16 +161,17 @@ The following characters have special meaning in wks and
 must be escaped with a backslash (`\`) to use as trigger
 keys:
 
-| Character | Meaning              |
-|-----------|----------------------|
-| `[` `]`   | Chord array          |
-| `{` `}`   | Prefix block         |
-| `(` `)`   | Chord expression     |
-| `#`       | Comment              |
-| `"`       | Description          |
-| `:`       | Preprocessor macro   |
-| `^`       | Hook                 |
-| `+`       | Flag                 |
+| Character | Meaning            |
+|-----------|--------------------|
+| `[` `]`   | Chord array        |
+| `{` `}`   | Prefix block       |
+| `(` `)`   | Chord expression   |
+| `#`       | Comment            |
+| `"`       | Description        |
+| `:`       | Preprocessor macro |
+| `^`       | Hook               |
+| `+`       | Flag               |
+| `@`       | Meta command       |
 
 ### Special Keys
 
