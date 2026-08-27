@@ -78,3 +78,8 @@ body[data-theme="light"] .highlight .p  { color: #6693bf; }                     
   body:not([data-theme="dark"]) .highlight .nl { color: #597b75; }
   body:not([data-theme="dark"]) .highlight .p  { color: #6693bf; }
 }
+
+table.align-default {
+    margin-left: 0;
+    margin-right: auto;
+}

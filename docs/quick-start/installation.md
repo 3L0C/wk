@@ -128,74 +128,227 @@ included files are accessible relative to `config/`.
 
 ## Installing via Nix
 
-### Flakes
+````{tab} NixOS
+Add wk as a flake input, then put the package in
+`environment.systemPackages`:
 
-```nix
-# flake.nix
+```{code-block} nix
+:caption: flake.nix
+
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-  inputs.wk.url = "github:3L0C/wk";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    wk = {
+      url = "github:3L0C/wk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
 
   outputs = { nixpkgs, wk, ... }: {
-    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.CHANGEME = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [({ pkgs, ... }: {
-        environment.systemPackages = [
-          wk.packages.${pkgs.stdenv.hostPlatform.system}.wk
-        ];
+        nixpkgs.overlays = [ wk.overlays.default ];
+        environment.systemPackages = [ pkgs.wk ];
       })];
     };
   };
 }
 ```
 
-#### Using the Overlay
-
-The overlay provides `pkgs.wk` so you don't need the verbose package path:
-
-```nix
-({ pkgs, ... }: {
-  nixpkgs.overlays = [ wk.overlays.default ];
-  environment.systemPackages = [ pkgs.wk ];
-})
+```{attention}
+Replace `CHANGEME` with your system's hostname.
 ```
 
-### Without Flakes
+```{attention}
+This snippet uses an overlay to add `wk` to `pkgs`. If you'd rather
+not add this overlay, you can use:
 
-```nix
-# configuration.nix or home.nix
-{ pkgs, ... }:
-let
-  wk-src = builtins.fetchTarball {
-    # Tags: https://github.com/3L0C/wk/tags
-    # Or use a commit: .../archive/<commit>.tar.gz
-    url = "https://github.com/3L0C/wk/archive/refs/tags/v{version}.tar.gz";
-    sha256 = ""; # Nix will tell you the correct hash
+`wk.packages.${pkgs.stdenv.hostPlatform.system}.default`
+
+You may need to use
+[`specialArgs`](https://nixos-and-flakes.thiscute.world/nixos-with-flakes/nixos-flake-and-module-system#pass-non-default-parameters-to-submodules)
+to pass either `inputs` or `wk` to additional modules.
+```
+````
+
+````{tab} Home Manager
+Add wk as a flake input, then put the package in
+`home.packages`:
+
+```{code-block} nix
+:caption: flake.nix
+
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    wk = {
+      url = "github:3L0C/wk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
-  wk = pkgs.callPackage "${wk-src}/default.nix" {};
-in {
-  environment.systemPackages = [ wk ];  # or home.packages
+
+  outputs = { nixpkgs, home-manager, wk, ... }: {
+    homeConfigurations.CHANGEME = home-manager.lib.homeManagerConfiguration {
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ wk.overlays.default ];
+      };
+      modules = [({ pkgs, ... }: {
+        home.packages = [ pkgs.wk ];
+      })];
+    };
+  };
 }
 ```
 
 ```{attention}
-The above example is incomplete. You will need to input the desired version number in place of `{version}` in the `url` and the correct `sha256` for the above example to work. To get the correct `sha256`, you can build your system and check the error to get the correct value.
+Replace `CHANGEME` with your username.
 ```
+
+```{attention}
+This snippet uses an overlay to add `wk` to `pkgs`. If you'd rather
+not add this overlay, you can use:
+
+`wk.packages.${pkgs.stdenv.hostPlatform.system}.default`
+
+You may need to use
+[`extraSpecialArgs`](https://nix-community.github.io/home-manager/nix-flakes/standalone.html?highlight=extraspecialargs#standalone-setup)
+to pass either `inputs` or `wk` to additional modules.
+```
+````
+
+````{tab} Without flakes
+Create `wk.nix` and import it in your `configuration.nix`:
+
+```{code-block} nix
+:caption: wk.nix
+
+{pkgs, ...}: let
+  version = "0.3.5-1";
+
+  wk-src = builtins.fetchTarball {
+    url = "https://github.com/3L0C/wk/archive/refs/tags/v${version}.tar.gz";
+    sha256 = "01687biymf8wnc7v154a17hzxhp6swzgg1bhmbgdxcws3wl7rmpy";
+  };
+in {
+  nixpkgs.overlays = [ (import "${wk-src}/nix/overlay.nix") ];
+  environment.systemPackages = [ pkgs.wk ];
+}
+```
+
+```{attention}
+To upgrade, change to the desired `version`. Replace `sha256`
+with `pkgs.lib.fakeHash`. Build the configuration once, and
+replace `pkgs.lib.fakeHash` with the expected value.
+```
+
+```{note}
+Replace `environment.systemPackages` with `home.packages`
+for a Home Manager configuration.
+```
+````
+
+````{tab} Nix package manager
+For an imperative install into your user profile:
+
+```{prompt} bash
+nix profile install github:3L0C/wk
+```
+
+To upgrade later:
+
+```{prompt} bash
+nix profile upgrade wk
+```
+
+To try oxbow in a temporary shell without an install:
+
+```{prompt} bash
+nix shell github:3L0C/wk
+```
+````
 
 ### Package Variants
 
-| Package          | Description                   |
-|------------------|-------------------------------|
-| `wk` / `default` | Both X11 and Wayland backends |
-| `wk-x11`         | X11 backend only              |
-| `wk-wayland`     | Wayland backend only          |
-| `wk-debug`       | Debug build with symbols      |
+The instructions above install wk with X11 and Wayland
+support, but backend specific versions are provided:
 
-```nix
-wk.packages.${system}.wk-x11
-wk.packages.${system}.wk-wayland
+| Package      | Description              |
+|--------------|--------------------------|
+| `wk-x11`     | X11 backend only         |
+| `wk-wayland` | Wayland backend only     |
+| `wk-debug`   | Debug build with symbols |
 
-# Or via override (with overlay)
-pkgs.wk.override { backend = "x11"; }
-pkgs.wk.override { backend = "wayland"; }
+### Building in a wks config
+
+You can build your config into the binary:
+
+````{tab} wksContent
+The `wksContent` override allows you to build your keybinds
+into wk, without any additional files:
+
+```{code-block} nix
+pkgs.wk.override {
+  wksContent = ''
+    s "Steam" %{{steam}}
+    f "Files" %{{thunar}}
+  '';
+}
 ```
+````
+
+````{tab} wksFile
+The `wksFile` override allows you to build your keybinds
+into wk from a given file:
+
+```{code-block} nix
+pkgs.wk.override {
+  wksFile = ./key_chords.wks;
+}
+```
+````
+
+````{tab} wksDirs
+`wksDirs` makes it possible to build more complex
+configurations:
+
+```{code-block} nix
+pkgs.wk.override {
+  wksContent = ''
+    # Some common settings
+    :delay 0
+    :font "monospace, 12"
+
+    :include "niri/main.wks"
+  '';
+
+  wksDirs = [
+    ./common
+    ./niri
+  ];
+}
+```
+
+When using `wksDirs`, the given directories are copied into
+the build environment. The contents of the directories are
+placed into `config/` under their basename (e.g.,
+`./wks/common` -> `config/common`).  This makes it possible
+to [`:include`](../reference/wks.md#include-macro) files
+across the given directories.
+
+It is best to use unique terminal directories like
+`./wks/common` and `./wks/niri` vs. `./common/wks` and
+`./niri/wks`. The second form will copy the contents of
+`./common/wks` into `config/wks`. Then, the contents of
+`./niri/wks` will be copied int `config/wks/wks`.
+
+```{attention}
+You must give either `wksContent` or `wksFile` when using
+`wksDirs`. It is an error to give both.
+```
+````
