@@ -4,17 +4,16 @@
   ...
 }:
 let
-  wk-package = pkgs.callPackage ./default.nix { };
-
-  # Make pre-commit optional to avoid circular dependencies
   hasPreCommit = checks ? pre-commit-check;
+
   preCommitPackages = if hasPreCommit then checks.pre-commit-check.enabledPackages else [ ];
+
   preCommitHook = if hasPreCommit then checks.pre-commit-check.shellHook else "";
 in
 pkgs.mkShell {
   buildInputs = [ pkgs.bashInteractive ] ++ preCommitPackages;
 
-  inputsFrom = [ wk-package ];
+  inputsFrom = [ pkgs.wk ];
 
   nativeBuildInputs = [
     (pkgs.python3.withPackages (ps: [
@@ -63,6 +62,7 @@ pkgs.mkShell {
     echo "  make docs-html  - Build HTML docs"
     echo "  make docs-man   - Build man pages from docs"
     echo "  make docs-serve - Serve docs at localhost:8000"
+    echo "  make docs-live  - Live rebuild+serve docs at localhost:8000"
     echo ""
     echo "Code quality:"
     echo "  pre-commit run --all-files  - Run all pre-commit hooks"

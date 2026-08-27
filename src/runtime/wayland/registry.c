@@ -135,10 +135,10 @@ keyboardHandleLeave(
     (void)keyboard, (void)serial, (void)surface;
     Input*            input = data;
     struct itimerspec its   = {
-          .it_interval.tv_sec  = 0,
-          .it_interval.tv_nsec = 0,
-          .it_value.tv_sec     = 0,
-          .it_value.tv_nsec    = 0
+        .it_interval.tv_sec  = 0,
+        .it_interval.tv_nsec = 0,
+        .it_value.tv_sec     = 0,
+        .it_value.tv_nsec    = 0
     };
     timerfd_settime(*input->repeatFd, 0, &its, NULL);
 

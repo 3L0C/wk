@@ -84,7 +84,7 @@ assert assertMsg wks.dirsValid "wksDirs must be a non-empty list if provided";
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "wk";
-  version = lib.trim (readFile ./VERSION);
+  version = lib.fileContents ./VERSION;
 
   src =
     with fileset;
@@ -133,24 +133,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   # When using custom wks, copy it to config/
   preBuild = optionalString wks.isCustom (
-    if wks.hasContent && wks.hasDirs then
-      # Mode 1: wksContent as entry point + wksDirs for dependencies
-      ''
-        ${copyWksFile wks.fileToUse}
-        ${copyWksDirs wksDirs}
-      ''
-    else if wks.hasContent then
-      # Mode 2: Inline wks content only
-      copyWksFile wks.fileToUse
-    else if wks.hasFile && wks.hasDirs then
-      # Mode 3: wksFile as entry point + wksDirs for dependencies
-      ''
-        ${copyWksFile wksFile}
-        ${copyWksDirs wksDirs}
-      ''
-    else
-      # Mode 4: Single wksFile only
-      copyWksFile wksFile
+    copyWksFile wks.fileToUse + optionalString wks.hasDirs ("\n" + copyWksDirs wksDirs)
   );
 
   buildPhase = ''
@@ -172,11 +155,10 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://github.com/3L0C/wk";
     description = "Which-Key via X11 and Wayland";
     longDescription = ''
-      wk displays available key chords in a popup window, inspired by
-      emacs-which-key. It supports both X11 and Wayland backends with a
-      custom scripting language (wks files) for defining key chord mappings.
-      Features include nested key chord prefixes, hooks, chord arrays, and
-      comprehensive preprocessor macros for customization.
+      wk is a popup menu for your custom keyboard shortcuts. Inspired by
+      emacs-which-key, dmenu, and bemenu. It supports both X11 and Wayland
+      backends with a custom scripting language (wks) for defining key chord
+      mappings.
     '';
     license = licenses.gpl3Plus;
     platforms = platforms.linux;

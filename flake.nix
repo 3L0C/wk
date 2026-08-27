@@ -3,7 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
 
     pre-commit-hooks = {
       url = "github:cachix/git-hooks.nix";
@@ -11,63 +10,70 @@
     };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-    ...
-  } @ inputs:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      wk-package = pkgs.callPackage ./default.nix {};
-    in {
-      packages = {
-        default = wk-package;
-        wk = wk-package;
+  outputs =
+    {
+      self,
+      nixpkgs,
+      ...
+    }@inputs:
+    let
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
 
-        # Backend-specific variants
-        wk-x11 = wk-package.override { backend = "x11"; };
-        wk-wayland = wk-package.override { backend = "wayland"; };
+      forAllSystems =
+        f:
+        nixpkgs.lib.genAttrs systems (
+          system: f system (nixpkgs.legacyPackages.${system}.extend self.overlays.default)
+        );
+    in
+    {
+      packages = forAllSystems (
+        _: pkgs: {
+          default = pkgs.wk;
+          wk = pkgs.wk;
 
-        # Debug build variant
-        wk-debug = wk-package.overrideAttrs (old: {
-          dontStrip = true;
-          separateDebugInfo = false;
-          NIX_CFLAGS_COMPILE = (old.NIX_CFLAGS_COMPILE or "") + " -ggdb -O0";
-        });
-      };
+          wk-x11 = pkgs.wk.override { backend = "x11"; };
+          wk-wayland = pkgs.wk.override { backend = "wayland"; };
 
-      apps.default = {
-        type = "app";
-        program = "${wk-package}/bin/wk";
-      };
+          wk-debug = pkgs.wk.overrideAttrs (old: {
+            dontStrip = true;
+            separateDebugInfo = false;
+            NIX_CFLAGS_COMPILE = (old.NIX_CFLAGS_COMPILE or "") + " -ggdb -O0";
+          });
+        }
+      );
 
-      # Formatter for 'nix fmt'
-      formatter = pkgs.alejandra;
+      formatter = forAllSystems (_: pkgs: pkgs.nixfmt);
 
-      # Pre-commit checks and build variant checks
-      checks = (import ./checks.nix {inherit inputs pkgs;}) // {
-        # Build variant checks
-        package-default = wk-package;
-        package-x11 = wk-package.override { backend = "x11"; };
-        package-wayland = wk-package.override { backend = "wayland"; };
-        package-with-wks = wk-package.override {
-          wksContent = ''
-            h "help" %{{echo "test"}}
-            t "test" %{{echo "test command"}}
-          '';
-        };
-      };
+      checks = forAllSystems (
+        _: pkgs:
+        (import ./checks.nix {
+          inherit inputs pkgs;
+        })
+        // {
+          package-default = pkgs.wk;
+          package-x11 = pkgs.wk.override { backend = "x11"; };
+          package-wayland = pkgs.wk.override { backend = "wayland"; };
+          package-with-wks = pkgs.wk.override {
+            wksContent = ''
+              h "help" %{{echo "test"}}
+              t "test" %{{echo "test command"}}
+            '';
+          };
+        }
+      );
 
-      # Development shell
-      devShells.default = import ./shell.nix {
-        inherit pkgs;
-        checks = self.checks.${system};
-      };
-    })
-    // {
-      overlays.default = final: prev: {
-        wk = final.callPackage ./default.nix {};
-      };
+      devShells = forAllSystems (
+        system: pkgs: {
+          default = import ./shell.nix {
+            inherit pkgs;
+            checks = self.checks.${system};
+          };
+        }
+      );
+
+      overlays.default = import ./nix/overlay.nix;
     };
 }

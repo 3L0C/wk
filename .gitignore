@@ -8,6 +8,8 @@ src/runtime/wayland/xdg-shell.*
 config/config.h
 config/key_chords.h
 man/*.scd
+/docs/_build/
+**/__pycache__/
 
 # Nix
 .direnv
@@ -31,5 +33,3 @@ config/*.wks
 config/*.bak.h
 config/*template.h
 config/*template.def.h
-/docs/_build/
-**/__pycache__/
