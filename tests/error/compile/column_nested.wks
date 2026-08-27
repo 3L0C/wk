@@ -1,0 +1,12 @@
+# @desc: A @column block inside a @column block is rejected
+
+# @test: "a"
+# @expect-error: Cannot nest @column blocks
+
+@column
+{
+    @column
+    {
+        a "cmd" +write %{{echo a}}
+    }
+}

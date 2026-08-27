@@ -90,6 +90,12 @@ static const char* wrapCmd = NULL;
         .type  = PROP_TYPE_STRING,            \
         .value = {.as_string = STRING_EMPTY } \
     }
+#define PROPERTY_INT(_i)           \
+    (Property)                     \
+    {                              \
+        .type  = PROP_TYPE_INT,    \
+        .value = {.as_int = (_i) } \
+    }
 #define PROPERTIES(...) __VA_ARGS__
 #define PROPERTIES_EMPTY
 #define KEY_CHORD(_key, _props, _flags, _chords) \
@@ -115,32 +121,36 @@ static Span builtinKeyChords =
         KEY_CHORD(
             KEY("x", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Item x"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo x"),
-                [KC_PROP_GROUP]       = PROPERTY_STRING("Alpha")),
+                [KC_PROP_DESCRIPTION]  = PROPERTY_STRING("Item x"),
+                [KC_PROP_COMMAND]      = PROPERTY_STRING("echo x"),
+                [KC_PROP_GROUP]        = PROPERTY_STRING("Alpha"),
+                [KC_PROP_GROUP_COLUMN] = PROPERTY_INT(0)),
             FLAG_WRITE,
             SPAN_EMPTY),
         KEY_CHORD(
             KEY("y", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Item y"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo y"),
-                [KC_PROP_GROUP]       = PROPERTY_STRING("Alpha")),
+                [KC_PROP_DESCRIPTION]  = PROPERTY_STRING("Item y"),
+                [KC_PROP_COMMAND]      = PROPERTY_STRING("echo y"),
+                [KC_PROP_GROUP]        = PROPERTY_STRING("Alpha"),
+                [KC_PROP_GROUP_COLUMN] = PROPERTY_INT(0)),
             FLAG_WRITE,
             SPAN_EMPTY),
         KEY_CHORD(
             KEY("z", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Zed"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo z"),
-                [KC_PROP_GROUP]       = PROPERTY_STRING("Alpha")),
+                [KC_PROP_DESCRIPTION]  = PROPERTY_STRING("Zed"),
+                [KC_PROP_COMMAND]      = PROPERTY_STRING("echo z"),
+                [KC_PROP_GROUP]        = PROPERTY_STRING("Alpha"),
+                [KC_PROP_GROUP_COLUMN] = PROPERTY_INT(0)),
             FLAG_WRITE,
             SPAN_EMPTY),
         KEY_CHORD(
             KEY("m", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Prefix in group"),
-                [KC_PROP_GROUP]       = PROPERTY_STRING("Mid")),
+                [KC_PROP_DESCRIPTION]  = PROPERTY_STRING("Prefix in group"),
+                [KC_PROP_GROUP]        = PROPERTY_STRING("Mid"),
+                [KC_PROP_GROUP_COLUMN] = PROPERTY_INT(1)),
             FLAG_NONE,
             SPAN_STATIC(
                 KeyChord,
@@ -155,17 +165,19 @@ static Span builtinKeyChords =
         KEY_CHORD(
             KEY("a", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Ay"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo a"),
-                [KC_PROP_GROUP]       = PROPERTY_STRING("Zeta")),
+                [KC_PROP_DESCRIPTION]  = PROPERTY_STRING("Ay"),
+                [KC_PROP_COMMAND]      = PROPERTY_STRING("echo a"),
+                [KC_PROP_GROUP]        = PROPERTY_STRING("Zeta"),
+                [KC_PROP_GROUP_COLUMN] = PROPERTY_INT(2)),
             FLAG_WRITE,
             SPAN_EMPTY),
         KEY_CHORD(
             KEY("b", MOD_NONE, SPECIAL_KEY_NONE),
             PROPERTIES(
-                [KC_PROP_DESCRIPTION] = PROPERTY_STRING("Bee"),
-                [KC_PROP_COMMAND]     = PROPERTY_STRING("echo b"),
-                [KC_PROP_GROUP]       = PROPERTY_STRING("Zeta")),
+                [KC_PROP_DESCRIPTION]  = PROPERTY_STRING("Bee"),
+                [KC_PROP_COMMAND]      = PROPERTY_STRING("echo b"),
+                [KC_PROP_GROUP]        = PROPERTY_STRING("Zeta"),
+                [KC_PROP_GROUP_COLUMN] = PROPERTY_INT(2)),
             FLAG_WRITE,
             SPAN_EMPTY));
 

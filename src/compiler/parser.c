@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* common includes */
 #include "common/key_chord.h"
@@ -38,8 +39,13 @@ static InternedIndex indexInterns[256] = { 0 };
 typedef struct
 {
     Vector nameTokens;
+    Vector prevNameTokens;
     size_t startIndex;
+    size_t columnStart;
+    size_t nextColumn;
     bool   active;
+    bool   columnActive;
+    bool   hasPrevName;
 } GroupState;
 
 struct Parser
@@ -390,6 +396,7 @@ parserFree(Parser* p)
     for (size_t i = 0; i < MAX_DEPTH; i++)
     {
         vectorFree(&p->groupStates[i].nameTokens);
+        vectorFree(&p->groupStates[i].prevNameTokens);
     }
 
     while (!stackIsEmpty(&p->argEnvStack))
@@ -422,9 +429,14 @@ parserInit(Parser* p, Scanner* scanner, Menu* m)
     for (size_t i = 0; i < MAX_DEPTH; i++)
     {
         p->groupStates[i] = (GroupState){
-            .nameTokens = VECTOR_INIT(Token),
-            .startIndex = 0,
-            .active     = false,
+            .nameTokens     = VECTOR_INIT(Token),
+            .prevNameTokens = VECTOR_INIT(Token),
+            .startIndex     = 0,
+            .columnStart    = 0,
+            .nextColumn     = 0,
+            .active         = false,
+            .columnActive   = false,
+            .hasPrevName    = false,
         };
     }
     p->argEnvStack       = STACK_INIT(ArgEnvironment);
@@ -536,6 +548,21 @@ destHasMixedGroups(Vector* dest)
     return grouped != 0 && grouped != vectorLength(dest);
 }
 
+static void
+parserErrorMixedGroups(Parser* p)
+{
+    assert(p);
+
+    if (p->groupStates[p->depth].columnActive)
+    {
+        parserErrorAtCurrent(p, "Chords inside a @column block must be in a @group block.");
+    }
+    else
+    {
+        parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
+    }
+}
+
 KeyChord*
 parserAllocChord(Parser* p)
 {
@@ -543,7 +570,7 @@ parserAllocChord(Parser* p)
 
     if (!p->groupStates[p->depth].active && destHasMixedGroups(p->dest))
     {
-        parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
+        parserErrorMixedGroups(p);
     }
 
     KeyChord* chord = VECTOR_APPEND_SLOT(p->dest, KeyChord);
@@ -755,7 +782,7 @@ parserNextChordExpectation(Parser* p)
 {
     assert(p);
 
-    if (p->depth > 0 || p->groupStates[p->depth].active)
+    if (p->depth > 0 || p->groupStates[p->depth].active || p->groupStates[p->depth].columnActive)
     {
         return EXPECT_KEY_START | EXPECT_RBRACE;
     }
@@ -789,6 +816,7 @@ parserPushState(Parser* p)
     p->parentStack[p->depth] = p->chord;
     p->destStack[p->depth]   = p->dest;
     p->depth++;
+    p->groupStates[p->depth].hasPrevName = false;
 }
 
 bool
@@ -1047,6 +1075,71 @@ skipGroupConstruct(Parser* p)
 }
 
 static bool
+parserBeginGroupConstruct(Parser* p)
+{
+    assert(p);
+
+    KeyChord* uncommitted = parserCurrentChord(p);
+    Vector*   dest        = parserDest(p);
+    compilerFreeChord(uncommitted);
+    vectorRemove(dest, vectorLength(dest) - 1);
+
+    vectorForEach(dest, KeyChord, chord)
+    {
+        if (!propHasContent(chord, KC_PROP_GROUP))
+        {
+            parserErrorMixedGroups(p);
+            /* The enclosing column cannot close normally after this error;
+             * clear the flag so EOF does not report a bogus unterminated
+             * block when synchronize() swallows the closing brace. */
+            p->groupStates[p->depth].columnActive = false;
+            skipGroupConstruct(p);
+            parserAllocChord(p);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool
+parseColumnOpen(Parser* p)
+{
+    assert(p);
+
+    GroupState* gs = &p->groupStates[p->depth];
+    if (gs->columnActive)
+    {
+        parserErrorAtCurrent(p, "Cannot nest @column blocks.");
+        gs->columnActive = false;
+        return false;
+    }
+    if (gs->active)
+    {
+        parserErrorAtCurrent(p, "Cannot use @column inside a @group block.");
+        return false;
+    }
+
+    if (!parserBeginGroupConstruct(p)) return false;
+
+    parserAdvance(p);
+
+    if (!parserCheck(p, TOKEN_LEFT_BRACE))
+    {
+        parserErrorAtCurrent(p, "Expected '{' to begin @column block.");
+        parserAllocChord(p);
+        return false;
+    }
+    parserAdvance(p);
+
+    gs->columnActive = true;
+    gs->columnStart  = vectorLength(parserDest(p));
+    parserAllocChord(p);
+    p->expect = parserNextChordExpectation(p);
+    return true;
+}
+
+static bool
 parseGroupOpen(Parser* p)
 {
     assert(p);
@@ -1058,21 +1151,7 @@ parseGroupOpen(Parser* p)
         return false;
     }
 
-    KeyChord* uncommitted = parserCurrentChord(p);
-    Vector*   dest        = parserDest(p);
-    compilerFreeChord(uncommitted);
-    vectorRemove(dest, vectorLength(dest) - 1);
-
-    vectorForEach(dest, KeyChord, chord)
-    {
-        if (!propHasContent(chord, KC_PROP_GROUP))
-        {
-            parserErrorAtCurrent(p, "Cannot mix grouped and ungrouped chords in the same block.");
-            skipGroupConstruct(p);
-            parserAllocChord(p);
-            return false;
-        }
-    }
+    if (!parserBeginGroupConstruct(p)) return false;
 
     parserAdvance(p);
 
@@ -1102,10 +1181,41 @@ parseGroupOpen(Parser* p)
     parserAdvance(p);
 
     gs->active     = true;
-    gs->startIndex = vectorLength(dest);
+    gs->startIndex = vectorLength(parserDest(p));
     parserAllocChord(p);
     p->expect = parserNextChordExpectation(p);
     return true;
+}
+
+static bool
+groupNameTokensEqual(const Vector* a, const Vector* b)
+{
+    assert(a), assert(b);
+
+    if (vectorLength(a) != vectorLength(b)) return false;
+
+    for (size_t i = 0; i < vectorLength(a); i++)
+    {
+        const Token* ta = VECTOR_GET(a, const Token, i);
+        const Token* tb = VECTOR_GET(b, const Token, i);
+        if (ta->type != tb->type || ta->length != tb->length) return false;
+        if (memcmp(ta->start, tb->start, ta->length) != 0) return false;
+    }
+
+    return true;
+}
+
+static void
+saveGroupNameAsPrev(GroupState* gs)
+{
+    assert(gs);
+
+    vectorClear(&gs->prevNameTokens);
+    vectorForEach(&gs->nameTokens, const Token, nameToken)
+    {
+        vectorAppend(&gs->prevNameTokens, nameToken);
+    }
+    gs->hasPrevName = true;
 }
 
 static bool
@@ -1131,6 +1241,12 @@ parseGroupClose(Parser* p)
         return false;
     }
 
+    /* An adjacent bare group with the same name joins the previous column, so
+     * `:unsorted` keeps the pre-packing coalescing behavior. */
+    bool    mergeWithPrev = !gs->columnActive && gs->hasPrevName &&
+                            groupNameTokensEqual(&gs->nameTokens, &gs->prevNameTokens);
+    int32_t column        = (int32_t)(mergeWithPrev ? gs->nextColumn - 1 : gs->nextColumn);
+
     vectorForEachFrom(dest, KeyChord, chord, gs->startIndex)
     {
         Vector* groupTokens = propVector(chord, KC_PROP_GROUP);
@@ -1139,6 +1255,16 @@ parseGroupClose(Parser* p)
         {
             vectorAppend(groupTokens, nameToken);
         }
+
+        Property* columnProp     = propGet(chord, KC_PROP_GROUP_COLUMN);
+        columnProp->type         = PROP_TYPE_INT;
+        columnProp->value.as_int = column;
+    }
+
+    if (!gs->columnActive)
+    {
+        if (!mergeWithPrev) gs->nextColumn++;
+        saveGroupNameAsPrev(gs);
     }
 
     gs->active = false;
@@ -1148,6 +1274,49 @@ parseGroupClose(Parser* p)
     parserAllocChord(p);
     p->expect = parserNextChordExpectation(p);
     return true;
+}
+
+static bool
+parseColumnClose(Parser* p)
+{
+    assert(p);
+
+    GroupState* gs   = &p->groupStates[p->depth];
+    Vector*     dest = parserDest(p);
+
+    KeyChord* lastChord = parserCurrentChord(p);
+    if (lastChord && stringIsEmpty(&lastChord->key.repr))
+    {
+        compilerFreeChord(lastChord);
+        vectorRemove(dest, vectorLength(dest) - 1);
+    }
+
+    gs->columnActive = false;
+
+    if (vectorLength(dest) == gs->columnStart)
+    {
+        parserErrorAtCurrent(p, "Empty @column block.");
+        parserAllocChord(p);
+        return false;
+    }
+
+    bool ok = true;
+    vectorForEachFrom(dest, KeyChord, chord, gs->columnStart)
+    {
+        if (!propHasContent(chord, KC_PROP_GROUP))
+        {
+            parserErrorAtCurrent(p, "Chords inside a @column block must be in a @group block.");
+            ok = false;
+            break;
+        }
+    }
+
+    gs->nextColumn++;
+    gs->hasPrevName = false;
+    parserAdvance(p);
+    parserAllocChord(p);
+    p->expect = parserNextChordExpectation(p);
+    return ok;
 }
 
 static void
@@ -1683,7 +1852,7 @@ parseSingleChord(Parser* p)
         if (t == TOKEN_LEFT_BRACKET || t == TOKEN_ELLIPSIS ||
             tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY ||
             t == TOKEN_LESS_THAN || t == TOKEN_RIGHT_BRACE ||
-            t == TOKEN_GROUP || t == TOKEN_EOF)
+            t == TOKEN_GROUP || t == TOKEN_COLUMN || t == TOKEN_EOF)
         {
             return true;
         }
@@ -1724,9 +1893,16 @@ parseImpl(Parser* p)
         {
             ok = parseGroupOpen(p);
         }
+        else if (t == TOKEN_COLUMN)
+        {
+            ok = parseColumnOpen(p);
+        }
         else if (t == TOKEN_RIGHT_BRACE)
         {
-            ok = p->groupStates[p->depth].active ? parseGroupClose(p) : parseRightBrace(p);
+            GroupState* gs = &p->groupStates[p->depth];
+            if (gs->active) ok = parseGroupClose(p);
+            else if (gs->columnActive) ok = parseColumnClose(p);
+            else ok = parseRightBrace(p);
         }
         else if (tokenIsModType(t) || t == TOKEN_KEY || t == TOKEN_SPECIAL_KEY || t == TOKEN_LESS_THAN)
         {
@@ -1759,6 +1935,11 @@ parseImpl(Parser* p)
         if (p->groupStates[i].active)
         {
             parserErrorAtCurrent(p, "Unterminated @group block.");
+            break;
+        }
+        if (p->groupStates[i].columnActive)
+        {
+            parserErrorAtCurrent(p, "Unterminated @column block.");
             break;
         }
     }

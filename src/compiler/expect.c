@@ -127,7 +127,8 @@ tokenToExpectation(TokenType type)
     case TOKEN_COMMAND: /* FALLTHROUGH */
     case TOKEN_COMM_INTERP: return EXPECT_COMMAND;
 
-    case TOKEN_GOTO: /* FALLTHROUGH */
+    case TOKEN_COLUMN: /* FALLTHROUGH */
+    case TOKEN_GOTO:
     case TOKEN_GROUP: return EXPECT_META;
 
     case TOKEN_LEFT_BRACE: return EXPECT_LBRACE;

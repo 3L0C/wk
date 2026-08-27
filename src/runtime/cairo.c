@@ -115,7 +115,8 @@ typedef struct
 {
     size_t start;
     size_t count;
-} GroupColumn;
+    size_t column;
+} GroupSegment;
 
 static bool
 menuIsGrouped(const Menu* menu)
@@ -127,27 +128,56 @@ menuIsGrouped(const Menu* menu)
     return propIsSet(first, KC_PROP_GROUP);
 }
 
-static void
-partitionGroups(const Span* keyChords, Vector* columns)
+/* Split the chord span into group segments and assign each segment a column
+ * index. Chords carry a column ordinal; a new ordinal starts a new column.
+ * Chords without an ordinal (older transpiled headers) get one column per
+ * segment, which matches the pre-packing layout. Returns the column count. */
+static size_t
+partitionGroups(const Span* keyChords, Vector* segments)
 {
-    assert(keyChords), assert(columns);
+    assert(keyChords), assert(segments);
 
-    const String* prevName = NULL;
+    const String* prevName    = NULL;
+    bool          haveOrdinal = false;
+    int32_t       prevOrdinal = 0;
+    size_t        columns     = 0;
+
     for (size_t i = 0; i < keyChords->count; i++)
     {
-        const KeyChord* chord = SPAN_GET(keyChords, const KeyChord, i);
-        const String*   name  = propStringConst(chord, KC_PROP_GROUP);
+        const KeyChord* chord   = SPAN_GET(keyChords, const KeyChord, i);
+        const String*   name    = propStringConst(chord, KC_PROP_GROUP);
+        const int32_t*  ordinal = propIntConst(chord, KC_PROP_GROUP_COLUMN);
 
-        if (!prevName || !name || !stringEquals(prevName, name))
+        bool newSegment = !prevName || !name || !stringEquals(prevName, name);
+        bool newColumn;
+        if (columns == 0)
         {
-            GroupColumn column = { .start = i, .count = 0 };
-            vectorAppend(columns, &column);
+            newColumn = true;
+        }
+        else if (ordinal && haveOrdinal)
+        {
+            newColumn = *ordinal != prevOrdinal;
+        }
+        else
+        {
+            newColumn = newSegment;
         }
 
-        GroupColumn* current = VECTOR_GET(columns, GroupColumn, vectorLength(columns) - 1);
+        if (newColumn) columns++;
+        if (newColumn || newSegment)
+        {
+            GroupSegment segment = { .start = i, .count = 0, .column = columns - 1 };
+            vectorAppend(segments, &segment);
+        }
+
+        GroupSegment* current = VECTOR_GET(segments, GroupSegment, vectorLength(segments) - 1);
         current->count++;
-        prevName = name;
+        prevName    = name;
+        haveOrdinal = ordinal != NULL;
+        if (ordinal) prevOrdinal = *ordinal;
     }
+
+    return columns;
 }
 
 uint32_t
@@ -169,26 +199,38 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
     menu->cellHeight  = cellHeight;
     menu->titleHeight = (menu->title && strlen(menu->title) > 0) ? titleHeight : 0;
 
+    uint32_t contentHeight = 0;
+
     if (menuIsGrouped(menu))
     {
-        Vector columns = VECTOR_INIT(GroupColumn);
-        partitionGroups(menu->keyChords, &columns);
+        Vector segments    = VECTOR_INIT(GroupSegment);
+        size_t columnCount = partitionGroups(menu->keyChords, &segments);
 
-        uint32_t maxRows = 0;
-        vectorForEach(&columns, GroupColumn, column)
+        uint32_t maxRows      = 0;
+        uint32_t columnHeight = 0;
+        size_t   prevColumn   = SIZE_MAX;
+        vectorForEach(&segments, GroupSegment, segment)
         {
-            if (column->count > maxRows) maxRows = (uint32_t)column->count;
+            if (segment->column != prevColumn)
+            {
+                columnHeight = 0;
+                prevColumn   = segment->column;
+            }
+            columnHeight += headerHeight + ((uint32_t)segment->count * cellHeight);
+            if (columnHeight > contentHeight) contentHeight = columnHeight;
+            if ((uint32_t)segment->count > maxRows) maxRows = (uint32_t)segment->count;
         }
 
-        menu->cols         = (uint32_t)vectorLength(&columns);
+        menu->cols         = (uint32_t)columnCount;
         menu->rows         = maxRows;
         menu->headerHeight = headerHeight;
-        vectorFree(&columns);
+        vectorFree(&segments);
     }
     else
     {
         calculateGrid(menu->keyChords->count, menu->maxCols, &menu->rows, &menu->cols);
         menu->headerHeight = 0;
+        contentHeight      = menu->cellHeight * menu->rows;
     }
 
     /* Calculate table padding for height calculation - if -1, use cell padding,
@@ -198,8 +240,7 @@ cairoHeight(Menu* menu, cairo_surface_t* surface, uint32_t maxHeight)
                                 : (menu->tablePadding < 0 ? 0U : (uint32_t)menu->tablePadding);
 
     height = menu->titleHeight +
-             menu->headerHeight +
-             (menu->cellHeight * menu->rows) +
+             contentHeight +
              (tablePadding * 2) +
              (menu->borderWidth * 2);
 
@@ -702,13 +743,21 @@ drawGroupedColumns(
 {
     assert(cr), assert(paint), assert(menu), assert(layout), assert(ctx);
 
-    Vector columns = VECTOR_INIT(GroupColumn);
-    partitionGroups(menu->keyChords, &columns);
+    Vector segments = VECTOR_INIT(GroupSegment);
+    partitionGroups(menu->keyChords, &segments);
 
-    vectorForEach(&columns, GroupColumn, column)
+    uint32_t yOffset    = 0;
+    size_t   prevColumn = SIZE_MAX;
+    vectorForEach(&segments, GroupSegment, segment)
     {
-        uint32_t        colX  = startx + ((uint32_t)iter.index * cellWidth);
-        const KeyChord* first = SPAN_GET(menu->keyChords, const KeyChord, column->start);
+        if (segment->column != prevColumn)
+        {
+            yOffset    = 0;
+            prevColumn = segment->column;
+        }
+
+        uint32_t        colX  = startx + ((uint32_t)segment->column * cellWidth);
+        const KeyChord* first = SPAN_GET(menu->keyChords, const KeyChord, segment->start);
 
         drawHeaderText(
             cr,
@@ -716,16 +765,17 @@ drawGroupedColumns(
             first,
             menu->headerAlign,
             colX,
-            starty + menu->hpadding,
+            starty + yOffset + menu->hpadding,
             cellWidth,
             menu->wpadding);
 
-        for (size_t row = 0; row < column->count; row++)
+        for (size_t row = 0; row < segment->count; row++)
         {
             const KeyChord* keyChord =
-                SPAN_GET(menu->keyChords, const KeyChord, column->start + row);
+                SPAN_GET(menu->keyChords, const KeyChord, segment->start + row);
             uint32_t x = colX + menu->wpadding;
-            uint32_t y = starty + menu->headerHeight + ((uint32_t)row * cellHeight) + menu->hpadding;
+            uint32_t y = starty + yOffset + menu->headerHeight + ((uint32_t)row * cellHeight) +
+                         menu->hpadding;
 
             drawHintText(
                 cr,
@@ -738,9 +788,11 @@ drawGroupedColumns(
                 y,
                 ctx->ellipsisWidth);
         }
+
+        yOffset += menu->headerHeight + ((uint32_t)segment->count * cellHeight);
     }
 
-    vectorFree(&columns);
+    vectorFree(&segments);
 }
 
 static bool

@@ -35,7 +35,7 @@ class WksLexer(RegexLexer):
                 bygroups(Operator, Name.Builtin),
             ),
             # Meta commands: @goto
-            (r"(@)(goto)\b", bygroups(Operator, Name.Builtin)),
+            (r"(@)(goto|group|column)\b", bygroups(Operator, Name.Builtin)),
             # Special keys
             (
                 words(

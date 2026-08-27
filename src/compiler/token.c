@@ -113,8 +113,9 @@ static const TokenTable tokenTable[TOKEN_LAST] = {
     [TOKEN_ARGS]      = "TOKEN_ARGS",
 
     /* meta commands */
-    [TOKEN_GOTO]  = "TOKEN_GOTO",
-    [TOKEN_GROUP] = "TOKEN_GROUP",
+    [TOKEN_COLUMN] = "TOKEN_COLUMN",
+    [TOKEN_GOTO]   = "TOKEN_GOTO",
+    [TOKEN_GROUP]  = "TOKEN_GROUP",
 
     /* literals */
     [TOKEN_COMMAND]          = "TOKEN_COMMAND",

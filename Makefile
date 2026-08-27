@@ -241,6 +241,9 @@ docs-man:
 docs-serve: docs-html
 	python3 -m http.server -d $(DOCS_BUILD)/html 8000
 
+docs-live:
+	sphinx-autobuild $(DOCS_DIR) $(DOCS_BUILD)/html
+
 docs-linkcheck:
 	sphinx-build -b linkcheck $(DOCS_DIR) $(DOCS_BUILD)/linkcheck
 
