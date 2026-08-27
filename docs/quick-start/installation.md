@@ -266,7 +266,7 @@ To upgrade later:
 nix profile upgrade wk
 ```
 
-To try oxbow in a temporary shell without an install:
+To try wk in a temporary shell without an install:
 
 ```{prompt} bash
 nix shell github:3L0C/wk
