@@ -345,7 +345,7 @@ It is best to use unique terminal directories like
 `./wks/common` and `./wks/niri` vs. `./common/wks` and
 `./niri/wks`. The second form will copy the contents of
 `./common/wks` into `config/wks`. Then, the contents of
-`./niri/wks` will be copied int `config/wks/wks`.
+`./niri/wks` will be copied into `config/wks/wks`.
 
 ```{attention}
 You must give either `wksContent` or `wksFile` when using
