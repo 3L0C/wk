@@ -677,8 +677,7 @@ menuParseArgs(Menu* menu, int* argc, char*** argv)
 
     while (true)
     {
-
-        opt = getopt_long(*argc, *argv, ":hvdtbcsUD:m:p:T:w:g:", longOpts, NULL);
+        opt = getopt_long(*argc, *argv, ":hvdtbcsUD:m:p:T:k:w:g:", longOpts, NULL);
         if (opt < 0) break;
 
         switch (opt)
